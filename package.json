@@ -1,8 +1,8 @@
 {
   "name": "coffee-pos-web-final",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
-  "description": "Hardened Coffee POS web migration with ingredient-aware availability tooltips, recipe-required product gating, detailed transaction audit viewer, reliable checkout reset, responsive admin UI, safe retry protection, exact stock reversal, backups, reports and PostgreSQL support.",
+  "description": "Coffee POS web migration with live cross-terminal refresh, filtered audit logs, version-aware What's New notices, batch replenish/transfer, ingredient-aware availability, reports, backups and PostgreSQL support.",
   "scripts": {
     "start": "node --no-warnings server.js",
     "start:postgres": "node scripts/start-postgres.js",

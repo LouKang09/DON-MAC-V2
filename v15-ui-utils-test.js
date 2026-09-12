@@ -1,0 +1,14 @@
+const assert = require('assert');
+const ui = require('./public/ui-utils.js');
+assert.equal(ui.classifyLogEntry({status:'Sold',activity:'Sale completed: X'}),'sales');
+assert.equal(ui.classifyLogEntry({status:'Daily Report',activity:'Daily report emailed'}),'reports');
+assert.equal(ui.classifyLogEntry({status:'Replenished stock',activity:'Items Replenished'}),'inventory');
+assert.equal(ui.classifyLogEntry({status:'Product Added',activity:'Product added'}),'catalog');
+assert.equal(ui.classifyLogEntry({status:'User Updated',activity:'User account saved'}),'users');
+assert.equal(ui.classifyLogEntry({status:'Restored',activity:'Database restored'}),'database');
+assert.equal(ui.filterLogs([{status:'Sold',activity:'ABC'},{status:'Restored',activity:'XYZ'}],'sales','').length,1);
+assert.equal(ui.isUpdateUnread('1.5.0','1.4.2'),true);
+assert.equal(ui.isUpdateUnread('1.5.0','1.5.0'),false);
+const batch=ui.mergeBatchItem([{ingredientId:2,qty:3,name:'Milk'}],{ingredientId:2,qty:4,name:'Milk'});
+assert.equal(batch.length,1);assert.equal(batch[0].qty,7);
+console.log('V1.5 UI UTILS TEST PASSED');
