@@ -1,0 +1,18 @@
+/* Coffee POS v1.5.5 — release history + system-log PDF export */
+.version-history-section{margin-top:18px;border-top:1px solid var(--line,#e7e1d7);padding-top:16px}
+.version-history-section>h3{margin:0 0 6px;font-size:15px;color:var(--ink,#17231e)}
+.version-history-intro{margin:0 0 12px;color:var(--muted,#6b746f);font-size:12px;line-height:1.5}
+.version-history{display:grid;gap:8px;max-height:340px;overflow:auto;padding-right:4px}
+.version-entry{border:1px solid var(--line,#e7e1d7);border-radius:12px;background:#fff;overflow:hidden}
+.version-entry summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;font-weight:700;color:var(--ink,#17231e)}
+.version-entry summary::-webkit-details-marker{display:none}
+.version-entry summary::after{content:'+';font-size:18px;color:var(--muted,#6b746f);font-weight:400}
+.version-entry[open] summary::after{content:'−'}
+.version-entry .version-meta{display:flex;align-items:center;gap:8px;min-width:0}
+.version-chip{display:inline-flex;align-items:center;border-radius:999px;background:#edf5f0;color:#1f654c;padding:3px 7px;font-size:10px;letter-spacing:.04em;white-space:nowrap}
+.version-entry.current .version-chip{background:#dff3e8;color:#0f5b3d}
+.version-entry ul{margin:0;padding:0 28px 12px 31px;color:#4d5a54;font-size:12px;line-height:1.55}
+.version-entry li+li{margin-top:4px}
+.log-export-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#systemLogSavePdf{display:inline-flex;align-items:center;justify-content:center}
+@media(max-width:720px){.version-history{max-height:280px}.version-entry summary{align-items:flex-start;flex-direction:column}.log-export-actions{width:100%}.log-export-actions button{flex:1}}
