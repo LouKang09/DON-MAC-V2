@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#14261f" />
+  <title>Don Macchiatos Web POS</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <section id="authScreen" class="auth-screen hidden">
+    <form id="authForm" class="auth-card">
+      <div class="brand-mark">DM</div>
+      <p class="eyebrow">COFFEE POS 0.4 MIGRATION</p>
+      <h1 id="authTitle">Sign in</h1>
+      <p id="authHint" class="muted">Use your web POS account.</p>
+      <label>Username<input id="authUsername" autocomplete="username" minlength="2" maxlength="80" required /></label>
+      <label>Password<input id="authPassword" type="password" minlength="8" maxlength="256" required /></label>
+      <button id="authSubmit" class="primary big" type="submit">Sign in</button>
+      <p class="tiny muted">Excel passwords are intentionally not imported. Web passwords are stored as secure hashes.</p>
+    </form>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark small">DM</div><div><strong>Don Macchiatos</strong><span>Web POS</span></div></div>
+      <nav id="mainNav">
+        <button class="nav" data-view="dashboard">◫ <span>Dashboard</span></button>
+        <button class="nav active" data-view="pos">▦ <span>POS</span></button>
+        <button class="nav" data-view="inventory">▤ <span>Inventory</span></button>
+        <button class="nav" data-view="reports">▥ <span>Reports</span></button>
+        <button class="nav admin-only" data-view="catalog">◇ <span>Catalog Admin</span></button>
+        <button class="nav admin-only" data-view="users">◎ <span>Users</span></button>
+        <button class="nav" data-view="logs">≣ <span>System Logs</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="user-chip"><b id="currentUser">—</b><span id="currentRole">—</span></div>
+        <button id="logoutButton" class="ghost">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow" id="viewEyebrow">POINT OF SALE</p><h2 id="viewTitle">New Order</h2></div>
+        <div class="topbar-right"><span class="db-pill" id="dbEngine">DATABASE</span><span class="db-pill" id="appVersion">v1</span><span id="clock"></span></div>
+      </header>
+
+      <section id="view-dashboard" class="view">
+        <div id="dashboardSummary" class="summary-grid dashboard-summary"></div>
+        <div class="dashboard-grid">
+          <div class="card chart-card"><div class="card-head"><div><p class="eyebrow">LAST 30 DAYS</p><h3>Actual Sales Trend</h3></div></div><canvas id="salesTrendChart" height="250"></canvas></div>
+          <div class="card chart-card"><div class="card-head"><div><p class="eyebrow">THIS MONTH</p><h3>Top Products</h3></div></div><canvas id="topProductsChart" height="250"></canvas></div>
+        </div>
+        <div class="dashboard-grid lower">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">LOW STOCK</p><h3>Needs Attention</h3></div><button id="dashboardRefresh" class="ghost">Refresh</button></div><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div></div>
+          <div class="card"><div class="card-head"><div><p class="eyebrow">MONTH MIX</p><h3>Gross by Category</h3></div></div><div id="categorySales" class="bar-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-pos" class="view active">
+        <div class="pos-layout">
+          <div class="catalog-panel">
+            <div class="catalog-tools"><div id="categoryTabs" class="tabs"></div><input id="searchBox" class="search" placeholder="Search products…" /></div>
+            <div id="promoBanner" class="promo-banner hidden"></div>
+            <div id="catalogGrid" class="catalog-grid"></div>
+          </div>
+          <aside class="order-panel">
+            <div class="order-head"><div><span class="eyebrow">CURRENT ORDER</span><h3>Order Items</h3></div><button id="clearCart" class="text-button">Clear</button></div>
+            <div id="orderList" class="order-list"></div>
+            <div class="discount-box">
+              <label class="check-row"><input type="checkbox" id="seniorEnabled" /> Senior Citizen Discount <span>20%</span></label>
+              <div id="seniorFields" class="senior-fields hidden"><input id="seniorName" maxlength="150" placeholder="Senior full name" /><input id="seniorId" inputmode="numeric" maxlength="12" pattern="[0-9]{6,12}" placeholder="Senior ID (6–12 digits)" /></div>
+            </div>
+            <div class="totals"><div><span>Gross</span><strong id="grossAmount">₱0.00</strong></div><div><span>Adjustment</span><strong id="adjustmentAmount">₱0.00</strong></div><div class="actual"><span>Actual</span><strong id="actualAmount">₱0.00</strong></div></div>
+            <div id="quoteMessage" class="quote-message"></div>
+            <button id="payButton" class="primary pay" disabled>Pay ₱0.00</button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="view-inventory" class="view">
+        <div class="section-grid inventory-layout">
+          <div class="card wide-card">
+            <div class="card-head"><div><p class="eyebrow">LIVE STOCK</p><h3>Ingredients</h3></div><input id="inventorySearch" class="search compact" placeholder="Search ingredient…" /></div>
+            <div class="table-wrap tall"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Low Threshold</th><th>Status</th></tr></thead><tbody id="inventoryBody"></tbody></table></div>
+          </div>
+          <div class="side-stack">
+            <form id="replenishForm" class="card form-card"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><label>Ingredient<select id="replenishIngredient"></select></label><label>Quantity<input id="replenishQty" type="number" min="0.000001" step="any" required /></label><label>Delivered By<input id="deliveredBy" maxlength="150" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Add Stock</button></form>
+            <form id="transferForm" class="card form-card"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><label>Ingredient<select id="transferIngredient"></select></label><label>Quantity<input id="transferQty" type="number" min="0.000001" step="any" required /></label><label>Transfer To<input id="transferBranch" maxlength="150" required /></label><label>Received By<input id="receivedBy" maxlength="150" required /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Transfer Stock</button></form>
+          </div>
+        </div>
+        <div class="card spaced"><div class="card-head"><div><p class="eyebrow">MOVEMENT HISTORY</p><h3>Inventory Audit</h3></div><button id="refreshMovements" class="ghost">Refresh</button></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Balance</th><th>Reference / Branch</th><th>Actor</th></tr></thead><tbody id="movementBody"></tbody></table></div></div>
+      </section>
+
+      <section id="view-reports" class="view">
+        <div class="card report-toolbar">
+          <div><p class="eyebrow">SALES + COSTING</p><h3>Daily / Weekly / Monthly / Yearly</h3></div>
+          <div class="report-filters"><select id="reportPeriod"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select><input id="reportDate" type="date" /><input id="reportCashier" maxlength="80" placeholder="Cashier (optional)" /><button id="loadReport" class="primary">Load</button><button id="salesPdf" class="ghost">Sales PDF</button><button id="costingPdf" class="ghost">Costing PDF</button><button id="emailReport" class="ghost">Email PDF</button></div>
+        </div>
+        <div id="reportSummary" class="summary-grid"></div>
+        <div class="card spaced"><div class="card-head"><div><p class="eyebrow">PRODUCT SUMMARY</p><h3>Gross / Adjusted / Actual / Costing / Net</h3></div></div><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th><th class="num">Costing</th><th class="num">Net Sales</th></tr></thead><tbody id="reportProducts"></tbody></table></div></div>
+        <div class="card spaced"><div class="card-head"><div><p class="eyebrow">PROMO BREAKDOWN</p><h3>Promo Purchases</h3></div></div><div class="table-wrap"><table><thead><tr><th>Promo</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th></tr></thead><tbody id="reportPromos"></tbody></table></div></div>
+        <div class="card spaced"><div class="card-head"><div><p class="eyebrow">COSTING REPORT</p><h3>Ingredient Usage and Cost</h3></div><strong id="costingTotal"></strong></div><div id="costingList" class="costing-list"></div></div>
+        <div class="card spaced"><div class="card-head"><div><p class="eyebrow">TRANSACTIONS LOGS</p><h3>Audit Trail</h3></div></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Cashier</th><th>Status</th><th>Payment</th><th>Remark</th><th>Date/Time</th><th class="num">Gross</th><th class="num">Adjustment</th><th class="num">Actual</th><th>Action</th></tr></thead><tbody id="reportTransactions"></tbody></table></div></div>
+      </section>
+
+      <section id="view-catalog" class="view admin-only">
+        <div class="admin-tabs" id="adminTabs"><button class="active" data-admin-tab="products">Products</button><button data-admin-tab="ingredients">Ingredients</button><button data-admin-tab="recipes">Recipes & Costing</button><button data-admin-tab="promos">Promos</button><button data-admin-tab="packages">Packages</button><button data-admin-tab="settings">Settings</button><button data-admin-tab="backups">Backups</button></div>
+
+        <div id="admin-products" class="admin-panel active section-grid admin-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">CATALOG</p><h3>Products</h3></div><input id="adminProductSearch" class="search compact" placeholder="Search…" /></div><div class="table-wrap tall"><table><thead><tr><th>Name</th><th>Category</th><th class="num">Price</th><th class="num">Unit Cost</th><th>Recipe</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminProductsBody"></tbody></table></div></div>
+          <form id="productForm" class="card form-card"><p class="eyebrow">ADD / UPDATE</p><h3 id="productFormTitle">New Product</h3><input id="productEditId" type="hidden" /><label>Name<input id="productName" maxlength="150" required /></label><label>Category<select id="productCategory"><option>Coffee</option><option>Non Coffee</option><option>Food</option></select></label><label>Price<input id="productPrice" type="number" min="0" step="0.01" required /></label><label class="check-row"><input id="productActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save Product</button><button id="productFormClear" class="ghost" type="button">Clear</button><p class="tiny muted">To preserve the original VBA rule, an existing product name is not renamed. Archive it and add a new name instead.</p></form>
+        </div>
+
+        <div id="admin-ingredients" class="admin-panel section-grid admin-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">INVENTORY MASTER</p><h3>Ingredients & Measurement</h3></div><input id="adminIngredientSearch" class="search compact" placeholder="Search…" /></div><div class="table-wrap tall"><table><thead><tr><th>Ingredient</th><th>Code</th><th>UOM</th><th class="num">Stock</th><th class="num">Low</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminIngredientsBody"></tbody></table></div></div>
+          <form id="ingredientForm" class="card form-card"><p class="eyebrow">ADD / UPDATE</p><h3 id="ingredientFormTitle">New Ingredient</h3><input id="ingredientEditId" type="hidden" /><label>Name<input id="ingredientName" maxlength="150" required /></label><label>Measurement / UOM<input id="ingredientUom" maxlength="40" placeholder="kg/sack, ml, pcs/pk" /></label><label>Low-stock Threshold<input id="ingredientThreshold" type="number" min="0" step="any" value="0" /></label><label class="check-row"><input id="ingredientActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save Ingredient</button><button id="ingredientFormClear" class="ghost" type="button">Clear</button></form>
+        </div>
+
+        <div id="admin-recipes" class="admin-panel">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">PRODUCTLIST + COSTINGLIST</p><h3>Recipe & Costing Editor</h3></div><select id="recipeProduct" class="select-wide"></select></div><div class="recipe-add"><select id="recipeIngredient"></select><input id="recipeQty" type="number" min="0.000000001" step="any" placeholder="Qty required" /><input id="recipeCost" type="number" min="0" step="0.000001" placeholder="Cost contribution" /><button id="recipeAdd" class="ghost">Add / Update Row</button></div><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Qty Required</th><th class="num">Cost Contribution</th><th></th></tr></thead><tbody id="recipeBody"></tbody></table></div><div class="form-actions"><strong id="recipeUnitCost">Unit Cost: ₱0.00</strong><button id="saveRecipe" class="primary">Save Recipe</button></div></div>
+        </div>
+
+        <div id="admin-promos" class="admin-panel section-grid admin-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">PROMOLIST</p><h3>Promos</h3></div></div><div class="table-wrap"><table><thead><tr><th>Name</th><th>Inclusion</th><th class="num">Price</th><th>Limits</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminPromosBody"></tbody></table></div></div>
+          <form id="promoForm" class="card form-card"><p class="eyebrow">ADD / UPDATE</p><h3>Promo</h3><input id="promoEditId" type="hidden" /><label>Name<input id="promoName" maxlength="150" required /></label><label>Inclusion Label<input id="promoInclusion" maxlength="100" placeholder="2Food+2Coffee" required /></label><label>Promo Price<input id="promoPrice" type="number" min="0" step="0.01" required /></label><div class="two-col"><label>Food Limit<input id="promoFood" type="number" min="0" step="1" required /></label><label>Coffee Limit<input id="promoCoffee" type="number" min="0" step="1" required /></label></div><label class="check-row"><input id="promoActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save Promo</button><button id="promoFormClear" class="ghost" type="button">Clear</button></form>
+        </div>
+
+        <div id="admin-packages" class="admin-panel section-grid admin-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">PACKAGELIST</p><h3>Packages</h3></div></div><div class="table-wrap"><table><thead><tr><th>Name</th><th class="num">Price</th><th>Composition</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminPackagesBody"></tbody></table></div></div>
+          <form id="packageForm" class="card form-card"><p class="eyebrow">PACKAGE MASTER</p><h3>Package</h3><input id="packageEditId" type="hidden" /><label>Name<input id="packageName" maxlength="150" required /></label><label>Price<input id="packagePrice" type="number" min="0" step="0.01" required /></label><label class="check-row"><input id="packageActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save Package</button><button id="packageFormClear" class="ghost" type="button">Clear</button><hr/><p class="eyebrow">COMPOSITION</p><label>Package<select id="compositionPackage"></select></label><div class="recipe-add compact-add"><select id="compositionProduct"></select><input id="compositionQty" type="number" min="1" step="1" placeholder="Qty" /><button id="compositionAdd" class="ghost" type="button">Add / Update</button></div><div id="compositionList" class="mini-list"></div><button id="saveComposition" class="primary" type="button">Save Composition</button><p class="tiny muted">The uploaded PackageList does not contain component products. Enter the client-approved contents here; packages remain unsellable until composition is saved.</p></form>
+        </div>
+
+        <div id="admin-settings" class="admin-panel section-grid admin-layout">
+          <form id="settingsForm" class="card form-card"><p class="eyebrow">APPLICATION</p><h3>Settings</h3><label>Shop Name<input id="shopName" maxlength="100" /></label><label>Default Report Email<input id="defaultReportEmail" type="email" maxlength="320" /></label><button class="primary" type="submit">Save Settings</button></form>
+          <div class="card"><p class="eyebrow">EMAIL SERVER</p><h3>SMTP Status</h3><div id="smtpStatus" class="info-box"></div><p class="tiny muted">SMTP passwords are never stored in the browser or database. Configure them through server environment variables.</p></div>
+        </div>
+
+        <div id="admin-backups" class="admin-panel">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">DATABASE SAFETY</p><h3>Backup & Restore</h3></div><button id="createBackup" class="primary">Create Backup</button></div><div id="backupNote" class="info-box"></div><div class="table-wrap"><table><thead><tr><th>Backup</th><th>Date</th><th class="num">Size</th><th>Actions</th></tr></thead><tbody id="backupBody"></tbody></table></div></div>
+        </div>
+      </section>
+
+      <section id="view-users" class="view admin-only">
+        <div class="section-grid users-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Web Accounts</h3></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Password</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+          <form id="userForm" class="card form-card"><p class="eyebrow">ACTIVATE / RESET</p><h3>User Account</h3><input id="userEditId" type="hidden" /><label>Username<input id="newUsername" minlength="2" maxlength="80" required /></label><label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" /></label><label>Role<select id="newRole"><option>User</option><option>Admin</option></select></label><label class="check-row"><input id="newUserActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save User</button><button id="userFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">For a new/legacy account, enter a password. When editing an active web account, leave password blank to keep its current password.</p></form>
+        </div>
+      </section>
+
+      <section id="view-logs" class="view"><div class="card"><div class="card-head"><div><p class="eyebrow">AUDIT</p><h3>System Logs</h3></div><button id="refreshLogs" class="ghost">Refresh</button></div><div id="logsList" class="logs-list"></div></div></section>
+    </main>
+  </div>
+
+  <dialog id="paymentDialog"><form id="paymentForm" class="modal-card"><button type="button" class="modal-close" id="paymentClose">×</button><p class="eyebrow">CHECKOUT</p><h2>Complete Payment</h2><div class="amount-due"><span>Amount Due</span><strong id="modalDue">₱0.00</strong></div><label>Mode of Payment<select id="paymentMode"><option>Cash</option><option>GCash</option></select></label><label id="tenderWrap">Cash Tender<input id="cashTender" type="number" min="0" step="0.01" /></label><label id="referenceWrap" class="hidden">GCash Reference<input id="gcashReference" maxlength="150" /></label><div id="changePreview" class="change-preview">Change: ₱0.00</div><button id="paymentSubmit" class="primary big" type="submit">Confirm Payment</button></form></dialog>
+  <dialog id="receiptDialog"><div class="modal-card receipt-card"><div class="success-icon">✓</div><p class="eyebrow">PAYMENT COMPLETE</p><h2>Sale Recorded</h2><p id="receiptText" class="receipt-text"></p><button id="receiptClose" class="primary big">New Order</button></div></dialog>
+  <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>
