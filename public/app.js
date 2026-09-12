@@ -1,6 +1,7 @@
-// Coffee POS v1.5.1 safe loader: keep authentication/core usable first.
+// Coffee POS v1.5.2 safe loader: core/login first, enhancements only after authentication.
 (() => {
-  const VERSION = '1.5.1-login-hotfix';
+  'use strict';
+  const VERSION = '1.5.2-safe1';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -26,19 +27,27 @@
     if (submit) submit.textContent = 'Sign in';
   }
 
+  function loadFeatureCss() {
+    if (document.getElementById('v15SafeCss')) return;
+    const css = document.createElement('link');
+    css.id = 'v15SafeCss';
+    css.rel = 'stylesheet';
+    css.href = `/v15.css?v=${encodeURIComponent(VERSION)}`;
+    document.head.appendChild(css);
+  }
+
   async function startEnhancementsWhenAppIsReady() {
     if (enhancementsStarted) return;
     const app = document.getElementById('app');
     if (!isVisible(app)) return;
     enhancementsStarted = true;
     try {
-      // Live sync is safe to start only after the authenticated POS is visible.
+      loadFeatureCss();
       await loadScript('/live-refresh.js');
-      // v1.5 feature layer is temporarily disabled by this hotfix because its
-      // document-wide observer can freeze some Chromium/Brave sessions.
-      // Core POS, sales, reports, inventory, PostgreSQL and live sync remain available.
-      console.info('Coffee POS safe mode: v1.5 feature layer deferred for browser stability.');
+      await loadScript('/v15-safe.js');
+      console.info('Coffee POS v1.5.2 safe enhancement layer started.');
     } catch (err) {
+      // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
     }
   }
@@ -52,17 +61,15 @@
         observer.disconnect();
       }
     });
-    observer.observe(app, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(app, { attributes:true, attributeFilter:['class'] });
     startEnhancementsWhenAppIsReady();
   }
 
-  // Load only the stable core during authentication.
+  // Authentication and the proven POS core always load first.
   loadScript('/ui-utils.js')
     .then(() => loadScript('/app-core.js'))
     .then(() => {
       watchForAuthenticatedApp();
-      // Recovery guard: if core startup somehow leaves both shells hidden,
-      // reveal login without running any enhancement code.
       setTimeout(() => {
         const auth = document.getElementById('authScreen');
         const app = document.getElementById('app');
