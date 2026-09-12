@@ -1,0 +1,235 @@
+/* Coffee POS v1.5.6 — tablet-first / phone responsive experience.
+   Tablets preserve the desktop mental model: compact left rail + catalog + order pane.
+   Phones use a touch-first bottom nav and stacked content. */
+
+/* Shared touch polish */
+@media (pointer:coarse){
+  button,.nav,.tab,.product-card,.table-btn,.ghost,.primary,.text-button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button:active,.tab:active,.product-card:active:not(:disabled),.ghost:active,.primary:active{transform:scale(.985)}
+  input,select,textarea,button{min-height:42px}
+  .qty-control button{min-height:30px}
+  .table-wrap,.order-list,.logs-list,.inventory-audit-scroll,.costing-scroll-panel{-webkit-overflow-scrolling:touch}
+}
+
+/* ---------------------------------------------------------
+   TABLET / SMALL LAPTOP: keep the desktop two-pane POS model
+   --------------------------------------------------------- */
+@media (min-width:700px) and (max-width:1180px){
+  .app{grid-template-columns:104px minmax(0,1fr)}
+  .sidebar{padding:12px 9px;overflow:hidden}
+  .brand{justify-content:center;padding:2px 0 14px}
+  .brand>div:last-child{display:none}
+  .brand-mark.small{width:42px;height:42px;border-radius:13px;font-size:15px}
+  .sidebar nav{gap:4px;overflow-y:auto;overflow-x:hidden;padding-right:1px;scrollbar-width:thin}
+  .nav{min-height:54px;padding:7px 4px;flex-direction:column;justify-content:center;gap:3px;text-align:center;font-size:17px;line-height:1}
+  .nav span{display:block;font-size:9px;line-height:1.08;white-space:normal;max-width:88px}
+  .sidebar-bottom{padding-top:10px}
+  .user-chip{min-width:0;text-align:center}
+  .user-chip b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-chip span{font-size:9px;margin-top:1px}
+  .sidebar .ghost{margin-top:8px;padding:8px 4px;font-size:10px;min-height:38px}
+
+  .topbar{height:68px;padding:10px 16px}
+  .topbar h2{font-size:18px}
+  .topbar .eyebrow{font-size:8px}
+  .topbar-right{gap:7px;font-size:10px;min-width:0}
+  .topbar-right #clock{display:none}
+  .db-pill{padding:5px 7px;font-size:8px}
+  .whats-new-button{padding:7px 9px!important}
+
+  .view{padding:12px 14px 18px}
+  .card,.catalog-panel,.order-panel{border-radius:14px}
+  .card{padding:14px}
+
+  /* Main tablet POS stays side-by-side instead of the old one-column <=1100 layout. */
+  .pos-layout{grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+  .catalog-panel{padding:12px;min-height:calc(100dvh - 92px)}
+  .order-panel{padding:12px;position:sticky;top:80px;max-height:calc(100dvh - 92px)}
+  .catalog-tools{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:9px;align-items:start}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding-bottom:3px}
+  .tab{flex:0 0 auto;white-space:nowrap;padding:8px 10px;font-size:10px}
+  .search{min-width:0;width:100%;padding:9px 10px;font-size:12px}
+  .promo-banner{margin-top:10px;padding:9px 11px;font-size:10px}
+  .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;margin-top:11px}
+  .product-card{min-height:102px;border-radius:12px;padding:10px}
+  .product-card h4{font-size:12px;margin:9px 0 6px}
+  .product-card .cat,.unavailable{font-size:8px}
+  .product-card .price{font-size:12px}
+
+  .order-head h3{font-size:15px}
+  .order-list{min-height:90px;max-height:calc(100dvh - 370px);margin-top:8px}
+  .order-row{padding:9px 0}
+  .order-row h4,.line-price{font-size:11px}
+  .qty-control{gap:5px;margin-top:6px}
+  .discount-box{padding:8px}
+  .senior-fields{grid-template-columns:1fr;gap:6px}
+  .totals{margin-top:9px;padding-top:8px}
+  .totals>div{font-size:11px}
+  .totals .actual{font-size:15px}
+  .pay{min-height:46px;margin-top:8px}
+
+  /* Dashboard / reports use space efficiently without tiny cards. */
+  .summary-grid{grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px}
+  .summary-card{padding:12px;border-radius:12px}
+  .summary-card strong{font-size:17px}
+  .dashboard-grid{gap:12px}
+  .chart-card canvas{height:220px}
+  .report-toolbar{padding:13px;gap:10px}
+  .report-filters{gap:6px}
+  .report-filters input,.report-filters select,.report-filters button{font-size:10px;padding:8px 9px}
+  .table-wrap{scrollbar-width:thin}
+  table{font-size:10px}
+  th,td{padding:8px}
+
+  /* Keep operational forms compact on larger tablets. */
+  .inventory-layout{grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+  .users-layout,.admin-layout{grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+  .side-stack{gap:12px}
+  .form-card{gap:8px}
+  .form-card input,.form-card select,.form-card textarea{font-size:11px}
+  .batch-entry{gap:7px}
+  .audit-filter-toolbar,.logs-toolbar{gap:7px;padding:9px}
+
+  dialog .modal-card{max-height:88dvh;overflow:auto}
+  .transaction-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Portrait / narrower tablets: still keep POS two-pane, but use a slimmer rail/cart. */
+@media (min-width:700px) and (max-width:860px){
+  .app{grid-template-columns:88px minmax(0,1fr)}
+  .nav{min-height:50px;font-size:16px}
+  .nav span{font-size:8px;max-width:72px}
+  .sidebar .ghost{font-size:9px}
+  .pos-layout{grid-template-columns:minmax(0,1fr) 270px;gap:10px}
+  .catalog-tools{grid-template-columns:1fr}
+  .search{max-width:none}
+  .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .product-card{min-height:96px;padding:9px}
+  .order-panel{padding:10px}
+  .inventory-layout,.users-layout,.admin-layout,.report-columns,.dashboard-grid,.dashboard-grid.lower{grid-template-columns:1fr}
+  .topbar-right #dbEngine{display:none}
+  .topbar-right{gap:5px}
+}
+
+/* Short tablet landscape: make every vertical region independently usable. */
+@media (min-width:700px) and (max-width:1180px) and (max-height:620px){
+  .brand{padding-bottom:8px}
+  .brand-mark.small{width:34px;height:34px}
+  .nav{min-height:43px;padding:5px 3px}
+  .sidebar-bottom{padding-top:6px}
+  .user-chip span{display:none}
+  .topbar{height:58px;padding:7px 14px}
+  .view{padding-top:9px}
+  .order-panel{top:68px;max-height:calc(100dvh - 76px);overflow:auto}
+  .catalog-panel{min-height:calc(100dvh - 76px)}
+  .order-list{max-height:145px}
+  .product-card{min-height:90px}
+}
+
+/* ---------------------------
+   PHONE: touch-first mini POS
+   --------------------------- */
+@media (max-width:699px){
+  html,body{height:100%;overflow:hidden}
+  body{overscroll-behavior:none}
+  .app{display:block;height:100dvh;min-height:0;overflow:hidden}
+  .main{height:100dvh;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:74px;overscroll-behavior-y:contain}
+
+  /* Bottom navigation keeps the working area visually similar to an app. */
+  .sidebar{position:fixed!important;left:0;right:0;bottom:0;top:auto!important;width:100%;height:66px!important;min-height:66px!important;padding:5px 6px!important;z-index:80;display:block!important;background:#14261f;border-top:1px solid rgba(255,255,255,.1)}
+  .sidebar .brand,.sidebar-bottom{display:none!important}
+  .sidebar nav{display:flex!important;gap:3px!important;overflow-x:auto;overflow-y:hidden;height:100%;scrollbar-width:none;align-items:center;padding:0!important}
+  .sidebar nav::-webkit-scrollbar{display:none}
+  .nav{flex:0 0 72px;min-height:54px!important;padding:6px 3px!important;border-radius:9px!important;display:flex!important;flex-direction:column;justify-content:center;align-items:center;gap:3px!important;text-align:center;font-size:16px;scroll-snap-align:center}
+  .nav span{display:block!important;font-size:8px!important;line-height:1.05;white-space:nowrap}
+
+  .topbar{height:60px;padding:8px 10px;top:0!important;z-index:45}
+  .topbar h2{font-size:15px;margin-top:1px}
+  .topbar .eyebrow{font-size:7px}
+  .topbar-right{gap:4px;max-width:58%;overflow:hidden}
+  .topbar-right #clock,.topbar-right #dbEngine{display:none!important}
+  .db-pill{padding:4px 6px;font-size:7px;white-space:nowrap}
+  .whats-new-button{min-height:34px!important;padding:5px 7px!important}
+  .whats-new-label{display:none!important}
+  #liveSyncStatus{max-width:104px;overflow:hidden;text-overflow:ellipsis}
+
+  .view{padding:10px 10px 16px}
+  .card,.catalog-panel,.order-panel{border-radius:13px}
+  .card{padding:12px}
+  .pos-layout{grid-template-columns:1fr;gap:10px}
+  .catalog-panel{padding:10px;min-height:auto}
+  .catalog-tools{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;white-space:nowrap;padding:8px 10px;font-size:10px;min-height:38px}
+  .search,.search.compact{width:100%;min-width:0;font-size:16px;padding:10px 11px}
+  .promo-banner{padding:9px 10px;margin-top:8px;font-size:10px}
+  .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+  .product-card{min-height:98px;padding:10px;border-radius:12px}
+  .product-card h4{font-size:12px;margin:8px 0 6px}
+  .product-card .cat,.unavailable{font-size:7px}
+  .product-card .price{font-size:12px}
+
+  .order-panel{position:static;max-height:none;padding:12px}
+  .order-list{max-height:260px;min-height:92px}
+  .discount-box{margin-top:8px}
+  .senior-fields{grid-template-columns:1fr}
+  .pay{min-height:50px;font-size:14px}
+
+  .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .summary-card{padding:11px;border-radius:12px}
+  .summary-card strong{font-size:16px}
+  .dashboard-grid,.dashboard-grid.lower,.inventory-layout,.users-layout,.admin-layout,.report-columns{grid-template-columns:1fr;gap:10px}
+  .chart-card canvas{height:190px}
+  .card-head{align-items:flex-start;flex-wrap:wrap}
+  .card-head .search{flex:1 1 100%}
+
+  .report-toolbar{align-items:stretch;flex-direction:column;padding:11px}
+  .report-filters{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .report-filters>*{min-width:0;width:100%;font-size:12px}
+  .report-filters #reportCashier{grid-column:1/-1}
+  .report-filters .primary{grid-column:1/-1}
+  .table-wrap{overflow:auto;overscroll-behavior-x:contain}
+  table{font-size:10px}
+  th,td{padding:8px}
+  .inventory-audit-scroll{max-height:330px}
+  .costing-scroll-panel{max-height:390px}
+  .logs-card .logs-list{max-height:390px}
+  .audit-filter-toolbar,.logs-toolbar{align-items:stretch;display:grid;grid-template-columns:1fr;gap:7px;padding:9px}
+  .audit-filter-toolbar>* ,.logs-toolbar>*{min-width:0;width:100%}
+
+  /* iOS/Android browsers avoid zooming text fields at 16px. */
+  input,select,textarea{font-size:16px!important}
+  .modal-card{width:calc(100vw - 18px);max-height:88dvh;padding:18px;border-radius:16px;overflow:auto}
+  .transaction-info-grid{grid-template-columns:1fr!important}
+  .transaction-info.wide{grid-column:auto!important}
+  .detail-actions{position:sticky;bottom:-18px;background:white;padding:10px 0 2px;z-index:2}
+  .toast{left:10px;right:10px;bottom:78px;max-width:none;text-align:center}
+
+  /* Floating order shortcut so a long catalog never traps phone users above the cart. */
+  #mobileOrderJump{display:flex!important}
+}
+
+#mobileOrderJump{display:none;position:fixed;right:12px;bottom:78px;z-index:75;border:0;border-radius:999px;background:var(--accent);color:white;box-shadow:0 12px 30px rgba(20,58,44,.28);padding:10px 14px;min-height:44px;font-size:11px;font-weight:800;align-items:center;gap:7px}
+#mobileOrderJump .mobile-order-count{display:grid;place-items:center;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:white;color:var(--accent);font-size:10px}
+
+/* Very small phones */
+@media (max-width:390px){
+  .nav{flex-basis:66px}
+  .view{padding-left:8px;padding-right:8px}
+  .catalog-grid{gap:6px}
+  .product-card{padding:9px;min-height:94px}
+  .summary-grid{grid-template-columns:1fr 1fr}
+  .report-filters{grid-template-columns:1fr}
+  .report-filters>*{grid-column:1!important}
+}
+
+/* Standalone / installed-web-app polish */
+@media (display-mode:standalone){
+  .topbar{padding-top:max(8px,env(safe-area-inset-top))}
+  @media(max-width:699px){
+    .main{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+    .sidebar{height:calc(66px + env(safe-area-inset-bottom))!important;padding-bottom:calc(5px + env(safe-area-inset-bottom))!important}
+    #mobileOrderJump{bottom:calc(78px + env(safe-area-inset-bottom))}
+  }
+}
