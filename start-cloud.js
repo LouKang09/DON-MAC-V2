@@ -1,4 +1,4 @@
-// Railway/PostgreSQL startup shim for Coffee POS v1.5.4.
+// Railway/PostgreSQL startup shim for Coffee POS v1.5.5.
 // Keeps PostgreSQL timestamps ISO-normalized and applies small production-only
 // validation/version patches without mutating the historical server source.
 const fs = require('fs');
@@ -14,7 +14,7 @@ try {
 
 const serverPath = path.join(__dirname, 'server.js');
 let source = fs.readFileSync(serverPath, 'utf8');
-source = source.replace(/const APP_VERSION = '[^']+';/, "const APP_VERSION = '1.5.4';");
+source = source.replace(/const APP_VERSION = '[^']+';/, "const APP_VERSION = '1.5.5';");
 
 if (!source.includes('Delivered By is required. Enter who will deliver the stock.')) {
   source = source.replace(
@@ -31,7 +31,7 @@ if (!source.includes('Remarks are required. Add the expected delivery time and d
 
 if (!source.includes('Delivered By is required. Enter who will deliver the stock.') ||
     !source.includes('Remarks are required. Add the expected delivery time and delivery person.')) {
-  throw new Error('Coffee POS v1.5.4 startup patch could not find the expected inventory validation code.');
+  throw new Error('Coffee POS v1.5.5 startup patch could not find the expected inventory validation code.');
 }
 
 const compiled = new Module(serverPath, module);
