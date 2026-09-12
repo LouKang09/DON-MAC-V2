@@ -1,0 +1,4651 @@
+{
+  "source": "Coffee POS 0.4.xlsm",
+  "products": [
+    {
+      "name": "CARAMEL MACCHIATO",
+      "category": "Coffee",
+      "price": 39.0
+    },
+    {
+      "name": "DON DARKO",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "DON MATCHATOS",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "DONYA BERRY",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "BLACK FOREST",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "OREO COFFEE",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "DON PISTACHIO",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "MATCHA BERRY",
+      "category": "Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC DON MATCHATOS",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC DON DARKO",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC MATCHA BERRY",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC DONYA BERRY",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC BLACK FOREST",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC OREO COFFEE",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "NC DON PISTACHIO",
+      "category": "Non Coffee",
+      "price": 49.0
+    },
+    {
+      "name": "PLAIN FRIES",
+      "category": "Food",
+      "price": 40.0
+    },
+    {
+      "name": "C CHEESE FRIES",
+      "category": "Food",
+      "price": 45.0
+    },
+    {
+      "name": "BBQ FRIES",
+      "category": "Food",
+      "price": 45.0
+    },
+    {
+      "name": "CLASSIC WAFFLE",
+      "category": "Food",
+      "price": 39.0
+    },
+    {
+      "name": "STRAWBERRY WAFFLE",
+      "category": "Food",
+      "price": 39.0
+    },
+    {
+      "name": "CHOCOLATE WAFFLE",
+      "category": "Food",
+      "price": 39.0
+    },
+    {
+      "name": "EMPANADA",
+      "category": "Food",
+      "price": 55.0
+    },
+    {
+      "name": "CHOC MARB VAN MUFFIN",
+      "category": "Food",
+      "price": 55.0
+    },
+    {
+      "name": "CHOCO BANANA MUFFIN",
+      "category": "Food",
+      "price": 55.0
+    },
+    {
+      "name": "MATCHA COOKIE",
+      "category": "Food",
+      "price": 45.0
+    },
+    {
+      "name": "SLICE BANANA LOAF",
+      "category": "Food",
+      "price": 55.0
+    },
+    {
+      "name": "WHOLE BANANA LOAF",
+      "category": "Food",
+      "price": 195.0
+    },
+    {
+      "name": "DOUBLE CHOCO MUFFIN",
+      "category": "Food",
+      "price": 55.0
+    }
+  ],
+  "packages": [
+    {
+      "name": "50 Snack Package",
+      "price": 4599.0
+    },
+    {
+      "name": "100 Snack Package",
+      "price": 6999.0
+    },
+    {
+      "name": "Coffee Package",
+      "price": 5499.0
+    }
+  ],
+  "promos": [
+    {
+      "name": "143 Promo",
+      "inclusion": "2Food+2Coffee",
+      "price": 143.0,
+      "food_limit": 2,
+      "coffee_limit": 2
+    },
+    {
+      "name": "Waffle + 2Coffee",
+      "inclusion": "1Food+2Coffee",
+      "price": 105.0,
+      "food_limit": 1,
+      "coffee_limit": 2
+    },
+    {
+      "name": "Fries + Coffee",
+      "inclusion": "1Food+1Coffee",
+      "price": 69.0,
+      "food_limit": 1,
+      "coffee_limit": 1
+    },
+    {
+      "name": "Waffle Fries Combo",
+      "inclusion": "2Food+1Coffee",
+      "price": 105.0,
+      "food_limit": 2,
+      "coffee_limit": 1
+    }
+  ],
+  "ingredients": [
+    {
+      "index": 0,
+      "code": "ING_001_COFFEE",
+      "name": "COFFEE",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 6989.991999999999
+    },
+    {
+      "index": 1,
+      "code": "ING_002_MILK",
+      "name": "MILK",
+      "occurrence": 1,
+      "uom": "kg/sack",
+      "stock": 6975.886
+    },
+    {
+      "index": 2,
+      "code": "ING_003_FRUCTOSE_1",
+      "name": "FRUCTOSE",
+      "occurrence": 1,
+      "uom": "L/can",
+      "stock": 6975.888000000001
+    },
+    {
+      "index": 3,
+      "code": "ING_004_16_OZ_CUP",
+      "name": "16 OZ CUP",
+      "occurrence": 1,
+      "uom": "pcs/pk",
+      "stock": 6970
+    },
+    {
+      "index": 4,
+      "code": "ING_005_PLASTIC_CUP_LID",
+      "name": "PLASTIC CUP LID",
+      "occurrence": 1,
+      "uom": "pcs/pk",
+      "stock": 6431
+    },
+    {
+      "index": 5,
+      "code": "ING_006_PLASTIC_STRAW",
+      "name": "PLASTIC STRAW",
+      "occurrence": 1,
+      "uom": "pcs/pk",
+      "stock": 6442
+    },
+    {
+      "index": 6,
+      "code": "ING_007_CARAMEL_SYRUP",
+      "name": "CARAMEL SYRUP",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 6453.986
+    },
+    {
+      "index": 7,
+      "code": "ING_008_MATCHA",
+      "name": "MATCHA",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 0
+    },
+    {
+      "index": 8,
+      "code": "ING_009_DARKO",
+      "name": "DARKO",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 9793
+    },
+    {
+      "index": 9,
+      "code": "ING_010_STRAWBERRY",
+      "name": "STRAWBERRY",
+      "occurrence": 1,
+      "uom": "kg/can",
+      "stock": 9792.880000000001
+    },
+    {
+      "index": 10,
+      "code": "ING_011_OREO_POWDER",
+      "name": "OREO POWDER",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 9793
+    },
+    {
+      "index": 11,
+      "code": "ING_012_CRUSHED_OREO",
+      "name": "CRUSHED OREO",
+      "occurrence": 1,
+      "uom": "g",
+      "stock": 9837
+    },
+    {
+      "index": 12,
+      "code": "ING_013_UBE_POWDER",
+      "name": "UBE POWDER",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 9983
+    },
+    {
+      "index": 13,
+      "code": "ING_014_PREMIUM_TIGER_SUGAR",
+      "name": "PREMIUM TIGER SUGAR",
+      "occurrence": 1,
+      "uom": "kg/gal",
+      "stock": 10000
+    },
+    {
+      "index": 14,
+      "code": "ING_015_PISTACHIO",
+      "name": "PISTACHIO",
+      "occurrence": 1,
+      "uom": "kg/pack",
+      "stock": 10000
+    },
+    {
+      "index": 15,
+      "code": "ING_016_CONDENSED_MILK_1",
+      "name": "CONDENSED MILK",
+      "occurrence": 1,
+      "uom": "ml/can",
+      "stock": 10000
+    },
+    {
+      "index": 16,
+      "code": "ING_017_PAPER_CUPS",
+      "name": "PAPER CUPS",
+      "occurrence": 1,
+      "uom": "pcs/pk",
+      "stock": 10000
+    },
+    {
+      "index": 17,
+      "code": "ING_018_PAPER_STRAW",
+      "name": "PAPER STRAW",
+      "occurrence": 1,
+      "uom": "pcs/pk",
+      "stock": 10000
+    },
+    {
+      "index": 18,
+      "code": "ING_019_PAPER_CUP_LID",
+      "name": "PAPER CUP LID",
+      "occurrence": 1,
+      "uom": "pcs/pk",
+      "stock": 10000
+    },
+    {
+      "index": 19,
+      "code": "ING_020_BANANA",
+      "name": "BANANA",
+      "occurrence": 1,
+      "uom": "pc",
+      "stock": 10000
+    },
+    {
+      "index": 20,
+      "code": "ING_021_MILK_BAKING",
+      "name": "MILK BAKING",
+      "occurrence": 1,
+      "uom": "ml",
+      "stock": 9999
+    },
+    {
+      "index": 21,
+      "code": "ING_022_EGG",
+      "name": "EGG",
+      "occurrence": 1,
+      "uom": "Pc",
+      "stock": 999.67
+    },
+    {
+      "index": 22,
+      "code": "ING_023_BUTTER",
+      "name": "BUTTER",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 23,
+      "code": "ING_024_VANILLA_ESSENCE",
+      "name": "VANILLA ESSENCE",
+      "occurrence": 1,
+      "uom": "ml",
+      "stock": 1000
+    },
+    {
+      "index": 24,
+      "code": "ING_025_ALL_PURPOSE_FLOUR",
+      "name": "ALL PURPOSE FLOUR",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 950
+    },
+    {
+      "index": 25,
+      "code": "ING_026_BROWN_SUGAR",
+      "name": "BROWN SUGAR",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 26,
+      "code": "ING_027_SALT",
+      "name": "SALT",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 999
+    },
+    {
+      "index": 27,
+      "code": "ING_028_BAKING_POWDER",
+      "name": "BAKING POWDER",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 997
+    },
+    {
+      "index": 28,
+      "code": "ING_029_BAKING_SODA",
+      "name": "BAKING SODA",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 29,
+      "code": "ING_030_CINNAMON",
+      "name": "CINNAMON",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 30,
+      "code": "ING_031_OIL",
+      "name": "OIL",
+      "occurrence": 1,
+      "uom": "ml",
+      "stock": 886
+    },
+    {
+      "index": 31,
+      "code": "ING_032_MARSHMALLOW",
+      "name": "MARSHMALLOW",
+      "occurrence": 1,
+      "uom": "pc",
+      "stock": 1000
+    },
+    {
+      "index": 32,
+      "code": "ING_033_WHITE_SUGAR",
+      "name": "WHITE SUGAR",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 973
+    },
+    {
+      "index": 33,
+      "code": "ING_034_CHOCOLATE_POWDER",
+      "name": "CHOCOLATE POWDER",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 34,
+      "code": "ING_035_CONDENSED_MILK_2",
+      "name": "CONDENSED MILK",
+      "occurrence": 2,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 35,
+      "code": "ING_036_DARK_CHOCOLATE_CHIP",
+      "name": "DARK CHOCOLATE CHIP",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 36,
+      "code": "ING_037_WHITE_CHOCOLATE_CHIP",
+      "name": "WHITE CHOCOLATE CHIP",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 37,
+      "code": "ING_038_MATCHA_POWDER",
+      "name": "MATCHA POWDER",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 1000
+    },
+    {
+      "index": 38,
+      "code": "ING_039_COCONUT_WATER",
+      "name": "COCONUT WATER",
+      "occurrence": 1,
+      "uom": "ml",
+      "stock": 1000
+    },
+    {
+      "index": 39,
+      "code": "ING_040_ALL_PURPOSE_CREAM",
+      "name": "ALL PURPOSE CREAM",
+      "occurrence": 1,
+      "uom": "ml",
+      "stock": 1000
+    },
+    {
+      "index": 40,
+      "code": "ING_041_FRUCTOSE_2",
+      "name": "FRUCTOSE",
+      "occurrence": 2,
+      "uom": "ml",
+      "stock": 1000
+    },
+    {
+      "index": 41,
+      "code": "ING_042_FRIES",
+      "name": "FRIES",
+      "occurrence": 1,
+      "uom": "kg",
+      "stock": 500
+    },
+    {
+      "index": 42,
+      "code": "ING_043_WATER",
+      "name": "WATER",
+      "occurrence": 1,
+      "uom": "L",
+      "stock": 999.995
+    },
+    {
+      "index": 43,
+      "code": "ING_044_CHOCOLATE_FUDGE",
+      "name": "CHOCOLATE FUDGE",
+      "occurrence": 1,
+      "uom": "L",
+      "stock": 1000
+    },
+    {
+      "index": 44,
+      "code": "ING_045_FRIES_FLAVORING",
+      "name": "FRIES FLAVORING",
+      "occurrence": 1,
+      "uom": "gram",
+      "stock": 600
+    },
+    {
+      "index": 45,
+      "code": "ING_046_EMPANADA",
+      "name": "EMPANADA",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 997
+    },
+    {
+      "index": 46,
+      "code": "ING_047_CHOC_MARB_VAN_MUFFIN",
+      "name": "CHOC MARB VAN MUFFIN",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 1000
+    },
+    {
+      "index": 47,
+      "code": "ING_048_CHOCO_BANANA_MUFFIN",
+      "name": "CHOCO BANANA MUFFIN",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 1000
+    },
+    {
+      "index": 48,
+      "code": "ING_049_MATCHA_COOKIE",
+      "name": "MATCHA COOKIE",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 1000
+    },
+    {
+      "index": 49,
+      "code": "ING_050_SLICE_BANANA_LOAF",
+      "name": "SLICE BANANA LOAF",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 1000
+    },
+    {
+      "index": 50,
+      "code": "ING_051_WHOLE_BANANA_LOAF",
+      "name": "WHOLE BANANA LOAF",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 1000
+    },
+    {
+      "index": 51,
+      "code": "ING_052_DOUBLE_CHOCO_MUFFIN",
+      "name": "DOUBLE CHOCO MUFFIN",
+      "occurrence": 1,
+      "uom": "pcs",
+      "stock": 1000
+    }
+  ],
+  "recipes": [
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.003
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.022
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_007_CARAMEL_SYRUP",
+      "quantity": 0.007
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.013
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_009_DARKO",
+      "quantity": 0.01
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.013
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_008_MATCHA",
+      "quantity": 0.017
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.015
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.03
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.013
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_009_DARKO",
+      "quantity": 0.005
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.015
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.013
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_011_OREO_POWDER",
+      "quantity": 0.01
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_012_CRUSHED_OREO",
+      "quantity": 0.007
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.013
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_015_PISTACHIO",
+      "quantity": 0.004
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_016_CONDENSED_MILK_1",
+      "quantity": 16.304
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_001_COFFEE",
+      "quantity": 0.001
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.013
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_008_MATCHA",
+      "quantity": 0.008
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.015
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_008_MATCHA",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_009_DARKO",
+      "quantity": 0.01
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_008_MATCHA",
+      "quantity": 0.008
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.015
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.025
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.03
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_009_DARKO",
+      "quantity": 0.005
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.015
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_011_OREO_POWDER",
+      "quantity": 0.01
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_012_CRUSHED_OREO",
+      "quantity": 6.667
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_002_MILK",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "quantity": 0.017
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "quantity": 1.0
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_015_PISTACHIO",
+      "quantity": 0.004
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_016_CONDENSED_MILK_1",
+      "quantity": 16.304
+    },
+    {
+      "product": "PLAIN FRIES",
+      "ingredient_code": "ING_031_OIL",
+      "quantity": 20.0
+    },
+    {
+      "product": "PLAIN FRIES",
+      "ingredient_code": "ING_042_FRIES",
+      "quantity": 100.0
+    },
+    {
+      "product": "C CHEESE FRIES",
+      "ingredient_code": "ING_031_OIL",
+      "quantity": 20.0
+    },
+    {
+      "product": "C CHEESE FRIES",
+      "ingredient_code": "ING_042_FRIES",
+      "quantity": 100.0
+    },
+    {
+      "product": "C CHEESE FRIES",
+      "ingredient_code": "ING_045_FRIES_FLAVORING",
+      "quantity": 100.0
+    },
+    {
+      "product": "BBQ FRIES",
+      "ingredient_code": "ING_031_OIL",
+      "quantity": 20.0
+    },
+    {
+      "product": "BBQ FRIES",
+      "ingredient_code": "ING_042_FRIES",
+      "quantity": 100.0
+    },
+    {
+      "product": "BBQ FRIES",
+      "ingredient_code": "ING_045_FRIES_FLAVORING",
+      "quantity": 100.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_021_MILK_BAKING",
+      "quantity": 1.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_022_EGG",
+      "quantity": 0.33
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_025_ALL_PURPOSE_FLOUR",
+      "quantity": 50.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_027_SALT",
+      "quantity": 1.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_028_BAKING_POWDER",
+      "quantity": 3.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_031_OIL",
+      "quantity": 14.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_033_WHITE_SUGAR",
+      "quantity": 27.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_043_WATER",
+      "quantity": 0.005
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "quantity": 0.005
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_021_MILK_BAKING",
+      "quantity": 1.0
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_022_EGG",
+      "quantity": 0.33
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_025_ALL_PURPOSE_FLOUR",
+      "quantity": 50.0
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_027_SALT",
+      "quantity": 1.0
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_028_BAKING_POWDER",
+      "quantity": 3.0
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_031_OIL",
+      "quantity": 14.0
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_033_WHITE_SUGAR",
+      "quantity": 27.0
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_043_WATER",
+      "quantity": 0.005
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_021_MILK_BAKING",
+      "quantity": 1.0
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_022_EGG",
+      "quantity": 0.33
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_025_ALL_PURPOSE_FLOUR",
+      "quantity": 50.0
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_027_SALT",
+      "quantity": 1.0
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_028_BAKING_POWDER",
+      "quantity": 3.0
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_031_OIL",
+      "quantity": 14.0
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_033_WHITE_SUGAR",
+      "quantity": 27.0
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_043_WATER",
+      "quantity": 0.005
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_044_CHOCOLATE_FUDGE",
+      "quantity": 0.005
+    },
+    {
+      "product": "EMPANADA",
+      "ingredient_code": "ING_046_EMPANADA",
+      "quantity": 1.0
+    },
+    {
+      "product": "CHOC MARB VAN MUFFIN",
+      "ingredient_code": "ING_047_CHOC_MARB_VAN_MUFFIN",
+      "quantity": 1.0
+    },
+    {
+      "product": "CHOCO BANANA MUFFIN",
+      "ingredient_code": "ING_048_CHOCO_BANANA_MUFFIN",
+      "quantity": 1.0
+    },
+    {
+      "product": "MATCHA COOKIE",
+      "ingredient_code": "ING_049_MATCHA_COOKIE",
+      "quantity": 1.0
+    },
+    {
+      "product": "SLICE BANANA LOAF",
+      "ingredient_code": "ING_050_SLICE_BANANA_LOAF",
+      "quantity": 1.0
+    },
+    {
+      "product": "WHOLE BANANA LOAF",
+      "ingredient_code": "ING_051_WHOLE_BANANA_LOAF",
+      "quantity": 1.0
+    },
+    {
+      "product": "DOUBLE CHOCO MUFFIN",
+      "ingredient_code": "ING_052_DOUBLE_CHOCO_MUFFIN",
+      "quantity": 1.0
+    }
+  ],
+  "costs": [
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 2.69
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.83
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "CARAMEL MACCHIATO",
+      "ingredient_code": "ING_007_CARAMEL_SYRUP",
+      "cost": 1.23
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.35
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "DON DARKO",
+      "ingredient_code": "ING_009_DARKO",
+      "cost": 5.3
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.35
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "DON MATCHATOS",
+      "ingredient_code": "ING_008_MATCHA",
+      "cost": 9.58
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.82
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "DONYA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 8.48
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.35
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_009_DARKO",
+      "cost": 2.65
+    },
+    {
+      "product": "BLACK FOREST",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 4.23
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.35
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_011_OREO_POWDER",
+      "cost": 5.3
+    },
+    {
+      "product": "OREO COFFEE",
+      "ingredient_code": "ING_012_CRUSHED_OREO",
+      "cost": 0.003
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.35
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_015_PISTACHIO",
+      "cost": 13.04
+    },
+    {
+      "product": "DON PISTACHIO",
+      "ingredient_code": "ING_016_CONDENSED_MILK_1",
+      "cost": 2.35
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_001_COFFEE",
+      "cost": 0.67
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 2.35
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_008_MATCHA",
+      "cost": 4.79
+    },
+    {
+      "product": "MATCHA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 4.23
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC DON MATCHATOS",
+      "ingredient_code": "ING_008_MATCHA",
+      "cost": 9.58
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC DON DARKO",
+      "ingredient_code": "ING_009_DARKO",
+      "cost": 5.3
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_008_MATCHA",
+      "cost": 4.79
+    },
+    {
+      "product": "NC MATCHA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 4.23
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC DONYA BERRY",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 8.48
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_009_DARKO",
+      "cost": 2.65
+    },
+    {
+      "product": "NC BLACK FOREST",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 4.23
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_011_OREO_POWDER",
+      "cost": 5.3
+    },
+    {
+      "product": "NC OREO COFFEE",
+      "ingredient_code": "ING_012_CRUSHED_OREO",
+      "cost": 2.91
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_002_MILK",
+      "cost": 3.13
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_003_FRUCTOSE_1",
+      "cost": 1.37
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_004_16_OZ_CUP",
+      "cost": 2.35
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_005_PLASTIC_CUP_LID",
+      "cost": 1.1
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_015_PISTACHIO",
+      "cost": 13.04
+    },
+    {
+      "product": "NC DON PISTACHIO",
+      "ingredient_code": "ING_016_CONDENSED_MILK_1",
+      "cost": 2.35
+    },
+    {
+      "product": "PLAIN FRIES",
+      "ingredient_code": "ING_031_OIL",
+      "cost": 2.3
+    },
+    {
+      "product": "PLAIN FRIES",
+      "ingredient_code": "ING_042_FRIES",
+      "cost": 14.0
+    },
+    {
+      "product": "C CHEESE FRIES",
+      "ingredient_code": "ING_031_OIL",
+      "cost": 2.3
+    },
+    {
+      "product": "C CHEESE FRIES",
+      "ingredient_code": "ING_042_FRIES",
+      "cost": 14.0
+    },
+    {
+      "product": "C CHEESE FRIES",
+      "ingredient_code": "ING_045_FRIES_FLAVORING",
+      "cost": 5.5
+    },
+    {
+      "product": "BBQ FRIES",
+      "ingredient_code": "ING_031_OIL",
+      "cost": 2.3
+    },
+    {
+      "product": "BBQ FRIES",
+      "ingredient_code": "ING_042_FRIES",
+      "cost": 14.0
+    },
+    {
+      "product": "BBQ FRIES",
+      "ingredient_code": "ING_045_FRIES_FLAVORING",
+      "cost": 5.5
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_021_MILK_BAKING",
+      "cost": 0.01
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_022_EGG",
+      "cost": 3.85
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_025_ALL_PURPOSE_FLOUR",
+      "cost": 3.0
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_027_SALT",
+      "cost": 0.03
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_028_BAKING_POWDER",
+      "cost": 0.8
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_031_OIL",
+      "cost": 1.6
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_033_WHITE_SUGAR",
+      "cost": 2.78
+    },
+    {
+      "product": "CLASSIC WAFFLE",
+      "ingredient_code": "ING_043_WATER",
+      "cost": 0.04
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_010_STRAWBERRY",
+      "cost": 1.4
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_021_MILK_BAKING",
+      "cost": 0.01
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_022_EGG",
+      "cost": 3.85
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_025_ALL_PURPOSE_FLOUR",
+      "cost": 5.4
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_027_SALT",
+      "cost": 0.03
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_028_BAKING_POWDER",
+      "cost": 1.41
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_031_OIL",
+      "cost": 2.1
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_033_WHITE_SUGAR",
+      "cost": 2.78
+    },
+    {
+      "product": "STRAWBERRY WAFFLE",
+      "ingredient_code": "ING_043_WATER",
+      "cost": 0.04
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_021_MILK_BAKING",
+      "cost": 0.01
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_022_EGG",
+      "cost": 3.85
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_025_ALL_PURPOSE_FLOUR",
+      "cost": 5.4
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_027_SALT",
+      "cost": 0.03
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_028_BAKING_POWDER",
+      "cost": 1.41
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_031_OIL",
+      "cost": 2.1
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_033_WHITE_SUGAR",
+      "cost": 2.78
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_043_WATER",
+      "cost": 0.04
+    },
+    {
+      "product": "CHOCOLATE WAFFLE",
+      "ingredient_code": "ING_044_CHOCOLATE_FUDGE",
+      "cost": 2.25
+    },
+    {
+      "product": "EMPANADA",
+      "ingredient_code": "ING_046_EMPANADA",
+      "cost": 30.0
+    },
+    {
+      "product": "CHOC MARB VAN MUFFIN",
+      "ingredient_code": "ING_047_CHOC_MARB_VAN_MUFFIN",
+      "cost": 18.0
+    },
+    {
+      "product": "CHOCO BANANA MUFFIN",
+      "ingredient_code": "ING_048_CHOCO_BANANA_MUFFIN",
+      "cost": 24.0
+    },
+    {
+      "product": "MATCHA COOKIE",
+      "ingredient_code": "ING_049_MATCHA_COOKIE",
+      "cost": 18.0
+    },
+    {
+      "product": "SLICE BANANA LOAF",
+      "ingredient_code": "ING_050_SLICE_BANANA_LOAF",
+      "cost": 16.0
+    },
+    {
+      "product": "WHOLE BANANA LOAF",
+      "ingredient_code": "ING_051_WHOLE_BANANA_LOAF",
+      "cost": 82.0
+    },
+    {
+      "product": "DOUBLE CHOCO MUFFIN",
+      "ingredient_code": "ING_052_DOUBLE_CHOCO_MUFFIN",
+      "cost": 20.0
+    }
+  ],
+  "legacy_users": [
+    {
+      "username": "Mar",
+      "role": "Admin",
+      "created_at": "2026-07-28T15:39:39",
+      "active": false,
+      "migration_status": "PASSWORD_RESET_REQUIRED"
+    },
+    {
+      "username": "Mike",
+      "role": "User",
+      "created_at": "2026-07-28T13:01:48",
+      "active": false,
+      "migration_status": "PASSWORD_RESET_REQUIRED"
+    },
+    {
+      "username": "SarahG",
+      "role": "User",
+      "created_at": "2026-07-28T13:48:36",
+      "active": false,
+      "migration_status": "PASSWORD_RESET_REQUIRED"
+    },
+    {
+      "username": "ana",
+      "role": "User",
+      "created_at": "2026-07-28T13:48:52",
+      "active": false,
+      "migration_status": "PASSWORD_RESET_REQUIRED"
+    }
+  ],
+  "historical_sales": [
+    {
+      "reference": "REF#-8CA8-A86F-3CB5",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 150.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T17:29:17",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 147.0,
+      "adjustment": 0.0,
+      "actual": 147.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON MATCHATOS",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "BLACK FOREST",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-378E-BD01-CF32",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 105.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T17:29:17",
+      "remark": "Waffle + 2Coffee",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 137.0,
+      "adjustment": -32.0,
+      "actual": 105.0,
+      "promo_name": "Waffle + 2Coffee",
+      "items": [
+        {
+          "product_name": "NC DONYA BERRY",
+          "quantity": 2.0,
+          "unit_price": 49.0,
+          "line_total": 98.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-DF39-BFD2-2946",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 180.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T17:29:17",
+      "remark": "With Senior Discount.",
+      "senior_details": "Sarah(475353)",
+      "discount_amount": 45.0,
+      "gross": 225.0,
+      "adjustment": -45.0,
+      "actual": 180.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 2.0,
+          "unit_price": 49.0,
+          "line_total": 98.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DON MATCHATOS",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 2.0,
+          "unit_price": 39.0,
+          "line_total": 78.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-FA9D-684A-CFF0",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 280.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T17:29:17",
+      "remark": "With Senior Discount.",
+      "senior_details": "marlou(213322)",
+      "discount_amount": 69.6,
+      "gross": 348.0,
+      "adjustment": -69.6,
+      "actual": 278.4,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DON MATCHATOS",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "WHOLE BANANA LOAF",
+          "quantity": 1.0,
+          "unit_price": 195.0,
+          "line_total": 195.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "SLICE BANANA LOAF",
+          "quantity": 1.0,
+          "unit_price": 55.0,
+          "line_total": 55.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "Deleted",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 0.0,
+      "status": "Deleted",
+      "sold_at": "2026-08-19T13:06:04",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 0.0,
+      "adjustment": 0.0,
+      "actual": 0.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "BLACK FOREST",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 5.0,
+          "unit_price": 55.0,
+          "line_total": 275.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 5.0,
+          "unit_price": 55.0,
+          "line_total": 275.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-9A49-438D-1F5E",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 180.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T13:06:15",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 176.0,
+      "adjustment": 0.0,
+      "actual": 176.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON MATCHATOS",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "STRAWBERRY WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-B2B0-5658-D2FC",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 70.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T14:03:01",
+      "remark": "Fries + Coffee",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 88.0,
+      "adjustment": -19.0,
+      "actual": 69.0,
+      "promo_name": "Fries + Coffee",
+      "items": [
+        {
+          "product_name": "NC DON MATCHATOS",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-7C18-9763-480D",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 240.0,
+      "status": "Sold",
+      "sold_at": "2026-08-19T14:04:20",
+      "remark": "With Senior Discount.",
+      "senior_details": "Sarah Mae Estella(133131)",
+      "discount_amount": 59.2,
+      "gross": 296.0,
+      "adjustment": -59.2,
+      "actual": 236.8,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "NC DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "NC BLACK FOREST",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CHOCOLATE WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 2.0,
+          "unit_price": 55.0,
+          "line_total": 110.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-2216-2026-2D93",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 150.0,
+      "status": "Sold",
+      "sold_at": "2026-08-20T17:34:10",
+      "remark": "143 Promo",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 173.0,
+      "adjustment": -30.0,
+      "actual": 143.0,
+      "promo_name": "143 Promo",
+      "items": [
+        {
+          "product_name": "CARAMEL MACCHIATO",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "REGULAR FRIES",
+          "quantity": 1.0,
+          "unit_price": 40.0,
+          "line_total": 40.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CREAM CHEESE FRIES",
+          "quantity": 1.0,
+          "unit_price": 45.0,
+          "line_total": 45.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DON DARKO",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-6AFE-E56D-FDBA",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 180.0,
+      "status": "Sold",
+      "sold_at": "2026-08-21T08:39:54",
+      "remark": "143 Promo",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 192.0,
+      "adjustment": -15.0,
+      "actual": 177.0,
+      "promo_name": "143 Promo",
+      "items": [
+        {
+          "product_name": "CARAMEL MACCHIATO",
+          "quantity": 2.0,
+          "unit_price": 39.0,
+          "line_total": 78.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "REGULAR FRIES",
+          "quantity": 2.0,
+          "unit_price": 40.0,
+          "line_total": 80.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "Flavored Fries",
+          "quantity": 2.0,
+          "unit_price": 7.0,
+          "line_total": 14.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "Premium Coffee",
+          "quantity": 2.0,
+          "unit_price": 10.0,
+          "line_total": 20.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-70EA-80ED-336F",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 100.0,
+      "status": "Sold",
+      "sold_at": "2026-08-21T09:11:52",
+      "remark": "Fries + Coffee",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 106.0,
+      "adjustment": -20.0,
+      "actual": 86.0,
+      "promo_name": "Fries + Coffee",
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "REGULAR FRIES",
+          "quantity": 1.0,
+          "unit_price": 40.0,
+          "line_total": 40.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "Flavored Fries",
+          "quantity": 1.0,
+          "unit_price": 7.0,
+          "line_total": 7.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "Premium Coffee",
+          "quantity": 1.0,
+          "unit_price": 10.0,
+          "line_total": 10.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-D688-8ECC-3D9E",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 200.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T11:22:44",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 196.0,
+      "adjustment": 0.0,
+      "actual": 196.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON MATCHATOS",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DON DARKO",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "BLACK FOREST",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-42A9-C7B0-2B26",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 180.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T11:23:01",
+      "remark": "143 Promo",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 210.0,
+      "adjustment": -33.0,
+      "actual": 177.0,
+      "promo_name": "143 Promo",
+      "items": [
+        {
+          "product_name": "NC DONYA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "NC MATCHA BERRY",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 2.0,
+          "unit_price": 39.0,
+          "line_total": 78.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "Flavored Fries",
+          "quantity": 2.0,
+          "unit_price": 7.0,
+          "line_total": 14.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "Premium Coffee",
+          "quantity": 2.0,
+          "unit_price": 10.0,
+          "line_total": 20.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-29C8-9828-7843",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 350.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T11:23:45",
+      "remark": "With Senior Discount.",
+      "senior_details": "Marlou Kong(331223)",
+      "discount_amount": 86.2,
+      "gross": 431.0,
+      "adjustment": -86.2,
+      "actual": 344.8,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "CARAMEL MACCHIATO",
+          "quantity": 4.0,
+          "unit_price": 39.0,
+          "line_total": 156.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "SLICE BANANA LOAF",
+          "quantity": 5.0,
+          "unit_price": 55.0,
+          "line_total": 275.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-314C-FC40-6C0E",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 370.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T11:48:52",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 362.0,
+      "adjustment": 0.0,
+      "actual": 362.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 5.0,
+          "unit_price": 49.0,
+          "line_total": 245.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 3.0,
+          "unit_price": 39.0,
+          "line_total": 117.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-C6D5-9456-69B1",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 140.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T11:49:13",
+      "remark": "Waffle + 2Coffee",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 144.0,
+      "adjustment": -12.0,
+      "actual": 132.0,
+      "promo_name": "Waffle + 2Coffee",
+      "items": [
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CARAMEL MACCHIATO",
+          "quantity": 2.0,
+          "unit_price": 39.0,
+          "line_total": 78.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "Flavored Fries",
+          "quantity": 1.0,
+          "unit_price": 7.0,
+          "line_total": 7.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "Premium Coffee",
+          "quantity": 2.0,
+          "unit_price": 10.0,
+          "line_total": 20.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-E1F4-A7FD-0FB0",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 500.0,
+      "status": "Sold",
+      "sold_at": "2026-08-23T11:50:58",
+      "remark": "With Senior Discount.",
+      "senior_details": "Carla(2131231)",
+      "discount_amount": 113.6,
+      "gross": 568.0,
+      "adjustment": -113.6,
+      "actual": 454.4,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "NC DON DARKO",
+          "quantity": 7.0,
+          "unit_price": 49.0,
+          "line_total": 343.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CREAM CHEESE FRIES",
+          "quantity": 5.0,
+          "unit_price": 45.0,
+          "line_total": 225.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-6EED-49A8-A0F5",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 110.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T12:25:38",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 110.0,
+      "adjustment": 0.0,
+      "actual": 110.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 2.0,
+          "unit_price": 55.0,
+          "line_total": 110.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-016F-0E88-6D28",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 110.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T12:27:41",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 110.0,
+      "adjustment": 0.0,
+      "actual": 110.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 2.0,
+          "unit_price": 55.0,
+          "line_total": 110.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-1B45-C678-04FA",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 250.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T12:28:48",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 220.0,
+      "adjustment": 0.0,
+      "actual": 220.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 4.0,
+          "unit_price": 55.0,
+          "line_total": 220.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-9DCC-0504-76F8",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 250.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T12:50:00",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 250.0,
+      "adjustment": 0.0,
+      "actual": 250.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "WHOLE BANANA LOAF",
+          "quantity": 1.0,
+          "unit_price": 195.0,
+          "line_total": 195.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 1.0,
+          "unit_price": 55.0,
+          "line_total": 55.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-4D6E-FE1D-73AA",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 310.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T14:08:21",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 305.0,
+      "adjustment": 0.0,
+      "actual": 305.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "WHOLE BANANA LOAF",
+          "quantity": 1.0,
+          "unit_price": 195.0,
+          "line_total": 195.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "DOUBLE CHOCO MUFFIN",
+          "quantity": 1.0,
+          "unit_price": 55.0,
+          "line_total": 55.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASS WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 55.0,
+          "line_total": 55.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-B782-0FE2-4E5F",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 160.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T15:55:05",
+      "remark": "143 Promo",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 195.0,
+      "adjustment": -35.0,
+      "actual": 160.0,
+      "promo_name": "143 Promo",
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 2.0,
+          "unit_price": 49.0,
+          "line_total": 98.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "REGULAR FRIES",
+          "quantity": 2.0,
+          "unit_price": 40.0,
+          "line_total": 80.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "FLAVORED FRIES",
+          "quantity": 1.0,
+          "unit_price": 7.0,
+          "line_total": 7.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "PREMIUM COFFEE",
+          "quantity": 1.0,
+          "unit_price": 10.0,
+          "line_total": 10.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-5FFC-7BB7-EB10",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 160.0,
+      "status": "Sold",
+      "sold_at": "2026-08-22T15:58:45",
+      "remark": "143 Promo",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 193.0,
+      "adjustment": -33.0,
+      "actual": 160.0,
+      "promo_name": "143 Promo",
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 2.0,
+          "unit_price": 49.0,
+          "line_total": 98.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 2.0,
+          "unit_price": 39.0,
+          "line_total": 78.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "FLAVORED FRIES",
+          "quantity": 1.0,
+          "unit_price": 7.0,
+          "line_total": 7.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "PREMIUM COFFEE",
+          "quantity": 1.0,
+          "unit_price": 10.0,
+          "line_total": 10.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-FC00-FE64-4ED6",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 50.0,
+      "status": "Sold",
+      "sold_at": "2026-08-23T10:18:20",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 49.0,
+      "adjustment": 0.0,
+      "actual": 49.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "DON DARKO",
+          "quantity": 1.0,
+          "unit_price": 49.0,
+          "line_total": 49.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-72BA-BE39-A356",
+      "cashier": "Mar",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 180.0,
+      "status": "Sold",
+      "sold_at": "2026-08-26T14:16:39",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 180.0,
+      "adjustment": 0.0,
+      "actual": 180.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "C CHEESE FRIES",
+          "quantity": 2.0,
+          "unit_price": 45.0,
+          "line_total": 90.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "BBQ FRIES",
+          "quantity": 2.0,
+          "unit_price": 45.0,
+          "line_total": 90.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-6DEE-9C9D-982A",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 160.0,
+      "status": "Sold",
+      "sold_at": "2026-09-09T16:15:23",
+      "remark": "143 Promo",
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 194.0,
+      "adjustment": -34.0,
+      "actual": 160.0,
+      "promo_name": "143 Promo",
+      "items": [
+        {
+          "product_name": "DONYA BERRY",
+          "quantity": 2.0,
+          "unit_price": 49.0,
+          "line_total": 98.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CLASSIC WAFFLE",
+          "quantity": 1.0,
+          "unit_price": 39.0,
+          "line_total": 39.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "PLAIN FRIES",
+          "quantity": 1.0,
+          "unit_price": 40.0,
+          "line_total": 40.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "FLAVORED FRIES",
+          "quantity": 1.0,
+          "unit_price": 7.0,
+          "line_total": 7.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        },
+        {
+          "product_name": "PREMIUM COFFEE",
+          "quantity": 1.0,
+          "unit_price": 10.0,
+          "line_total": 10.0,
+          "is_add_on": true,
+          "exclude_from_costing": true
+        }
+      ]
+    },
+    {
+      "reference": "REF#-6EC3-2B63-4810",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 180.0,
+      "status": "Sold",
+      "sold_at": "2026-09-09T16:15:50",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 176.0,
+      "adjustment": 0.0,
+      "actual": 176.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "NC DONYA BERRY",
+          "quantity": 2.0,
+          "unit_price": 49.0,
+          "line_total": 98.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        },
+        {
+          "product_name": "CARAMEL MACCHIATO",
+          "quantity": 2.0,
+          "unit_price": 39.0,
+          "line_total": 78.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    },
+    {
+      "reference": "REF#-F257-3760-4FE5",
+      "cashier": "Mike",
+      "payment_mode": "Cash",
+      "payment_reference": null,
+      "tender": 170.0,
+      "status": "Sold",
+      "sold_at": "2026-09-09T17:14:02",
+      "remark": null,
+      "senior_details": null,
+      "discount_amount": 0.0,
+      "gross": 165.0,
+      "adjustment": 0.0,
+      "actual": 165.0,
+      "promo_name": null,
+      "items": [
+        {
+          "product_name": "EMPANADA",
+          "quantity": 3.0,
+          "unit_price": 55.0,
+          "line_total": 165.0,
+          "is_add_on": false,
+          "exclude_from_costing": false
+        }
+      ]
+    }
+  ],
+  "historical_system_logs": [
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 5\nUBE = 5\nCOFFEE = 5\nICE = 5\nCARAMEL = 5\nSTRAWBERRY = 5\nCOFFEE BEANS = 5\nWATER = 5\nMILK = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-07-31T12:27:37",
+      "remark": "Transfer to (Branch Name), and received by (Person Name)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 10\nUBE = 10\nCOFFEE = 10\nICE = 10\nCARAMEL = 10\nSTRAWBERRY = 10\nCOFFEE BEANS = 10\nWATER = 10\nMILK = 10\nCREAM = 10\nBROWN SUGAR = 10\nHONEY = 10\nSWEETENER = 10\nCONDENSED MILK = 10\nEVAPORATED MILK = 10\nWHIPPED CREAM = 10\nCHOCOLATE SYRUP = 10",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-07-31T12:28:24",
+      "remark": "Transfer to (Branch Name), and received by (Person Name)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 5\nUBE = 5\nCOFFEE = 5\nICE = 5\nCARAMEL = 5\nSTRAWBERRY = 5\nCOFFEE BEANS = 5\nWATER = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-07-31T12:31:13",
+      "remark": "Transfer to (Branch Name), and received by (Person Name)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 5\nUBE = 5\nCOFFEE = 5\nICE = 5\nCARAMEL = 5\nSTRAWBERRY = 5\nCOFFEE BEANS = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-07-31T12:34:25",
+      "remark": "Transfer to (Waling Waling), and received by (Marlou)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 20\nUBE = 20\nCOFFEE = 20\nICE = 20\nCARAMEL = 20\nSTRAWBERRY = 20\nCOFFEE BEANS = 20\nWATER = 20\nMILK = 20\nCREAM = 20\nBROWN SUGAR = 20",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-07-31T12:35:58",
+      "remark": "Transfer to (SM North), and received by (Jill)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 5\nUBE = 5\nCOFFEE = 5\nICE = 5\nCARAMEL = 5\nSTRAWBERRY = 5\nCOFFEE BEANS = 5\nWATER = 5\nMILK = 5\nCREAM = 5\nBROWN SUGAR = 5\nHONEY = 5\nSWEETENER = 5\nCONDENSED MILK = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-02T20:14:49",
+      "remark": "Transfer to (SM), and received by (Jake)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 50\nUBE = 50\nCOFFEE = 50\nICE = 50\nCARAMEL = 50\nSTRAWBERRY = 50",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-02T20:36:11",
+      "remark": "Transfer to (JILLS), and received by (SARAH)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nSUGAR = 1000\nUBE = 1000\nCOFFEE = 1000\nICE = 1000\nCARAMEL = 1000\nSTRAWBERRY = 1000",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-02T21:43:34",
+      "remark": "Received from (Gaisano), and delivered by (Sarah)."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-03T12:42:08",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (Mar).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-03T12:45:46",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T12:45:52",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T12:46:07",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T12:48:04",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T12:48:17",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T12:49:23",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T12:50:13",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-03T13:55:31",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Database has been restored successfully.",
+      "actor": "Admin",
+      "status": "Database Restored.",
+      "created_at": "2026-08-04T10:09:37",
+      "remark": "Restore Database Success."
+    },
+    {
+      "activity": "Database has been restored successfully.",
+      "actor": "Admin",
+      "status": "Database Restored.",
+      "created_at": "2026-08-04T10:10:16",
+      "remark": "Restore Database Success."
+    },
+    {
+      "activity": "Database has been restored successfully.",
+      "actor": "Admin",
+      "status": "Database Restored.",
+      "created_at": "2026-08-04T10:18:53",
+      "remark": "Restore Database Success."
+    },
+    {
+      "activity": "Database has been restored successfully.",
+      "actor": "Admin",
+      "status": "Database Restored.",
+      "created_at": "2026-08-04T10:20:19",
+      "remark": "Restore Database Success."
+    },
+    {
+      "activity": "Database has been restored successfully.",
+      "actor": "Admin",
+      "status": "Database Restored.",
+      "created_at": "2026-08-04T17:07:05",
+      "remark": "Restore Database Success."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T18:58:30",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:01:46",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:05:37",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:06:07",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:07:33",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:09:27",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:09:50",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-04T19:09:54",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 10000\nALL PURPOSE CREAM = 10000\nALL PURPOSE FLOUR = 10000\nBAKING POWDER = 10000\nBAKING SODA = 10000\nBANANA = 10000\nBROWN SUGAR = 10000\nBUTTER = 10000\nCARAMEL SYRUP = 10000\nCHOCOLATE FUDGE = 10000\nCHOCOLATE POWDER = 10000\nCINNAMON = 10000\nCOCONUT WATER = 10000\nCOFFEE = 10000\nCONDENSED MILK = 10000\nCRUSHED OREO = 10000\nDARK CHOCOLATE CHIP = 10000\nDARKO = 10000\nEGG = 10000\nFRIES = 10000\nFRIES FLAVORING = 10000",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-06T07:45:58",
+      "remark": "Received from (Balay), and delivered by (Mama)."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T17:20:31",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T17:26:58",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T17:27:34",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T17:57:31",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Yearly report for (Sarah).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T17:58:16",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T17:59:54",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T18:02:50",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T18:06:53",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T18:09:35",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T18:11:56",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T18:56:48",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T18:57:55",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T19:56:15",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T19:57:18",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T19:58:21",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T20:02:39",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T20:07:06",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T20:08:06",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T20:08:49",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-06T20:29:35",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Admin is logged on.",
+      "actor": "Admin",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-08T10:51:14",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Admin is logged on.",
+      "actor": "Admin",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-08T11:08:14",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-08T14:34:52",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-08T16:27:17",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Admin is logged on.",
+      "actor": "Admin",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-09T19:58:35",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Admin is logged on and has downloaded the Daily report for (Mike).",
+      "actor": "Admin",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-09T19:59:05",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 150\nALL PURPOSE CREAM = 150\nALL PURPOSE FLOUR = 150\nBAKING POWDER = 150\nBAKING SODA = 150\nBANANA = 150\nBROWN SUGAR = 150\nBUTTER = 150\nCARAMEL SYRUP = 150\nCHOCOLATE FUDGE = 150\nCHOCOLATE POWDER = 150\nCINNAMON = 150",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-12T13:27:13",
+      "remark": "Transfer to (SM Branch), and received by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 1000\nALL PURPOSE CREAM = 1000\nALL PURPOSE FLOUR = 1000\nBAKING POWDER = 1000\nBAKING SODA = 1000\nBANANA = 1000",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-12T13:32:55",
+      "remark": "Transfer to (SM Branch), and received by (James)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 1000\nALL PURPOSE CREAM = 1000\nALL PURPOSE FLOUR = 1000\nBAKING POWDER = 1000\nBAKING SODA = 1000\nBANANA = 1000",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-12T13:35:22",
+      "remark": "Transfer to (SM Branch), and received by (James Ata)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 1500\nALL PURPOSE CREAM = 1500\nALL PURPOSE FLOUR = 1500\nBAKING POWDER = 1500\nBAKING SODA = 1500\nBANANA = 1500\nBROWN SUGAR = 1500",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-12T13:38:54",
+      "remark": "Transfer to (Ilang Ilang Branch), and received by (Jill May)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 1500\nALL PURPOSE CREAM = 1500\nALL PURPOSE FLOUR = 1500\nBAKING POWDER = 1500\nBAKING SODA = 1500\nBANANA = 1500\nBROWN SUGAR = 1500",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-12T13:44:37",
+      "remark": "Received from (SM Branch), and delivered by (Jill May)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 1500\nALL PURPOSE CREAM = 1500\nALL PURPOSE FLOUR = 1500\nBAKING POWDER = 1500\nBAKING SODA = 1500\nBANANA = 1500\nBROWN SUGAR = 1500",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-12T13:47:31",
+      "remark": "Received from (SM Branch), and delivered by (Jill)."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-13T17:31:26",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (Sarah).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-13T17:31:36",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-13T18:00:14",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (Sarah).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-13T18:00:37",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (Sarah).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-13T18:26:33",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (Mar).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-13T18:26:41",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Deleted ingredient: WHITE CHOCOLATE CHIP",
+      "actor": "Admin",
+      "status": "SUCCESS",
+      "created_at": "2026-08-14T16:05:37",
+      "remark": "Ingredient 'WHITE CHOCOLATE CHIP' was permanently deleted from Ingredients, ProductListWithIngredients, and CostingListWithIngredients."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 5000\nALL PURPOSE CREAM = 5000\nALL PURPOSE FLOUR = 5000\nBAKING POWDER = 5000\nBAKING SODA = 5000\nBANANA = 5000\nBROWN SUGAR = 5000",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-14T16:11:42",
+      "remark": "Received from (Makati Branch), and delivered by (Larry Gadon)."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:13:43",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:14:39",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:16:28",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-14T17:20:04",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-14T17:20:38",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:21:38",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:26:42",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:28:26",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (Mar).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:28:31",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:32:16",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:39:36",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:42:05",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-14T17:46:28",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-14T17:51:02",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T15:41:51",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T15:56:25",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:03:16",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:03:46",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:15:44",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:16:41",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:17:50",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:35:31",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:36:10",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (Mike).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T16:38:47",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T17:01:12",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T17:39:18",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T17:44:50",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-17T17:51:47",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T07:58:35",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T08:29:26",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T08:44:26",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T09:26:39",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T09:38:45",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T09:39:39",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T12:17:51",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T12:42:32",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T12:44:39",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T12:52:34",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:00:58",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:03:14",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:05:15",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:06:44",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (Mike).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:34:43",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (Mar).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:34:47",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:36:27",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:41:28",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:43:35",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:50:52",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T13:59:20",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-19T14:04:54",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-19T15:29:38",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-19T15:32:23",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-19T15:58:16",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T15:56:40",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T16:13:04",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T16:50:04",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T16:52:20",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T16:53:57",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T16:56:58",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T16:59:48",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-20T17:00:39",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-20T17:02:11",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Weekly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T09:36:07",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Weekly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T09:37:47",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T09:42:13",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T09:51:51",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T09:54:07",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T10:04:43",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T10:05:20",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T10:07:33",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T10:07:46",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T10:11:53",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-21T10:13:27",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T12:50:18",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T12:51:35",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T12:52:10",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Weekly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T12:53:04",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCLASS WAFFLE = 10",
+      "actor": "Admin",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:15:07",
+      "remark": "Received from (SM), and delivered by (Mark)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCLASS WAFFLE = 10",
+      "actor": "Admin",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:17:59",
+      "remark": "Received from (SM), and delivered by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 10\nWHOLE BANANA LOAF = 10\nCLASS WAFFLE = 10",
+      "actor": "Admin",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:20:13",
+      "remark": "Received from (SM), and delivered by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 100\nALL PURPOSE CREAM = 100\nALL PURPOSE FLOUR = 100\nBAKING POWDER = 100",
+      "actor": "Admin",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:20:49",
+      "remark": "Received from (SM), and delivered by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 25",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:28:48",
+      "remark": "Received from (SM), and delivered by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 25\nWHOLE BANANA LOAF = 25\nCLASS WAFFLE = 25",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:29:19",
+      "remark": "Received from (dsf), and delivered by (asfd)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 100\nWHOLE BANANA LOAF = 100\nCLASS WAFFLE = 100",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:37:16",
+      "remark": "Received from (SM), and delivered by (Smite)."
+    },
+    {
+      "activity": "The transferred ingredients are:\n16 OZ CUP = 448\nALL PURPOSE CREAM = 448\nALL PURPOSE FLOUR = 448\nBAKING POWDER = 448",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:38:08",
+      "remark": "Received from (Ayala), and delivered by (Smite)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 10\nWHOLE BANANA LOAF = 10\nCLASS WAFFLE = 0",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:45:41",
+      "remark": "Received from (sd), and delivered by (asd)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 10\nWHOLE BANANA LOAF = 10\nCLASS WAFFLE = 10",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-08-22T13:54:54",
+      "remark": "Received from (Mark Store), and delivered by (Agay)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nDOUBLE CHOCO MUFFIN = 10\nWHOLE BANANA LOAF = 10\nCLASS WAFFLE = 10",
+      "actor": "Mike",
+      "status": "Received stock",
+      "created_at": "2026-08-22T14:10:05",
+      "remark": "Received from (Tintay), and delivered by (Jay)."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T15:59:01",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T15:59:18",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mike has accessed the admin report.",
+      "actor": "Mike",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T16:01:15",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mike has accessed the admin report.",
+      "actor": "Mike",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T16:03:05",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mike has accessed the admin report.",
+      "actor": "Mike",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T16:04:14",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mike has accessed the admin report.",
+      "actor": "Mike",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T16:04:18",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mike has downloaded the Daily report for (All).",
+      "actor": "Mike",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-22T16:04:52",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCLASS WAFFLE = 20",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-08-24T14:34:10",
+      "remark": "Transfer to (sdf), and received by (dss)."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T14:46:29",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T14:47:50",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T14:57:55",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T15:01:54",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T15:02:36",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T15:08:25",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T15:08:52",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mike has accessed the admin report.",
+      "actor": "Mike",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T17:02:17",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Weekly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-24T17:39:49",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-25T13:46:31",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T08:29:21",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T08:34:46",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T08:38:37",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T08:46:13",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Monthly report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T08:56:20",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has accessed the admin report.",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T14:17:22",
+      "remark": "Access Granted."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-26T14:17:49",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Deleted ingredient: LATTE",
+      "actor": "Admin",
+      "status": "SUCCESS",
+      "created_at": "2026-08-28T16:55:06",
+      "remark": "Ingredient 'LATTE' was permanently deleted from Ingredients, ProductListWithIngredients, CostingListWithIngredients, and IngredientMeasurement."
+    },
+    {
+      "activity": "Database has been restored successfully.",
+      "actor": "Admin",
+      "status": "Database Restored.",
+      "created_at": "2026-08-29T16:30:38",
+      "remark": "Restore Database Success."
+    },
+    {
+      "activity": "Database has been backup successfully.",
+      "actor": "Admin",
+      "status": "Database Saved.",
+      "created_at": "2026-08-29T16:34:03",
+      "remark": "Backup Database Success."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-29T18:03:58",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-08-29T18:06:17",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-08-29T23:16:38",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-09-01T16:01:05",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the Daily report for (All).",
+      "actor": "Mar",
+      "status": "Open Admin Reports",
+      "created_at": "2026-09-01T16:01:45",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-01T16:28:52",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-01T16:29:12",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCOFFEE = 5\nMILK = 5\nFRUCTOSE = 5",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-09-01T16:51:27",
+      "remark": "Received from (Mar), and delivered by (Mik)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCOFFEE = 5\nMILK = 5\nFRUCTOSE = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-09-01T16:53:21",
+      "remark": "Transfer to (SM), and received by (Jill)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCOFFEE = 3\nMILK = 3\nFRUCTOSE = 3\n16 OZ CUP = 3",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-09-01T17:00:38",
+      "remark": "Transfer to (SM), and received by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nMILK = 5\nFRUCTOSE = 5\n16 OZ CUP = 5\nPLASTIC CUP LID = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-09-01T17:06:20",
+      "remark": "Transfer to (SM), and received by (Mike)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCOFFEE = 5\nMILK = 5\nFRUCTOSE = 5\n16 OZ CUP = 5",
+      "actor": "Mar",
+      "status": "Transferred stock",
+      "created_at": "2026-09-01T17:12:19",
+      "remark": "Transfer to (sf), and received by (afsd)."
+    },
+    {
+      "activity": "The transferred ingredients are:\nCOFFEE = 5\nMILK = 5\nFRUCTOSE = 5\n16 OZ CUP = 5",
+      "actor": "Mar",
+      "status": "Received stock",
+      "created_at": "2026-09-01T17:16:01",
+      "remark": "Received from (SM), and delivered by (Mike)."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T16:16:13",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T17:07:33",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T17:10:15",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T17:13:02",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mike has downloaded the daily report for (All).",
+      "actor": "Mike",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T17:14:10",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T17:32:08",
+      "remark": "Downloaded a copy."
+    },
+    {
+      "activity": "Mar has downloaded the daily report for (All).",
+      "actor": "Mar",
+      "status": "Daily Sales Report",
+      "created_at": "2026-09-09T17:37:07",
+      "remark": "Downloaded a copy."
+    }
+  ],
+  "migration_notes": {
+    "duplicate_ingredient_names": [
+      "FRUCTOSE",
+      "CONDENSED MILK"
+    ],
+    "credentials_excluded": true,
+    "sales_logs_excluded_from_seed": true
+  },
+  "security": {
+    "excel_user_passwords_included": false,
+    "email_credentials_included": false,
+    "legacy_users_require_password_reset": true
+  },
+  "add_ons": [
+    {
+      "name": "FLAVORED FRIES",
+      "price": 7.0,
+      "active": true,
+      "exclude_from_costing": true
+    },
+    {
+      "name": "PREMIUM COFFEE",
+      "price": 10.0,
+      "active": true,
+      "exclude_from_costing": true
+    }
+  ]
+}
