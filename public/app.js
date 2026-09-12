@@ -1,6 +1,6 @@
 // Coffee POS v1.5.0 loader: core app + live sync + feature layer.
 (() => {
-  const VERSION = '1.5.0';
+  const VERSION = '1.5.0-hotfix1';
   const loadScript = src => new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = `${src}${src.includes('?')?'&':'?'}v=${VERSION}`;
