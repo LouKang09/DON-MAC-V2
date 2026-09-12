@@ -1,7 +1,7 @@
-// Coffee POS v1.5.4 safe loader: core/login first, enhancements only after authentication.
+// Coffee POS v1.5.5 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.4-audit-sync-tuning';
+  const VERSION = '1.5.5-history-pdf';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -45,11 +45,13 @@
       loadCss('v15SafeCss', '/v15.css');
       loadCss('v153Css', '/v153.css');
       loadCss('v154Css', '/v154.css');
+      loadCss('v155Css', '/v155.css');
       await loadScript('/live-refresh.js');
       await loadScript('/v15-safe.js');
       await loadScript('/v153-features.js');
       await loadScript('/v154-tuning.js');
-      console.info('Coffee POS v1.5.4 enhancement layers started.');
+      await loadScript('/v155-features.js');
+      console.info('Coffee POS v1.5.5 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
