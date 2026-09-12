@@ -1,0 +1,20 @@
+/* Coffee POS v1.5.4 audit-action tuning. */
+/* Sales already has a richer Transaction Audit viewer in Reports. Report and Other
+   entries are concise events, so View is reserved for audit-sensitive categories. */
+.log-row[data-category="sales"] .log-view-button,
+.log-row[data-category="reports"] .log-view-button,
+.log-row[data-category="other"] .log-view-button {
+  display:none !important;
+}
+
+.log-audit-scope-note{
+  margin:8px 0 12px;
+  padding:9px 11px;
+  border:1px solid var(--line,#e7e1d7);
+  border-radius:10px;
+  background:#faf8f4;
+  color:var(--muted,#6b746f);
+  font-size:11px;
+  line-height:1.45;
+}
+.log-audit-scope-note b{color:var(--ink,#17231e)}
