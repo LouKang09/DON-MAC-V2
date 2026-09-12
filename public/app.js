@@ -1,7 +1,7 @@
-// Coffee POS v1.5.2 safe loader: core/login first, enhancements only after authentication.
+// Coffee POS v1.5.3 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.2-safe1';
+  const VERSION = '1.5.3-fixed-pane-audit';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -11,6 +11,15 @@
     s.onerror = () => reject(new Error(`Unable to load ${src}`));
     document.head.appendChild(s);
   });
+
+  const loadCss = (id, src) => {
+    if (document.getElementById(id)) return;
+    const css = document.createElement('link');
+    css.id = id;
+    css.rel = 'stylesheet';
+    css.href = `${src}?v=${encodeURIComponent(VERSION)}`;
+    document.head.appendChild(css);
+  };
 
   const isVisible = el => !!el && !el.classList.contains('hidden');
 
@@ -27,25 +36,18 @@
     if (submit) submit.textContent = 'Sign in';
   }
 
-  function loadFeatureCss() {
-    if (document.getElementById('v15SafeCss')) return;
-    const css = document.createElement('link');
-    css.id = 'v15SafeCss';
-    css.rel = 'stylesheet';
-    css.href = `/v15.css?v=${encodeURIComponent(VERSION)}`;
-    document.head.appendChild(css);
-  }
-
   async function startEnhancementsWhenAppIsReady() {
     if (enhancementsStarted) return;
     const app = document.getElementById('app');
     if (!isVisible(app)) return;
     enhancementsStarted = true;
     try {
-      loadFeatureCss();
+      loadCss('v15SafeCss', '/v15.css');
+      loadCss('v153Css', '/v153.css');
       await loadScript('/live-refresh.js');
       await loadScript('/v15-safe.js');
-      console.info('Coffee POS v1.5.2 safe enhancement layer started.');
+      await loadScript('/v153-features.js');
+      console.info('Coffee POS v1.5.3 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
