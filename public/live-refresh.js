@@ -1,7 +1,7 @@
 // Cross-terminal live refresh layer for Coffee POS Web.
 // IMPORTANT: background sync must never navigate/reload the page.
 (() => {
-  const SYNC_MS = 5000;
+  const SYNC_MS = 90000;
   const locks = new Set();
   let posFingerprint = null;
   let pendingPosChange = false;
@@ -57,11 +57,12 @@
     el.id = 'liveSyncStatus';
     el.className = 'db-pill';
     el.style.whiteSpace = 'nowrap';
-    el.textContent = 'LIVE SYNC';
+    el.textContent = 'AUTO SYNC · 90s';
+    el.title = 'Background refresh runs every 1 minute 30 seconds. Refresh buttons fetch immediately.';
     document.querySelector('.topbar-right')?.prepend(el);
     return el;
   }
-  function stamp(message = 'LIVE SYNC') {
+  function stamp(message = 'AUTO SYNC') {
     const el = ensureStatus();
     const time = new Intl.DateTimeFormat('en-PH', {
       timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit'
@@ -180,9 +181,10 @@
 
   ensurePosUpdateButton();
   const run = () => refreshView(activeView());
+  // Event-driven refresh when the user returns to the POS, plus a light 90-second background sync.
   window.addEventListener('focus', run);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) run(); });
   setInterval(run, SYNC_MS);
   setTimeout(run, 1200);
-  stamp();
+  stamp('AUTO SYNC 90s');
 })();
