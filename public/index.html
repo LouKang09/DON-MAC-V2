@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#14261f" />
   <title>Don Macchiatos Web POS</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/branch-v157.css" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -48,9 +49,19 @@
       </header>
 
       <section id="view-dashboard" class="view">
+        <div class="card sales-range-toolbar">
+          <div class="range-heading"><p class="eyebrow">SALES ANALYTICS</p><h3>Sales timeline</h3><span class="muted tiny">Hourly for a single day, daily for multi-day ranges · Philippine time</span></div>
+          <div class="sales-range-controls">
+            <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
+            <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
+            <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
+            <label class="admin-only" id="dashboardBranchWrap">Branch<select id="dashboardBranch"><option value="all">All branches</option></select></label>
+            <button id="applyTrend" class="primary">Apply</button>
+          </div>
+        </div>
         <div id="dashboardSummary" class="summary-grid dashboard-summary"></div>
         <div class="dashboard-grid">
-          <div class="card chart-card"><div class="card-head"><div><p class="eyebrow">LAST 30 DAYS</p><h3>Actual Sales Trend</h3></div></div><canvas id="salesTrendChart" height="250"></canvas></div>
+          <div class="card chart-card"><div class="card-head"><div><p class="eyebrow" id="trendPeriodLabel">TODAY · HOURLY</p><h3>Actual Sales Trend</h3></div><span class="muted tiny" id="trendChartHint">Hover over a point to see its exact value</span></div><div class="trend-plot"><canvas id="salesTrendChart" height="250"></canvas><div id="trendTooltip" class="trend-tooltip hidden" role="status"></div></div></div>
           <div class="card chart-card"><div class="card-head"><div><p class="eyebrow">THIS MONTH</p><h3>Top Products</h3></div></div><canvas id="topProductsChart" height="250"></canvas></div>
         </div>
         <div class="dashboard-grid lower">
@@ -60,6 +71,7 @@
       </section>
 
       <section id="view-pos" class="view active">
+        <div class="pos-branch-bar"><div><strong>Current branch</strong><span class="muted tiny">Sales are attributed to this branch. Inventory remains shared.</span></div><select id="posBranch" aria-label="Branch for this sale"></select><span id="posBranchReadOnly" class="hidden"></span></div>
         <div class="pos-layout">
           <div class="catalog-panel">
             <div class="catalog-tools"><div id="categoryTabs" class="tabs"></div><input id="searchBox" class="search" placeholder="Search products…" /></div>
@@ -97,7 +109,7 @@
       <section id="view-reports" class="view">
         <div class="card report-toolbar">
           <div><p class="eyebrow">SALES + COSTING</p><h3>Daily / Weekly / Monthly / Yearly</h3></div>
-          <div class="report-filters"><select id="reportPeriod"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select><input id="reportDate" type="date" /><input id="reportCashier" maxlength="80" placeholder="Cashier (optional)" /><button id="loadReport" class="primary">Load</button><button id="salesPdf" class="ghost">Sales PDF</button><button id="costingPdf" class="ghost">Costing PDF</button><button id="emailReport" class="ghost">Email PDF</button></div>
+          <div class="report-filters"><select id="reportPeriod"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select><input id="reportDate" type="date" /><select id="reportBranch" class="admin-only" aria-label="Report branch"><option value="all">All branches</option></select><input id="reportCashier" maxlength="80" placeholder="Cashier (optional)" /><button id="loadReport" class="primary">Load</button><button id="salesPdf" class="ghost">Sales PDF</button><button id="costingPdf" class="ghost">Costing PDF</button><button id="emailReport" class="ghost">Email PDF</button></div>
         </div>
         <div id="reportSummary" class="summary-grid"></div>
         <div class="card spaced"><div class="card-head"><div><p class="eyebrow">PRODUCT SUMMARY</p><h3>Gross / Adjusted / Actual / Costing / Net</h3></div></div><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th><th class="num">Costing</th><th class="num">Net Sales</th></tr></thead><tbody id="reportProducts"></tbody></table></div></div>
@@ -144,9 +156,15 @@
       </section>
 
       <section id="view-users" class="view admin-only">
+        <div class="users-section-title"><div><p class="eyebrow">MULTI-BRANCH SETUP</p><h3>Manage branches</h3><p class="muted tiny">Create, rename, disable or delete unused branches. No subscriptions or branch fees.</p></div></div>
         <div class="section-grid users-layout">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Web Accounts</h3></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Password</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
-          <form id="userForm" class="card form-card"><p class="eyebrow">ACTIVATE / RESET</p><h3>User Account</h3><input id="userEditId" type="hidden" /><label>Username<input id="newUsername" minlength="2" maxlength="80" required /></label><label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" /></label><label>Role<select id="newRole"><option>User</option><option>Admin</option></select></label><label class="check-row"><input id="newUserActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save User</button><button id="userFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">For a new/legacy account, enter a password. When editing an active web account, leave password blank to keep its current password.</p></form>
+          <div class="card"><div class="card-head"><div><p class="eyebrow">LOCATIONS</p><h3>Branches</h3></div></div><div class="table-wrap"><table><thead><tr><th>Branch</th><th>Users / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
+          <form id="branchForm" class="card form-card"><p class="eyebrow">BRANCH DETAILS</p><h3 id="branchFormTitle">New Branch</h3><input id="branchEditId" type="hidden" /><label>Branch name<input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label><label>Address (optional)<input id="branchAddress" maxlength="250" placeholder="Location or landmark" /></label><label class="check-row"><input id="branchActive" type="checkbox" checked /> Active branch</label><button class="primary" type="submit">Save Branch</button><button id="branchFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Branches with linked sales cannot be permanently removed. Disable them instead to keep reporting and audit records.</p></form>
+        </div>
+        <div class="users-section-title users-subsection"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Users & branch assignments</h3><p class="muted tiny">Assign each staff account to a branch. Administrators can review all branches.</p></div></div>
+        <div class="section-grid users-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">WEB ACCOUNTS</p><h3>Users</h3></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+          <form id="userForm" class="card form-card"><p class="eyebrow">ADD / EDIT USER</p><h3>User Account</h3><input id="userEditId" type="hidden" /><label>Username<input id="newUsername" minlength="2" maxlength="80" required /></label><label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" /></label><label>Role<select id="newRole"><option>User</option><option>Admin</option></select></label><label id="newUserBranchWrap">Assigned branch<select id="newUserBranch" required></select></label><label class="check-row"><input id="newUserActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save User</button><button id="userFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Leave the password blank to preserve it when editing. Accounts with transaction history can be deactivated rather than deleted.</p></form>
         </div>
       </section>
 
