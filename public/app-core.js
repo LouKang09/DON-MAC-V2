@@ -5,7 +5,7 @@
   const normalize=s=>String(s||'').trim().replace(/\s+/g,' ').toUpperCase();
   const manilaToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const num=(n,d=6)=>Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:d});
-  const state={status:null,user:null,catalog:null,category:'Coffee',query:'',cart:[],promoId:null,quote:null,inventory:[],report:null,costing:null,dashboard:null,adminProducts:[],adminIngredients:[],adminPromos:[],adminPackages:[],recipeRows:[],compositionRows:[],pendingSaleRequestId:null,checkoutBusy:false};
+  const state={status:null,user:null,catalog:null,category:'Coffee',query:'',cart:[],promoId:null,quote:null,inventory:[],report:null,costing:null,dashboard:null,adminProducts:[],adminIngredients:[],adminPromos:[],adminPackages:[],recipeRows:[],compositionRows:[],pendingSaleRequestId:null,checkoutBusy:false,branches:[],userList:[],posBranchId:null};
   const categories=['Coffee','Non Coffee','Food','Add-ons','Promos','Packages'];
   let quoteTimer=null,quoteSeq=0,recipeLoadSeq=0;
 
@@ -82,9 +82,9 @@
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
     try{state.user=(await api('/api/auth/me')).user;}
     catch(err){if(err.status===401){state.user=null;resetOrderState({render:false});showAuth(false);return;}throw err;}
-    resetOrderState({render:false});showApp();await loadCatalog();switchView('pos');
+    resetOrderState({render:false});showApp();await loadBranches();await loadCatalog();switchView('pos');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await loadBranches();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
   $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
 
   function switchView(view){
@@ -161,7 +161,7 @@
   $('seniorEnabled').onchange=()=>{if($('seniorEnabled').checked&&state.promoId){$('seniorEnabled').checked=false;toast('Senior Citizen discount cannot be combined with a promo.');return;}$('seniorFields').classList.toggle('hidden',!$('seniorEnabled').checked);refreshQuote();};$('seniorName').oninput=()=>{clearTimeout(quoteTimer);quoteTimer=setTimeout(refreshQuote,300);};$('seniorId').oninput=()=>{clearTimeout(quoteTimer);quoteTimer=setTimeout(refreshQuote,300);};
   $('payButton').onclick=()=>{if(!state.quote||state.checkoutBusy)return;state.pendingSaleRequestId=state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`);$('paymentMode').value='Cash';$('cashTender').value=Number(state.quote.actual||0).toFixed(2);$('gcashReference').value='';renderPaymentFields();$('paymentDialog').showModal();};$('paymentClose').onclick=()=>{if(!state.checkoutBusy)$('paymentDialog').close();};$('paymentDialog').addEventListener('cancel',e=>{if(state.checkoutBusy)e.preventDefault();});$('paymentMode').onchange=renderPaymentFields;$('cashTender').oninput=renderPaymentFields;
   function renderPaymentFields(){const due=Number(state.quote?.actual||0),cash=$('paymentMode').value==='Cash';$('tenderWrap').classList.toggle('hidden',!cash);$('referenceWrap').classList.toggle('hidden',cash);if(cash&&!Number.isFinite(Number($('cashTender').value)))$('cashTender').value=due.toFixed(2);$('changePreview').textContent=cash?`Change: ${peso(Math.max(0,Number($('cashTender').value||0)-due))}`:'GCash payment: exact amount due';$('modalDue').textContent=peso(due);}
-  $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();if(!state.quote||state.checkoutBusy)return;state.checkoutBusy=true;const submit=$('paymentSubmit'),close=$('paymentClose');if(submit){submit.disabled=true;submit.textContent='Processing…';}if(close)close.disabled=true;const payload={...quotePayload(),clientRequestId:state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`),paymentMode:$('paymentMode').value,tender:Number($('cashTender').value||0),paymentReference:$('gcashReference').value.trim()};state.pendingSaleRequestId=payload.clientRequestId;try{const sale=await api('/api/sales',{method:'POST',body:payload,timeoutMs:30000});$('paymentDialog').close();$('receiptText').textContent=`${sale.reference} · ${sale.paymentMode} · ${peso(sale.actual)}${sale.change?` · Change ${peso(sale.change)}`:''}${sale.idempotent?' · Safe retry recovered':''}`;resetOrderState({render:true});$('receiptDialog').showModal();try{await loadCatalog();}catch(refreshErr){console.error(refreshErr);toast('Sale recorded successfully. Catalog refresh will retry on the next action.');}}catch(err){toast(err.message);if(err.status===409)try{await loadCatalog();}catch(_){}}finally{state.checkoutBusy=false;if(submit){submit.disabled=false;submit.textContent='Confirm Payment';}if(close)close.disabled=false;}});$('receiptClose').onclick=()=>{$('receiptDialog').close();resetOrderState({render:true});$('searchBox')?.focus();};
+  $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();if(!state.quote||state.checkoutBusy)return;state.checkoutBusy=true;const submit=$('paymentSubmit'),close=$('paymentClose');if(submit){submit.disabled=true;submit.textContent='Processing…';}if(close)close.disabled=true;const payload={...quotePayload(),branchId:state.user.role==='Admin'?state.posBranchId:state.user.branchId,clientRequestId:state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`),paymentMode:$('paymentMode').value,tender:Number($('cashTender').value||0),paymentReference:$('gcashReference').value.trim()};state.pendingSaleRequestId=payload.clientRequestId;try{const sale=await api('/api/sales',{method:'POST',body:payload,timeoutMs:30000});$('paymentDialog').close();$('receiptText').textContent=`${sale.reference} · ${sale.paymentMode} · ${peso(sale.actual)}${sale.change?` · Change ${peso(sale.change)}`:''}${sale.idempotent?' · Safe retry recovered':''}`;resetOrderState({render:true});$('receiptDialog').showModal();try{await loadCatalog();}catch(refreshErr){console.error(refreshErr);toast('Sale recorded successfully. Catalog refresh will retry on the next action.');}}catch(err){toast(err.message);if(err.status===409)try{await loadCatalog();}catch(_){}}finally{state.checkoutBusy=false;if(submit){submit.disabled=false;submit.textContent='Confirm Payment';}if(close)close.disabled=false;}});$('receiptClose').onclick=()=>{$('receiptDialog').close();resetOrderState({render:true});$('searchBox')?.focus();};
 
   async function loadInventory(){try{state.inventory=(await api('/api/inventory')).items;renderInventory();await loadMovements();}catch(err){toast(err.message);}}
   function renderInventory(){const q=normalize($('inventorySearch').value),rows=state.inventory.filter(i=>!q||normalize(i.name).includes(q)||normalize(i.uom).includes(q)||normalize(i.code).includes(q));$('inventoryBody').innerHTML=rows.map(i=>`<tr><td><b>${esc(i.name)}</b><div class="tiny muted">${esc(i.code)}</div></td><td>${esc(String(i.uom).toUpperCase())}</td><td class="num">${num(i.stock)}</td><td class="num">${num(i.lowStockThreshold)}</td><td class="${i.low?'stock-low':'stock-ok'}">${i.low?'LOW':'OK'}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No ingredients found.</td></tr>';const opts=state.inventory.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(String(i.uom).toUpperCase())})</option>`).join('');$('replenishIngredient').innerHTML=opts;$('transferIngredient').innerHTML=opts;}
@@ -170,7 +170,7 @@
   $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items:[{ingredientId:Number($('replenishIngredient').value),qty:Number($('replenishQty').value)}],deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast('Ingredients replenished successfully.');$('replenishQty').value='';await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
   $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items:[{ingredientId:Number($('transferIngredient').value),qty:Number($('transferQty').value)}],branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast('Transfer complete.');$('transferQty').value='';await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
 
-  function reportQuery(){const qs=new URLSearchParams({period:$('reportPeriod').value,date:$('reportDate').value||manilaToday()});if($('reportCashier').value.trim())qs.set('cashier',$('reportCashier').value.trim());return qs;}
+  function reportQuery(){const qs=new URLSearchParams({period:$('reportPeriod').value,date:$('reportDate').value||manilaToday()});if($('reportCashier').value.trim())qs.set('cashier',$('reportCashier').value.trim());if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')qs.set('branchId',$('reportBranch').value);return qs;}
   $('reportDate').value=manilaToday();
   async function loadReport(){if(!$('reportDate').value)$('reportDate').value=manilaToday();const qs=reportQuery();try{[state.report,state.costing]=await Promise.all([api(`/api/reports/sales?${qs}`),api(`/api/reports/costing?${qs}`)]);renderReport();renderCosting();}catch(err){toast(err.message);}}
   function renderReport(){const r=state.report;if(!r)return;$('reportSummary').innerHTML=[['Transactions',r.transactionCount],['Gross',peso(r.gross)],['Adjustment',peso(r.adjustment)],['Actual',peso(r.actual)],['Deleted',r.deletedCount]].map(([a,b])=>`<div class="summary-card"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=r.products.map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=r.promos.map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=r.transactions.map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
@@ -198,10 +198,58 @@
   $('transactionClose').onclick=()=>safeCloseDialog('transactionDialog');$('transactionDialog').addEventListener('click',e=>{if(e.target===$('transactionDialog'))safeCloseDialog('transactionDialog');});
   $('loadReport').onclick=loadReport;$('salesPdf').onclick=()=>window.open(`/api/reports/sales.pdf?${reportQuery()}`,'_blank');$('costingPdf').onclick=()=>window.open(`/api/reports/costing.pdf?${reportQuery()}`,'_blank');$('emailReport').onclick=()=>withActionLock('email-report',async()=>{try{const qs=Object.fromEntries(reportQuery());const d=await api('/api/reports/email',{method:'POST',body:qs,timeoutMs:60000});toast(`Report emailed to ${d.to}.`);}catch(err){toast(err.message);}});
 
-  async function loadDashboard(){try{state.dashboard=await api('/api/dashboard');renderDashboard();}catch(err){toast(err.message);}}
-  function renderDashboard(){const d=state.dashboard;if(!d)return;$('dashboardSummary').innerHTML=[['Today Actual',peso(d.metrics.todayActual)],['Today Gross',peso(d.metrics.todayGross)],['Today Transactions',d.metrics.todayTransactions],['Month Actual',peso(d.metrics.monthActual)],['Low Stock',d.metrics.lowStockCount]].map(([a,b])=>`<div class="summary-card"><span>${a}</span><strong>${b}</strong></div>`).join('');$('dashboardLowStock').innerHTML=d.lowStock.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(String(x.uom).toUpperCase())}</td><td class="num stock-low">${num(x.stock)}</td><td class="num">${num(x.lowStockThreshold)}</td></tr>`).join('')||'<tr><td colspan="4" class="stock-ok">No low-stock ingredients.</td></tr>';const max=Math.max(1,...d.categorySales.map(x=>x.amount));$('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';drawLineChart($('salesTrendChart'),d.trend.map(x=>x.actual),d.trend.map(x=>x.date.slice(5)));drawBarChart($('topProductsChart'),d.topProducts.map(x=>x.qty),d.topProducts.map(x=>x.name));}
+  async function loadDashboard(){
+   try{
+     const q=new URLSearchParams({view:$('trendView').value});
+     if($('trendView').value==='custom'){q.set('from',$('trendFrom').value);q.set('to',$('trendTo').value);}
+     if(state.user.role==='Admin'&&$('dashboardBranch').value!=='all')q.set('branchId',$('dashboardBranch').value);
+     state.dashboard=await api('/api/dashboard?'+q);
+     renderDashboard();
+   }catch(err){toast(err.message);}
+  }
+  function renderDashboard(){
+   const d=state.dashboard;if(!d)return;
+   $('trendPeriodLabel').textContent=(d.grain==='hourly'?'HOURLY · ':'DAILY · ')+d.from+(d.to!==d.from?' TO '+d.to:'');
+   $('dashboardSummary').innerHTML=[
+     [d.grain==='hourly'?'Selected day Actual':'Range Actual',peso(d.rangeActual)],['Range Transactions',num(d.rangeTransactions,0)],
+     ['Today Actual',peso(d.metrics.todayActual)],['Today Gross',peso(d.metrics.todayGross)],
+     ['Month Actual',peso(d.metrics.monthActual)],['Low Stock',d.metrics.lowStockCount]
+   ].map(([a,b])=>`<div class="summary-card"><span>${esc(a)}</span><strong>${b}</strong></div>`).join('');
+   $('dashboardLowStock').innerHTML=d.lowStock.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(String(x.uom).toUpperCase())}</td><td class="num stock-low">${num(x.stock)}</td><td class="num">${num(x.lowStockThreshold)}</td></tr>`).join('')||'<tr><td colspan="4" class="stock-ok">No low-stock ingredients.</td></tr>';
+   const max=Math.max(1,...d.categorySales.map(x=>x.amount));
+   $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
+   drawLineChart($('salesTrendChart'),d.trend.map(x=>x.actual),d.trend.map(x=>x.label));
+   drawBarChart($('topProductsChart'),d.topProducts.map(x=>x.qty),d.topProducts.map(x=>x.name));
+  }
   function setupCanvas(canvas){const rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;canvas.width=Math.max(300,rect.width)*ratio;canvas.height=250*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);return{c,w:Math.max(300,rect.width),h:250};}
-  function drawLineChart(canvas,values,labels){const{c,w,h}=setupCanvas(canvas);c.clearRect(0,0,w,h);const pad=32,max=Math.max(1,...values),step=(w-pad*2)/Math.max(1,values.length-1);c.strokeStyle='#d9ddd9';c.lineWidth=1;for(let i=0;i<4;i++){const y=pad+(h-pad*2)*i/3;c.beginPath();c.moveTo(pad,y);c.lineTo(w-pad,y);c.stroke();}c.strokeStyle='#1f5a43';c.lineWidth=2.5;c.beginPath();values.forEach((v,i)=>{const x=pad+i*step,y=h-pad-(h-pad*2)*v/max;i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();c.fillStyle='#6b746f';c.font='10px system-ui';for(let i=0;i<labels.length;i+=Math.max(1,Math.ceil(labels.length/6)))c.fillText(labels[i],pad+i*step-10,h-8);}
+  function drawLineChart(canvas,values,labels){
+   const {c,w,h}=setupCanvas(canvas),left=44,right=16,top=20,bottom=42,max=Math.max(1,...values),pw=w-left-right,ph=h-top-bottom,step=pw/Math.max(1,values.length-1);
+   c.clearRect(0,0,w,h);c.strokeStyle='#e5ebe6';c.fillStyle='#6d8072';c.lineWidth=1;c.font='10px system-ui';
+   for(let i=0;i<=4;i++){const y=top+i*ph/4;c.beginPath();c.moveTo(left,y);c.lineTo(w-right,y);c.stroke();c.fillText(num(max*(4-i)/4,0),3,y+3);}
+   const points=values.map((v,i)=>({x:left+i*step,y:top+ph-(Number(v||0)/max)*ph,label:labels[i],amount:Number(v||0)}));
+   c.beginPath();points.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.strokeStyle='#1f7050';c.lineWidth=2.6;c.stroke();
+   c.fillStyle='#1f7050';points.forEach(p=>{c.beginPath();c.arc(p.x,p.y,2.8,0,Math.PI*2);c.fill();});
+   c.font='10px system-ui';c.fillStyle='#607267';
+   const tickEvery=Math.max(1,Math.ceil(labels.length/7));
+   labels.forEach((label,i)=>{if(i%tickEvery===0||i===labels.length-1)c.fillText(String(label),Math.max(0,Math.min(w-48,left+i*step-13)),h-10);});
+   canvas._salesPoints=points;canvas._salesWidth=w;canvas._salesHeight=h;canvas._salesHit=Math.max(13,step/2);
+   if(!canvas._salesHoverBound){
+     canvas._salesHoverBound=true;
+     const onHover=e=>{
+       const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*(canvas._salesWidth/rect.width),y=(e.clientY-rect.top)*(canvas._salesHeight/rect.height);
+       let found=null,dist=Infinity;
+       (canvas._salesPoints||[]).forEach((p,i)=>{const diff=Math.abs(x-p.x);if(diff<dist){dist=diff;found={...p,index:i};}});
+       const t=$('trendTooltip');
+       if(!found||dist>canvas._salesHit||y<0||y>canvas._salesHeight){t.classList.add('hidden');return;}
+       const count=state.dashboard?.trend?.[found.index]?.transactions||0;
+       t.innerHTML=`<span>${esc(found.label)}</span><div><strong>${peso(found.amount)}</strong> · ${num(count,0)} sale(s)</div>`;
+       t.style.left=Math.max(68,Math.min(canvas._salesWidth-68,found.x))+'px';t.style.top=Math.max(22,found.y)+'px';
+       t.classList.remove('hidden');
+     };
+     canvas.addEventListener('pointermove',onHover);canvas.addEventListener('pointerdown',onHover);
+     canvas.addEventListener('pointerleave',()=>$('trendTooltip').classList.add('hidden'));
+   }
+  }
   function drawBarChart(canvas,values,labels){const{c,w,h}=setupCanvas(canvas);c.clearRect(0,0,w,h);const max=Math.max(1,...values),pad=16,row=(h-pad*2)/Math.max(1,values.length);c.font='10px system-ui';values.forEach((v,i)=>{const y=pad+i*row,label=String(labels[i]||'').slice(0,22);c.fillStyle='#50615a';c.fillText(label,pad,y+11);c.fillStyle='#e3ece7';c.fillRect(pad,y+16,w-pad*2,row-22);c.fillStyle='#1f5a43';c.fillRect(pad,y+16,(w-pad*2)*v/max,row-22);c.fillStyle='#17231e';c.fillText(num(v,1),w-pad-28,y+11);});}
   $('dashboardRefresh').onclick=loadDashboard;
 
@@ -250,10 +298,88 @@
   $('createBackup').onclick=()=>withActionLock('create-backup',async()=>{try{const d=await api('/api/backups',{method:'POST',timeoutMs:60000});toast(`Backup created: ${d.name}`);await loadBackups();}catch(err){toast(err.message);}});
   async function restoreBackup(name){return withActionLock(`restore-backup:${name}`,async()=>{if(!confirm(`Restore ${name}? This will replace the current SQLite database.`))return;if(!confirm('Final warning: a pre-restore backup will be created automatically. Continue with restore?'))return;try{await api(`/api/backups/${encodeURIComponent(name)}/restore`,{method:'POST',timeoutMs:60000});alert('Database restored. Please sign in again.');location.reload();}catch(err){toast(err.message);}});}
 
-  async function loadUsers(){if(state.user?.role!=='Admin')return;try{const d=await api('/api/users');$('usersBody').innerHTML=d.users.map(u=>`<tr><td><b>${esc(u.username)}</b></td><td>${esc(u.role)}</td><td class="${u.active?'stock-ok':'stock-low'}">${u.active?'ACTIVE':'INACTIVE'}</td><td>${u.hasWebPassword?'SET':'RESET REQUIRED'}</td><td><button class="table-btn" data-edit-user="${u.id}">Edit</button></td></tr>`).join('');$('usersBody').querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>editUser(Number(b.dataset.editUser),d.users));}catch(err){toast(err.message);}}
-  function clearUserForm(){$('userEditId').value='';$('newUsername').value='';$('newUsername').readOnly=false;$('newPassword').value='';$('newPassword').required=true;$('newRole').value='User';$('newUserActive').checked=true;}
-  function editUser(id,users){const u=users.find(x=>x.id===id);if(!u)return;$('userEditId').value=id;$('newUsername').value=u.username;$('newUsername').readOnly=true;$('newPassword').value='';$('newPassword').required=false;$('newRole').value=u.role;$('newUserActive').checked=u.active;}
-  $('userFormClear').onclick=clearUserForm;$('userForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('userEditId').value||0),body={username:$('newUsername').value.trim(),password:$('newPassword').value,role:$('newRole').value,active:$('newUserActive').checked};try{if(id)await api(`/api/users/${id}`,{method:'PUT',body});else await api('/api/users',{method:'POST',body});toast('User account saved.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}});});
+  function branchOptions(list,selected,includeAll=false){
+   return (includeAll?'<option value="all">All branches</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
+  }
+
+  async function loadBranches(){
+   const d=await api('/api/branches');
+   state.branches=d.branches||[];
+   const active=state.branches.filter(x=>x.active);
+   if(state.user.role==='Admin'){
+     if(!active.some(x=>x.id===state.posBranchId))state.posBranchId=active[0]?.id||null;
+     $('posBranch').innerHTML=branchOptions(active,state.posBranchId);
+     $('posBranch').classList.remove('hidden');$('posBranchReadOnly').classList.add('hidden');
+     const dashboardSelected=$('dashboardBranch').value||'all',reportSelected=$('reportBranch').value||'all';
+     $('dashboardBranch').innerHTML=branchOptions(state.branches,dashboardSelected,true);
+     $('dashboardBranch').value=state.branches.some(x=>String(x.id)===dashboardSelected)?dashboardSelected:'all';
+     $('reportBranch').innerHTML=branchOptions(state.branches,reportSelected,true);
+     $('reportBranch').value=state.branches.some(x=>String(x.id)===reportSelected)?reportSelected:'all';
+     $('dashboardBranchWrap').classList.remove('hidden');$('reportBranch').classList.remove('hidden');
+   } else {
+     state.posBranchId=state.user.branchId;
+     $('posBranch').classList.add('hidden');$('posBranchReadOnly').classList.remove('hidden');
+     $('posBranchReadOnly').textContent=state.branches.find(x=>x.id===state.user.branchId)?.name||'No branch assigned';
+     $('dashboardBranchWrap').classList.add('hidden');$('reportBranch').classList.add('hidden');
+   }
+   const previous=$('newUserBranch').value;
+   $('newUserBranch').innerHTML=branchOptions(active,previous);
+   if(state.user.role==='Admin')renderBranches();
+  }
+
+  function renderBranches(){
+   $('branchesBody').innerHTML=state.branches.map(b=>`<tr><td><b>${esc(b.name)}</b><div class="tiny muted">${esc(b.address)}</div></td><td>${num(b.usersCount,0)} users<div class="tiny muted">${num(b.salesCount,0)} sales</div></td><td class="${b.active?'stock-ok':'stock-low'}">${b.active?'ACTIVE':'INACTIVE'}</td><td><button class="table-btn" data-edit-branch="${b.id}">Edit</button><button class="danger-link" data-delete-branch="${b.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No branches.</td></tr>';
+   $('branchesBody').querySelectorAll('[data-edit-branch]').forEach(b=>b.onclick=()=>editBranch(Number(b.dataset.editBranch)));
+   $('branchesBody').querySelectorAll('[data-delete-branch]').forEach(b=>b.onclick=()=>deleteBranch(Number(b.dataset.deleteBranch)));
+  }
+
+  function clearBranchForm(){
+   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';
+  }
+
+  function editBranch(id){
+   const b=state.branches.find(x=>x.id===id);if(!b)return;
+   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;$('branchActive').checked=b.active;$('branchFormTitle').textContent='Edit Branch';$('branchName').focus();
+  }
+
+  async function deleteBranch(id){
+   return withActionLock('delete-branch:'+id,async()=>{
+     const b=state.branches.find(x=>x.id===id);if(!b||!confirm('Delete '+b.name+'? If this branch has users or sales, disable it instead.'))return;
+     try{await api('/api/branches/'+id,{method:'DELETE'});toast('Branch deleted.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
+   });
+  }
+
+  function toggleUserBranch(){
+   const show=$('newRole').value==='User';$('newUserBranchWrap').classList.toggle('hidden',!show);$('newUserBranch').required=show;
+  }
+
+  async function deleteUser(id){
+   return withActionLock('delete-user:'+id,async()=>{
+     const u=state.userList.find(x=>x.id===id);if(!u||!confirm('Delete '+u.username+'? Users with transaction history must be deactivated instead.'))return;
+     try{await api('/api/users/'+id,{method:'DELETE'});toast('User deleted.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}
+   });
+  }
+
+  function initBranchControls(){
+   $('posBranch').onchange=()=>{state.posBranchId=Number($('posBranch').value||0);};
+   $('newRole').onchange=toggleUserBranch;$('branchFormClear').onclick=clearBranchForm;
+   $('branchForm').addEventListener('submit',async e=>{
+     e.preventDefault();await withFormLock(e.currentTarget,async()=>{
+       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),active:$('branchActive').checked};
+       try{await api('/api/branches'+(id?'/'+id:''),{method:id?'PUT':'POST',body});toast(id?'Branch updated.':'Branch created.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
+     });
+   });
+   const today=manilaToday();$('trendTo').value=today;$('trendFrom').value=new Date(Date.parse(today+'T00:00:00Z')-9*86400000).toISOString().slice(0,10);
+   const toggleRange=()=>{const custom=$('trendView').value==='custom';$('trendFromWrap').classList.toggle('hidden',!custom);$('trendToWrap').classList.toggle('hidden',!custom);};
+   $('trendView').onchange=()=>{toggleRange();if($('trendView').value!=='custom')loadDashboard();};
+   $('applyTrend').onclick=loadDashboard;$('dashboardBranch').onchange=loadDashboard;
+   toggleRange();
+  }
+
+  async function loadUsers(){if(state.user?.role!=='Admin')return;try{await loadBranches();const d=await api('/api/users');state.userList=d.users;$('usersBody').innerHTML=d.users.map(u=>`<tr><td><b>${esc(u.username)}</b></td><td>${esc(u.role)}</td><td>${esc(u.branchName||'All branches')}</td><td class="${u.active?'stock-ok':'stock-low'}">${u.active?'ACTIVE':'INACTIVE'}</td><td>${u.hasWebPassword?'SET':'RESET REQUIRED'}</td><td><button class="table-btn" data-edit-user="${u.id}">Edit</button><button class="danger-link" data-delete-user="${u.id}">Delete</button></td></tr>`).join('');$('usersBody').querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>editUser(Number(b.dataset.editUser),d.users));$('usersBody').querySelectorAll('[data-delete-user]').forEach(b=>b.onclick=()=>deleteUser(Number(b.dataset.deleteUser)));}catch(err){toast(err.message);}}
+  function clearUserForm(){$('userEditId').value='';$('newUsername').value='';$('newUsername').readOnly=false;$('newPassword').value='';$('newPassword').required=true;$('newRole').value='User';$('newUserActive').checked=true;toggleUserBranch();}
+  function editUser(id,users){const u=users.find(x=>x.id===id);if(!u)return;$('userEditId').value=id;$('newUsername').value=u.username;$('newUsername').readOnly=true;$('newPassword').value='';$('newPassword').required=false;$('newRole').value=u.role;$('newUserBranch').value=String(u.branchId||'');$('newUserActive').checked=u.active;toggleUserBranch();}
+  $('userFormClear').onclick=clearUserForm;$('userForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('userEditId').value||0),body={username:$('newUsername').value.trim(),password:$('newPassword').value,role:$('newRole').value,branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,active:$('newUserActive').checked};try{if(id)await api(`/api/users/${id}`,{method:'PUT',body});else await api('/api/users',{method:'POST',body});toast('User account saved.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}});});
 
   function formatDateTime(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(d);}
   function formatDateTimeDetailed(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'medium'}).format(d);}
@@ -262,5 +388,6 @@
 
   window.addEventListener('resize',()=>{if(state.dashboard)renderDashboard();});
   setInterval(()=>$('clock').textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date()),1000);
+  initBranchControls();
   boot().catch(err=>{console.error(err);toast(err.message||'Unable to start the POS.');showAuth(false);$('authHint').textContent='Cannot reach the POS server. Keep START COFFEE POS open, then refresh this page.';});
 })();
