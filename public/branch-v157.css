@@ -1,0 +1,50 @@
+
+/* Don Macchiatos v1.5.7: branch management and sales time-series controls */
+.sales-range-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px;padding:20px 22px}
+.sales-range-toolbar .range-heading h3{margin:3px 0 7px;font-size:1.25rem}
+.sales-range-toolbar .sales-range-controls{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.sales-range-controls label{font-size:.76rem;font-weight:700;display:flex;flex-direction:column;gap:6px;color:#536257;min-width:136px}
+.sales-range-controls label select,.sales-range-controls label input{min-height:42px;min-width:140px;padding:9px 11px;border:1px solid #d6dfd8;border-radius:10px;background:#fff;color:#182d25;font:inherit;font-size:.86rem}
+.sales-range-controls label:has(#dashboardBranch){min-width:170px}
+.sales-range-controls #applyTrend{min-height:42px}
+.sales-range-toolbar .hidden{display:none!important}
+.trend-plot{position:relative;min-height:255px;width:100%}
+.trend-plot canvas{width:100%;cursor:crosshair;touch-action:pan-y}
+.trend-tooltip{position:absolute;pointer-events:none;z-index:5;background:#162d24;color:#fff;padding:9px 12px;border-radius:10px;white-space:nowrap;font-size:.78rem;line-height:1.5;box-shadow:0 8px 22px #142d2433;transform:translate(-50%,calc(-100% - 14px));max-width:230px}
+.trend-tooltip strong{font-size:.94rem}
+.trend-tooltip.hidden{display:none!important}
+.chart-card .card-head{flex-wrap:wrap;gap:10px}
+.pos-branch-bar{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#f3f8f4;border:1px solid #dae6dd;border-radius:14px;padding:12px 16px;margin:0 0 16px}
+.pos-branch-bar>div{display:flex;flex-direction:column;gap:4px}
+.pos-branch-bar select{min-width:220px;max-width:100%;min-height:42px;border:1px solid #cbdad0;border-radius:10px;padding:8px 12px;background:white}
+.pos-branch-bar #posBranchReadOnly{font-weight:700;color:#1f5a43}
+.pos-branch-bar .hidden{display:none!important}
+.users-section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 14px}
+.users-section-title h3{font-size:1.24rem;margin:3px 0 5px}
+.users-subsection{margin-top:28px;border-top:1px solid #e6ebe8;padding-top:24px}
+#view-users .users-layout{align-items:start;gap:20px}
+#view-users .card{min-width:0}
+#view-users .form-card{gap:12px}
+#view-users .table-wrap{overflow-x:auto}
+#view-users table{min-width:520px}
+#view-users td{vertical-align:middle}
+#view-users td:last-child{white-space:nowrap}
+#view-users .table-btn,#view-users .danger-link{margin:2px 4px 2px 0}
+#view-users .tiny.muted{line-height:1.55}
+.report-filters #reportBranch{min-width:140px;max-width:210px}
+@media(max-width:1000px){
+ .sales-range-toolbar{align-items:stretch}
+ .sales-range-toolbar .sales-range-controls{width:100%}
+ .sales-range-controls label{flex:1 1 145px}
+ .users-section-title{margin-top:16px}
+}
+@media(max-width:620px){
+ .sales-range-toolbar{padding:16px;gap:14px}
+ .sales-range-controls{gap:9px}
+ .sales-range-controls label{min-width:calc(50% - 6px);flex:1 1 calc(50% - 6px)}
+ .sales-range-controls label select,.sales-range-controls label input{min-width:0;width:100%}
+ .sales-range-controls #applyTrend{width:100%}
+ .pos-branch-bar select{width:100%}
+ #view-users .users-layout{grid-template-columns:1fr}
+ #view-users table{font-size:.82rem}
+}
