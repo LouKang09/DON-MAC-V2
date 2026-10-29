@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { createDb } = require('./db');
 const { makePdf, salesReportLines, costingReportLines } = require('./lib/pdf');
 const { sendMail } = require('./lib/smtp');
+const branchSupport = require('./lib/branch-support');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -28,7 +29,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.4.0-stable';
+const APP_VERSION = '1.5.7-branches-dashboard';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -109,7 +110,7 @@ async function getUser(req, conn = db) {
   if (!token) return null;
   const tokenHash = hashToken(token);
   const result = await conn.query(
-    `SELECT u.id, u.username, u.role, u.active, s.expires_at
+    `SELECT u.id, u.username, u.role, u.active, u.branch_id, s.expires_at
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = $1`, [tokenHash]
@@ -119,7 +120,7 @@ async function getUser(req, conn = db) {
     await conn.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     return null;
   }
-  return { id: Number(row.id), username: row.username, role: row.role };
+  return { id: Number(row.id), username: row.username, role: row.role, branchId: row.branch_id==null?null:Number(row.branch_id) };
 }
 
 async function requireUser(req, res, role) {
@@ -472,6 +473,7 @@ function makeReference(){const a=Array.from({length:3},()=>crypto.randomBytes(2)
 
 async function createSale(user,body){
   const mode=String(body.paymentMode||'').trim();if(!['Cash','GCash'].includes(mode))throw Object.assign(new Error('Please choose Cash or GCash.'),{status:400});
+  const branchId=await branchSupport.salesScope(db,user,body.branchId,true);
   const clientRequestId=String(body.clientRequestId||'').trim();
   if(clientRequestId&&!/^[A-Za-z0-9._:-]{8,128}$/.test(clientRequestId))throw Object.assign(new Error('Invalid checkout request id.'),{status:400});
   return db.transaction(async tx=>{
@@ -487,7 +489,7 @@ async function createSale(user,body){
     const quote=await quoteOrder(tx,body);let tender=quote.actual,change=0,paymentReference=null;
     if(mode==='Cash'){tender=money(Number(body.tender||0));if(!Number.isFinite(tender)||tender<quote.actual||tender>MAX_MONEY)throw Object.assign(new Error('Cash tender must cover the amount due and stay within the supported amount range.'),{status:400});change=money(tender-quote.actual);}else{paymentReference=String(body.paymentReference||'').trim();if(!paymentReference||paymentReference.length>150)throw Object.assign(new Error('Enter a GCash reference up to 150 characters.'),{status:400});}
     let reference=null;for(let tries=0;tries<8;tries++){const candidate=makeReference();const exists=await tx.query('SELECT id FROM sales WHERE reference=$1',[candidate]);if(!exists.rows.length){reference=candidate;break;}}if(!reference)throw new Error('Unable to generate a unique sale reference.');
-    const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null]);
+    const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id,branch_id) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null,branchId]);
     const saleId=Number(saleR.rows[0].id);
     for(const line of quote.lines){
       const itemR=await tx.query(`INSERT INTO sale_items (sale_id,product_id,add_on_id,package_id,product_name_snapshot,quantity,unit_price,line_total,is_add_on,is_package,exclude_from_costing) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,[saleId,line.productId,line.addOnId,line.packageId,line.name,line.qty,line.unitPrice,line.lineTotal,line.isAddOn,line.isPackage,line.excludeFromCosting]);
@@ -559,7 +561,7 @@ function addDays(dateStr,n){const[y,m,d]=dateStr.split('-').map(Number);const dt
 function matchesPeriod(soldAt,period,target){const d=manilaDateString(soldAt);if(!target)return true;if(period==='daily')return d===target;if(period==='monthly')return d.slice(0,7)===target.slice(0,7);if(period==='yearly')return d.slice(0,4)===target.slice(0,4);if(period==='weekly'){const start=sundayOf(target),end=addDays(start,6);return d>=start&&d<=end;}return d===target;}
 function validIsoDate(value){const s=String(value||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const[y,m,d]=s.split('-').map(Number),dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d;}
 function reportParams(params){const period=['daily','weekly','monthly','yearly'].includes(params.period)?params.period:'daily';const fallback=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ}).format(new Date());const raw=String(params.date||fallback).slice(0,10);if(!validIsoDate(raw))throw Object.assign(new Error('Report date must be a valid YYYY-MM-DD date.'),{status:400});const cashier=String(params.cashier||'').trim().toUpperCase();if(cashier.length>80)throw Object.assign(new Error('Cashier filter must be at most 80 characters.'),{status:400});return {period,target:raw,cashier};}
-async function periodSales(params){const {period,target,cashier}=reportParams(params);const r=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name FROM sales s LEFT JOIN promos p ON p.id=s.promo_id ORDER BY s.sold_at ASC`);const eligible=r.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&(!cashier||normalize(s.cashier_name_snapshot)===cashier));return {period,target,cashier,eligible,sold:eligible.filter(s=>s.status==='Sold')};}
+async function periodSales(params){const {period,target,cashier}=reportParams(params);const r=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name FROM sales s LEFT JOIN promos p ON p.id=s.promo_id ORDER BY s.sold_at ASC`);const eligible=r.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&(!cashier||normalize(s.cashier_name_snapshot)===cashier)&&(params.branchId==null||Number(s.branch_id)===Number(params.branchId)));return {period,target,cashier,eligible,sold:eligible.filter(s=>s.status==='Sold')};}
 
 async function productUnitCosts(conn=db){const r=await conn.query(`SELECT p.id,p.name,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.name`);return new Map(r.rows.map(x=>[Number(x.id),Number(x.unit_cost||0)]));}
 
@@ -578,7 +580,7 @@ async function salesReport(params){
   return {period:scope.period,target:scope.target,cashier:scope.cashier||null,transactionCount:scope.sold.length,deletedCount:scope.eligible.length-scope.sold.length,gross:sum('gross'),adjustment:sum('adjustment'),actual:sum('actual'),products:[...productMap.values()].sort((a,b)=>b.qty-a.qty||a.name.localeCompare(b.name)),promos:[...promoMap.values()].sort((a,b)=>b.qty-a.qty||a.name.localeCompare(b.name)),transactions:scope.eligible.map(s=>({reference:s.reference,cashier:s.cashier_name_snapshot,paymentMode:s.payment_mode,paymentReference:s.payment_reference,status:s.status,soldAt:s.sold_at,remark:s.remark,seniorDetails:s.senior_details,gross:Number(s.gross),adjustment:Number(s.adjustment),actual:Number(s.actual)}))};
 }
 
-async function getSaleDetail(reference){
+async function getSaleDetail(reference,user){
   const ref=String(reference||'').trim();
   if(!ref||ref.length>200)throw Object.assign(new Error('Invalid transaction reference.'),{status:400});
   const saleR=await db.query(`SELECT s.*,p.name AS promo_name,du.username AS deleted_by_username
@@ -588,6 +590,7 @@ async function getSaleDetail(reference){
     WHERE s.reference=$1`,[ref]);
   const s=saleR.rows[0];
   if(!s)throw Object.assign(new Error('Transaction not found.'),{status:404});
+  if(user?.role!=='Admin'&&Number(s.branch_id)!==Number(user?.branchId))throw Object.assign(new Error('This sale belongs to another branch.'),{status:403});
 
   const itemsR=await db.query(`SELECT id,product_id,add_on_id,package_id,product_name_snapshot,quantity,unit_price,line_total,is_add_on,is_package,exclude_from_costing
     FROM sale_items WHERE sale_id=$1 ORDER BY id`,[Number(s.id)]);
@@ -639,13 +642,14 @@ async function costingReport(params){
 }
 
 async function listLogs(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT id,activity,actor_name_snapshot,status,remark,created_at FROM system_logs ORDER BY created_at DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),activity:x.activity,actor:x.actor_name_snapshot,status:x.status,remark:x.remark,createdAt:x.created_at}));}
-async function listUsers(){const r=await db.query('SELECT id,username,role,active,created_at,password_hash FROM users ORDER BY id');return r.rows.map(u=>({id:Number(u.id),username:u.username,role:u.role,active:bool(u.active),hasWebPassword:!!u.password_hash,createdAt:u.created_at}));}
+async function listUsers(){const r=await db.query('SELECT u.id,u.username,u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name FROM users u LEFT JOIN branches b ON b.id=u.branch_id ORDER BY u.id');return r.rows.map(u=>({id:Number(u.id),username:u.username,role:u.role,active:bool(u.active),branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,hasWebPassword:!!u.password_hash,createdAt:u.created_at}));}
 async function createOrActivateUser(body,actor=null){
   const username=String(body.username||'').trim(),password=String(body.password||''),role=String(body.role||'User'),active=body.active===undefined?true:!!body.active;
   if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});
   if(username.length<2||username.length>80)throw Object.assign(new Error('Username must be 2-80 characters.'),{status:400});
   if(password.length<8||password.length>256)throw Object.assign(new Error('Password must be 8-256 characters.'),{status:400});
-  const existing=await db.query('SELECT id,username,password_hash,role,active FROM users WHERE LOWER(username)=LOWER($1)',[username]);
+  const branchId=await branchSupport.resolveAssignment(db,role,body.branchId);
+  const existing=await db.query('SELECT id,username,password_hash,role,active,branch_id FROM users WHERE LOWER(username)=LOWER($1)',[username]);
   if(existing.rows[0]){
     const old=existing.rows[0];
     // Existing web accounts must be changed through the Edit flow. POST is kept
@@ -656,14 +660,16 @@ async function createOrActivateUser(body,actor=null){
       const c=await db.query(`SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL`,[true]);
       if(Number(c.rows[0]?.c||0)<=1)throw Object.assign(new Error('At least one active Web Admin must remain.'),{status:400});
     }
-    await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3 WHERE id=$4',[hashPassword(password),role,active,Number(old.id)]);
+    await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3,branch_id=$4 WHERE id=$5',[hashPassword(password),role,active,branchId,Number(old.id)]);
     await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(old.id)]);
     return{id:Number(old.id),username:old.username,role,active};
   }
-  const r=await db.query('INSERT INTO users (username,password_hash,role,active,created_at) VALUES ($1,$2,$3,$4,$5) RETURNING id',[username,hashPassword(password),role,active,nowIso()]);
+  const r=await db.query('INSERT INTO users (username,password_hash,role,active,created_at,branch_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',[username,hashPassword(password),role,active,nowIso(),branchId]);
   return{id:Number(r.rows[0].id),username,role,active};
 }
-async function updateUserAccount(actor,id,body){const targetR=await db.query('SELECT id,username,role,active FROM users WHERE id=$1',[Number(id)]);const target=targetR.rows[0];if(!target)throw Object.assign(new Error('User not found.'),{status:404});const role=body.role===undefined?target.role:String(body.role),active=typeof body.active==='boolean'?body.active:bool(target.active),password=String(body.password||'');if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});if(Number(id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own signed-in account.'),{status:400});if((target.role==='Admin'&&bool(target.active))&&(role!=='Admin'||!active)){const c=await db.query(`SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL`,[true]);if(Number(c.rows[0].c)<=1)throw Object.assign(new Error('At least one active Web Admin must remain.'),{status:400});}if(password&&(password.length<8||password.length>256))throw Object.assign(new Error('Password must be 8-256 characters.'),{status:400});if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3 WHERE id=$4',[role,active,hashPassword(password),Number(id)]);else await db.query('UPDATE users SET role=$1,active=$2 WHERE id=$3',[role,active,Number(id)]);if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);await logAction(actor,`Web user updated: ${target.username}`,'User Updated',`${role} / ${active?'Active':'Inactive'}`);return{ok:true};}
+async function deleteUserAccount(actor,id){if(Number(id)===actor.id)throw Object.assign(new Error('You cannot delete your own account.'),{status:400});const r=await db.query('SELECT id,username,role,active FROM users WHERE id=$1',[id]);const u=r.rows[0];if(!u)throw Object.assign(new Error('User not found.'),{status:404});const refs=await db.query('SELECT (SELECT COUNT(*) FROM sales WHERE cashier_user_id=$1 OR deleted_by=$1) AS sales_count,(SELECT COUNT(*) FROM system_logs WHERE actor_user_id=$1) AS logs_count,(SELECT COUNT(*) FROM inventory_movements WHERE created_by=$1) AS movements_count',[id]);if(Number(refs.rows[0].sales_count)||Number(refs.rows[0].logs_count)||Number(refs.rows[0].movements_count))throw Object.assign(new Error('This account has transaction or audit history. Deactivate it instead of deleting it.'),{status:409});const count=await db.query("SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL",[true]);if(u.role==='Admin'&&bool(u.active)&&Number(count.rows[0].c)<=1)throw Object.assign(new Error('At least one active Admin must remain.'),{status:400});await db.query('DELETE FROM sessions WHERE user_id=$1',[id]);await db.query('DELETE FROM users WHERE id=$1',[id]);await logAction(actor,'Web user deleted: '+u.username,'User Deleted',null);return {ok:true};}
+
+async function updateUserAccount(actor,id,body){const targetR=await db.query('SELECT id,username,role,active,branch_id FROM users WHERE id=$1',[Number(id)]);const target=targetR.rows[0];if(!target)throw Object.assign(new Error('User not found.'),{status:404});const role=body.role===undefined?target.role:String(body.role),active=typeof body.active==='boolean'?body.active:bool(target.active),password=String(body.password||'');if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});if(Number(id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own signed-in account.'),{status:400});if((target.role==='Admin'&&bool(target.active))&&(role!=='Admin'||!active)){const c=await db.query(`SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL`,[true]);if(Number(c.rows[0].c)<=1)throw Object.assign(new Error('At least one active Web Admin must remain.'),{status:400});}if(password&&(password.length<8||password.length>256))throw Object.assign(new Error('Password must be 8-256 characters.'),{status:400});const branchId=await branchSupport.resolveAssignment(db,role,body.branchId===undefined?target.branch_id:body.branchId);if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3,branch_id=$4 WHERE id=$5',[role,active,hashPassword(password),branchId,Number(id)]);else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3 WHERE id=$4',[role,active,branchId,Number(id)]);if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);await logAction(actor,`Web user updated: ${target.username}`,'User Updated',`${role} / ${active?'Active':'Inactive'}`);return{ok:true};}
 
 async function listAdminProducts(){const r=await db.query(`SELECT p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at,COUNT(pi.ingredient_id) AS recipe_count,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at ORDER BY p.category,p.name`);return r.rows.map(x=>({id:Number(x.id),sku:x.sku,name:x.name,category:x.category,price:Number(x.price),active:bool(x.active),recipeCount:Number(x.recipe_count||0),unitCost:Number(x.unit_cost||0)}));}
 function validCategory(c){return['Coffee','Non Coffee','Food'].includes(c);}
@@ -699,17 +705,16 @@ function titleCase(s){return String(s||'').replace(/\b\w/g,c=>c.toUpperCase());}
 function reportFilename(report,kind='sales'){const safeDate=String(report.target||'report').replace(/[^0-9-]/g,'');return `${kind==='costing'?'Costing':'Sales'}_${titleCase(report.period)}_${safeDate}.pdf`;}
 async function salesPdf(params){const report=await salesReport(params);const shop=await getSetting('shop_name','Don Macchiatos');const title=`${shop} - ${titleCase(report.period)} Sales Report`;return{report,filename:reportFilename(report,'sales'),buffer:makePdf(salesReportLines(report,title),{title})};}
 async function costingPdf(params){const report=await costingReport(params);const shop=await getSetting('shop_name','Don Macchiatos');const title=`${shop} - ${titleCase(report.period)} Costing Report`;return{report,filename:reportFilename(report,'costing'),buffer:makePdf(costingReportLines(report,title),{title})};}
-async function emailSalesReport(user,body){const params={period:body.period,date:body.date,cashier:body.cashier};const {report,filename,buffer}=await salesPdf(params);const settings=await getSettings();let to=settings.defaultReportEmail;if(user.role==='Admin'&&String(body.to||'').trim())to=String(body.to).trim();if(!to)throw Object.assign(new Error('Configure a default report recipient first.'),{status:400});if(to.length>320||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Object.assign(new Error('Report recipient email is invalid.'),{status:400});if(!process.env.SMTP_USER||!process.env.SMTP_PASS)throw Object.assign(new Error('Email is not configured on the server. Set SMTP_USER and SMTP_PASS in the server environment.'),{status:503});const daily=report.period==='daily';const subject=daily?'Daily Report Notification':`${titleCase(report.period)} Report Notification`;const bodyText=daily?'Hello, attached are the daily reports.':`Hello, attached are the ${report.period} reports.`;try{await sendMail({host:process.env.SMTP_HOST||'smtp.gmail.com',port:Number(process.env.SMTP_PORT||465),user:process.env.SMTP_USER,pass:process.env.SMTP_PASS,from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text:bodyText,attachments:[{filename,contentType:'application/pdf',data:buffer}]});await logAction(user,`Report emailed: ${filename}`,'Email Sent',to);return{ok:true,to,filename};}catch(err){await logAction(user,`Report email failed: ${filename}`,'Email Failed',err.message);const e=new Error('Unable to send the report email. Please check the server internet/SMTP settings and try again.');e.status=502;e.details={reason:err.message};throw e;}}
+async function emailSalesReport(user,body){const params={period:body.period,date:body.date,cashier:body.cashier,branchId:body.branchId};const {report,filename,buffer}=await salesPdf(params);const settings=await getSettings();let to=settings.defaultReportEmail;if(user.role==='Admin'&&String(body.to||'').trim())to=String(body.to).trim();if(!to)throw Object.assign(new Error('Configure a default report recipient first.'),{status:400});if(to.length>320||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Object.assign(new Error('Report recipient email is invalid.'),{status:400});if(!process.env.SMTP_USER||!process.env.SMTP_PASS)throw Object.assign(new Error('Email is not configured on the server. Set SMTP_USER and SMTP_PASS in the server environment.'),{status:503});const daily=report.period==='daily';const subject=daily?'Daily Report Notification':`${titleCase(report.period)} Report Notification`;const bodyText=daily?'Hello, attached are the daily reports.':`Hello, attached are the ${report.period} reports.`;try{await sendMail({host:process.env.SMTP_HOST||'smtp.gmail.com',port:Number(process.env.SMTP_PORT||465),user:process.env.SMTP_USER,pass:process.env.SMTP_PASS,from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text:bodyText,attachments:[{filename,contentType:'application/pdf',data:buffer}]});await logAction(user,`Report emailed: ${filename}`,'Email Sent',to);return{ok:true,to,filename};}catch(err){await logAction(user,`Report email failed: ${filename}`,'Email Failed',err.message);const e=new Error('Unable to send the report email. Please check the server internet/SMTP settings and try again.');e.status=502;e.details={reason:err.message};throw e;}}
 
-async function dashboardData(){
+async function dashboardData(params={},branchId=null){
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const todayR=await salesReport({period:'daily',date:today});const monthR=await salesReport({period:'monthly',date:today});
-  const salesR=await db.query(`SELECT id,sold_at,actual,gross,status FROM sales WHERE status=$1 ORDER BY sold_at ASC`,['Sold']);
-  const end=today,start=addDays(today,-29),trendMap=new Map();for(let d=start;d<=end;d=addDays(d,1))trendMap.set(d,{date:d,actual:0,transactions:0});for(const s of salesR.rows){const d=manilaDateString(s.sold_at);if(d>=start&&d<=end&&trendMap.has(d)){const x=trendMap.get(d);x.actual=money(x.actual+Number(s.actual));x.transactions++;}}
+  const todayR=await salesReport({period:'daily',date:today,branchId});const monthR=await salesReport({period:'monthly',date:today,branchId});
+  const trendResult=await branchSupport.buildTrend(db,params,branchId);
   const inv=await getInventory();const lowStock=inv.filter(x=>x.low).sort((a,b)=>a.stock-b.stock).slice(0,10);
   const topProducts=monthR.products.filter(x=>!x.isAddOn).sort((a,b)=>b.qty-a.qty).slice(0,8);
-  const saleIds=[];const monthScope=await periodSales({period:'monthly',date:today});for(const s of monthScope.sold)saleIds.push(Number(s.id));const categoryMap=new Map();if(saleIds.length){const r=await db.query(`SELECT si.line_total,si.is_add_on,si.is_package,p.category FROM sale_items si LEFT JOIN products p ON p.id=si.product_id WHERE si.sale_id IN (${placeholders(1,saleIds.length)})`,saleIds);for(const x of r.rows){const cat=bool(x.is_add_on)?'Add-ons':bool(x.is_package)?'Packages':x.category||'Other';categoryMap.set(cat,money((categoryMap.get(cat)||0)+Number(x.line_total)));}}
-  return{today,metrics:{todayActual:todayR.actual,todayGross:todayR.gross,todayTransactions:todayR.transactionCount,monthActual:monthR.actual,monthTransactions:monthR.transactionCount,lowStockCount:inv.filter(x=>x.low).length},trend:[...trendMap.values()],topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:x.actual})),lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount}))};
+  const saleIds=[];const monthScope=await periodSales({period:'monthly',date:today,branchId});for(const s of monthScope.sold)saleIds.push(Number(s.id));const categoryMap=new Map();if(saleIds.length){const r=await db.query(`SELECT si.line_total,si.is_add_on,si.is_package,p.category FROM sale_items si LEFT JOIN products p ON p.id=si.product_id WHERE si.sale_id IN (${placeholders(1,saleIds.length)})`,saleIds);for(const x of r.rows){const cat=bool(x.is_add_on)?'Add-ons':bool(x.is_package)?'Packages':x.category||'Other';categoryMap.set(cat,money((categoryMap.get(cat)||0)+Number(x.line_total)));}}
+  return{today,metrics:{todayActual:todayR.actual,todayGross:todayR.gross,todayTransactions:todayR.transactionCount,monthActual:monthR.actual,monthTransactions:monthR.transactionCount,lowStockCount:inv.filter(x=>x.low).length},...trendResult,branchId,topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:x.actual})),lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount}))};
 }
 
 function safeBackupName(name){const base=path.basename(String(name||''));if(!/^[A-Za-z0-9._-]+\.sqlite$/.test(base))throw Object.assign(new Error('Invalid backup file name.'),{status:400});return base;}
@@ -798,24 +803,25 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION},safeHeaders());
   if(method==='GET'&&p==='/api/health'){const probe=await db.query('SELECT 1 AS ok');return json(res,200,{ok:Number(probe.rows[0]?.ok||0)===1,app:'coffee-pos-web',version:APP_VERSION,engine:db.engine,time:nowIso(),uptimeSeconds:Math.round(process.uptime())},safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='POST'&&p==='/api/setup'){const status=await appStatus();if(!status.setupRequired)return json(res,409,{error:'Initial setup has already been completed.'},safeHeaders());const body=await readJson(req),username=String(body.username||'').trim(),password=String(body.password||'');if(username.length<2||password.length<8)return json(res,400,{error:'Use a username of at least 2 characters and a password of at least 8 characters.'},safeHeaders());const user=await createOrActivateUser({username,password,role:'Admin',active:true},null);await logAction(user,'Web POS initial admin activated','Setup',null);return json(res,201,{ok:true,user},safeHeaders());}
-  if(method==='POST'&&p==='/api/auth/login'){const body=await readJson(req),username=String(body.username||'').trim();checkLoginRate(req,username);const r=await db.query('SELECT id,username,password_hash,role,active FROM users WHERE LOWER(username)=LOWER($1)',[username]);const u=r.rows[0];if(!u||!bool(u.active)||!verifyPassword(String(body.password||''),u.password_hash))return json(res,401,{error:'Invalid username or password.'},safeHeaders());clearLoginRate(req,username);const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);return json(res,200,{user:{id:Number(u.id),username:u.username,role:u.role}},safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));}
+  if(method==='POST'&&p==='/api/auth/login'){const body=await readJson(req),username=String(body.username||'').trim();checkLoginRate(req,username);const r=await db.query('SELECT id,username,password_hash,role,active,branch_id FROM users WHERE LOWER(username)=LOWER($1)',[username]);const u=r.rows[0];if(!u||!bool(u.active)||!verifyPassword(String(body.password||''),u.password_hash))return json(res,401,{error:'Invalid username or password.'},safeHeaders());clearLoginRate(req,username);const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);return json(res,200,{user:{id:Number(u.id),username:u.username,role:u.role,branchId:u.branch_id==null?null:Number(u.branch_id)}},safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));}
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
   if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(),safeHeaders());
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
-  const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1])),safeHeaders());
+  const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
   if(method==='GET'&&p==='/api/inventory')return json(res,200,{items:await getInventory()},safeHeaders());
   if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'))},safeHeaders());
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
-  if(method==='GET'&&p==='/api/dashboard')return json(res,200,await dashboardData(),safeHeaders());
-  if(method==='GET'&&p==='/api/reports/sales')return json(res,200,await salesReport(Object.fromEntries(url.searchParams)),safeHeaders());
-  if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport(Object.fromEntries(url.searchParams)),safeHeaders());
-  if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf(Object.fromEntries(url.searchParams));return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
-  if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf(Object.fromEntries(url.searchParams));return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
-  if(method==='POST'&&p==='/api/reports/email')return json(res,200,await emailSalesReport(user,await readJson(req)),safeHeaders());
+  if(method==='GET'&&p==='/api/branches'){const all=await branchSupport.listBranches(db);return json(res,200,{branches:user.role==='Admin'?all:all.filter(b=>b.id===Number(user.branchId))},safeHeaders());}
+  if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
+  if(method==='GET'&&p==='/api/reports/sales')return json(res,200,await salesReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
+  if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
+  if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
+  if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
+  if(method==='POST'&&p==='/api/reports/email')const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());
   if(method==='GET'&&p==='/api/system-logs')return json(res,200,{logs:await listLogs(url.searchParams.get('limit'))},safeHeaders());
 
   const delSale=p.match(/^\/api\/sales\/(.+)\/delete$/);if(method==='POST'&&delSale){requireAdminRole(user);return json(res,200,await deleteSale(user,decodeURIComponent(delSale[1]),await readJson(req)),safeHeaders());}
@@ -823,7 +829,9 @@ async function handleApi(req,res,url){
   requireAdminRole(user);
   if(method==='GET'&&p==='/api/users')return json(res,200,{users:await listUsers()},safeHeaders());
   if(method==='POST'&&p==='/api/users'){const created=await createOrActivateUser(await readJson(req),user);await logAction(user,`Web user saved: ${created.username}`,'User Updated',`${created.role} / ${created.active?'Active':'Inactive'}`);return json(res,201,{user:created},safeHeaders());}
-  const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());
+  const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&userMatch)return json(res,200,await deleteUserAccount(user,Number(userMatch[1])),safeHeaders());
+  if(method==='POST'&&p==='/api/branches')return json(res,201,{branch:await branchSupport.saveBranch(db,user,await readJson(req),null,logAction)},safeHeaders());
+  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT')return json(res,200,{branch:await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction)},safeHeaders());if(branchMatch&&method==='DELETE')return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());
 
   if(method==='GET'&&p==='/api/admin/products')return json(res,200,{products:await listAdminProducts()},safeHeaders());
   if(method==='POST'&&p==='/api/admin/products')return json(res,201,await createProduct(user,await readJson(req)),safeHeaders());
@@ -881,7 +889,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
