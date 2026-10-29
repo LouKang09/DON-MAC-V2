@@ -821,7 +821,7 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
-  if(method==='POST'&&p==='/api/reports/email')const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());
+  if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
   if(method==='GET'&&p==='/api/system-logs')return json(res,200,{logs:await listLogs(url.searchParams.get('limit'))},safeHeaders());
 
   const delSale=p.match(/^\/api\/sales\/(.+)\/delete$/);if(method==='POST'&&delSale){requireAdminRole(user);return json(res,200,await deleteSale(user,decodeURIComponent(delSale[1]),await readJson(req)),safeHeaders());}
