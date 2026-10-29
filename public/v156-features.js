@@ -34,7 +34,7 @@
     if (intro) intro.textContent = 'Track how the Coffee POS has progressed from the original Excel-to-Web migration through the current tablet-ready production build.';
 
     const upcoming = document.querySelector('.upcoming-copy');
-    if (upcoming) upcoming.textContent = 'Upcoming: multi-branch inventory, branch dashboards, branch permissions, and controlled branch-to-branch transfer receiving.';
+    if (upcoming) upcoming.textContent = 'Upcoming: per-branch inventory stock and controlled branch-to-branch transfer receiving. Branch accounts and sales dashboards are now available.';
   }
 
   function ensureMobileOrderJump() {
