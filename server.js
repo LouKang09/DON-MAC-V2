@@ -641,7 +641,7 @@ async function costingReport(params){
   const ingredients=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));return {period:scope.period,target:scope.target,cashier:scope.cashier||null,totalCost:money(ingredients.reduce((a,x)=>a+x.totalCost,0)),ingredients};
 }
 
-async function listLogs(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT id,activity,actor_name_snapshot,status,remark,created_at FROM system_logs ORDER BY created_at DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),activity:x.activity,actor:x.actor_name_snapshot,status:x.status,remark:x.remark,createdAt:x.created_at}));}
+async function listLogs(limit=300,user=null){const n=Math.max(1,Math.min(1000,Number(limit)||300));const restricted=user&&user.role!=='Admin';const sql=restricted?`SELECT id,activity,actor_name_snapshot,status,remark,created_at FROM system_logs WHERE actor_user_id=$1 ORDER BY created_at DESC LIMIT ${n}`:`SELECT id,activity,actor_name_snapshot,status,remark,created_at FROM system_logs ORDER BY created_at DESC LIMIT ${n}`;const r=await db.query(sql,restricted?[user.id]:[]);return r.rows.map(x=>({id:Number(x.id),activity:x.activity,actor:x.actor_name_snapshot,status:x.status,remark:x.remark,createdAt:x.created_at}));}
 async function listUsers(){const r=await db.query('SELECT u.id,u.username,u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name FROM users u LEFT JOIN branches b ON b.id=u.branch_id ORDER BY u.id');return r.rows.map(u=>({id:Number(u.id),username:u.username,role:u.role,active:bool(u.active),branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,hasWebPassword:!!u.password_hash,createdAt:u.created_at}));}
 async function createOrActivateUser(body,actor=null){
   const username=String(body.username||'').trim(),password=String(body.password||''),role=String(body.role||'User'),active=body.active===undefined?true:!!body.active;
@@ -822,7 +822,7 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
-  if(method==='GET'&&p==='/api/system-logs')return json(res,200,{logs:await listLogs(url.searchParams.get('limit'))},safeHeaders());
+  if(method==='GET'&&p==='/api/system-logs')return json(res,200,{logs:await listLogs(url.searchParams.get('limit'),user)},safeHeaders());
 
   const delSale=p.match(/^\/api\/sales\/(.+)\/delete$/);if(method==='POST'&&delSale){requireAdminRole(user);return json(res,200,await deleteSale(user,decodeURIComponent(delSale[1]),await readJson(req)),safeHeaders());}
 
