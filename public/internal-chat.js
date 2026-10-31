@@ -41,7 +41,8 @@
    const width=52,gap=12,h=window.innerHeight,w=window.innerWidth;
    const jump=$('mobileOrderJump');
    let right=15,bottom=83;
-   if(isVisible(jump)&&$('view-pos')?.classList.contains('active')){
+   if(isVisible(jump)){
+     // The View Order shortcut is fixed and may remain visible outside POS.
      const r=jump.getBoundingClientRect();
      // View Order sits at the right edge. Place Messages to its left.
      const leftOfOrder=r.left-gap-width;
