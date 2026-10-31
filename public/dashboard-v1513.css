@@ -75,7 +75,7 @@
 #view-dashboard .dashboard-series-key{
   display:inline-flex;align-items:center;gap:6px;padding:2px 0;
   background:transparent;border:0;color:#5a6e60;
-  font:700 10px/1.4 inherit;cursor:pointer;
+  font-family:inherit;font-size:10px;font-weight:700;line-height:1.4;cursor:pointer;
 }
 #view-dashboard .dashboard-series-key i{
   display:block;width:8px;height:8px;border-radius:50%;flex:0 0 8px;
