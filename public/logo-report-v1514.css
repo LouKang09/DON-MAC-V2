@@ -207,3 +207,70 @@
  .sidebar .sidebar-brand-title{font-size:17px;letter-spacing:-.035em}
  .app.sidebar-collapsed .sidebar .sidebar-logo-shell .brand-logo{width:52px!important;height:52px!important;max-width:52px!important}
 }
+
+/* v1.5.16: expanded sidebar branding must remain responsive at tablet/laptop widths.
+   Older navigation CSS previously hid the brand's final div below 1180px. */
+@media(min-width:700px){
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-brand{
+    height:auto;
+    min-height:0;
+    margin-bottom:clamp(12px,1.8vw,24px);
+  }
+  .app:not(.sidebar-collapsed) .sidebar .brand.sidebar-brand-card{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start;
+    justify-content:flex-start;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    min-height:0;
+    gap:clamp(7px,1vw,12px);
+  }
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-brand-copy{
+    display:flex!important;
+    flex-direction:column;
+    flex:0 0 auto;
+    align-items:flex-start;
+    min-width:0;
+    max-width:100%;
+    width:100%;
+    visibility:visible;
+    opacity:1;
+    overflow:visible;
+  }
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-brand-title{
+    display:block!important;
+    color:#fff;
+    font-size:clamp(14px,1.45vw,19px);
+    font-weight:830;
+    line-height:1.23;
+    letter-spacing:-.025em;
+    max-width:100%;
+    overflow-wrap:break-word;
+    white-space:normal;
+    text-overflow:clip;
+    visibility:visible;
+    opacity:1;
+  }
+  .app.sidebar-collapsed .sidebar .sidebar-brand-copy{
+    display:none!important;
+  }
+}
+@media(min-width:700px) and (max-width:850px){
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-brand-title{
+    font-size:14px;
+    letter-spacing:-.035em;
+  }
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-logo-shell{
+    width:clamp(88px,11vw,108px);
+    height:clamp(88px,11vw,108px);
+    flex-basis:auto;
+    aspect-ratio:1;
+  }
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-logo-shell .brand-logo{
+    width:94%!important;
+    height:94%!important;
+    max-width:94%!important;
+  }
+}
