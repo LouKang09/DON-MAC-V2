@@ -25,26 +25,48 @@
      '<span class="chat-person-info"><strong>'+esc(c.label)+'</strong><small>'+esc(c.subtitle)+'</small></span>';
  }
  function contactById(id){return state.contacts.find(c=>Number(c.id)===Number(id));}
+ const mobileMedia=window.matchMedia('(max-width:699px)');
+ function isMobile(){return mobileMedia.matches;}
+ function isVisible(el){
+   if(!el)return false;
+   const rect=el.getBoundingClientRect();
+   return rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<window.innerHeight&&
+     getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden';
+ }
+ // Chat and View Order are separate fixed controls. Align them side by side
+ // whenever possible; never cover View Order, Pay, or Confirm Payment.
  function ensureCheckoutClearance(){
-   const launcher=$('chatFloatingLauncher'),pay=$('payButton');
-   if(!launcher)return;
-   let bottom=96;
-   if(pay&&$('view-pos')?.classList.contains('active')){
-     const rect=pay.getBoundingClientRect();
-     // Only compensate while the Pay button is visible in the viewport.
-     if(rect.bottom>0&&rect.top<innerHeight){
-       const bubbleRight=innerWidth-(innerWidth>=700?Math.max(16,Math.min(32,innerWidth*.02)):15);
-       const bubbleLeft=bubbleRight-56;
-       const inX=rect.right>bubbleLeft-10&&rect.left<bubbleRight+10;
-       const bubbleTop=innerHeight-bottom-56;
-       const inY=rect.bottom>bubbleTop-10&&rect.top<innerHeight-bottom+10;
-       if(inX&&inY){
-         // Move the launcher up above Pay, leaving a visible 15px gap.
-         bottom=Math.max(96,Math.min(innerHeight-64,innerHeight-rect.top+15));
-       }
+   const launcher=$('chatFloatingLauncher');
+   if(!launcher||!isMobile())return;
+   const width=52,gap=12,h=window.innerHeight,w=window.innerWidth;
+   const jump=$('mobileOrderJump');
+   let right=15,bottom=83;
+   if(isVisible(jump)&&$('view-pos')?.classList.contains('active')){
+     const r=jump.getBoundingClientRect();
+     // View Order sits at the right edge. Place Messages to its left.
+     const leftOfOrder=r.left-gap-width;
+     if(leftOfOrder>=10){
+       right=w-leftOfOrder-width;
+       bottom=Math.max(74,Math.round(h-r.bottom+(r.height-width)/2));
+     }else{
+       bottom=Math.max(83,Math.round(h-r.top+gap));
      }
    }
-   launcher.style.setProperty('--chat-launcher-bottom',bottom+'px');
+   // Respect visible checkout/pay buttons in the same viewport.
+   for(const key of ['payButton','paymentSubmit']){
+     const control=$(key);
+     if(!isVisible(control))continue;
+     const r=control.getBoundingClientRect();
+     const bubbleLeft=w-right-width,bubbleTop=h-bottom-width;
+     if(bubbleLeft<r.right+gap&&bubbleLeft+width>r.left-gap&&
+        bubbleTop<r.bottom+gap&&bubbleTop+width>r.top-gap){
+       const alternateLeft=r.left-gap-width;
+       if(alternateLeft>=10)right=w-alternateLeft-width;
+       else bottom=Math.min(h-width-12,Math.max(bottom,Math.round(h-r.top+gap)));
+     }
+   }
+   launcher.style.setProperty('--chat-launcher-right',Math.round(right)+'px');
+   launcher.style.setProperty('--chat-launcher-bottom',Math.round(bottom)+'px');
  }
  let clearanceQueued=false;
  function queueCheckoutClearance(){
@@ -55,10 +77,12 @@
  window.addEventListener('scroll',queueCheckoutClearance,{passive:true,capture:true});
  window.addEventListener('resize',queueCheckoutClearance,{passive:true});
  function updateUnread(total){
-   const b=$('chatUnreadBadge');if(!b)return;
-   b.textContent=total>99?'99+':String(total||'');
-   b.classList.toggle('hidden',!total);
-   b.setAttribute('aria-label',String(total||0)+' unread messages');
+   for(const id of ['chatUnreadBadge','chatDesktopUnread']){
+     const b=$(id);if(!b)continue;
+     b.textContent=total>99?'99+':String(total||'');
+     b.classList.toggle('hidden',!total);
+     b.setAttribute('aria-label',String(total||0)+' unread messages');
+   }
  }
  function renderContacts(){
    const query=$('chatSearch').value.trim().toLowerCase();
@@ -89,8 +113,9 @@
  }
  function renderHeader(){
    const member=contactById(state.selected);
-   $('chatThreadHeader').innerHTML=member?'<div class="chat-thread-person">'+formatContact(member)+'</div>'+
-     '<div class="chat-thread-actions"><span class="chat-private-label">'+(member.isGroup?'Group conversation':'Private team chat')+'</span><button id="chatMobileBack" type="button" class="chat-mobile-back" aria-label="Back to contacts">Contacts</button></div>':
+   const back='<button id="chatMobileBack" type="button" class="chat-mobile-back" aria-label="Back to all chats" title="Back to chats"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 5-7 7 7 7"/></svg><span>Back</span></button>';
+   $('chatThreadHeader').innerHTML=member?'<div class="chat-thread-person">'+back+formatContact(member)+'</div>'+
+     '<div class="chat-thread-actions"><span class="chat-private-label">'+(member.isGroup?'Group conversation':'Private team chat')+'</span></div>':
      '<div class="chat-thread-placeholder">Select a colleague to start chatting.</div>';
    $('chatCompose').classList.toggle('chat-compose-disabled',!member);
    $('chatText').disabled=!member;$('chatPhotoInput').disabled=!member;
@@ -152,7 +177,7 @@
    finally{state.refreshing=false;}
  }
  async function setContact(id){
-   if(state.selected===id&&state.open)return;
+   if(state.selected===id&&state.open&&$('view-chat').classList.contains('chat-thread-open'))return;
    state.selected=id;state.messages=[];state.hasMore=false;state.turn++;
    notice('');renderContacts();renderHeader();renderMessages();
    $('view-chat').classList.add('chat-thread-open');
@@ -265,20 +290,10 @@
    catch(err){notice(err.message);}
  }
  function stopThread(){if(state.threadTimer){clearInterval(state.threadTimer);state.threadTimer=null;}}
- function open(){
-   if(!window.donmacChat?.authenticated)return;
-   const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
-   if(!panel||!launcher)return;
-   if(state.open)return close();
+ function startChat(){
+   if(!window.donmacChat?.authenticated||state.open)return;
    state.open=true;
-   queueCheckoutClearance();
-   panel.classList.remove('hidden');
-   launcher.classList.add('is-open');
-   launcher.setAttribute('aria-expanded','true');
-   launcher.setAttribute('aria-label','Close team messages');
-   $('view-chat').classList.remove('chat-thread-open');
-   notice('');refreshContacts();
-   renderHeader();renderMessages();
+   notice('');refreshContacts();renderHeader();renderMessages();
    stopThread();let cycle=0;
    state.threadTimer=setInterval(()=>{
      if(document.hidden||!state.open)return;
@@ -286,7 +301,21 @@
      refreshThread(cycle%8===0);
      if(cycle%3===0)refreshContacts();
    },5000);
-   if(window.innerWidth>699)$('chatSearch').focus({preventScroll:true});
+ }
+ function open(){
+   // Floating panel exists on phones only; desktops use sidebar navigation.
+   if(!isMobile()||!window.donmacChat?.authenticated)return;
+   const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
+   if(!panel||!launcher)return;
+   if(!panel.classList.contains('hidden'))return close();
+   startChat();
+   queueCheckoutClearance();
+   panel.classList.remove('hidden');
+   launcher.classList.add('is-open');
+   launcher.setAttribute('aria-expanded','true');
+   launcher.setAttribute('aria-label','Close team messages');
+   $('view-chat').classList.remove('chat-thread-open');
+   if(state.selected)renderHeader();
  }
  function close(){
    state.open=false;stopThread();
@@ -296,6 +325,39 @@
    launcher?.setAttribute('aria-expanded','false');
    launcher?.setAttribute('aria-label','Open team messages');
  }
+ function onViewChange(view){
+   if(isMobile())return;
+   if(view==='chat')startChat();
+   else if(state.open){state.open=false;stopThread();}
+ }
+ const chatSection=$('view-chat'),chatDockPanel=$('chatFloatingPanel');
+ const mainArea=document.querySelector('main.main');
+ function syncChatLayout(){
+   if(!chatSection||!chatDockPanel||!mainArea)return;
+   if(isMobile()){
+     if(chatSection.parentElement!==chatDockPanel){
+       if(document.querySelector('.nav.active')?.dataset.view==='chat'){
+         document.querySelector('.nav[data-view="pos"]')?.click();
+       }
+       chatSection.classList.remove('view','active');
+       chatDockPanel.appendChild(chatSection);
+       close();
+     }
+   }else{
+     if(chatSection.parentElement!==mainArea){
+       close();
+       chatSection.classList.add('view');
+       mainArea.appendChild(chatSection);
+     }
+     // Keep desktop chat visible when switching viewport without a reload.
+     const selected=document.querySelector('.nav.active')?.dataset.view==='chat';
+     chatSection.classList.toggle('active',selected);
+     if(selected)startChat();
+   }
+   queueCheckoutClearance();
+ }
+ if(mobileMedia.addEventListener)mobileMedia.addEventListener('change',syncChatLayout);
+ else mobileMedia.addListener?.(syncChatLayout);
  function resetSession(){
    close();if(state.unreadTimer){clearInterval(state.unreadTimer);state.unreadTimer=null;}
    state.contacts=[];state.selected=0;state.messages=[];state.turn++;
@@ -316,13 +378,13 @@
    close();$('chatFloatingLauncher').focus({preventScroll:true});
  });
  document.addEventListener('keydown',e=>{
-   if(e.key==='Escape'&&state.open&&!$('chatPhotoViewer').open){
+   if(e.key==='Escape'&&isMobile()&&state.open&&!$('chatPhotoViewer').open){
      close();$('chatFloatingLauncher').focus({preventScroll:true});
    }
  });
  // A chat window should never trap clicks intended for the payment system.
  document.addEventListener('pointerdown',e=>{
-   if(!state.open||$('chatPhotoViewer')?.open)return;
+   if(!isMobile()||!state.open||$('chatPhotoViewer')?.open)return;
    const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
    if(!panel.contains(e.target)&&!launcher.contains(e.target))close();
  });
@@ -333,7 +395,12 @@
    if(item)setContact(Number(item.dataset.contact));
  });
  $('chatThreadHeader').addEventListener('click',e=>{
-   if(e.target.closest('#chatMobileBack'))$('view-chat').classList.remove('chat-thread-open');
+   if(e.target.closest('#chatMobileBack')){
+     $('view-chat').classList.remove('chat-thread-open');
+     // Keep selected contact and draft; selecting the same chat re-opens it.
+     renderContacts();
+     $('chatSearch').focus({preventScroll:true});
+   }
  });
  $('chatText').addEventListener('input',updateSend);
  $('chatText').addEventListener('keydown',e=>{
@@ -360,5 +427,12 @@
  });
  $('chatPhotoClose').addEventListener('click',()=>$('chatPhotoViewer').close());
  $('chatPhotoViewer').addEventListener('close',()=>{$('chatPhotoLarge').removeAttribute('src');});
- window.donmacChat={open,close,loggedIn,userId:0,authenticated:false};
+ window.donmacChat={open,close,loggedIn,onViewChange,syncChatLayout,userId:0,authenticated:false};
+ syncChatLayout();
+ // View Order is inserted after initial load; reposition when it appears.
+ const orderObserver=new MutationObserver(mutations=>{
+   if(isMobile()&&mutations.some(m=>[...m.addedNodes].some(n=>n.id==='mobileOrderJump')))queueCheckoutClearance();
+ });
+ orderObserver.observe(document.body,{childList:true});
+
 })();
