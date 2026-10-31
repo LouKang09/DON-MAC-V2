@@ -1,4 +1,4 @@
-// Don Macchiatos v1.5.11: presentation only; pricing, stock and cashier actions stay in app-core.
+// Don Macchiatos v1.5.12: presentation only; pricing, stock and cashier actions stay in app-core.
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -17,8 +17,8 @@
     sidebarToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');
     sidebarToggle.title=collapsed?'Expand navigation':'Collapse navigation';
     sidebarToggle.innerHTML=collapsed
-      ? '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m3-8 3 3-3 3"/></svg>'
-      : '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m7-11-3 3 3 3"/></svg>';
+      ? '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 6 6-6 6M14 6l6 6-6 6"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6-6 6 6 6M10 6l-6 6 6 6"/></svg>';
     for(const button of navButtons){
       const name=button.dataset.tooltip||button.getAttribute('aria-label')||'';
       button.title=collapsed?name:'';
@@ -67,8 +67,8 @@
   }
 
   const latest=[
-    'Navigation is redesigned as a compact icon rail with hover labels or a fully labeled menu, including Main and Management sections.',
-    'Dashboard, POS (receipt), Inventory, Reports, Catalog Admin, Users and System Logs now have consistent line icons.',
+    'Dashboard now includes the item-performance radar and a table of recent completed transactions, with the existing charts and filters retained.',
+    'The sidebar collapse control now uses subtle directional chevrons instead of the previous heavy panel icon.',
     'Choose Dine In, Take Away or Order Online; customer name is optional for every type.',
     'Today’s order count is now in the checkout panel; the header welcomes the cashier.',
     'Fixed PNG and JPEG upload previews blocked by browser image URL security rules. The 1 MB limit, compression and save verification remain in place.',
@@ -77,15 +77,15 @@
   const list=$('whatsNewList');
   if(list)list.innerHTML=latest.map(item=>'<li>'+item+'</li>').join('');
   const version=$('whatsNewVersion');
-  if(version)version.textContent='v1.5.11';
+  if(version)version.textContent='v1.5.12';
   const history=document.querySelector('#versionHistorySection .version-history');
-  if(history&&!history.querySelector('[data-version="1.5.11"]')) {
+  if(history&&!history.querySelector('[data-version="1.5.12"]')) {
     history.querySelectorAll('.version-entry.current').forEach(el=>el.classList.remove('current'));
     const entry=document.createElement('details');
     entry.className='version-entry current';
     entry.open=true;
-    entry.dataset.version='1.5.11';
-    entry.innerHTML='<summary><span class="version-meta"><span class="version-chip">v1.5.11</span><span>Don Macchiatos navigation update</span></span></summary><ul>'+latest.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+    entry.dataset.version='1.5.12';
+    entry.innerHTML='<summary><span class="version-meta"><span class="version-chip">v1.5.12</span><span>Don Macchiatos navigation update</span></span></summary><ul>'+latest.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
     history.prepend(entry);
   }
 
@@ -95,5 +95,5 @@
   clear?.addEventListener('click',()=>setOrderType('Dine In'));
   const receiptClose=$('receiptClose');
   receiptClose?.addEventListener('click',()=>setOrderType('Dine In'));
-  console.info('Don Macchiatos POS presentation v1.5.11 ready');
+  console.info('Don Macchiatos POS presentation v1.5.12 ready');
 })();
