@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.26-branch-chat-scoping';
+  const VERSION = '1.5.27-desktop-chat-mobile-dock';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -56,6 +56,7 @@
       loadCss('posCategoryAdminCss', '/pos-categories-admin.css');
       loadCss('chatCss', '/internal-chat.css');
       loadCss('floatingChatSidebarCss', '/sidebar-chat-floating-v1523.css');
+      loadCss('chatResponsiveV1527Css', '/sidebar-chat-responsive-v1527.css');
 
 
       await loadScript('/live-refresh.js');
@@ -72,7 +73,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.26 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.27 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
