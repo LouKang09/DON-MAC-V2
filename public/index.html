@@ -128,7 +128,7 @@
         <div class="pos-branch-bar hidden" aria-hidden="true"><select id="posBranch" aria-label="Branch for this sale"></select><span id="posBranchReadOnly"></span></div>
         <div class="pos-layout">
           <div class="catalog-panel">
-            <div class="catalog-tools"><label class="catalog-search-wrap" aria-label="Search products"><span aria-hidden="true">⌕</span><input id="searchBox" class="search" placeholder="Search products…" autocomplete="off" /></label><button id="posAnimationPilotToggle" type="button" class="pos-animation-pilot-toggle hidden" aria-pressed="true" title="Compare new Coffee and Food animations with the originals">New animations: ON</button></div>
+            <div class="catalog-tools"><label class="catalog-search-wrap" aria-label="Search products"><span aria-hidden="true">⌕</span><input id="searchBox" class="search" placeholder="Search products…" autocomplete="off" /></label></div>
             <div id="categoryTabs" class="tabs" aria-label="Product categories"></div>
             <div id="promoBanner" class="promo-banner hidden"></div>
             <div id="catalogGrid" class="catalog-grid"></div>
@@ -185,11 +185,42 @@
       </section>
 
       <section id="view-catalog" class="view admin-only">
-        <div class="admin-tabs" id="adminTabs"><button class="active" data-admin-tab="products">Products</button><button data-admin-tab="ingredients">Ingredients</button><button data-admin-tab="recipes">Recipes & Costing</button><button data-admin-tab="promos">Promos</button><button data-admin-tab="packages">Packages</button><button data-admin-tab="settings">Settings</button><button data-admin-tab="backups">Backups</button></div>
+        <div class="admin-tabs" id="adminTabs"><button class="active" data-admin-tab="products">Products</button><button data-admin-tab="categories">POS Categories</button><button data-admin-tab="ingredients">Ingredients</button><button data-admin-tab="recipes">Recipes & Costing</button><button data-admin-tab="promos">Promos</button><button data-admin-tab="packages">Packages</button><button data-admin-tab="settings">Settings</button><button data-admin-tab="backups">Backups</button></div>
 
         <div id="admin-products" class="admin-panel active section-grid admin-layout">
           <div class="card"><div class="card-head"><div><p class="eyebrow">CATALOG</p><h3>Products</h3></div><input id="adminProductSearch" class="search compact" placeholder="Search…" /></div><div class="table-wrap tall"><table><thead><tr><th>Name</th><th>Category</th><th class="num">Price</th><th class="num">Unit Cost</th><th>Recipe</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminProductsBody"></tbody></table></div></div>
           <form id="productForm" class="card form-card"><p class="eyebrow">ADD / UPDATE</p><h3 id="productFormTitle">New Product</h3><input id="productEditId" type="hidden" /><label>Name<input id="productName" maxlength="150" required /></label><label>Category<select id="productCategory"><option>Coffee</option><option>Non Coffee</option><option>Food</option></select></label><label>Price<input id="productPrice" type="number" min="0" step="0.01" required /></label><label class="product-image-field">Product picture <span class="tiny muted">(JPG, PNG or WebP · max 1 MB · compressed automatically)</span><input id="productImageFile" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="productImageMessage" /></label><p id="productImageMessage" class="product-image-message muted" role="status" aria-live="polite">Select a photo, then save the product.</p><input id="productImageData" type="hidden" /><div class="product-image-editor"><img id="productImagePreview" alt="Product preview" class="hidden" /><span id="productImageEmpty">No product photo selected</span><button id="productImageRemove" class="ghost" type="button">Remove photo</button></div><label class="check-row"><input id="productActive" type="checkbox" checked /> Active</label><button id="productSaveButton" class="primary" type="submit">Save Product</button><button id="productFormClear" class="ghost" type="button">Clear</button><p class="tiny muted">To preserve the original VBA rule, an existing product name is not renamed. Archive it and add a new name instead.</p></form>
+        </div>
+
+        <div id="admin-categories" class="admin-panel section-grid admin-layout">
+          <section class="card">
+            <div class="card-head"><div><p class="eyebrow">POS TILES</p><h3>Category Buttons</h3></div></div>
+            <p class="tiny muted">Change the icon for any existing category. Create additional category buttons that display selected products without modifying their inventory, recipes, or base category.</p>
+            <div id="posCategoryAdminList" class="pos-category-admin-list" aria-live="polite">Open this section to load categories.</div>
+          </section>
+          <form id="posCategoryForm" class="card form-card">
+            <p class="eyebrow">CREATE / EDIT</p><h3 id="posCategoryFormTitle">New Category Button</h3>
+            <input id="posCategoryEditKey" type="hidden" />
+            <label>Category name<input id="posCategoryName" maxlength="32" placeholder="e.g. Best Sellers" required /></label>
+            <label>Category icon <span class="tiny muted">(PNG, JPG or WebP, up to 1 MB · optimized automatically)</span>
+              <input id="posCategoryIconFile" type="file" accept="image/png,image/jpeg,image/webp" />
+            </label>
+            <div class="pos-category-icon-edit">
+              <div id="posCategoryIconPreview" class="pos-category-icon-preview" aria-label="Selected category icon"></div>
+              <div class="pos-category-icon-actions">
+                <button type="button" id="posCategoryIconReset" class="ghost">Use default icon</button>
+                <small id="posCategoryIconStatus" role="status" aria-live="polite">Select an image to replace the icon.</small>
+              </div>
+            </div>
+            <fieldset id="posCategoryProductsFieldset" class="pos-category-products-fieldset">
+              <legend>Products shown in this category</legend>
+              <p class="tiny muted">Optional for new categories. Existing product recipes, original categories and stock rules remain unchanged.</p>
+              <div id="posCategoryProductChoices" class="pos-category-product-choices"></div>
+            </fieldset>
+            <label class="check-row"><input id="posCategoryActive" type="checkbox" checked /> Visible in POS</label>
+            <button id="posCategorySave" class="primary" type="submit">Save Category</button>
+            <button id="posCategoryClear" class="ghost" type="button">New / Clear</button>
+          </form>
         </div>
 
         <div id="admin-ingredients" class="admin-panel section-grid admin-layout">
