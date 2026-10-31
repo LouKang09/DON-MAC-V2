@@ -399,7 +399,8 @@
      $('view-chat').classList.remove('chat-thread-open');
      // Keep selected contact and draft; selecting the same chat re-opens it.
      renderContacts();
-     $('chatSearch').focus({preventScroll:true});
+     // Keep the keyboard closed when returning to the list on a phone.
+     if(!isMobile())$('chatSearch').focus({preventScroll:true});
    }
  });
  $('chatText').addEventListener('input',updateSend);
