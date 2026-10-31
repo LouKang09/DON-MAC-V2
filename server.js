@@ -1025,8 +1025,8 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/users')return json(res,200,{users:await listUsers()},safeHeaders());
   if(method==='POST'&&p==='/api/users'){const created=await createOrActivateUser(await readJson(req),user);await logAction(user,`Web user saved: ${created.username}`,'User Updated',`${created.role} / ${created.active?'Active':'Inactive'}`);return json(res,201,{user:created},safeHeaders());}
   const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&userMatch)return json(res,200,await deleteUserAccount(user,Number(userMatch[1])),safeHeaders());
-  if(method==='POST'&&p==='/api/branches')return json(res,201,{branch:await branchSupport.saveBranch(db,user,await readJson(req),null,logAction)},safeHeaders());
-  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT')return json(res,200,{branch:await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction)},safeHeaders());if(branchMatch&&method==='DELETE')return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());
+  if(method==='POST'&&p==='/api/branches'){const branch=await branchSupport.saveBranch(db,user,await readJson(req),null,logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,201,{branch},safeHeaders());}
+  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT'){const branch=await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,200,{branch},safeHeaders());}if(branchMatch&&method==='DELETE')return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());
 
    if(method==='GET'&&p==='/api/admin/pos-categories')
      return json(res,200,{categories:await listPosCategories()},safeHeaders());
