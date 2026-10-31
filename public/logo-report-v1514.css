@@ -8,7 +8,7 @@
     justify-content:flex-start;
     position:relative;
     width:100%;
-    min-height:213px;
+    min-height:192px;
     margin:0 0 10px;
     padding:0 3px;
   }
@@ -118,7 +118,7 @@
   }
 }
 @media(min-width:700px) and (max-width:1180px){
-  .sidebar .sidebar-brand{min-height:183px;margin-bottom:7px}
+  .sidebar .sidebar-brand{min-height:162px;margin-bottom:7px}
   .sidebar .sidebar-brand .brand.sidebar-brand-card{padding:1px 0 2px}
   .sidebar .sidebar-logo-shell{width:108px;height:108px;flex-basis:108px;border-radius:18px}
   .sidebar .sidebar-logo-shell .brand-logo{width:100px!important;height:100px!important;max-width:100px!important}
@@ -181,4 +181,29 @@
 @media(max-width:380px){
   .topbar .dashboard-print-report{padding:8px;min-width:36px}
   .topbar .dashboard-print-report>span{display:none}
+}
+/* 1.5.15 – crisp original brand vector, single white title */
+@media(min-width:700px){
+ .sidebar .sidebar-brand .brand.sidebar-brand-card{gap:10px}
+ .sidebar .sidebar-logo-shell{background:#fff;isolation:isolate}
+ .sidebar .sidebar-logo-shell .brand-logo{
+   display:block;width:118px!important;height:118px!important;
+   max-width:118px!important;object-fit:contain;
+   image-rendering:auto;filter:none!important;
+ }
+ .sidebar .sidebar-brand-copy{gap:0;padding:1px 0 0}
+ .sidebar .sidebar-brand-title{
+   display:block;font-size:19px;line-height:1.18;
+   letter-spacing:-.025em;font-weight:830;color:#fff;
+ }
+ .sidebar .sidebar-brand-kicker{display:none!important}
+ .app.sidebar-collapsed .sidebar .sidebar-brand-copy{display:none!important}
+ .app.sidebar-collapsed .sidebar .sidebar-logo-shell .brand-logo{
+   width:52px!important;height:52px!important;max-width:52px!important;
+ }
+}
+@media(min-width:700px) and (max-width:1180px){
+ .sidebar .sidebar-logo-shell .brand-logo{width:104px!important;height:104px!important;max-width:104px!important}
+ .sidebar .sidebar-brand-title{font-size:17px;letter-spacing:-.035em}
+ .app.sidebar-collapsed .sidebar .sidebar-logo-shell .brand-logo{width:52px!important;height:52px!important;max-width:52px!important}
 }
