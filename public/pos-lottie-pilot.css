@@ -23,8 +23,10 @@
   color:#526752;
   border-radius:999px;
   cursor:pointer;
-  font:700 10px/1.2 inherit;
   font-family:inherit;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.2;
   white-space:nowrap;
   transition:background-color .2s,color .2s,border-color .2s;
 }
