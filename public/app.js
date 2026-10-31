@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.30-mobile-more-fix';
+  const VERSION = '1.5.31-mobile-more-css-fix';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -76,7 +76,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.30 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.31 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
