@@ -37,6 +37,9 @@
           <button type="button" class="nav active" data-view="pos" data-tooltip="POS" aria-label="POS" title="POS"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3.5h15v17l-2.5-1.7-2.5 1.7-2.5-1.7-2.5 1.7-2.5-1.7-2.5 1.7v-17Z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg><span class="nav-label">POS</span></button>
           <button type="button" class="nav" data-view="inventory" data-tooltip="Inventory" aria-label="Inventory" title="Inventory"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.8 8.7 5-8.7 5-8.7-5 8.7-5Z"/><path d="M3.3 7.8v9l8.7 5 8.7-5v-9M12 12.8v9M7.7 5.3l8.7 5"/></svg><span class="nav-label">Inventory</span></button>
         </div>
+        <div class="nav-section nav-communication"><span class="nav-section-label">TEAM</span>
+          <button type="button" class="nav" data-view="chat" data-tooltip="Messages" aria-label="Messages" title="Messages"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H11l-6.5 4v-4H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"/><path d="M7.5 9.5h9M7.5 13h6"/></svg><span class="nav-label">Messages</span><span id="chatUnreadBadge" class="chat-nav-badge hidden" aria-label="Unread messages"></span></button>
+        </div>
         <div class="nav-section admin-only nav-management">
           <span class="nav-section-label">MANAGEMENT</span>
           <button type="button" class="nav admin-only" data-view="reports" data-tooltip="Reports" aria-label="Reports" title="Reports"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.8 20.5h16.4M6.2 16.5v-5M11.8 16.5v-9M17.4 16.5V4"/><path d="M5.2 16.5h2M10.8 16.5h2M16.4 16.5h2"/></svg><span class="nav-label">Reports</span></button>
@@ -252,6 +255,33 @@
         </div>
       </section>
 
+      <section id="view-chat" class="view">
+        <div class="chat-layout" aria-label="Internal team messaging">
+          <aside class="chat-people-panel">
+            <div class="chat-people-heading"><div><p class="eyebrow">OWNER'S TEAM</p><h3>Messages</h3><p>Chat across branches</p></div><button id="chatRefresh" type="button" class="chat-icon-button" title="Refresh conversations" aria-label="Refresh conversations"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9a7.5 7.5 0 0 1 13-2M18.5 15a7.5 7.5 0 0 1-13 2"/></svg></button></div>
+            <label class="chat-search-label"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 5 5"/></svg></span><input id="chatSearch" placeholder="Search team members" autocomplete="off" aria-label="Search team members" /></label>
+            <div id="chatPeople" class="chat-people-list" aria-live="polite"><p class="chat-empty">Open Messages to load your team.</p></div>
+          </aside>
+          <section class="chat-thread-panel" aria-label="Conversation">
+            <div id="chatThreadHeader" class="chat-thread-header"><div class="chat-thread-placeholder">Select a colleague to start chatting.</div></div>
+            <div id="chatMessages" class="chat-message-list" role="log" aria-live="polite" aria-relevant="additions"><div class="chat-thread-start">Your conversations stay within your owner's team.</div></div>
+            <div class="chat-composer-shell">
+              <div id="chatPhotoDraft" class="chat-photo-draft hidden"></div>
+              <div id="chatDraftError" class="chat-draft-error hidden" role="alert"></div>
+              <form id="chatCompose" class="chat-composer" autocomplete="off">
+                <label class="chat-attach-button" title="Attach a photo (max 1 MB)" aria-label="Attach photo">
+                  <input id="chatPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" />
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="2"/><path d="m3 17 6-5 4 4 3-3 5 5"/></svg>
+                </label>
+                <textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…" aria-label="Message text"></textarea>
+                <button id="chatSend" type="submit" class="chat-send-button" title="Send message" aria-label="Send message" disabled><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="m3 20 18-8-18-8 3 8-3 8Z"/><path d="M6 12h15"/></svg></button>
+              </form>
+              <p class="chat-composer-note">Enter to send · Shift+Enter for a new line · Photos only, no audio messaging</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
       <section id="view-users" class="view admin-only">
         <div class="users-section-title"><div><p class="eyebrow">MULTI-BRANCH SETUP</p><h3>Manage branches</h3><p class="muted tiny">Create, rename, disable or delete unused branches. No subscriptions or branch fees.</p></div></div>
         <div class="section-grid users-layout">
@@ -269,6 +299,7 @@
     </main>
   </div>
 
+  <dialog id="chatPhotoViewer" class="chat-photo-dialog"><div class="chat-photo-viewer"><button type="button" id="chatPhotoClose" aria-label="Close photo" class="chat-photo-close">×</button><img id="chatPhotoLarge" alt="Photo attached to message" /></div></dialog>
   <dialog id="paymentDialog"><form id="paymentForm" class="modal-card"><button type="button" class="modal-close" id="paymentClose">×</button><p class="eyebrow">CHECKOUT</p><h2>Complete Payment</h2><div class="amount-due"><span>Amount Due</span><strong id="modalDue">₱0.00</strong></div><label>Mode of Payment<select id="paymentMode"><option>Cash</option><option>GCash</option></select></label><label id="tenderWrap">Cash Tender<input id="cashTender" type="number" min="0" step="0.01" /></label><label id="referenceWrap" class="hidden">GCash Reference<input id="gcashReference" maxlength="150" /></label><div id="changePreview" class="change-preview">Change: ₱0.00</div><button id="paymentSubmit" class="primary big" type="submit">Confirm Payment</button></form></dialog>
   <dialog id="receiptDialog"><div class="modal-card receipt-card"><div class="success-icon">✓</div><p class="eyebrow">PAYMENT COMPLETE</p><h2>Sale Recorded</h2><p id="receiptText" class="receipt-text"></p><button id="receiptClose" class="primary big">New Order</button></div></dialog>
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
