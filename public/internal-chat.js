@@ -20,7 +20,8 @@
  }
  function notice(msg){$('chatDraftError').textContent=msg;$('chatDraftError').classList.toggle('hidden',!msg);}
  function formatContact(c){
-   return '<span class="chat-avatar" aria-hidden="true">'+esc(initials(c.username))+'</span>'+
+   const badge=c.isGroup?(c.groupKind==='all'?'ALL':'GC'):initials(c.username);
+   return '<span class="chat-avatar'+(c.isGroup?' is-group':'')+'" aria-hidden="true">'+esc(badge)+'</span>'+
      '<span class="chat-person-info"><strong>'+esc(c.label)+'</strong><small>'+esc(c.subtitle)+'</small></span>';
  }
  function contactById(id){return state.contacts.find(c=>Number(c.id)===Number(id));}
@@ -62,19 +63,23 @@
  function renderContacts(){
    const query=$('chatSearch').value.trim().toLowerCase();
    const roster=state.contacts.filter(c=>(c.label+' '+c.subtitle).toLowerCase().includes(query));
-   $('chatPeople').innerHTML=roster.length?roster.map(c=>
+   $('chatPeople').innerHTML=roster.length?roster.map((c,i)=>
+      (i===0||!!roster[i-1].isGroup!==!!c.isGroup?'<div class="chat-list-heading">'+(c.isGroup?'GROUP CHATS':'DIRECT MESSAGES')+'</div>':'')+
       '<button type="button" class="chat-person'+(state.selected===c.id?' is-active':'')+'" data-contact="'+c.id+'" aria-current="'+(state.selected===c.id?'true':'false')+'">'+
        formatContact(c)+'<span class="chat-person-side">'+
        (c.unread?'<span class="chat-person-unread">'+(c.unread>99?'99+':c.unread)+'</span>':'')+
        (c.lastMessage?'<small class="chat-last-date">'+esc(dateString(c.lastMessage.createdAt))+'</small>':'')+
-       '</span><span class="chat-person-last">'+esc(c.lastMessage?.text||(c.role==='Admin'?'Owner':'Tap to start a conversation'))+'</span></button>'
+       '</span><span class="chat-person-last">'+esc(c.lastMessage?.text||(c.isGroup?'Team conversation':c.role==='Admin'?'Owner':'Tap to start a conversation'))+'</span></button>'
      ).join(''):'<div class="chat-empty">'+(query?'No matching team members.':'No other active members in your owner account yet.')+'</div>';
  }
  async function refreshContacts(){
    if(!window.donmacChat?.authenticated)return;
    try{
      const data=await request('/api/chat/people');
-     state.contacts=data.people||[];updateUnread(data.unreadTotal||0);renderContacts();
+     const groupItems=(data.groups||[]).map(g=>({...g,id:-Number(g.id),groupId:Number(g.id),isGroup:true,groupKind:g.kind,
+        username:g.kind==='all'?'All':g.label,label:g.kind==='all'?'All':g.label,
+        subtitle:g.kind==='all'?'All Branches · Group Chat':'Branch Group Chat'}));
+     state.contacts=[...groupItems,...(data.people||[])];updateUnread(data.unreadTotal||0);renderContacts();
      if(state.selected&&!contactById(state.selected)){
        state.selected=0;state.messages=[];renderHeader();renderMessages();
      }
@@ -85,7 +90,7 @@
  function renderHeader(){
    const member=contactById(state.selected);
    $('chatThreadHeader').innerHTML=member?'<div class="chat-thread-person">'+formatContact(member)+'</div>'+
-     '<div class="chat-thread-actions"><span class="chat-private-label">Private team chat</span><button id="chatMobileBack" type="button" class="chat-mobile-back" aria-label="Back to contacts">Contacts</button></div>':
+     '<div class="chat-thread-actions"><span class="chat-private-label">'+(member.isGroup?'Group conversation':'Private team chat')+'</span><button id="chatMobileBack" type="button" class="chat-mobile-back" aria-label="Back to contacts">Contacts</button></div>':
      '<div class="chat-thread-placeholder">Select a colleague to start chatting.</div>';
    $('chatCompose').classList.toggle('chat-compose-disabled',!member);
    $('chatText').disabled=!member;$('chatPhotoInput').disabled=!member;
@@ -105,6 +110,7 @@
      emojis.map(e=>'<button class="chat-emoji'+(myReaction===e?' is-mine':'')+'" type="button" data-message="'+m.id+'" data-emoji="'+e+'" aria-label="React '+e+'">'+e+'</button>').join('')+
      (byMe?'<button type="button" class="chat-delete-message" data-delete="'+m.id+'" aria-label="Delete message">Delete</button>':'')+'</div>';
    return '<article class="chat-message '+(byMe?'is-mine':'is-theirs')+'" data-message-id="'+m.id+'">'+
+     (m.senderLabel&&!byMe?'<div class="chat-message-sender">'+esc(m.senderLabel)+'</div>':'')+
      '<div class="chat-bubble">'+image+text+'<div class="chat-msg-meta">'+esc(dateString(m.createdAt))+
      (byMe&&!m.deleted?' · '+(m.readAt?'Seen':'Sent'):'')+'</div></div>'+
      (row?'<div class="chat-reaction-list">'+row+'</div>':'')+actions+'</article>';
@@ -126,7 +132,8 @@
    const turn=state.turn;state.refreshing=true;
    try{
      const after=!force&&state.messages.length?state.messages[state.messages.length-1].id:0;
-     const data=await request('/api/chat/messages/'+id+(after?'?after='+encodeURIComponent(after):''));
+     const path=id<0?'/api/chat/groups/'+(-id)+'/messages':'/api/chat/messages/'+id;
+     const data=await request(path+(after?'?after='+encodeURIComponent(after):''));
      if(turn!==state.turn||state.selected!==id)return;
      if(after){
        const seen=new Set(state.messages.map(m=>m.id));
@@ -138,7 +145,7 @@
        renderMessages({stick:!oldLength});
      }
      if((data.messages||[]).some(m=>!m.mine&&!m.readAt)){
-       await request('/api/chat/read/'+id,{method:'POST',body:'{}'});
+       await request(id<0?'/api/chat/groups/'+(-id)+'/read':'/api/chat/read/'+id,{method:'POST',body:'{}'});
        refreshContacts().catch(()=>{});
      }
    }catch(err){notice(err.message);}
@@ -156,7 +163,8 @@
    const first=state.messages[0].id,id=state.selected,turn=state.turn;
    try{
      const box=$('chatMessages'),prevHeight=box.scrollHeight;
-     const data=await request('/api/chat/messages/'+id+'?before='+first);
+     const url=id<0?'/api/chat/groups/'+(-id)+'/messages':'/api/chat/messages/'+id;
+     const data=await request(url+'?before='+first);
      if(turn!==state.turn)return;
      state.messages=[...data.messages,...state.messages];
      state.hasMore=!!data.hasMore;renderMessages({stick:false});
@@ -208,7 +216,9 @@
    state.sending=true;updateSend();notice('');
    const partner=state.selected;
    try{
-     await request('/api/chat/messages',{method:'POST',body:JSON.stringify({recipientId:partner,text,photo})});
+     const url=partner<0?'/api/chat/groups/'+(-partner)+'/messages':'/api/chat/messages';
+     const payload=partner<0?{text,photo}:{recipientId:partner,text,photo};
+     await request(url,{method:'POST',body:JSON.stringify(payload)});
      $('chatText').value='';state.image=null;$('chatPhotoInput').value='';photoPreview();
      await refreshThread(true);await refreshContacts();
    }catch(err){notice(err.message);}
@@ -218,7 +228,8 @@
    const msg=state.messages.find(m=>m.id===id);if(!msg)return;
    const mine=msg.reactions?.find(r=>r.userId===mineUserId())?.emoji;
    try{
-     await request('/api/chat/reaction/'+id,{method:mine===emoji?'DELETE':'PUT',
+     const url=state.selected<0?'/api/chat/groups/'+(-state.selected)+'/reaction/'+id:'/api/chat/reaction/'+id;
+     await request(url,{method:mine===emoji?'DELETE':'PUT',
        body:mine===emoji?'{}':JSON.stringify({emoji})});
      // Refresh the whole thread so all reaction badges reflect the server.
      await refreshThread(true);
@@ -226,7 +237,8 @@
  }
  async function remove(id){
    if(!confirm('Delete this message for both people?'))return;
-   try{await request('/api/chat/message/'+id,{method:'DELETE',body:'{}'});await refreshThread(true);await refreshContacts();}
+   const url=state.selected<0?'/api/chat/groups/'+(-state.selected)+'/message/'+id:'/api/chat/message/'+id;
+   try{await request(url,{method:'DELETE',body:'{}'});await refreshThread(true);await refreshContacts();}
    catch(err){notice(err.message);}
  }
  function stopThread(){if(state.threadTimer){clearInterval(state.threadTimer);state.threadTimer=null;}}
