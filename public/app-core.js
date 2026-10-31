@@ -96,16 +96,21 @@
     if(!state.user)return;
     const branchId=state.user.role==='Admin'?state.posBranchId:state.user.branchId;
     const branch=state.branches.find(b=>Number(b.id)===Number(branchId));
-    $('posBranchName').textContent=branch?'Branch: '+branch.name:'Branch not assigned';
+    // POS no longer displays branch selection; admins manage the branch from Dashboard.
     if(!branchId){$('posDailyCount').textContent='Today · no branch';return;}
     try{const data=await api('/api/dashboard?branchId='+encodeURIComponent(branchId));if(!state.user)return;$('posDailyCount').textContent='Today · '+num(data.metrics.todayTransactions,0)+' orders';}
     catch(_){$('posDailyCount').textContent='Today · — orders';}
   }
+  function updatePosDateTime(){
+    const target=$('posDate');
+    if(!target)return;
+    target.textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date());
+  }
   function switchView(view){
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['POINT OF SALE','New Order'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
-    $('posDate').textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',day:'numeric',month:'long'}).format(new Date());
+    updatePosDateTime();
     if(view==='pos')refreshPosDailyCount();
     if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports')loadReport();if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
   }
@@ -124,11 +129,21 @@
     return changed;
   }
   async function loadCatalog(){state.catalog=await api('/api/catalog');const changed=reconcileCartWithCatalog();renderTabs();renderPromo();renderCatalog();renderOrder();await refreshQuote();if(changed)toast('Order updated because a catalog item is no longer available.');}
+  function categoryArt(name){
+    const paths={
+      'Coffee':'<path d="M6 8h11v7a5.5 5.5 0 0 1-11 0V8Z"/><path d="M17 9h1.5a3 3 0 1 1 0 6H17"/><path d="M4 21h16"/><path d="M9 3v2M14 3v2"/>',
+      'Non Coffee':'<path d="M7 4h10l-1 16H8L7 4Z"/><path d="M5 4h14M9 11h6M10 15h4"/><path d="m11 4 4-2"/>',
+      'Food':'<path d="M3 16c2-7 7-10 9-10s7 3 9 10c-3 3-6 4-9 4s-6-1-9-4Z"/><path d="m8 9 2 4m5-4-2 4M5 15l3 1m11-1-3 1"/>',
+      'Add-ons':'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
+      'Promos':'<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M10 9h.01M14 15h.01M9 16l6-8"/>',
+      'Packages':'<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/>'
+    };
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||paths.Packages)+'</svg>';
+  }
   function renderTabs(){
-    const pictures={'Coffee':'☕','Non Coffee':'🥛','Food':'🍪','Add-ons':'✦','Promos':'%','Packages':'▣'};
     const counts={'Coffee':0,'Non Coffee':0,'Food':0,'Add-ons':state.catalog?.addOns?.length||0,'Promos':state.catalog?.promos?.length||0,'Packages':state.catalog?.packages?.length||0};
     for(const p of state.catalog?.products||[])if(Object.hasOwn(counts,p.category))counts[p.category]++;
-    $('categoryTabs').innerHTML=categories.map(c=>`<button type="button" class="tab ${state.category===c?'active':''}" data-cat="${esc(c)}"><span class="category-status">${state.category===c?'Selected':'Browse'}</span><span class="category-symbol" aria-hidden="true">${pictures[c]}</span><strong>${esc(c)}</strong><small>${counts[c]} items</small></button>`).join('');
+    $('categoryTabs').innerHTML=categories.map(c=>`<button type="button" class="tab ${state.category===c?'active':''}" data-cat="${esc(c)}"><span class="category-status">${state.category===c?'Selected':'Browse'}</span><span class="category-symbol" aria-hidden="true">${categoryArt(c)}</span><strong>${esc(c)}</strong><small>${counts[c]} items</small></button>`).join('');
     $('categoryTabs').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderTabs();renderCatalog();});
   }
   function promoById(){return state.catalog?.promos.find(p=>p.id===state.promoId)||null;}
@@ -290,35 +305,136 @@
 
   function renderAdminProducts(){const q=normalize($('adminProductSearch').value),rows=state.adminProducts.filter(p=>!q||normalize(p.name).includes(q)||normalize(p.category).includes(q));$('adminProductsBody').innerHTML=rows.map(p=>`<tr><td><b>${esc(p.name)}</b><div class="tiny muted">${esc(p.sku)}</div></td><td>${esc(p.category)}</td><td class="num">${peso(p.price)}</td><td class="num">${peso(p.unitCost)}</td><td class="${p.active&&!p.recipeCount?'stock-low':''}">${p.recipeCount} ingredient(s)${p.active&&!p.recipeCount?'<div class="tiny">RECIPE REQUIRED · NOT SELLABLE</div>':''}</td><td class="${p.active?'stock-ok':'stock-low'}">${p.active?'ACTIVE':'ARCHIVED'}</td><td><button class="table-btn" data-edit-product="${p.id}">Edit</button>${p.active?`<button class="danger-link" data-archive-product="${p.id}">Archive</button>`:''}</td></tr>`).join('');$('adminProductsBody').querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>editProduct(Number(b.dataset.editProduct)));$('adminProductsBody').querySelectorAll('[data-archive-product]').forEach(b=>b.onclick=()=>archiveProduct(Number(b.dataset.archiveProduct)));}
   $('adminProductSearch').oninput=renderAdminProducts;
+  let imageProcessingToken=0,imageBusy=false,imageInvalid=false;
+  function productImageStatus(message,error=false){
+    const el=$('productImageMessage');
+    if(el){el.textContent=message;el.classList.toggle('error',error);el.classList.toggle('success',!error&&/ready|optimized|saved/i.test(message));}
+  }
+  function photoFormState(){
+    const save=$('productSaveButton');
+    if(save)save.disabled=imageBusy||imageInvalid;
+  }
   function showProductPhoto(data){
     $('productImageData').value=data||'';
     $('productImagePreview').classList.toggle('hidden',!data);
     $('productImageEmpty').classList.toggle('hidden',!!data);
     if(data)$('productImagePreview').src=data;else $('productImagePreview').removeAttribute('src');
   }
-  function clearProductForm(){$('productEditId').value='';$('productName').value='';$('productName').readOnly=false;$('productCategory').value='Coffee';$('productPrice').value='';$('productActive').checked=true;$('productFormTitle').textContent='New Product';$('productImageFile').value='';showProductPhoto(null);}
-  function editProduct(id){const p=state.adminProducts.find(x=>x.id===id);if(!p)return;$('productEditId').value=id;$('productName').value=p.name;$('productName').readOnly=true;$('productCategory').value=p.category;$('productPrice').value=p.price;$('productActive').checked=p.active;$('productFormTitle').textContent=`Update ${p.name}`;$('productImageFile').value='';showProductPhoto(p.imageData);}
+  function clearProductForm(){
+    imageProcessingToken++;imageBusy=false;imageInvalid=false;
+    $('productEditId').value='';$('productName').value='';$('productName').readOnly=false;
+    $('productCategory').value='Coffee';$('productPrice').value='';$('productActive').checked=true;
+    $('productFormTitle').textContent='New Product';$('productImageFile').value='';
+    showProductPhoto(null);productImageStatus('Select a photo, then save the product.');photoFormState();
+  }
+  function editProduct(id){
+    const p=state.adminProducts.find(x=>x.id===id);if(!p)return;
+    imageProcessingToken++;imageBusy=false;imageInvalid=false;
+    $('productEditId').value=id;$('productName').value=p.name;$('productName').readOnly=true;
+    $('productCategory').value=p.category;$('productPrice').value=p.price;
+    $('productActive').checked=p.active;$('productFormTitle').textContent=`Update ${p.name}`;
+    $('productImageFile').value='';showProductPhoto(p.imageData);
+    productImageStatus(p.imageData?'Current photo loaded. Choose a replacement or remove it.':'No photo saved for this product yet.');
+    photoFormState();
+  }
   async function archiveProduct(id){return withActionLock(`archive-product:${id}`,async()=>{const p=state.adminProducts.find(x=>x.id===id);if(!p||!confirm(`Archive ${p.name}? It will disappear from the POS but historical sales remain.`))return;try{await api(`/api/admin/products/${id}`,{method:'DELETE'});toast('Product archived.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
-  $('productImageRemove').onclick=()=>{$('productImageFile').value='';showProductPhoto(null);};
-  $('productImageFile').addEventListener('change',async e=>{
-    const file=e.target.files?.[0];if(!file)return;
-    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>6*1024*1024){toast('Choose a JPEG, PNG or WebP photo smaller than 6 MB.');e.target.value='';return;}
-    const url=URL.createObjectURL(file);
+  $('productImageRemove').onclick=()=>{
+    imageProcessingToken++;imageBusy=false;imageInvalid=false;
+    $('productImageFile').value='';showProductPhoto(null);
+    productImageStatus('Photo removed from preview. Save Product to remove it from the catalog.');
+    photoFormState();
+  };
+  $('productImageFile').addEventListener('change',async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    const token=++imageProcessingToken;
+    imageBusy=true;imageInvalid=false;photoFormState();
+    const fail=message=>{
+      if(token!==imageProcessingToken)return;
+      imageBusy=false;imageInvalid=true;event.target.value='';
+      productImageStatus(message,true);photoFormState();toast(message);
+    };
+    if(file.size>1024*1024){fail('Image too large: maximum file size is 1 MB. Please select a smaller image.');return;}
+    if(file.size<32||!['image/jpeg','image/png','image/webp'].includes(file.type)){
+      fail('Invalid image. Use a valid JPG, PNG, or WebP photo (maximum 1 MB).');return;
+    }
+    productImageStatus('Checking and compressing photo…');
+    let objectUrl=null;
     try{
-      const image=new Image();
-      await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=url;});
-      const scale=Math.min(1,640/image.naturalWidth,480/image.naturalHeight);
-      const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
-      const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Image processing unavailable.');
-      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
-      let data=canvas.toDataURL('image/jpeg',0.78);
-      if(data.length>264000)data=canvas.toDataURL('image/jpeg',0.55);
-      if(data.length>264000)throw new Error('Image could not be compressed below 200 KB. Choose a simpler photo.');
+      const magic=new Uint8Array(await file.slice(0,16).arrayBuffer());
+      const jpg=magic[0]===0xff&&magic[1]===0xd8&&magic[2]===0xff;
+      const png=magic.slice(0,8).every((x,i)=>x===[137,80,78,71,13,10,26,10][i]);
+      const webp=String.fromCharCode(...magic.slice(0,4))==='RIFF'&&String.fromCharCode(...magic.slice(8,12))==='WEBP';
+      if(!(file.type==='image/jpeg'&&jpg||file.type==='image/png'&&png||file.type==='image/webp'&&webp))
+        throw new Error('Invalid image format: this file is not a genuine JPG, PNG, or WebP.');
+      objectUrl=URL.createObjectURL(file);
+      const img=new Image();
+      await new Promise((resolve,reject)=>{
+        img.onload=resolve;
+        img.onerror=()=>reject(new Error('The photo could not be decoded. Please choose another image.'));
+        img.src=objectUrl;
+      });
+      if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth>14000||img.naturalHeight>14000)
+        throw new Error('Invalid image dimensions.');
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d',{alpha:false});
+      if(!ctx)throw new Error('Image compression is not available in this browser.');
+      let scale=Math.min(1,540/img.naturalWidth,540/img.naturalHeight);
+      let data='',bytes=0;
+      for(let attempt=0;attempt<6;attempt++){
+        canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
+        canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        data=canvas.toDataURL('image/jpeg',Math.max(.43,.78-attempt*.065));
+        bytes=Math.ceil((data.length-data.indexOf(',')-1)*3/4);
+        if(bytes<=115*1024)break;
+        scale*=.76;
+      }
+      if(bytes>115*1024||!data.startsWith('data:image/jpeg;base64,'))
+        throw new Error('Unable to compress the photo sufficiently. Please choose another image.');
+      if(token!==imageProcessingToken)return;
       showProductPhoto(data);
-    }catch(err){toast(err.message||'Could not load photo.');}
-    finally{URL.revokeObjectURL(url);}
+      productImageStatus(`Photo optimized to ${Math.ceil(bytes/1024)} KB. Click Save Product to apply.`);
+      imageBusy=false;imageInvalid=false;photoFormState();
+    }catch(error){fail(error.message||'Invalid photo. Please select another image.');}
+    finally{if(objectUrl)URL.revokeObjectURL(objectUrl);}
   });
-  $('productFormClear').onclick=clearProductForm;$('productForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('productEditId').value||0),body={name:$('productName').value.trim(),category:$('productCategory').value,price:Number($('productPrice').value),active:$('productActive').checked,imageData:$('productImageData').value||null};try{if(id)await api(`/api/admin/products/${id}`,{method:'PUT',body});else await api('/api/admin/products',{method:'POST',body});toast(id?'Product updated.':'Product added. It will stay Not Available until recipe ingredients are added.');clearProductForm();await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});});
+  $('productFormClear').onclick=clearProductForm;
+  $('productForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(imageBusy){productImageStatus('Please finish processing your photo before saving.',true);return;}
+    if(imageInvalid){productImageStatus('Please choose a valid photo or remove the invalid selection first.',true);return;}
+    const form=e.currentTarget;
+    await withFormLock(form,async()=>{
+      const id=Number($('productEditId').value||0);
+      const desiredPhoto=$('productImageData').value||null;
+      const body={
+        name:$('productName').value.trim(),category:$('productCategory').value,
+        price:Number($('productPrice').value),active:$('productActive').checked,
+        imageData:desiredPhoto
+      };
+      try{
+        const saved=await api(id?`/api/admin/products/${id}`:'/api/admin/products',{
+          method:id?'PUT':'POST',body
+        });
+        const savedId=id||Number(saved.id);
+        // Read back the stored picture. Do not report success until it is persisted.
+        const refreshed=await api('/api/admin/products');
+        const serverProduct=refreshed.products.find(x=>Number(x.id)===savedId);
+        if(!serverProduct||((serverProduct.imageData||null)!==desiredPhoto)){
+          throw new Error('The product was updated, but its photo could not be verified. Please retry.');
+        }
+        productImageStatus(desiredPhoto?'Photo saved and verified in the product catalog.':'Product saved without a photo.');
+        toast(id?'Product and photo saved successfully.':'Product added successfully.');
+        clearProductForm();
+        await loadAdminAll();
+        await loadCatalog();
+      }catch(err){
+        productImageStatus(err.message||'Could not save the product photo.',true);
+        toast(err.message||'Could not save the product photo.');
+      }
+    });
+  });
 
   function renderAdminIngredients(){const q=normalize($('adminIngredientSearch').value),rows=state.adminIngredients.filter(i=>!q||normalize(i.name).includes(q)||normalize(i.code).includes(q)||normalize(i.uom).includes(q));$('adminIngredientsBody').innerHTML=rows.map(i=>`<tr><td><b>${esc(i.name)}</b></td><td class="tiny">${esc(i.code)}</td><td>${esc(String(i.uom).toUpperCase())}</td><td class="num">${num(i.stock)}</td><td class="num">${num(i.lowStockThreshold)}</td><td class="${i.active?'stock-ok':'stock-low'}">${i.active?'ACTIVE':'ARCHIVED'}</td><td><button class="table-btn" data-edit-ing="${i.id}">Edit</button>${i.active?`<button class="danger-link" data-archive-ing="${i.id}">Archive</button>`:''}</td></tr>`).join('');$('adminIngredientsBody').querySelectorAll('[data-edit-ing]').forEach(b=>b.onclick=()=>editIngredient(Number(b.dataset.editIng)));$('adminIngredientsBody').querySelectorAll('[data-archive-ing]').forEach(b=>b.onclick=()=>archiveIngredient(Number(b.dataset.archiveIng)));}
   $('adminIngredientSearch').oninput=renderAdminIngredients;
@@ -452,7 +568,7 @@
   $('refreshLogs').onclick=loadLogs;
 
   window.addEventListener('resize',()=>{if(state.dashboard)renderDashboard();});
-  setInterval(()=>$('clock').textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date()),1000);
+  setInterval(()=>{$('clock').textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date());updatePosDateTime();},1000);
   initBranchControls();
   boot().catch(err=>{console.error(err);toast(err.message||'Unable to start the POS.');showAuth(false);$('authHint').textContent='Cannot reach the POS server. Keep START COFFEE POS open, then refresh this page.';});
 })();
