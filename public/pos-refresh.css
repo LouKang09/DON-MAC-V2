@@ -15,7 +15,9 @@ body{background:var(--pos-cream)}
 .app.sidebar-collapsed{grid-template-columns:72px minmax(0,1fr)}
 .app.sidebar-collapsed .sidebar{padding:16px 8px}
 .app.sidebar-collapsed .brand{justify-content:center;padding:5px 0 12px}
-.app.sidebar-collapsed .brand>div:last-child,.app.sidebar-collapsed .nav span,.app.sidebar-collapsed .user-chip,.app.sidebar-collapsed #logoutButton{display:none!important}
+.app.sidebar-collapsed .brand>div:last-child,.app.sidebar-collapsed .nav span,.app.sidebar-collapsed .user-chip{display:none!important}
+.app.sidebar-collapsed #logoutButton{display:grid!important;place-items:center;width:46px;height:42px;margin:10px auto 0;padding:0;font-size:20px;border-radius:9px}
+.app.sidebar-collapsed .sidebar-bottom{padding-top:8px}
 .app.sidebar-collapsed .sidebar-toggle{align-self:center;margin:0 0 16px}
 .app.sidebar-collapsed .nav{justify-content:center;padding:12px 7px;font-size:18px}
 .main{min-width:0}
