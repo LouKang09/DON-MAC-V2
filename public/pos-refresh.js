@@ -1,4 +1,4 @@
-// Don Macchiatos v1.5.8: presentation only; pricing, stock and cashier actions stay in app-core.
+// Don Macchiatos v1.5.9: presentation only; pricing, stock and cashier actions stay in app-core.
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -13,7 +13,9 @@
     sidebarToggle.setAttribute('aria-expanded',String(!collapsed));
     sidebarToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');
     sidebarToggle.title=collapsed?'Expand navigation':'Collapse navigation';
-    sidebarToggle.textContent=collapsed?'☰':'☷';
+    sidebarToggle.innerHTML=collapsed
+      ? '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m4-12 4 4-4 4"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m8-12-4 4 4 4"/></svg>';
     logout.textContent=collapsed?'⇥':'Sign out';
     logout.title='Sign out';
     for(const button of document.querySelectorAll('.sidebar .nav')) {
@@ -54,25 +56,25 @@
   }
 
   const latest=[
-    'The POS catalog now uses spacious green-and-cream product and category cards.',
+    'Don Macchiatos branding replaces the redundant sidebar title; categories now have clean line icons.',
     'Collapse or expand the desktop navigation without losing access to POS tools.',
     'Choose Dine In, Take Away or Order Online; customer name is optional for every type.',
-    'The top bar displays today’s order count for the POS branch, without a duplicate report button.',
-    'Admins can add, replace or remove product photos directly in Catalog Admin.',
+    'Today’s order count is now in the checkout panel; the header welcomes the cashier.',
+    'Product photos now have a strict 1 MB source limit, compression, and save verification.',
     'Product stock restrictions, recipes, payments and branch reporting are unchanged.'
   ];
   const list=$('whatsNewList');
   if(list)list.innerHTML=latest.map(item=>'<li>'+item+'</li>').join('');
   const version=$('whatsNewVersion');
-  if(version)version.textContent='v1.5.8';
+  if(version)version.textContent='v1.5.9';
   const history=document.querySelector('#versionHistorySection .version-history');
-  if(history&&!history.querySelector('[data-version="1.5.8"]')) {
+  if(history&&!history.querySelector('[data-version="1.5.9"]')) {
     history.querySelectorAll('.version-entry.current').forEach(el=>el.classList.remove('current'));
     const entry=document.createElement('details');
     entry.className='version-entry current';
     entry.open=true;
-    entry.dataset.version='1.5.8';
-    entry.innerHTML='<summary><span class="version-meta"><span class="version-chip">v1.5.8</span><span>Don Macchiatos POS design refresh</span></span></summary><ul>'+latest.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+    entry.dataset.version='1.5.9';
+    entry.innerHTML='<summary><span class="version-meta"><span class="version-chip">v1.5.9</span><span>Don Macchiatos POS design refresh</span></span></summary><ul>'+latest.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
     history.prepend(entry);
   }
 
@@ -82,5 +84,5 @@
   clear?.addEventListener('click',()=>setOrderType('Dine In'));
   const receiptClose=$('receiptClose');
   receiptClose?.addEventListener('click',()=>setOrderType('Dine In'));
-  console.info('Don Macchiatos POS presentation v1.5.8 ready');
+  console.info('Don Macchiatos POS presentation v1.5.9 ready');
 })();
