@@ -80,8 +80,8 @@
     }finally{clearTimeout(timer);}
   }
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
-  function showAuth(setupRequired){safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');$('app').classList.add('hidden');$('authScreen').classList.remove('hidden');$('authTitle').textContent=setupRequired?'Create Web Admin':'Sign in';$('authHint').textContent=setupRequired?'First run: create a secure administrator account.':'Use your web POS account.';$('authSubmit').textContent=setupRequired?'Create Admin':'Sign in';$('authPassword').autocomplete=setupRequired?'new-password':'current-password';}
-  function showApp(){$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('currentUser').textContent=state.user.username;$('currentRole').textContent=state.user.role;document.querySelectorAll('.admin-only,.staff-hidden').forEach(x=>x.classList.toggle('hidden',state.user.role!=='Admin'));$('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();$('appVersion').textContent=state.status?.version||'FINAL';$('topbarUsername').textContent=state.user.username;$('topbarRole').textContent=state.user.role==='Admin'?'Administrator':'Cashier';}
+  function showAuth(setupRequired){window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');$('app').classList.add('hidden');$('authScreen').classList.remove('hidden');$('authTitle').textContent=setupRequired?'Create Web Admin':'Sign in';$('authHint').textContent=setupRequired?'First run: create a secure administrator account.':'Use your web POS account.';$('authSubmit').textContent=setupRequired?'Create Admin':'Sign in';$('authPassword').autocomplete=setupRequired?'new-password':'current-password';}
+  function showApp(){window.donmacChatUserId=state.user.id;window.donmacChat?.loggedIn(state.user.id);$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('currentUser').textContent=state.user.username;$('currentRole').textContent=state.user.role;document.querySelectorAll('.admin-only,.staff-hidden').forEach(x=>x.classList.toggle('hidden',state.user.role!=='Admin'));$('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();$('appVersion').textContent=state.status?.version||'FINAL';$('topbarUsername').textContent=state.user.username;$('topbarRole').textContent=state.user.role==='Admin'?'Administrator':'Cashier';}
   async function boot(){
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
@@ -108,10 +108,11 @@
   }
   function switchView(view){
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
     $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
+    if(view==='chat')window.donmacChat?.open();else window.donmacChat?.close();
     if(view==='pos')refreshPosDailyCount();
     if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports')loadReport();if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
   }
