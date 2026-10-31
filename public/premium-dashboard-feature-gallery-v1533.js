@@ -118,6 +118,7 @@
   }
   function render(tier){
     const current=items.filter(x=>x.tier===tier||x.tier==='both');
+    const visibleCount=current.length+(tier==='business'?1:0);
     const core=current.filter(x=>x.tier===tier);
     const highlights=current.filter(x=>x.tier==='both');
     const removedCount=items.filter(x=>removed.has(x.id)).length;
@@ -125,7 +126,7 @@
       '<header class="pg-gallery-heading"><div><span class="premium-preview-overline">FEATURE REVIEW GALLERY · SAMPLE DATA</span>'+
       '<h4>Explore '+(tier==='pro'?'Pro':'Business')+' features</h4>'+
       '<p>Review each feature with illustrative sample data. Mark anything you want to remove; no production settings are affected.</p></div>'+
-      '<div class="pg-gallery-count"><strong>'+current.length+'</strong><span>concepts in this tab</span></div></header>'+
+      '<div class="pg-gallery-count"><strong>'+visibleCount+'</strong><span>concepts in this tab</span></div></header>'+
       '<div class="pg-review-toolbar"><div class="pg-review-status"><strong id="pgRemovedCount">'+removedCount+'</strong> of '+items.length+' features marked for removal across both tiers</div>'+
       '<div class="pg-review-actions"><button type="button" data-pg-copy>Copy removal shortlist</button>'+
       '<button type="button" data-pg-reset>Clear marks</button></div></div>'+
