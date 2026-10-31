@@ -211,6 +211,7 @@
     observer.disconnect();
     for(const [button,entry] of Array.from(animations.entries()))clearButton(button,entry);
   });
+  toggle.classList.remove('hidden');
   updateToggle();
   reconcile();
 })();
