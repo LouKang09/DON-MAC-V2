@@ -358,7 +358,6 @@
       fail('Invalid image. Use a valid JPG, PNG, or WebP photo (maximum 1 MB).');return;
     }
     productImageStatus('Checking and compressing photo…');
-    let objectUrl=null;
     try{
       const magic=new Uint8Array(await file.slice(0,16).arrayBuffer());
       const jpg=magic[0]===0xff&&magic[1]===0xd8&&magic[2]===0xff;
@@ -366,12 +365,20 @@
       const webp=String.fromCharCode(...magic.slice(0,4))==='RIFF'&&String.fromCharCode(...magic.slice(8,12))==='WEBP';
       if(!(file.type==='image/jpeg'&&jpg||file.type==='image/png'&&png||file.type==='image/webp'&&webp))
         throw new Error('Invalid image format: this file is not a genuine JPG, PNG, or WebP.');
-      objectUrl=URL.createObjectURL(file);
+      // CSP allows image data URLs, but blocks blob: URLs. Read through
+      // FileReader so valid local photos load without loosening security policy.
+      const imageSrc=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(reader.result);
+        reader.onerror=()=>reject(new Error('Could not read this photo. Please choose another image.'));
+        reader.readAsDataURL(file);
+      });
+      if(token!==imageProcessingToken)return;
       const img=new Image();
       await new Promise((resolve,reject)=>{
         img.onload=resolve;
-        img.onerror=()=>reject(new Error('The photo could not be decoded. Please choose another image.'));
-        img.src=objectUrl;
+        img.onerror=()=>reject(new Error('The photo could not be decoded in your browser. Please try another valid image.'));
+        img.src=imageSrc;
       });
       if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth>14000||img.naturalHeight>14000)
         throw new Error('Invalid image dimensions.');
@@ -397,7 +404,6 @@
       productImageStatus(`Photo optimized to ${Math.ceil(bytes/1024)} KB. Click Save Product to apply.`);
       imageBusy=false;imageInvalid=false;photoFormState();
     }catch(error){fail(error.message||'Invalid photo. Please select another image.');}
-    finally{if(objectUrl)URL.revokeObjectURL(objectUrl);}
   });
   $('productFormClear').onclick=clearProductForm;
   $('productForm').addEventListener('submit',async e=>{
