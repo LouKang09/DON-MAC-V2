@@ -202,7 +202,15 @@
  }
  function stopThread(){if(state.threadTimer){clearInterval(state.threadTimer);state.threadTimer=null;}}
  function open(){
+   if(!window.donmacChat?.authenticated)return;
+   const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
+   if(!panel||!launcher)return;
+   if(state.open)return close();
    state.open=true;
+   panel.classList.remove('hidden');
+   launcher.classList.add('is-open');
+   launcher.setAttribute('aria-expanded','true');
+   launcher.setAttribute('aria-label','Close team messages');
    $('view-chat').classList.remove('chat-thread-open');
    notice('');refreshContacts();
    renderHeader();renderMessages();
@@ -213,8 +221,16 @@
      refreshThread(cycle%8===0);
      if(cycle%3===0)refreshContacts();
    },5000);
+   $('chatSearch').focus({preventScroll:true});
  }
- function close(){state.open=false;stopThread();}
+ function close(){
+   state.open=false;stopThread();
+   const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
+   panel?.classList.add('hidden');
+   launcher?.classList.remove('is-open');
+   launcher?.setAttribute('aria-expanded','false');
+   launcher?.setAttribute('aria-label','Open team messages');
+ }
  function resetSession(){
    close();if(state.unreadTimer){clearInterval(state.unreadTimer);state.unreadTimer=null;}
    state.contacts=[];state.selected=0;state.messages=[];state.turn++;
@@ -229,6 +245,21 @@
      if(!document.hidden&&window.donmacChat?.authenticated)refreshContacts();
    },15000);
  }
+ $('chatFloatingLauncher').addEventListener('click',open);
+ $('chatFloatingClose').addEventListener('click',()=>{
+   close();$('chatFloatingLauncher').focus({preventScroll:true});
+ });
+ document.addEventListener('keydown',e=>{
+   if(e.key==='Escape'&&state.open&&!$('chatPhotoViewer').open){
+     close();$('chatFloatingLauncher').focus({preventScroll:true});
+   }
+ });
+ // A chat window should never trap clicks intended for the payment system.
+ document.addEventListener('pointerdown',e=>{
+   if(!state.open)return;
+   const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
+   if(!panel.contains(e.target)&&!launcher.contains(e.target))close();
+ });
  $('chatSearch').addEventListener('input',renderContacts);
  $('chatRefresh').addEventListener('click',refreshContacts);
  $('chatPeople').addEventListener('click',e=>{
