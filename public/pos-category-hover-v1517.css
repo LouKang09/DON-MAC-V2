@@ -1,258 +1,342 @@
-/* Don Macchiatos POS category interactions v1.5.17
-   CSS-only, GPU-friendly motion. Never changes product, stock or cart state. */
-#view-pos #categoryTabs .category-tile{
-  --tile-hover:#f5f0e5;
-  --tile-art:#9eac9c;
-  isolation:isolate;
-  cursor:pointer;
-  transition:transform .28s cubic-bezier(.2,.75,.24,1),
-    box-shadow .28s ease, border-color .28s ease,
-    background-color .28s ease, color .28s ease;
-  will-change:auto;
-  -webkit-tap-highlight-color:transparent;
+/* Don Macchiatos POS v1.5.18 — literal motion on category hover.
+   Entire tile changes to a FLAT coffee-inspired color; no flare, radial gradient,
+   glowing light effect, or continuous idle animation. */
+
+#view-pos #categoryTabs .category-tile {
+  --tile-hover: #ead9c0;
+  --tile-hover-active: #654b37;
+  --tile-art: #98886c;
+  cursor: pointer;
+  isolation: isolate;
+  background-image: none !important;
+  transition: background-color .22s ease, border-color .22s ease,
+              transform .22s ease, color .22s ease;
 }
-#view-pos #categoryTabs .category-tile::before{
-  content:"";
-  pointer-events:none;
-  position:absolute;
-  z-index:0;
-  inset:0;
-  background:radial-gradient(ellipse at 82% 73%,rgba(255,255,255,.23),transparent 55%);
-  opacity:0;
-  transition:opacity .3s ease;
+#view-pos #categoryTabs .category-tile::before,
+#view-pos #categoryTabs .category-tile::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
 }
-#view-pos #categoryTabs .category-tile :is(.category-status,strong,small,.category-symbol){
-  position:relative;
-  z-index:1;
+#view-pos #categoryTabs .category-tile.category-coffee {
+  --tile-hover: #e8d4b5;
+  --tile-hover-active: #69452f;
+  --tile-art: #967656;
+}
+#view-pos #categoryTabs .category-tile.category-noncoffee {
+  --tile-hover: #cfe5df;
+  --tile-hover-active: #3f736c;
+  --tile-art: #5c9d9b;
+}
+#view-pos #categoryTabs .category-tile.category-food {
+  --tile-hover: #f0d1ba;
+  --tile-hover-active: #86563d;
+  --tile-art: #b17a51;
+}
+#view-pos #categoryTabs .category-tile.category-addons {
+  --tile-hover: #f4dcaa;
+  --tile-hover-active: #815c31;
+  --tile-art: #b68745;
+}
+#view-pos #categoryTabs .category-tile.category-promos {
+  --tile-hover: #eddbb7;
+  --tile-hover-active: #80633c;
+  --tile-art: #b89347;
+}
+#view-pos #categoryTabs .category-tile.category-packages {
+  --tile-hover: #d8e5d2;
+  --tile-hover-active: #476a4d;
+  --tile-art: #729b70;
+}
+/* Solid, fully filled hover color. No spotlight overlay. */
+#view-pos #categoryTabs .category-tile:not(.active):is(:hover,:focus-visible,:active) {
+  background: var(--tile-hover) !important;
+  background-image: none !important;
+  border-color: color-mix(in srgb,var(--tile-art) 40%,#fff);
+  color: #27352a;
+}
+#view-pos #categoryTabs .category-tile.active {
+  --tile-art: #b2debc;
+}
+#view-pos #categoryTabs .category-tile.active:is(:hover,:focus-visible,:active) {
+  background: var(--tile-hover-active) !important;
+  background-image: none !important;
+  color: #fff;
+  border-color: var(--tile-hover-active);
+}
+#view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 9px rgba(27,34,24,.09);
+}
+#view-pos #categoryTabs .category-tile:focus-visible {
+  outline: 2px solid #196c49;
+  outline-offset: 3px;
 }
 #view-pos #categoryTabs .category-tile .category-status{
-  position:absolute;
-  top:10px;
-  left:11px;
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  left: 11px;
 }
-#view-pos #categoryTabs .category-tile .category-symbol{
-  position:absolute;
-  right:14px;
-  bottom:10px;
-  width:67px;
-  height:67px;
-  opacity:.69;
-  color:var(--tile-art);
-  display:grid;
-  place-items:center;
-  filter:none;
-  transition:opacity .28s ease,color .28s ease,transform .38s cubic-bezier(.2,.7,.2,1);
+#view-pos #categoryTabs .category-tile strong,
+#view-pos #categoryTabs .category-tile small {
+  position: relative;
+  z-index: 2;
 }
-#view-pos #categoryTabs .category-tile .category-illustration{
-  width:62px;
-  height:62px;
-  display:block;
-  overflow:visible;
-  stroke-width:2.3;
-  transform-origin:center;
+#view-pos #categoryTabs .category-tile .category-symbol {
+  position: absolute;
+  z-index: 1;
+  right: 13px;
+  bottom: 6px;
+  width: 78px;
+  height: 78px;
+  color: var(--tile-art);
+  opacity: .65;
+  filter: none !important;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity .2s ease, color .2s ease;
+  transform: none;
 }
-#view-pos #categoryTabs .category-tile.category-coffee{
-  --tile-hover:#dfece1;--tile-art:#83b49a;
+#view-pos #categoryTabs .category-tile .category-illustration {
+  display: block;
+  overflow: visible;
+  width: 76px;
+  height: 76px;
+  stroke-width: 2.8;
 }
-#view-pos #categoryTabs .category-tile.category-noncoffee{
-  --tile-hover:#f1eee3;--tile-art:#b6a680;
+#view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) .category-symbol {
+  opacity: 1;
+  color: var(--tile-art);
+  transform: none;
 }
-#view-pos #categoryTabs .category-tile.category-food{
-  --tile-hover:#f3e9dd;--tile-art:#c39773;
+#view-pos #categoryTabs .category-tile.active:not(:hover):not(:focus-visible):not(:active) .category-symbol {
+  color:#b9e3c6;
+  opacity:.85;
 }
-#view-pos #categoryTabs .category-tile.category-addons{
-  --tile-hover:#f5ebdb;--tile-art:#c29d63;
+#view-pos #categoryTabs .category-tile .category-illustration > g,
+#view-pos #categoryTabs .category-tile .category-illustration > path {
+  vector-effect: non-scaling-stroke;
 }
-#view-pos #categoryTabs .category-tile.category-promos{
-  --tile-hover:#f4ebdd;--tile-art:#b99b62;
+#view-pos #categoryTabs .cat-coffee-body,
+#view-pos #categoryTabs .cat-iced-liquid,
+#view-pos #categoryTabs .cat-cookie-dough,
+#view-pos #categoryTabs .cat-fries-pocket,
+#view-pos #categoryTabs .cat-ticket-paper,
+#view-pos #categoryTabs .cat-carton-body,
+#view-pos #categoryTabs .cat-flap,
+#view-pos #categoryTabs .cat-present {
+  fill: currentColor;
+  fill-opacity: .12;
 }
-#view-pos #categoryTabs .category-tile.category-packages{
-  --tile-hover:#e8f0e4;--tile-art:#8eac85;
+
+/* Coffee: steam is actually emitted from a stationary cup and drifts upward. */
+#view-pos #categoryTabs .steam {
+  opacity: .62;
+  transform-origin: center bottom;
+  transform-box: fill-box;
 }
-#view-pos #categoryTabs .category-tile:not(.active):is(:hover,:focus-visible,:active){
-  background-color:var(--tile-hover);
-  border-color:#b4bda4;
-  color:#20372a;
+#view-pos #categoryTabs .category-coffee:is(:hover,:focus-visible,:active) .steam {
+  animation: dm18-steam 1.7s ease-in-out infinite;
 }
-#view-pos #categoryTabs .category-tile.active{
-  --tile-art:#b1ddc0;
+#view-pos #categoryTabs .category-coffee .steam-b { animation-delay: -.55s !important; }
+#view-pos #categoryTabs .category-coffee .steam-c { animation-delay: -1.1s !important; }
+@keyframes dm18-steam {
+  0% { opacity: 0; transform: translate(0,7px) scale(.86); }
+  20% { opacity: 1; transform: translate(2px,1px) scale(1); }
+  62% { opacity: .85; transform: translate(-2px,-9px) scale(1.13); }
+  100% { opacity: 0; transform: translate(3px,-19px) scale(1.2); }
 }
-#view-pos #categoryTabs .category-tile.active:is(:hover,:focus-visible,:active){
-  background-color:#116645;
-  border-color:#b3c4a9;
-  color:white;
+
+/* Non Coffee: each individual ice cube visibly falls into the liquid. */
+#view-pos #categoryTabs .cat-ice {
+  transform-box: fill-box;
+  transform-origin: center center;
+  opacity: .88;
 }
-#view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active){
-  transform:translateY(-3px);
-  box-shadow:0 9px 22px rgba(43,58,36,.11);
+#view-pos #categoryTabs .category-noncoffee:is(:hover,:focus-visible,:active) .cat-ice {
+  animation: dm18-ice 1.9s cubic-bezier(.26,.52,.21,1) infinite;
 }
-#view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active)::before{
-  opacity:1;
+#view-pos #categoryTabs .category-noncoffee .ice-b { animation-delay: -.64s !important; }
+#view-pos #categoryTabs .category-noncoffee .ice-c { animation-delay: -1.25s !important; }
+#view-pos #categoryTabs .cat-ice-splash { opacity: 0; }
+#view-pos #categoryTabs .category-noncoffee:is(:hover,:focus-visible,:active) .cat-ice-splash {
+  animation: dm18-ice-splash 1.9s ease-out infinite;
 }
-#view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) .category-symbol{
-  color:var(--tile-art);
-  opacity:1;
-  transform:translateY(-2px) scale(1.07);
+@keyframes dm18-ice {
+  0% { opacity: 0; transform: translate(0,-11px) rotate(-18deg); }
+  18% { opacity: 1; }
+  52% { opacity: 1; transform: translate(1px,27px) rotate(16deg); }
+  65% { opacity: .75; transform: translate(2px,31px) rotate(-7deg); }
+  100% { opacity: 0; transform: translate(2px,33px) rotate(-7deg); }
 }
-#view-pos #categoryTabs .category-tile:focus-visible{
-  outline:2px solid #1a7852;
-  outline-offset:3px;
+@keyframes dm18-ice-splash {
+  0%,42% { opacity: 0;transform: scale(.85); }
+  52% { opacity: .8;transform: scale(1.1); }
+  75%,100% { opacity: 0;transform: scale(1.4); }
 }
-#view-pos #categoryTabs .category-tile.active:focus-visible{
-  outline-color:#b6cfa8;
+
+/* Food: an actual cookie, a biting mouth that closes over its edge, 
+   a large visible chunk missing, and falling crumbs. */
+#view-pos #categoryTabs .cat-chips { fill: currentColor; stroke: none; fill-opacity: .7; }
+#view-pos #categoryTabs .cat-cookie-bitten,
+#view-pos #categoryTabs .cat-biting-mouth,
+#view-pos #categoryTabs .cat-cookie-crumbs { opacity: 0; }
+#view-pos #categoryTabs .category-food:is(:hover,:focus-visible,:active) .cat-cookie-whole {
+  animation: dm18-cookie-whole 2.35s step-end infinite;
 }
-#view-pos #categoryTabs .category-tile:not(.active):is(:hover,:focus-visible) .category-status{
-  border-color:#bfcab6;
-  background:rgba(255,255,255,.6);
+#view-pos #categoryTabs .category-food:is(:hover,:focus-visible,:active) .cat-cookie-bitten {
+  animation: dm18-cookie-bitten 2.35s step-end infinite;
 }
-#view-pos #categoryTabs .category-tile .cat-steam{
-  opacity:.72;
-  transform-origin:center bottom;
+#view-pos #categoryTabs .category-food:is(:hover,:focus-visible,:active) .cat-biting-mouth {
+  animation: dm18-mouth 2.35s ease-in-out infinite;
+}
+#view-pos #categoryTabs .category-food:is(:hover,:focus-visible,:active) .cat-cookie-crumbs {
+  animation: dm18-crumbs 2.35s ease-out infinite;
+}
+@keyframes dm18-cookie-whole {
+  0%,37% {opacity:1}
+  38%,88% {opacity:0}
+  89%,100% {opacity:1}
+}
+@keyframes dm18-cookie-bitten {
+  0%,37% {opacity:0}
+  38%,88% {opacity:1}
+  89%,100% {opacity:0}
+}
+@keyframes dm18-mouth {
+  0%,10% {opacity:0;transform:translateX(17px)}
+  24% {opacity:1;transform:translateX(-12px)}
+  40% {opacity:1;transform:translateX(-15px)}
+  58%,100% {opacity:0;transform:translateX(22px)}
+}
+@keyframes dm18-crumbs {
+  0%,37% {opacity:0;transform:translate(0,0)}
+  45% {opacity:1;transform:translate(3px,-5px)}
+  73% {opacity:.6;transform:translate(9px,9px)}
+  90%,100% {opacity:0;transform:translate(14px,16px)}
+}
+
+/* Add-ons: the full fries carton shakes from side to side, with fries jumping. */
+#view-pos #categoryTabs .cat-fries-carton,
+#view-pos #categoryTabs .cat-fries-sticks {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+}
+#view-pos #categoryTabs .category-addons:is(:hover,:focus-visible,:active) .cat-fries-carton {
+  animation: dm18-fries-shake 1.05s ease-in-out infinite;
+}
+#view-pos #categoryTabs .category-addons:is(:hover,:focus-visible,:active) .cat-fries-sticks {
+  animation: dm18-fries-bounce 1.05s ease-in-out infinite;
+}
+#view-pos #categoryTabs .cat-seasoning-drops { opacity: 0; }
+#view-pos #categoryTabs .category-addons:is(:hover,:focus-visible,:active) .cat-seasoning-drops {
+  animation: dm18-fries-season .85s linear infinite;
+}
+@keyframes dm18-fries-shake {
+  0%,100%{transform:translateX(0) rotate(0)}
+  21%{transform:translateX(-4px) rotate(-10deg)}
+  44%{transform:translateX(5px) rotate(10deg)}
+  69%{transform:translateX(-3px) rotate(-7deg)}
+  88%{transform:translateX(2px) rotate(5deg)}
+}
+@keyframes dm18-fries-bounce {
+  0%,100% {transform:translateY(0) rotate(0)}
+  23% {transform:translateY(-8px) rotate(-5deg)}
+  49% {transform:translateY(3px) rotate(6deg)}
+  76% {transform:translateY(-6px) rotate(-3deg)}
+}
+@keyframes dm18-fries-season {
+  0% {opacity:0;transform:translateY(-8px)}
+  25% {opacity:1}
+  72% {opacity:1;transform:translateY(16px)}
+  100% {opacity:0;transform:translateY(23px)}
+}
+
+/* Promos: clear confetti shower around the ticket, not a light flare. */
+#view-pos #categoryTabs .confetti {
+  opacity:0;
+  stroke-width:3.8;
   transform-box:fill-box;
+  transform-origin:center center;
 }
-#view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) .cat-steam{
-  animation:donmac-steam 1.8s ease-in-out infinite;
+#view-pos #categoryTabs .category-promos:is(:hover,:focus-visible,:active) .confetti {
+  animation:dm18-confetti 1.7s linear infinite;
 }
-#view-pos #categoryTabs .cat-steam.s2{animation-delay:.35s!important}
-#view-pos #categoryTabs .cat-steam.s3{animation-delay:.7s!important}
-@keyframes donmac-steam{
-  0%{opacity:0;transform:translateY(5px) scale(.94)}
-  35%{opacity:1;transform:translateY(-1px) translateX(2px)}
-  75%{opacity:.65;transform:translateY(-6px) translateX(-2px)}
-  100%{opacity:0;transform:translateY(-11px) scale(1.06)}
+#view-pos #categoryTabs .category-promos .cf-b {animation-delay:-.25s!important}
+#view-pos #categoryTabs .category-promos .cf-c {animation-delay:-.55s!important}
+#view-pos #categoryTabs .category-promos .cf-d {animation-delay:-.85s!important}
+#view-pos #categoryTabs .category-promos .cf-e {animation-delay:-1.1s!important}
+#view-pos #categoryTabs .category-promos .cf-f {animation-delay:-1.3s!important}
+#view-pos #categoryTabs .category-promos .cf-g {animation-delay:-1.5s!important}
+#view-pos #categoryTabs .category-promos:is(:hover,:focus-visible,:active) .cat-promo-ticket {
+  animation: dm18-ticket 1.7s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center center;
 }
-/* Non-coffee: gently falling ice into the cup. */
-#view-pos #categoryTabs .ice{
-  transform-box:fill-box;
-  transform-origin:center;
+@keyframes dm18-confetti {
+  0%{opacity:0;transform:translate(-5px,-20px) rotate(-20deg)}
+  15%{opacity:1}
+  60%{opacity:1;transform:translate(4px,18px) rotate(30deg)}
+  100%{opacity:0;transform:translate(-6px,42px) rotate(80deg)}
 }
-#view-pos #categoryTabs .category-noncoffee:is(:hover,:focus-visible,:active) .ice{
-  animation:donmac-icefall 1.7s cubic-bezier(.3,.13,.24,.98) infinite;
+@keyframes dm18-ticket {
+  0%,100%{transform:translateY(0) rotate(0)}
+  42%{transform:translateY(-3px) rotate(-3deg)}
 }
-#view-pos #categoryTabs .category-noncoffee .ice-two{animation-delay:.4s!important}
-#view-pos #categoryTabs .category-noncoffee .ice-three{animation-delay:.85s!important}
-@keyframes donmac-icefall{
-  0%{opacity:0;transform:translateY(-9px) rotate(-9deg)}
-  17%{opacity:1}
-  58%{opacity:1;transform:translateY(14px) rotate(13deg)}
-  75%{opacity:.8;transform:translateY(17px) rotate(-6deg)}
-  100%{opacity:0;transform:translateY(20px) rotate(-8deg)}
+
+/* Packages: box flaps visibly open in opposite directions; a gift falls inside. */
+#view-pos #categoryTabs .cat-box-leftflap,
+#view-pos #categoryTabs .cat-box-rightflap {
+  transform-box: fill-box;
+  transition: transform .26s ease;
 }
-/* Food: cookie receives a bite; crumbs drift away to suggest a satisfying crunch. */
-#view-pos #categoryTabs .cat-bite-mask{
-  transition:transform .3s ease;
-  transform:translateX(13px);
+#view-pos #categoryTabs .cat-box-leftflap {transform-origin:right bottom}
+#view-pos #categoryTabs .cat-box-rightflap {transform-origin:left bottom}
+#view-pos #categoryTabs .category-packages:is(:hover,:focus-visible,:active) .cat-box-leftflap {
+  transform:translate(-7px,-8px) rotate(-19deg);
 }
-#view-pos #categoryTabs .category-food:is(:hover,:focus-visible,:active) .cat-bite-mask{
-  animation:donmac-bite 2s ease-in-out infinite;
+#view-pos #categoryTabs .category-packages:is(:hover,:focus-visible,:active) .cat-box-rightflap {
+  transform:translate(7px,-8px) rotate(19deg);
 }
-#view-pos #categoryTabs .cat-food-crumbs{opacity:0;transform-origin:50% 50%}
-#view-pos #categoryTabs .category-food:is(:hover,:focus-visible,:active) .cat-food-crumbs{
-  animation:donmac-crumbs 2s ease-out infinite;
+#view-pos #categoryTabs .cat-box-item {opacity:0}
+#view-pos #categoryTabs .category-packages:is(:hover,:focus-visible,:active) .cat-box-item {
+  animation:dm18-gift-drop 1.8s ease-in infinite;
 }
-@keyframes donmac-bite{
-  0%,9%{transform:translateX(13px)}
-  25%,50%{transform:translateX(-9px)}
-  57%,75%{transform:translateX(-5px)}
-  83%,100%{transform:translateX(13px)}
+@keyframes dm18-gift-drop {
+  0%,14%{opacity:0;transform:translateY(-15px) scale(.8)}
+  23%{opacity:1}
+  65%{opacity:1;transform:translateY(29px) scale(1)}
+  77%,100%{opacity:0;transform:translateY(33px) scale(.8)}
 }
-@keyframes donmac-crumbs{
-  0%,23%{opacity:0;transform:translate(0,0)}
-  30%{opacity:.9}
-  60%{opacity:.65;transform:translate(5px,5px) rotate(10deg)}
-  85%,100%{opacity:0;transform:translate(9px,11px) rotate(22deg)}
-}
-/* Add-ons: fries carton shakes while seasoning flecks flutter. */
-#view-pos #categoryTabs .cat-fries{
-  transform-origin:50% 86%;
-  transform-box:fill-box;
-}
-#view-pos #categoryTabs .category-addons:is(:hover,:focus-visible,:active) .cat-fries{
-  animation:donmac-fries-wiggle 1s ease-in-out infinite;
-}
-#view-pos #categoryTabs .cat-salt{opacity:0}
-#view-pos #categoryTabs .category-addons:is(:hover,:focus-visible,:active) .cat-salt{
-  animation:donmac-season .85s ease-out infinite;
-}
-#view-pos #categoryTabs .category-addons .salt2{animation-delay:.25s!important}
-#view-pos #categoryTabs .category-addons .salt3{animation-delay:.5s!important}
-@keyframes donmac-fries-wiggle{
-  0%,100%{transform:rotate(0)}
-  20%{transform:rotate(-4deg)}
-  42%{transform:rotate(4deg)}
-  63%{transform:rotate(-2deg)}
-  80%{transform:rotate(2deg)}
-}
-@keyframes donmac-season{
-  0%{opacity:0;transform:translateY(-6px)}
-  28%{opacity:.85}
-  100%{opacity:0;transform:translateY(18px) translateX(2px)}
-}
-/* Promos: celebratory ticket confetti falls and sways. */
-#view-pos #categoryTabs .confetti{opacity:0;transform-box:fill-box;transform-origin:center}
-#view-pos #categoryTabs .category-promos:is(:hover,:focus-visible,:active) .confetti{
-  animation:donmac-confetti 1.45s ease-in infinite;
-}
-#view-pos #categoryTabs .category-promos .cf2{animation-delay:.22s!important}
-#view-pos #categoryTabs .category-promos .cf3{animation-delay:.43s!important}
-#view-pos #categoryTabs .category-promos .cf4{animation-delay:.62s!important}
-#view-pos #categoryTabs .category-promos .cf5{animation-delay:.81s!important}
-#view-pos #categoryTabs .category-promos:is(:hover,:focus-visible,:active) .cat-ticket{
-  animation:donmac-ticket-pop 1.45s ease-in-out infinite;
-  transform-origin:center center;transform-box:fill-box;
-}
-@keyframes donmac-confetti{
-  0%{opacity:0;transform:translateY(-12px) rotate(-20deg)}
-  20%{opacity:.95}
-  75%{opacity:.8}
-  100%{opacity:0;transform:translateY(23px) translateX(7px) rotate(35deg)}
-}
-@keyframes donmac-ticket-pop{
-  0%,100%{transform:rotate(0)}
-  45%{transform:rotate(-2deg) translateY(-1px)}
-}
-/* Packages: the lid lifts and a gift drops into the open carton. */
-#view-pos #categoryTabs .cat-box-lid{
-  transform-box:fill-box;
-  transform-origin:50% 95%;
-  transition:transform .44s cubic-bezier(.17,.7,.3,1);
-}
-#view-pos #categoryTabs .category-packages:is(:hover,:focus-visible,:active) .cat-box-lid{
-  transform:translateY(-9px) rotate(-9deg);
-}
-#view-pos #categoryTabs .cat-package-item{
-  opacity:0;transform-box:fill-box;transform-origin:center center;
-}
-#view-pos #categoryTabs .category-packages:is(:hover,:focus-visible,:active) .cat-package-item{
-  animation:donmac-package-drop 1.75s ease-in-out infinite;
-}
-@keyframes donmac-package-drop{
-  0%,15%{opacity:0;transform:translateY(-14px) scale(.88)}
-  28%{opacity:1}
-  63%{opacity:1;transform:translateY(21px) scale(.97)}
-  78%,100%{opacity:0;transform:translateY(24px) scale(.9)}
-}
-@media(min-width:700px) and (max-width:1180px){
-  #view-pos #categoryTabs .category-tile .category-symbol{width:49px;height:49px;right:10px;bottom:11px}
-  #view-pos #categoryTabs .category-tile .category-illustration{width:45px;height:45px}
-}
-@media(max-width:699px){
-  #view-pos #categoryTabs .category-tile .category-symbol{width:40px;height:40px;right:7px;bottom:7px}
-  #view-pos #categoryTabs .category-tile .category-illustration{width:38px;height:38px}
-  #view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active){transform:translateY(-1px)}
-  #view-pos #categoryTabs .category-tile .category-status{top:6px;left:7px}
-}
-@media(prefers-reduced-motion:reduce){
-  #view-pos #categoryTabs .category-tile,
-  #view-pos #categoryTabs .category-tile::before,
-  #view-pos #categoryTabs .category-tile .category-symbol,
-  #view-pos #categoryTabs .category-tile .category-illustration *,
-  #view-pos #categoryTabs .cat-steam,
-  #view-pos #categoryTabs .cat-bite-mask{
-    animation:none!important;
-    transition:none!important;
+
+@media(min-width:700px) and (max-width:1180px) {
+  #view-pos #categoryTabs .category-tile .category-symbol {
+    width:56px;height:56px;right:8px;bottom:9px;
   }
-  #view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active){transform:none}
-  #view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) .category-symbol{transform:none}
-  #view-pos #categoryTabs .category-tile .cat-bite-mask{transform:translateX(13px)!important}
+  #view-pos #categoryTabs .category-tile .category-illustration {width:54px;height:54px}
+}
+@media(max-width:699px) {
+  #view-pos #categoryTabs .category-tile .category-symbol {
+    width:43px;height:43px;right:6px;bottom:7px;
+  }
+  #view-pos #categoryTabs .category-tile .category-illustration {width:42px;height:42px}
+  #view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) {transform:translateY(-1px)}
+  #view-pos #categoryTabs .category-tile .category-status {top:6px;left:7px}
+}
+@media(prefers-reduced-motion:reduce) {
+  #view-pos #categoryTabs .category-tile,
+  #view-pos #categoryTabs .category-tile .category-symbol,
+  #view-pos #categoryTabs .category-illustration *,
+  #view-pos #categoryTabs .cat-box-leftflap,
+  #view-pos #categoryTabs .cat-box-rightflap {
+    animation:none!important;transition:none!important;
+  }
+  #view-pos #categoryTabs .category-tile:is(:hover,:focus-visible,:active) {transform:none}
+  #view-pos #categoryTabs .category-tile .cat-cookie-bitten {opacity:0!important}
+  #view-pos #categoryTabs .category-tile .cat-biting-mouth,
+  #view-pos #categoryTabs .category-tile .cat-cookie-crumbs {opacity:0!important}
+  #view-pos #categoryTabs .category-tile .cat-cookie-whole {opacity:1!important}
 }
