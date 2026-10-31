@@ -29,7 +29,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.13-dashboard-refinement';
+const APP_VERSION = '1.5.14-logo-staff-report';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -916,6 +916,13 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/sales')return json(res,200,await salesReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
   if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
+  if(method==='GET'&&p==='/api/reports/sales/print'){
+    // Dashboard staff action: daily PDF for the authenticated user's assigned branch.
+    // Do not trust client-provided branch or date values for this shortcut.
+    const ownBranch=await branchSupport.salesScope(db,user,null);
+    const d=await salesPdf({period:'daily',branchId:ownBranch});
+    return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`inline; filename="${d.filename}"`});
+  }
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
