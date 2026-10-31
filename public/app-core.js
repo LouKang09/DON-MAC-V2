@@ -362,6 +362,8 @@
    state.branches=d.branches||[];
    const active=state.branches.filter(x=>x.active);
    if(state.user.role==='Admin'){
+     const selectedBranch=Number($('dashboardBranch').value||0);
+     if(active.some(x=>x.id===selectedBranch))state.posBranchId=selectedBranch;
      if(!active.some(x=>x.id===state.posBranchId))state.posBranchId=active[0]?.id||null;
      $('posBranch').innerHTML=branchOptions(active,state.posBranchId);
      $('posBranch').classList.remove('hidden');$('posBranchReadOnly').classList.add('hidden');
@@ -427,7 +429,15 @@
    const today=manilaToday();$('trendTo').value=today;$('trendFrom').value=new Date(Date.parse(today+'T00:00:00Z')-9*86400000).toISOString().slice(0,10);
    const toggleRange=()=>{const custom=$('trendView').value==='custom';$('trendFromWrap').classList.toggle('hidden',!custom);$('trendToWrap').classList.toggle('hidden',!custom);};
    $('trendView').onchange=()=>{toggleRange();if($('trendView').value!=='custom')loadDashboard();};
-   $('applyTrend').onclick=loadDashboard;$('dashboardBranch').onchange=loadDashboard;
+   $('applyTrend').onclick=loadDashboard;$('dashboardBranch').onchange=()=>{
+      const selected=Number($('dashboardBranch').value||0);
+      if(state.user?.role==='Admin'&&state.branches.some(x=>x.id===selected&&x.active)){
+        state.posBranchId=selected;
+        $('posBranch').value=String(selected);
+        refreshPosDailyCount();
+      }
+      loadDashboard();
+    };
    toggleRange();
   }
 
