@@ -7,7 +7,7 @@
   const openBtn=$('dashboardPremiumPreviewOpen');
   const dialog=$('premiumDashboardPreview');
   if(!openBtn||!dialog)return;
-  const content=$('premiumPreviewContent'),pro=$('premiumPreviewProTab'),business=$('premiumPreviewBusinessTab');
+  const content=$('premiumPreviewContent'),pro=$('premiumPreviewProTab'),business=$('premiumPreviewBusinessTab'),reference=$('premiumPreviewReferenceTab');
   const money=n=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP',maximumFractionDigits:2}).format(Number(n)||0);
   const count=n=>new Intl.NumberFormat('en-PH',{maximumFractionDigits:0}).format(Number(n)||0);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -158,7 +158,7 @@
   }
   function setTab(tier){
     state.tier=tier;
-    for(const [node,selected] of [[pro,tier==='pro'],[business,tier==='business']]){
+    for(const [node,selected] of [[pro,tier==='pro'],[business,tier==='business'],[reference,tier==='reference']]){
       node.setAttribute('aria-selected',selected?'true':'false');
       node.tabIndex=selected?0:-1;
     }
@@ -168,6 +168,10 @@
   const featureGallery=()=>window.DonmacPremiumFeatureReview?.render(state.tier)||'';
   function render(){
     if(!state.open)return;
+    if(state.tier==='reference'){
+      content.innerHTML=window.DonmacReferenceDashboard?.render()||'<p class="premium-preview-loading">Reference layout is unavailable. Please refresh the page.</p>';
+      return;
+    }
     const d=state.data;
     if(!d){content.innerHTML='<p class="premium-preview-loading">Loading current dashboard data. You can explore the sample feature gallery below.</p>'+featureGallery();return;}
     content.innerHTML=hero(d)+commonKPIs(d)+
@@ -259,8 +263,12 @@
   dialog.addEventListener('click',e=>{if(e.target===dialog)hide();});
   pro.addEventListener('click',()=>setTab('pro'));
   business.addEventListener('click',()=>setTab('business'));
-  [pro,business].forEach(tab=>tab.addEventListener('keydown',e=>{
+  reference.addEventListener('click',()=>setTab('reference'));
+  const tabs=[pro,business,reference];
+  tabs.forEach((tab,i)=>tab.addEventListener('keydown',e=>{
     if(!['ArrowLeft','ArrowRight'].includes(e.key))return;
-    e.preventDefault();(state.tier==='pro'?business:pro).click();(state.tier==='pro'?pro:business).focus();
+    e.preventDefault();
+    const next=tabs[(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length];
+    next.click();next.focus();
   }));
 })();
