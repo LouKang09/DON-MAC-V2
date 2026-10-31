@@ -61,49 +61,65 @@
       </header>
 
       <section id="view-dashboard" class="view">
-        <div class="dashboard-intro">
-          <div><p class="dashboard-kicker">BUSINESS OVERVIEW</p><h3>Dashboard</h3><p>Sales, products, inventory and recent activity at a glance.</p></div>
-          <span class="dashboard-data-notice"><span class="status-dot" aria-hidden="true"></span> Actual POS data</span>
+        <div id="dashboardSummary" class="summary-grid dashboard-summary" aria-label="Sales overview"></div>
+
+        <div class="dashboard-grid dashboard-hero-grid">
+          <section class="card chart-card dashboard-statistics-card" aria-labelledby="dashboardStatisticsTitle">
+            <div class="card-head dashboard-chart-head">
+              <div class="dashboard-chart-heading"><p class="eyebrow" id="trendPeriodLabel">TODAY · HOURLY</p><h3 id="dashboardStatisticsTitle">Sales Statistic</h3><span class="muted tiny" id="trendChartHint">Actual sales by category · hover for details</span></div>
+              <div class="dashboard-card-tools">
+                <button id="dashboardChartRefresh" class="dashboard-icon-button" type="button" aria-label="Refresh sales statistics" title="Refresh sales statistics"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg></button>
+                <span id="dashboardRangePill" class="dashboard-range-pill">Selected range</span>
+              </div>
+            </div>
+            <div class="dashboard-chart-legend" id="dashboardSalesLegend" aria-label="Sales series"></div>
+            <div class="dashboard-chart-filters">
+              <div class="sales-range-controls">
+                <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
+                <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
+                <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
+                <label class="admin-only" id="dashboardBranchWrap">Branch<select id="dashboardBranch"><option value="all">All branches</option></select></label>
+                <button id="applyTrend" class="primary" type="button">Apply</button>
+              </div>
+            </div>
+            <div class="trend-plot dashboard-multiline-plot">
+              <canvas id="salesTrendChart" height="260" aria-label="Sales by product category for the selected range" role="img"></canvas>
+              <div id="trendTooltip" class="trend-tooltip hidden" role="status"></div>
+            </div>
+            <div class="dashboard-plot-note">Based on recorded transactions. Series reflect actual category sales; a category with no sales stays at zero.</div>
+          </section>
+
+          <section class="card dashboard-category-card" aria-labelledby="categoryMixTitle">
+            <div class="card-head"><div><p class="eyebrow">THIS MONTH</p><h3 id="categoryMixTitle">Category Mix</h3></div></div>
+            <p class="dashboard-category-desc">Gross sales by menu category</p>
+            <div id="categorySales" class="bar-list dashboard-category-bars"></div>
+            <div class="dashboard-category-footer"><span>Only completed transactions</span><span class="category-footer-icon" aria-hidden="true">↗</span></div>
+          </section>
         </div>
-        <div class="card sales-range-toolbar">
-          <div class="range-heading"><p class="eyebrow">SALES ANALYTICS</p><h3>Sales timeline</h3><span class="muted tiny">Hourly for a single day, daily for multi-day ranges · Philippine time</span></div>
-          <div class="sales-range-controls">
-            <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
-            <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
-            <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
-            <label class="admin-only" id="dashboardBranchWrap">Branch<select id="dashboardBranch"><option value="all">All branches</option></select></label>
-            <button id="applyTrend" class="primary">Apply</button>
-          </div>
-        </div>
-        <div id="dashboardSummary" class="summary-grid dashboard-summary"></div>
-        <div class="dashboard-grid">
-          <div class="card chart-card"><div class="card-head"><div><p class="eyebrow" id="trendPeriodLabel">TODAY · HOURLY</p><h3>Actual Sales Trend</h3></div><span class="muted tiny" id="trendChartHint">Hover over a point to see its exact value</span></div><div class="trend-plot"><canvas id="salesTrendChart" height="250"></canvas><div id="trendTooltip" class="trend-tooltip hidden" role="status"></div></div></div>
-          <div class="card chart-card"><div class="card-head"><div><p class="eyebrow">THIS MONTH</p><h3>Top Products</h3></div></div><canvas id="topProductsChart" height="250"></canvas></div>
-        </div>
-        <div class="dashboard-grid lower">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">LOW STOCK</p><h3>Needs Attention</h3></div><button id="dashboardRefresh" class="ghost">Refresh</button></div><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div></div>
-          <div class="card"><div class="card-head"><div><p class="eyebrow">MONTH MIX</p><h3>Gross by Category</h3></div></div><div id="categorySales" class="bar-list"></div></div>
-        </div>
+
         <div class="dashboard-insights-grid">
           <section class="card dashboard-insight-card dashboard-items-card" aria-labelledby="performanceTitle">
             <div class="card-head">
               <div><p class="eyebrow">THIS MONTH · UNITS SOLD</p><h3 id="performanceTitle">Items Performance</h3></div>
-              <span class="dashboard-mini-caption">Top 6 products</span>
+              <span class="dashboard-mini-caption" id="performanceCountLabel">Up to 8 products</span>
             </div>
-            <div id="dashboardRadar" class="dashboard-radar" role="img" aria-label="Product performance comparison"></div>
+            <div id="dashboardRadar" class="dashboard-radar" role="img" aria-label="Top product quantities on a radar chart"></div>
             <div id="dashboardRadarLegend" class="dashboard-radar-legend"></div>
           </section>
           <section class="card dashboard-insight-card dashboard-recent-card" aria-labelledby="recentTransactionsTitle">
             <div class="card-head">
               <div><p class="eyebrow">LATEST CHECKOUT ACTIVITY</p><h3 id="recentTransactionsTitle">Recent Transactions</h3></div>
-              <button id="dashboardRecentRefresh" class="dashboard-icon-button" type="button" title="Refresh dashboard" aria-label="Refresh recent transactions">
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg>
-              </button>
+              <button id="dashboardRecentRefresh" class="dashboard-icon-button" type="button" title="Refresh dashboard" aria-label="Refresh recent transactions"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg></button>
             </div>
-            <p id="dashboardRecentScope" class="dashboard-recent-scope">Most recent completed orders for the selected branch scope.</p>
-            <div id="dashboardRecentTransactions" class="dashboard-recent-table-wrap" aria-live="polite">
-              <div class="empty-state">Select Dashboard to load recent transactions.</div>
-            </div>
+            <p id="dashboardRecentScope" class="dashboard-recent-scope">Recent completed orders in the selected branch.</p>
+            <div id="dashboardRecentTransactions" class="dashboard-recent-table-wrap" aria-live="polite"><div class="empty-state">Loading transactions…</div></div>
+          </section>
+        </div>
+
+        <div class="dashboard-bottom-grid">
+          <section class="card dashboard-stock-card" aria-labelledby="lowStockTitle">
+            <div class="card-head"><div><p class="eyebrow">INVENTORY WATCH</p><h3 id="lowStockTitle">Needs Attention</h3></div><button id="dashboardRefresh" class="ghost" type="button">Refresh</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div>
           </section>
         </div>
       </section>
