@@ -167,3 +167,18 @@ CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
 CREATE INDEX IF NOT EXISTS idx_sale_item_components_sale_item ON sale_item_components(sale_item_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_movements_created ON inventory_movements(created_at);
 CREATE INDEX IF NOT EXISTS idx_system_logs_created ON system_logs(created_at);
+
+
+-- POS category presentation only; existing products retain their original category rules.
+CREATE TABLE IF NOT EXISTS pos_categories (
+  name TEXT PRIMARY KEY,
+  icon_data TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 100,
+  builtin INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS pos_category_products (
+  category_name TEXT NOT NULL REFERENCES pos_categories(name) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  PRIMARY KEY (category_name, product_id)
+);
