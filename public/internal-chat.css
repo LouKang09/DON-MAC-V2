@@ -244,3 +244,38 @@
  #view-chat .chat-message-list{scroll-behavior:auto}
  #view-chat *{transition:none!important}
 }
+/* v1.5.25: All Branches, branch groups, and distinct sender identities. */
+#view-chat .chat-list-heading{
+  padding:11px 12px 5px;
+  font-size:9px;letter-spacing:.13em;
+  font-weight:850;color:#688573;
+  text-transform:uppercase;
+}
+#view-chat .chat-avatar.is-group{
+  border-radius:14px;
+  background:#e1efe1;
+  color:#286f43;
+  font-size:10px;
+  letter-spacing:.025em;
+  border-color:#b9d7c1;
+}
+#view-chat .chat-person.is-active .chat-avatar.is-group{
+  background:#cbe7ce;
+}
+#view-chat .chat-message-sender{
+  font-size:10px;font-weight:750;
+  color:#63816d;padding:0 4px;
+  max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#view-chat .chat-message.is-mine .chat-message-sender{
+  display:none;
+}
+#view-chat .chat-person-unread{
+  min-width:19px;height:19px;
+}
+@media(max-width:699px){
+  #view-chat .chat-list-heading{padding:13px 13px 6px}
+  #view-chat .chat-avatar.is-group{border-radius:12px}
+}
