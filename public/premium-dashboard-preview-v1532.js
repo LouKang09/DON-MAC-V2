@@ -165,17 +165,18 @@
     render();
     if(tier==='business')loadBranches();
   }
+  const featureGallery=()=>window.DonmacPremiumFeatureReview?.render(state.tier)||'';
   function render(){
     if(!state.open)return;
     const d=state.data;
-    if(!d){content.innerHTML='<p class="premium-preview-loading">Loading current dashboard data…</p>';return;}
+    if(!d){content.innerHTML='<p class="premium-preview-loading">Loading current dashboard data. You can explore the sample feature gallery below.</p>'+featureGallery();return;}
     content.innerHTML=hero(d)+commonKPIs(d)+
       (state.tier==='pro'?proInsights(d)+proPlanned():
         '<div class="premium-preview-business-intro">Business includes all Pro analytics plus multi-branch management insights.</div>'+
         businessPlanned(d)+
         '<section class="premium-preview-panel"><div class="premium-preview-panel-heading"><div><span class="premium-preview-overline">INCLUDED FROM PRO</span><h4>Sales & Product Analytics</h4></div>'+dataSource+'</div>'+
         '<div class="premium-preview-two-col premium-preview-nested"><div>'+salesChart(d.trend)+'</div><div class="premium-preview-products">'+productRows(d.topProducts)+'</div></div></section>')+
-      '<div class="premium-preview-disclaimer">This is a design preview, not a subscription or production dashboard change. No plan is activated. Figures tagged LIVE POS DATA are retrieved from existing reports; PLANNED FEATURE panels have no fabricated KPI results.</div>';
+      featureGallery()+'<div class="premium-preview-disclaimer">This is a design preview, not a subscription or production dashboard change. No plan is activated. LIVE POS DATA uses current reporting; SAMPLE DATA in the feature gallery is fictional and for illustration only. Marking a feature for removal does not change the production dashboard.</div>';
   }
   async function get(url){
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),18000);
@@ -205,7 +206,7 @@
       if(window.__donmacDashboardData){
         state.data=window.__donmacDashboardData;render();
       }else{
-        content.innerHTML='<div class="premium-preview-blank">Could not load dashboard figures ('+esc(e.message)+'). Return to the dashboard and refresh its data, then try again.</div>';
+        content.innerHTML='<div class="premium-preview-blank">Live dashboard figures are unavailable ('+esc(e.message)+'). You can still review the sample concept gallery below.</div>'+featureGallery();
       }
     }
   }
