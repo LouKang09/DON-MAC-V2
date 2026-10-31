@@ -6,6 +6,7 @@ const { createDb } = require('./db');
 const { makePdf, salesReportLines, costingReportLines } = require('./lib/pdf');
 const { sendMail } = require('./lib/smtp');
 const branchSupport = require('./lib/branch-support');
+const internalChat = require('./lib/internal-chat');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -29,7 +30,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.21-icon-mapping-fix';
+const APP_VERSION = '1.5.22-internal-messages';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -680,9 +681,11 @@ async function createOrActivateUser(body,actor=null){
     }
     await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3,branch_id=$4 WHERE id=$5',[hashPassword(password),role,active,branchId,Number(old.id)]);
     await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(old.id)]);
+    await internalChat.assignNewUser(db,actor?.id||null,Number(old.id));
     return{id:Number(old.id),username:old.username,role,active};
   }
   const r=await db.query('INSERT INTO users (username,password_hash,role,active,created_at,branch_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',[username,hashPassword(password),role,active,nowIso(),branchId]);
+  await internalChat.assignNewUser(db,actor?.id||null,Number(r.rows[0].id));
   return{id:Number(r.rows[0].id),username,role,active};
 }
 async function deleteUserAccount(actor,id){if(Number(id)===actor.id)throw Object.assign(new Error('You cannot delete your own account.'),{status:400});const r=await db.query('SELECT id,username,role,active FROM users WHERE id=$1',[id]);const u=r.rows[0];if(!u)throw Object.assign(new Error('User not found.'),{status:404});const refs=await db.query('SELECT (SELECT COUNT(*) FROM sales WHERE cashier_user_id=$1 OR deleted_by=$1) AS sales_count,(SELECT COUNT(*) FROM system_logs WHERE actor_user_id=$1) AS logs_count,(SELECT COUNT(*) FROM inventory_movements WHERE created_by=$1) AS movements_count',[id]);if(Number(refs.rows[0].sales_count)||Number(refs.rows[0].logs_count)||Number(refs.rows[0].movements_count))throw Object.assign(new Error('This account has transaction or audit history. Deactivate it instead of deleting it.'),{status:409});const count=await db.query("SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL",[true]);if(u.role==='Admin'&&bool(u.active)&&Number(count.rows[0].c)<=1)throw Object.assign(new Error('At least one active Admin must remain.'),{status:400});await db.query('DELETE FROM sessions WHERE user_id=$1',[id]);await db.query('DELETE FROM users WHERE id=$1',[id]);await logAction(actor,'Web user deleted: '+u.username,'User Deleted',null);return {ok:true};}
@@ -906,7 +909,7 @@ async function restoreBackup(user,name){
     for(const suffix of ['-wal','-shm'])try{fs.unlinkSync(dbPath+suffix);}catch(_){}
     try{fs.unlinkSync(dbPath);}catch(_){}
     fs.renameSync(incoming,dbPath);
-    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await db.query('DELETE FROM sessions');
+    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await db.query('DELETE FROM sessions');
     await logAction({id:null,username:user.username},`Database restored from: ${name}`,'Restored','Automatic pre-restore backup created; all web sessions cleared');
     return{ok:true,name,requiresRelogin:true};
   }catch(err){
@@ -977,6 +980,7 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
+  if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
   if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(),safeHeaders());
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
@@ -1076,7 +1080,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
