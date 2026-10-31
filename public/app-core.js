@@ -108,11 +108,12 @@
   }
   function switchView(view){
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
     $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
-    // Team Messages now uses a persistent floating window, independent of page navigation.
+    // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
+    window.donmacChat?.onViewChange(view);
     if(view==='pos')refreshPosDailyCount();
     if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports')loadReport();if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
   }
