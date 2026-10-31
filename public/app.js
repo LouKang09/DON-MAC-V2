@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.31-mobile-more-css-fix';
+  const VERSION = '1.5.32-dashboard-preview';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -51,6 +51,7 @@
       loadCss('sidebarNavCss', '/sidebar-v1511.css');
       loadCss('dashboardEnhancementsCss', '/dashboard-v1512.css');
       loadCss('dashboardRefinementCss', '/dashboard-v1513.css');
+      loadCss('premiumDashboardPreviewCss', '/premium-dashboard-preview-v1532.css');
       loadCss('logoAndReportCss', '/logo-report-v1514.css');
       loadCss('posStaticIconsCss', '/pos-category-icons-v1520.css');
       loadCss('posCategoryAdminCss', '/pos-categories-admin.css');
@@ -70,13 +71,15 @@
       await loadScript('/v156-features.js');
       await loadScript('/pos-refresh.js');
       await loadScript('/dashboard-v1512.js');
+      // Admin-only read-only preview; keep all current dashboard renderers unchanged.
+      await loadScript('/premium-dashboard-preview-v1532.js');
       await loadScript('/pos-categories-admin.js');
       await loadScript('/internal-chat.js');
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
 
 
 
-      console.info('Don Macchiatos POS v1.5.31 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.32 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
