@@ -29,7 +29,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.11-sidebar-navigation';
+const APP_VERSION = '1.5.12-dashboard-experience';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -741,7 +741,34 @@ async function dashboardData(params={},branchId=null){
   const inv=await getInventory();const lowStock=inv.filter(x=>x.low).sort((a,b)=>a.stock-b.stock).slice(0,10);
   const topProducts=monthR.products.filter(x=>!x.isAddOn).sort((a,b)=>b.qty-a.qty).slice(0,8);
   const saleIds=[];const monthScope=await periodSales({period:'monthly',date:today,branchId});for(const s of monthScope.sold)saleIds.push(Number(s.id));const categoryMap=new Map();if(saleIds.length){const r=await db.query(`SELECT si.line_total,si.is_add_on,si.is_package,p.category FROM sale_items si LEFT JOIN products p ON p.id=si.product_id WHERE si.sale_id IN (${placeholders(1,saleIds.length)})`,saleIds);for(const x of r.rows){const cat=bool(x.is_add_on)?'Add-ons':bool(x.is_package)?'Packages':x.category||'Other';categoryMap.set(cat,money((categoryMap.get(cat)||0)+Number(x.line_total)));}}
-  return{today,metrics:{todayActual:todayR.actual,todayGross:todayR.gross,todayTransactions:todayR.transactionCount,monthActual:monthR.actual,monthTransactions:monthR.transactionCount,lowStockCount:inv.filter(x=>x.low).length},...trendResult,branchId,topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:x.actual})),lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount}))};
+  // Compact recent activity, already scoped by the authorized dashboard branch.
+  // Keep this query bounded; product/customer details are optional on historical sales.
+  const recentArgs=branchId==null?['Sold']:['Sold',Number(branchId)];
+  const recentR=await db.query(
+    'SELECT id,reference,sold_at,cashier_name_snapshot,payment_mode,actual,order_type,customer_name,table_label FROM sales WHERE status=$1'+
+    (branchId==null?'':' AND branch_id=$2')+' ORDER BY sold_at DESC,id DESC LIMIT 8',
+    recentArgs
+  );
+  const recentIds=recentR.rows.map(s=>Number(s.id));
+  const itemsBySale=new Map();
+  if(recentIds.length){
+    const recentItems=await db.query(
+      'SELECT sale_id,product_name_snapshot,quantity FROM sale_items WHERE sale_id IN ('+
+      placeholders(1,recentIds.length)+') ORDER BY sale_id,id',recentIds
+    );
+    for(const item of recentItems.rows){
+      const id=Number(item.sale_id);
+      if(!itemsBySale.has(id))itemsBySale.set(id,[]);
+      itemsBySale.get(id).push({name:item.product_name_snapshot,qty:Number(item.quantity)});
+    }
+  }
+  const recentTransactions=recentR.rows.map(x=>({
+    reference:x.reference,soldAt:x.sold_at,cashier:x.cashier_name_snapshot||null,
+    paymentMode:x.payment_mode,amount:Number(x.actual||0),
+    orderType:x.order_type||'Take Away',customerName:x.customer_name||null,
+    tableLabel:x.table_label||null,items:itemsBySale.get(Number(x.id))||[]
+  }));
+  return{today,metrics:{todayActual:todayR.actual,todayGross:todayR.gross,todayTransactions:todayR.transactionCount,monthActual:monthR.actual,monthTransactions:monthR.transactionCount,lowStockCount:inv.filter(x=>x.low).length,inventoryCount:inv.length},...trendResult,branchId,topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:x.actual})),lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount})),recentTransactions};
 }
 
 function safeBackupName(name){const base=path.basename(String(name||''));if(!/^[A-Za-z0-9._-]+\.sqlite$/.test(base))throw Object.assign(new Error('Invalid backup file name.'),{status:400});return base;}
