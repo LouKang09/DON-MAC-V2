@@ -12,18 +12,20 @@
   background-image:var(--donmac-category-sprite);
   background-repeat:no-repeat;
   background-size:600% 100%;
-  background-position:0 0;
+  /* Do not set background-position here: the category-specific rule owns it. */
   image-rendering:auto;
   transform:none!important;
 }
-#view-pos #categoryTabs .category-icon-coffee {background-position:0% 0%}
-#view-pos #categoryTabs .category-icon-noncoffee {background-position:20% 0%}
-#view-pos #categoryTabs .category-icon-food {background-position:40% 0%}
-#view-pos #categoryTabs .category-icon-addons {background-position:60% 0%}
-#view-pos #categoryTabs .category-icon-promos {background-position:80% 0%}
-#view-pos #categoryTabs .category-icon-packages {background-position:100% 0%}
-#view-pos #categoryTabs .category-icon-custom {
-  background:none;
+#view-pos #categoryTabs .category-tile .category-icon-coffee {background-position:0% 0%}
+#view-pos #categoryTabs .category-tile .category-icon-noncoffee {background-position:20% 0%}
+#view-pos #categoryTabs .category-tile .category-icon-food {background-position:40% 0%}
+#view-pos #categoryTabs .category-tile .category-icon-addons {background-position:60% 0%}
+#view-pos #categoryTabs .category-tile .category-icon-promos {background-position:80% 0%}
+#view-pos #categoryTabs .category-tile .category-icon-packages {background-position:100% 0%}
+#view-pos #categoryTabs .category-tile .category-icon-custom {
+  background-image:none;
+  background-position:center;
+  background-color:transparent;
   width:64px;height:64px;
   object-fit:contain;
 }
