@@ -216,7 +216,8 @@
  }
  function close(){state.open=false;stopThread();}
  function resetSession(){
-   close();state.contacts=[];state.selected=0;state.messages=[];state.turn++;
+   close();if(state.unreadTimer){clearInterval(state.unreadTimer);state.unreadTimer=null;}
+   state.contacts=[];state.selected=0;state.messages=[];state.turn++;
    state.image=null;photoPreview();updateUnread(0);
  }
  function loggedIn(id){
@@ -224,6 +225,9 @@
    window.donmacChat.authenticated=!!id;
    if(!id){resetSession();return;}
    refreshContacts();
+   if(!state.unreadTimer)state.unreadTimer=setInterval(()=>{
+     if(!document.hidden&&window.donmacChat?.authenticated)refreshContacts();
+   },15000);
  }
  $('chatSearch').addEventListener('input',renderContacts);
  $('chatRefresh').addEventListener('click',refreshContacts);
