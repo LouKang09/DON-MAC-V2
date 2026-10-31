@@ -312,8 +312,8 @@
       const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Image processing unavailable.');
       ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
       let data=canvas.toDataURL('image/jpeg',0.78);
-      if(data.length>270000)data=canvas.toDataURL('image/jpeg',0.55);
-      if(data.length>270000)throw new Error('Image could not be compressed below 200 KB. Choose a simpler photo.');
+      if(data.length>264000)data=canvas.toDataURL('image/jpeg',0.55);
+      if(data.length>264000)throw new Error('Image could not be compressed below 200 KB. Choose a simpler photo.');
       showProductPhoto(data);
     }catch(err){toast(err.message||'Could not load photo.');}
     finally{URL.revokeObjectURL(url);}
