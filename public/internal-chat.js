@@ -251,7 +251,7 @@
      refreshThread(cycle%8===0);
      if(cycle%3===0)refreshContacts();
    },5000);
-   $('chatSearch').focus({preventScroll:true});
+   if(window.innerWidth>699)$('chatSearch').focus({preventScroll:true});
  }
  function close(){
    state.open=false;stopThread();
@@ -287,7 +287,7 @@
  });
  // A chat window should never trap clicks intended for the payment system.
  document.addEventListener('pointerdown',e=>{
-   if(!state.open)return;
+   if(!state.open||$('chatPhotoViewer')?.open)return;
    const panel=$('chatFloatingPanel'),launcher=$('chatFloatingLauncher');
    if(!panel.contains(e.target)&&!launcher.contains(e.target))close();
  });
