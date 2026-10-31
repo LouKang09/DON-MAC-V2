@@ -122,12 +122,12 @@
     const branches=state.branches;
     if(branches?.error)return '<div class="premium-preview-blank">Branch comparison unavailable: '+esc(branches.error)+'. Current dashboard remains unaffected.</div>';
     if(!Array.isArray(branches)||!branches.length)return '<div class="premium-preview-blank">No active branches available for comparison yet.</div>';
-    const max=Math.max(1,...branches.map(x=>Number(x.amount)||0));
+    const max=Math.max(1,...branches.filter(x=>!x.unavailable).map(x=>Number(x.amount)||0));
     return '<div class="premium-preview-branch-list">'+branches.map((b,i)=>
       '<div class="premium-preview-branch-row"><span class="premium-preview-branch-number">'+(i+1)+'</span>'+
       '<span class="premium-preview-branch-name">'+esc(b.name)+'</span>'+
       '<span class="premium-preview-branch-bar"><span style="width:'+Math.max(0,(Number(b.amount)||0)/max*100).toFixed(1)+'%"></span></span>'+
-      '<strong>'+money(b.amount)+'</strong></div>'
+      '<strong>'+(b.unavailable?'Unavailable':money(b.amount))+'</strong></div>'
     ).join('')+'</div>'+
     '<p class="premium-preview-hint">Actual current-month sales from existing branch reports. Up to 8 active branches shown.'+
       (branches.length===8?' Larger accounts will support full comparison in the finished Business dashboard.':'')+'</p>';
