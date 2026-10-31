@@ -125,6 +125,10 @@
   }
   .app .mobile-bottom-nav .mobile-more-button.hidden,
   .app .mobile-more-panel.hidden{display:none!important}
+  /* The base #mobileMorePanel display:none selector has ID-level specificity.
+     A class-only display rule cannot override it; force visible only when open. */
+  #mobileMorePanel:not(.hidden){display:flex!important}
+  #mobileMorePanel.hidden{display:none!important}
   .app .mobile-more-panel{
     position:fixed;
     right:10px;
