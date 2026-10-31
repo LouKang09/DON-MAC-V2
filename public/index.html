@@ -37,9 +37,6 @@
           <button type="button" class="nav active" data-view="pos" data-tooltip="POS" aria-label="POS" title="POS"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3.5h15v17l-2.5-1.7-2.5 1.7-2.5-1.7-2.5 1.7-2.5-1.7-2.5 1.7v-17Z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg><span class="nav-label">POS</span></button>
           <button type="button" class="nav" data-view="inventory" data-tooltip="Inventory" aria-label="Inventory" title="Inventory"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.8 8.7 5-8.7 5-8.7-5 8.7-5Z"/><path d="M3.3 7.8v9l8.7 5 8.7-5v-9M12 12.8v9M7.7 5.3l8.7 5"/></svg><span class="nav-label">Inventory</span></button>
         </div>
-        <div class="nav-section nav-communication"><span class="nav-section-label">TEAM</span>
-          <button type="button" class="nav" data-view="chat" data-tooltip="Messages" aria-label="Messages" title="Messages"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H11l-6.5 4v-4H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"/><path d="M7.5 9.5h9M7.5 13h6"/></svg><span class="nav-label">Messages</span><span id="chatUnreadBadge" class="chat-nav-badge hidden" aria-label="Unread messages"></span></button>
-        </div>
         <div class="nav-section admin-only nav-management">
           <span class="nav-section-label">MANAGEMENT</span>
           <button type="button" class="nav admin-only" data-view="reports" data-tooltip="Reports" aria-label="Reports" title="Reports"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.8 20.5h16.4M6.2 16.5v-5M11.8 16.5v-9M17.4 16.5V4"/><path d="M5.2 16.5h2M10.8 16.5h2M16.4 16.5h2"/></svg><span class="nav-label">Reports</span></button>
@@ -255,7 +252,27 @@
         </div>
       </section>
 
-      <section id="view-chat" class="view">
+      <section id="view-users" class="view admin-only">
+        <div class="users-section-title"><div><p class="eyebrow">MULTI-BRANCH SETUP</p><h3>Manage branches</h3><p class="muted tiny">Create, rename, disable or delete unused branches. No subscriptions or branch fees.</p></div></div>
+        <div class="section-grid users-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">LOCATIONS</p><h3>Branches</h3></div></div><div class="table-wrap"><table><thead><tr><th>Branch</th><th>Users / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
+          <form id="branchForm" class="card form-card"><p class="eyebrow">BRANCH DETAILS</p><h3 id="branchFormTitle">New Branch</h3><input id="branchEditId" type="hidden" /><label>Branch name<input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label><label>Address (optional)<input id="branchAddress" maxlength="250" placeholder="Location or landmark" /></label><label class="check-row"><input id="branchActive" type="checkbox" checked /> Active branch</label><button class="primary" type="submit">Save Branch</button><button id="branchFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Branches with linked sales cannot be permanently removed. Disable them instead to keep reporting and audit records.</p></form>
+        </div>
+        <div class="users-section-title users-subsection"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Users & branch assignments</h3><p class="muted tiny">Assign each staff account to a branch. Administrators can review all branches.</p></div></div>
+        <div class="section-grid users-layout">
+          <div class="card"><div class="card-head"><div><p class="eyebrow">WEB ACCOUNTS</p><h3>Users</h3></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+          <form id="userForm" class="card form-card"><p class="eyebrow">ADD / EDIT USER</p><h3>User Account</h3><input id="userEditId" type="hidden" /><label>Username<input id="newUsername" minlength="2" maxlength="80" required /></label><label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" /></label><label>Role<select id="newRole"><option>User</option><option>Admin</option></select></label><label id="newUserBranchWrap">Assigned branch<select id="newUserBranch" required></select></label><label class="check-row"><input id="newUserActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save User</button><button id="userFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Leave the password blank to preserve it when editing. Accounts with transaction history can be deactivated rather than deleted.</p></form>
+        </div>
+      </section>
+
+      <section id="view-logs" class="view"><div class="card"><div class="card-head"><div><p class="eyebrow">AUDIT</p><h3>System Logs</h3></div><button id="refreshLogs" class="ghost">Refresh</button></div><div id="logsList" class="logs-list"></div></div></section>
+    </main>
+    <div id="chatFloatingDock" class="chat-floating-dock" aria-label="Internal team messages">
+      <div id="chatFloatingPanel" class="chat-floating-panel hidden" role="dialog" aria-label="Team messages" aria-modal="false">
+        <div class="chat-floating-titlebar"><span class="chat-floating-title"><span class="chat-floating-status" aria-hidden="true"></span> Team Messages</span><span class="chat-floating-subtitle">Your owner's branches</span>
+          <button id="chatFloatingClose" type="button" class="chat-floating-close" title="Close chat" aria-label="Close messages"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+        </div>
+      <section id="view-chat" class="chat-floating-view">
         <div class="chat-layout" aria-label="Internal team messaging">
           <aside class="chat-people-panel">
             <div class="chat-people-heading"><div><p class="eyebrow">OWNER'S TEAM</p><h3>Messages</h3><p>Chat across branches</p></div><button id="chatRefresh" type="button" class="chat-icon-button" title="Refresh conversations" aria-label="Refresh conversations"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9a7.5 7.5 0 0 1 13-2M18.5 15a7.5 7.5 0 0 1-13 2"/></svg></button></div>
@@ -282,21 +299,12 @@
         </div>
       </section>
 
-      <section id="view-users" class="view admin-only">
-        <div class="users-section-title"><div><p class="eyebrow">MULTI-BRANCH SETUP</p><h3>Manage branches</h3><p class="muted tiny">Create, rename, disable or delete unused branches. No subscriptions or branch fees.</p></div></div>
-        <div class="section-grid users-layout">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">LOCATIONS</p><h3>Branches</h3></div></div><div class="table-wrap"><table><thead><tr><th>Branch</th><th>Users / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
-          <form id="branchForm" class="card form-card"><p class="eyebrow">BRANCH DETAILS</p><h3 id="branchFormTitle">New Branch</h3><input id="branchEditId" type="hidden" /><label>Branch name<input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label><label>Address (optional)<input id="branchAddress" maxlength="250" placeholder="Location or landmark" /></label><label class="check-row"><input id="branchActive" type="checkbox" checked /> Active branch</label><button class="primary" type="submit">Save Branch</button><button id="branchFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Branches with linked sales cannot be permanently removed. Disable them instead to keep reporting and audit records.</p></form>
-        </div>
-        <div class="users-section-title users-subsection"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Users & branch assignments</h3><p class="muted tiny">Assign each staff account to a branch. Administrators can review all branches.</p></div></div>
-        <div class="section-grid users-layout">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">WEB ACCOUNTS</p><h3>Users</h3></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
-          <form id="userForm" class="card form-card"><p class="eyebrow">ADD / EDIT USER</p><h3>User Account</h3><input id="userEditId" type="hidden" /><label>Username<input id="newUsername" minlength="2" maxlength="80" required /></label><label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" /></label><label>Role<select id="newRole"><option>User</option><option>Admin</option></select></label><label id="newUserBranchWrap">Assigned branch<select id="newUserBranch" required></select></label><label class="check-row"><input id="newUserActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save User</button><button id="userFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Leave the password blank to preserve it when editing. Accounts with transaction history can be deactivated rather than deleted.</p></form>
-        </div>
-      </section>
-
-      <section id="view-logs" class="view"><div class="card"><div class="card-head"><div><p class="eyebrow">AUDIT</p><h3>System Logs</h3></div><button id="refreshLogs" class="ghost">Refresh</button></div><div id="logsList" class="logs-list"></div></div></section>
-    </main>
+      </div>
+      <button type="button" id="chatFloatingLauncher" class="chat-floating-launcher" title="Team messages" aria-label="Open team messages" aria-controls="chatFloatingPanel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.5c0 4.5-3.8 8-8.5 8-1.2 0-2.3-.2-3.3-.6l-5.2 1.5 1.6-4.6A7.4 7.4 0 0 1 3.5 11.5c0-4.3 3.8-7.5 8.5-7.5s8.5 3.2 8.5 7.5Z"/><path d="M8 11.5h8M8 14.8h5.5"/></svg>
+        <span id="chatUnreadBadge" class="chat-floating-unread hidden" aria-label="Unread messages"></span>
+      </button>
+    </div>
   </div>
 
   <dialog id="chatPhotoViewer" class="chat-photo-dialog"><div class="chat-photo-viewer"><button type="button" id="chatPhotoClose" aria-label="Close photo" class="chat-photo-close">×</button><img id="chatPhotoLarge" alt="Photo attached to message" /></div></dialog>
