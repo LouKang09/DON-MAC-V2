@@ -61,6 +61,10 @@
       </header>
 
       <section id="view-dashboard" class="view">
+        <div class="dashboard-intro">
+          <div><p class="dashboard-kicker">BUSINESS OVERVIEW</p><h3>Dashboard</h3><p>Sales, products, inventory and recent activity at a glance.</p></div>
+          <span class="dashboard-data-notice"><span class="status-dot" aria-hidden="true"></span> Actual POS data</span>
+        </div>
         <div class="card sales-range-toolbar">
           <div class="range-heading"><p class="eyebrow">SALES ANALYTICS</p><h3>Sales timeline</h3><span class="muted tiny">Hourly for a single day, daily for multi-day ranges · Philippine time</span></div>
           <div class="sales-range-controls">
@@ -79,6 +83,28 @@
         <div class="dashboard-grid lower">
           <div class="card"><div class="card-head"><div><p class="eyebrow">LOW STOCK</p><h3>Needs Attention</h3></div><button id="dashboardRefresh" class="ghost">Refresh</button></div><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div></div>
           <div class="card"><div class="card-head"><div><p class="eyebrow">MONTH MIX</p><h3>Gross by Category</h3></div></div><div id="categorySales" class="bar-list"></div></div>
+        </div>
+        <div class="dashboard-insights-grid">
+          <section class="card dashboard-insight-card dashboard-items-card" aria-labelledby="performanceTitle">
+            <div class="card-head">
+              <div><p class="eyebrow">THIS MONTH · UNITS SOLD</p><h3 id="performanceTitle">Items Performance</h3></div>
+              <span class="dashboard-mini-caption">Top 6 products</span>
+            </div>
+            <div id="dashboardRadar" class="dashboard-radar" role="img" aria-label="Product performance comparison"></div>
+            <div id="dashboardRadarLegend" class="dashboard-radar-legend"></div>
+          </section>
+          <section class="card dashboard-insight-card dashboard-recent-card" aria-labelledby="recentTransactionsTitle">
+            <div class="card-head">
+              <div><p class="eyebrow">LATEST CHECKOUT ACTIVITY</p><h3 id="recentTransactionsTitle">Recent Transactions</h3></div>
+              <button id="dashboardRecentRefresh" class="dashboard-icon-button" type="button" title="Refresh dashboard" aria-label="Refresh recent transactions">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg>
+              </button>
+            </div>
+            <p id="dashboardRecentScope" class="dashboard-recent-scope">Most recent completed orders for the selected branch scope.</p>
+            <div id="dashboardRecentTransactions" class="dashboard-recent-table-wrap" aria-live="polite">
+              <div class="empty-state">Select Dashboard to load recent transactions.</div>
+            </div>
+          </section>
         </div>
       </section>
 
