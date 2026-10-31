@@ -280,3 +280,22 @@
 @media print{
   #view-dashboard .dashboard-insights-grid{display:none}
 }
+/* Light-touch directional sidebar control: quieter than the previous boxed panel icon. */
+@media(min-width:700px){
+  .sidebar .sidebar-toggle,
+  .app.sidebar-collapsed .sidebar .sidebar-toggle{
+    display:grid;place-items:center;width:30px;height:30px;
+    min-width:30px;margin:0;padding:0;
+    border:1px solid #354a3d;border-radius:50%;
+    background:#25372b;color:#bfd4c4;
+    box-shadow:0 2px 7px #00000014;
+  }
+  .sidebar .sidebar-toggle:hover,
+  .sidebar .sidebar-toggle:focus-visible{
+    background:#31553c;color:white;border-color:#659675;
+  }
+  .sidebar .sidebar-toggle svg{display:block;width:15px;height:15px}
+  .app.sidebar-collapsed .sidebar .sidebar-toggle{
+    position:static;align-self:center;margin:0 auto;
+  }
+}
