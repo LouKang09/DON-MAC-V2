@@ -240,6 +240,7 @@
       <details class="transaction-section transaction-details"><summary>Audit Events <span>${(d.auditEvents||[]).length} event(s)</span></summary><div class="audit-events">${auditRows}</div></details>`;
   }
   async function viewTransaction(reference){return withActionLock(`view-sale:${reference}`,async()=>{const dialog=$('transactionDialog');$('transactionReference').textContent=reference;$('transactionStatus').textContent='';$('transactionDetailBody').innerHTML='<div class="empty-state">Loading transaction details…</div>';if(!dialog.open)dialog.showModal();try{renderTransactionDetail(await api(`/api/sales/${encodeURIComponent(reference)}`));}catch(err){$('transactionDetailBody').innerHTML=`<div class="empty-state"><div><b>Unable to load transaction</b>${esc(err.message)}</div></div>`;toast(err.message);}});}
+  window.donmacOpenTransactionDetail=viewTransaction;
   $('transactionClose').onclick=()=>safeCloseDialog('transactionDialog');$('transactionDialog').addEventListener('click',e=>{if(e.target===$('transactionDialog'))safeCloseDialog('transactionDialog');});
   $('loadReport').onclick=loadReport;$('salesPdf').onclick=()=>window.open(`/api/reports/sales.pdf?${reportQuery()}`,'_blank');$('costingPdf').onclick=()=>window.open(`/api/reports/costing.pdf?${reportQuery()}`,'_blank');$('emailReport').onclick=()=>withActionLock('email-report',async()=>{try{const qs=Object.fromEntries(reportQuery());const d=await api('/api/reports/email',{method:'POST',body:qs,timeoutMs:60000});toast(`Report emailed to ${d.to}.`);}catch(err){toast(err.message);}});
 
@@ -265,6 +266,7 @@
    $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
    drawLineChart($('salesTrendChart'),d.trend.map(x=>x.actual),d.trend.map(x=>x.label));
    drawBarChart($('topProductsChart'),d.topProducts.map(x=>x.qty),d.topProducts.map(x=>x.name));
+   if(typeof window.renderDonMacDashboardExtras==='function')window.renderDonMacDashboardExtras(d);
   }
   function setupCanvas(canvas){const rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;canvas.width=Math.max(300,rect.width)*ratio;canvas.height=250*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);return{c,w:Math.max(300,rect.width),h:250};}
   function drawLineChart(canvas,values,labels){
