@@ -27,7 +27,7 @@
   <div id="app" class="app hidden">
     <aside class="sidebar" aria-label="Don Macchiatos navigation">
       <div class="sidebar-brand">
-        <div class="brand"><img class="brand-logo" src="/donmac-logo.svg" alt="Don Macchiatos" loading="eager" /></div>
+        <div class="brand sidebar-brand-card"><div class="sidebar-logo-shell"><img class="brand-logo" src="/donmac-logo-on-white.svg" alt="Don Macchiatos barista logo" loading="eager" /></div><div class="sidebar-brand-copy"><span class="sidebar-brand-kicker">DON MACCHIATOS</span><strong class="sidebar-brand-title">Don Mac POS</strong></div></div>
         <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" aria-controls="mainNav" title="Collapse navigation"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m8-12-4 4 4 4"/></svg></button>
       </div>
       <nav id="mainNav" aria-label="Main navigation">
@@ -57,7 +57,7 @@
     <main class="main">
       <header class="topbar">
         <div class="topbar-heading"><p class="eyebrow" id="viewEyebrow"></p><h2 id="viewTitle">Welcome to Don Macchiatos POS</h2><span id="posDate" class="pos-header-date"></span></div>
-        <div class="topbar-right"><span class="db-pill" id="dbEngine">DATABASE</span><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><div class="topbar-profile"><span class="topbar-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span></div></div>
+        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine">DATABASE</span><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><div class="topbar-profile"><span class="topbar-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span></div></div>
       </header>
 
       <section id="view-dashboard" class="view">
