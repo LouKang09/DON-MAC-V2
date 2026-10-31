@@ -135,20 +135,41 @@
     return changed;
   }
   async function loadCatalog(){state.catalog=await api('/api/catalog');const changed=reconcileCartWithCatalog();renderTabs();renderPromo();renderCatalog();renderOrder();await refreshQuote();if(changed)toast('Order updated because a catalog item is no longer available.');}
+  window.refreshPosCatalogCategories=loadCatalog;
 
   // Lightweight SVG artwork; animation lives in CSS and never modifies cart state.
   // Each POS category has a visible illustration and a distinct hover-only motion.
   // Cart totals, inventory/availability checks and click handlers are unchanged.
-  function categoryArt(name){
-    const drawings={"Coffee":"<g class=\"cat-coffee-steam\"><path class=\"steam steam-a\" d=\"M21 24C10 16 31 15 21 5\"/><path class=\"steam steam-b\" d=\"M33 22C23 14 43 12 32 3\"/><path class=\"steam steam-c\" d=\"M45 24C35 17 55 14 44 5\"/></g><g class=\"cat-coffee-cup\"><path class=\"cat-coffee-body\" d=\"M12 29H47V42C47 51 40 57 30 57S12 51 12 42Z\"/><path d=\"M47 32H51C63 32 60 47 47 47M9 60H53\"/><path d=\"M15 37H43\" opacity=\".5\"/></g>","Non Coffee":"<g class=\"cat-ice-cubes\"><g class=\"cat-ice ice-a\"><rect x=\"17\" y=\"5\" width=\"10\" height=\"10\" rx=\"1.6\" transform=\"rotate(-14 22 10)\"/></g><g class=\"cat-ice ice-b\"><rect x=\"33\" y=\"2\" width=\"10\" height=\"10\" rx=\"1.6\" transform=\"rotate(16 38 7)\"/></g><g class=\"cat-ice ice-c\"><rect x=\"46\" y=\"8\" width=\"8\" height=\"8\" rx=\"1.5\" transform=\"rotate(-12 50 12)\"/></g></g><g class=\"cat-iced-cup\"><path class=\"cat-iced-liquid\" d=\"M16 27H50L46 53Q45 58 40 58H26Q21 58 20 53Z\"/><path d=\"M14 22H52L48 53Q47 59 41 59H25Q19 59 18 53L14 22Z\"/><path d=\"M12 22H54M36 22L44 7\"/><path d=\"M20 35H48\" opacity=\".5\"/></g><g class=\"cat-ice-splash\"><path d=\"m23 29-4-4m16 3 4-6m7 8 5-4\"/></g>","Food":"<g class=\"cat-cookie-whole\"><circle class=\"cat-cookie-dough\" cx=\"29\" cy=\"34\" r=\"22\"/><g class=\"cat-chips\"><circle cx=\"22\" cy=\"22\" r=\"3\"/><circle cx=\"35\" cy=\"25\" r=\"3.1\"/><circle cx=\"21\" cy=\"40\" r=\"3.2\"/><circle cx=\"38\" cy=\"43\" r=\"2.6\"/><circle cx=\"29\" cy=\"34\" r=\"2.2\"/></g></g><g class=\"cat-cookie-bitten\"><path class=\"cat-cookie-dough\" d=\"M29 12C17 12 7 22 7 34S17 56 29 56C37 56 43 53 48 47C40 46 37 41 41 36C35 31 38 23 48 22C43 16 36 12 29 12Z\"/><g class=\"cat-chips\"><circle cx=\"22\" cy=\"22\" r=\"3\"/><circle cx=\"30\" cy=\"28\" r=\"3\"/><circle cx=\"20\" cy=\"41\" r=\"3.1\"/><circle cx=\"32\" cy=\"45\" r=\"2.5\"/></g></g><g class=\"cat-biting-mouth\"><path d=\"M48 23C53 18 60 18 64 19M48 43C53 48 60 48 64 47\"/><path d=\"m50 26 4 3 4-3m-8 14 4-3 4 3\"/></g><g class=\"cat-cookie-crumbs\"><circle cx=\"55\" cy=\"18\" r=\"2.3\"/><circle cx=\"60\" cy=\"31\" r=\"1.8\"/><circle cx=\"55\" cy=\"50\" r=\"2.1\"/></g>","Add-ons":"<g class=\"cat-fries-sticks\"><path d=\"m15 28-3-16 9-2 5 18M26 27 25 7h9l-1 21M37 28l4-20 8 3-5 18M45 30l8-16 7 5-10 16\"/></g><g class=\"cat-fries-carton\"><path class=\"cat-fries-pocket\" d=\"M13 27H53L48 52Q47 58 41 58H25Q19 58 18 52Z\"/><path d=\"M20 39q6 6 12 0 6 6 13 0M23 49h19\"/></g><g class=\"cat-seasoning-drops\"><circle class=\"salt salt-a\" cx=\"11\" cy=\"6\" r=\"2\"/><circle class=\"salt salt-b\" cx=\"46\" cy=\"5\" r=\"1.9\"/><circle class=\"salt salt-c\" cx=\"57\" cy=\"7\" r=\"2\"/><circle class=\"salt salt-d\" cx=\"9\" cy=\"22\" r=\"1.5\"/></g>","Promos":"<g class=\"cat-promo-ticket\"><path class=\"cat-ticket-paper\" d=\"M9 21H55V29C47 29 47 39 55 39V47H9V39C17 39 17 29 9 29Z\"/><path d=\"M32 23V45\" stroke-dasharray=\"3 5\"/><circle cx=\"23\" cy=\"31\" r=\"2\"/><circle cx=\"41\" cy=\"38\" r=\"2\"/><path d=\"m22 41 20-15\"/></g><g class=\"cat-confetti\"><path class=\"confetti cf-a\" d=\"m11 3 4 8\"/><path class=\"confetti cf-b\" d=\"m27 1-2 7\"/><path class=\"confetti cf-c\" d=\"m44 5 5-8\"/><path class=\"confetti cf-d\" d=\"m57 11-5 7\"/><path class=\"confetti cf-e\" d=\"m7 18 5 5\"/><circle class=\"confetti cf-f\" cx=\"35\" cy=\"3\" r=\"2.4\"/><circle class=\"confetti cf-g\" cx=\"58\" cy=\"5\" r=\"2.3\"/></g>","Packages":"<g class=\"cat-box-item\"><rect class=\"cat-present\" x=\"25\" y=\"3\" width=\"14\" height=\"13\" rx=\"1.5\"/><path d=\"M32 4V16M25 9H39\"/></g><g class=\"cat-box-container\"><path class=\"cat-carton-body\" d=\"M12 29 32 40 52 29V49L32 60 12 49Z\"/><path d=\"M32 40V60M12 29l20-12 20 12\"/></g><g class=\"cat-box-leftflap\"><path class=\"cat-flap\" d=\"M12 29 3 21 23 10 32 17Z\"/></g><g class=\"cat-box-rightflap\"><path class=\"cat-flap\" d=\"M52 29 61 21 41 10 32 17Z\"/></g>"};
-    const art=drawings[name]||drawings.Packages;
-    return '<svg class="category-illustration" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+art+'</svg>';
+
+  // Every category button is static artwork; category behavior stays unchanged.
+  const categorySlugs={'Coffee':'coffee','Non Coffee':'noncoffee','Food':'food',
+                       'Add-ons':'addons','Promos':'promos','Packages':'packages'};
+  const builtinCategories=['Coffee','Non Coffee','Food','Add-ons','Promos','Packages'];
+  function activePosCategories(){
+    return (state.catalog?.categories||builtinCategories.map(name=>({name,builtin:true,active:true,productIds:[]}))).filter(c=>c.active);
+  }
+  function categoryArt(c){
+    const slug=categorySlugs[c.name];
+    if(typeof c.iconData==='string'&&/^data:image\/(png|webp);base64,[a-zA-Z0-9+/=]+$/.test(c.iconData))
+      return '<span class="category-icon category-icon-custom"><img src="'+esc(c.iconData)+'" alt="" loading="lazy" /></span>';
+    return '<span class="category-icon category-icon-'+(slug||'packages')+'"></span>';
   }
   function renderTabs(){
-    const counts={'Coffee':0,'Non Coffee':0,'Food':0,'Add-ons':state.catalog?.addOns?.length||0,'Promos':state.catalog?.promos?.length||0,'Packages':state.catalog?.packages?.length||0};
-    const slugs={'Coffee':'coffee','Non Coffee':'noncoffee','Food':'food','Add-ons':'addons','Promos':'promos','Packages':'packages'};
+    const all=activePosCategories();
+    if(!all.some(c=>c.name===state.category))state.category=all[0]?.name||'Coffee';
+    const categories=all.map(c=>c.name);
+    const counts={Coffee:0,'Non Coffee':0,Food:0,'Add-ons':state.catalog?.addOns?.length||0,
+      Promos:state.catalog?.promos?.length||0,Packages:state.catalog?.packages?.length||0};
     for(const p of state.catalog?.products||[])if(Object.hasOwn(counts,p.category))counts[p.category]++;
-    $('categoryTabs').innerHTML=categories.map(c=>`<button type="button" class="tab category-tile category-${slugs[c]||'packages'} ${state.category===c?'active':''}" data-cat="${esc(c)}" aria-pressed="${state.category===c}" title="Browse ${esc(c)}"><span class="category-status">${state.category===c?'Selected':'Browse'}</span><span class="category-symbol" aria-hidden="true">${categoryArt(c)}</span><strong>${esc(c)}</strong><small>${counts[c]} items</small></button>`).join('');
+    for(const c of all)if(!c.builtin)counts[c.name]=(state.catalog?.products||[]).filter(p=>(c.productIds||[]).includes(p.id)).length;
+    $('categoryTabs').innerHTML=all.map(c=>{
+      const slug=categorySlugs[c.name]||'custom';
+      return '<button type="button" class="tab category-tile category-'+slug+(state.category===c.name?' active':'')+'"'+
+        ' data-cat="'+esc(c.name)+'" aria-pressed="'+String(state.category===c.name)+'" title="Browse '+esc(c.name)+'">'+
+        '<span class="category-status">'+(state.category===c.name?'Selected':'Browse')+'</span>'+
+        '<span class="category-symbol" aria-hidden="true">'+categoryArt(c)+'</span>'+
+        '<strong>'+esc(c.name)+'</strong><small>'+Number(counts[c.name]||0)+' items</small></button>';
+    }).join('');
     $('categoryTabs').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderTabs();renderCatalog();});
   }
   function promoById(){return state.catalog?.promos.find(p=>p.id===state.promoId)||null;}
@@ -192,7 +213,10 @@
     if(state.category==='Promos'){const items=state.catalog.promos.filter(p=>!q||normalize(p.name).includes(q));html=items.map(p=>`<button class="product-card promo ${state.promoId===p.id?'selected':''}" data-promo="${p.id}"><div class="cat">PROMO · ${esc(p.inclusion)}</div><h4>${esc(p.name)}</h4><div class="price">${peso(p.price)}</div></button>`).join('');}
     else if(state.category==='Packages'){const items=state.catalog.packages.filter(p=>!q||normalize(p.name).includes(q));html=items.map(p=>{const enabled=p.sellable&&p.available&&!state.promoId;const label=state.promoId?'NOT ALLOWED WITH PROMO':availabilityLabel(p);const card=`<button class="product-card package" data-package="${p.id}" ${enabled?'':'disabled'}><div class="cat">PACKAGE · ${p.itemCount} ITEM TYPE(S)</div><h4>${esc(p.name)}</h4><div class="price">${p.sellable?peso(p.price):'Not Available'}</div>${label?`<div class="unavailable">${esc(label)}</div>`:''}</button>`;return state.promoId?card:availabilityWrap(card,p);}).join('');}
     else if(state.category==='Add-ons'){const items=state.catalog.addOns.filter(a=>!q||normalize(a.name).includes(q));html=items.map(a=>`<button class="product-card" data-addon="${a.id}" ${state.promoId?'':'disabled'}><div class="cat">PROMO UPGRADE · NO COSTING</div><h4>${esc(a.name)}</h4><div class="price">${peso(a.price)}</div>${state.promoId?'':'<div class="unavailable">PROMO ONLY</div>'}</button>`).join('');}
-    else{const items=state.catalog.products.filter(p=>p.category===state.category&&(!q||normalize(p.name).includes(q)));html=items.map(p=>{const enabled=p.available&&canAddProduct(p),label=availabilityLabel(p);const card=`<button class="product-card ${p.stockWarnings?.length?'low-warning':''}" data-product="${p.id}" ${enabled?'':'disabled'}><div class="cat">${esc(p.category)}</div>${productArt(p)}<h4>${esc(p.name)}</h4><div class="price">${p.available?peso(p.price):'Not Available'}</div><span class="product-add-circle" aria-hidden="true">+</span>${label?`<div class="unavailable ${p.available?'warning':''}">${esc(label)}</div>`:''}</button>`;return availabilityWrap(card,p);}).join('');}
+    else{const currentCategory=activePosCategories().find(c=>c.name===state.category);
+      const items=state.catalog.products.filter(p=>
+        (currentCategory&&!currentCategory.builtin?(currentCategory.productIds||[]).includes(p.id):p.category===state.category)
+        &&(!q||normalize(p.name).includes(q)));html=items.map(p=>{const enabled=p.available&&canAddProduct(p),label=availabilityLabel(p);const card=`<button class="product-card ${p.stockWarnings?.length?'low-warning':''}" data-product="${p.id}" ${enabled?'':'disabled'}><div class="cat">${esc(p.category)}</div>${productArt(p)}<h4>${esc(p.name)}</h4><div class="price">${p.available?peso(p.price):'Not Available'}</div><span class="product-add-circle" aria-hidden="true">+</span>${label?`<div class="unavailable ${p.available?'warning':''}">${esc(label)}</div>`:''}</button>`;return availabilityWrap(card,p);}).join('');}
     $('catalogGrid').innerHTML=html||'<div class="empty-state"><div><b>No items found</b>Try another search.</div></div>';$('catalogGrid').querySelectorAll('[data-product]').forEach(b=>b.onclick=()=>addItem('product',Number(b.dataset.product)));$('catalogGrid').querySelectorAll('[data-addon]').forEach(b=>b.onclick=()=>addItem('addon',Number(b.dataset.addon)));$('catalogGrid').querySelectorAll('[data-package]').forEach(b=>b.onclick=()=>addItem('package',Number(b.dataset.package)));$('catalogGrid').querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>selectPromo(Number(b.dataset.promo)));bindAvailabilityTooltips();
   }
   function selectPromo(id){if(state.promoId===id){cancelPromo();return;}if(state.cart.length&&!confirm('Selecting a promo will clear the current order. Continue?'))return;state.cart=[];state.promoId=id;$('seniorEnabled').checked=false;$('seniorFields').classList.add('hidden');$('seniorName').value='';$('seniorId').value='';state.pendingSaleRequestId=null;state.category='Coffee';renderAll();}
