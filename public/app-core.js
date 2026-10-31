@@ -110,11 +110,17 @@
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
     const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
+    $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
     if(view==='pos')refreshPosDailyCount();
     if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports')loadReport();if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
+  $('dashboardPrintReport').addEventListener('click',()=>{
+    // The server resolves the user's own branch and today's date in Manila.
+    // Open the existing PDF report in print-ready inline mode.
+    window.open('/api/reports/sales/print?period=daily','_blank','noopener,noreferrer');
+  });
 
   function reconcileCartWithCatalog(){
     if(!state.catalog)return false;
