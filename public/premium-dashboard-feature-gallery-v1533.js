@@ -118,8 +118,8 @@
   }
   function render(tier){
     const current=items.filter(x=>x.tier===tier||x.tier==='both');
-    const visibleCount=current.length+(tier==='business'?1:0);
-    const core=current.filter(x=>x.tier===tier);
+    const visibleCount=current.length;
+    const core=current.filter(x=>x.tier===tier&&x.id!=='standout-whatif');
     const highlights=current.filter(x=>x.tier==='both');
     const removedCount=items.filter(x=>removed.has(x.id)).length;
     return '<section class="pg-gallery" aria-label="Sample feature review gallery">'+
