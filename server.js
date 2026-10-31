@@ -1010,6 +1010,16 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/branches')return json(res,201,{branch:await branchSupport.saveBranch(db,user,await readJson(req),null,logAction)},safeHeaders());
   const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT')return json(res,200,{branch:await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction)},safeHeaders());if(branchMatch&&method==='DELETE')return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());
 
+   if(method==='GET'&&p==='/api/admin/pos-categories')
+     return json(res,200,{categories:await listPosCategories()},safeHeaders());
+   if(method==='POST'&&p==='/api/admin/pos-categories')
+     return json(res,201,await savePosCategory(user,null,await readJson(req)),safeHeaders());
+   const categoryMatch=p.match(/^\/api\/admin\/pos-categories\/([^/]+)$/);
+   if(categoryMatch){
+     const categoryName=decodeURIComponent(categoryMatch[1]);
+     if(method==='PUT')return json(res,200,await savePosCategory(user,categoryName,await readJson(req)),safeHeaders());
+     if(method==='DELETE')return json(res,200,await deletePosCategory(user,categoryName),safeHeaders());
+   }
   if(method==='GET'&&p==='/api/admin/products')return json(res,200,{products:await listAdminProducts()},safeHeaders());
   if(method==='POST'&&p==='/api/admin/products')return json(res,201,await createProduct(user,await readJson(req)),safeHeaders());
   const productMatch=p.match(/^\/api\/admin\/products\/(\d+)$/);if(method==='PUT'&&productMatch)return json(res,200,await updateProduct(user,Number(productMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&productMatch)return json(res,200,await archiveProduct(user,Number(productMatch[1])),safeHeaders());
