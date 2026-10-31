@@ -24,6 +24,35 @@
      '<span class="chat-person-info"><strong>'+esc(c.label)+'</strong><small>'+esc(c.subtitle)+'</small></span>';
  }
  function contactById(id){return state.contacts.find(c=>Number(c.id)===Number(id));}
+ function ensureCheckoutClearance(){
+   const launcher=$('chatFloatingLauncher'),pay=$('payButton');
+   if(!launcher)return;
+   let bottom=96;
+   if(pay&&$('view-pos')?.classList.contains('active')){
+     const rect=pay.getBoundingClientRect();
+     // Only compensate while the Pay button is visible in the viewport.
+     if(rect.bottom>0&&rect.top<innerHeight){
+       const bubbleRight=innerWidth-(innerWidth>=700?Math.max(16,Math.min(32,innerWidth*.02)):15);
+       const bubbleLeft=bubbleRight-56;
+       const inX=rect.right>bubbleLeft-10&&rect.left<bubbleRight+10;
+       const bubbleTop=innerHeight-bottom-56;
+       const inY=rect.bottom>bubbleTop-10&&rect.top<innerHeight-bottom+10;
+       if(inX&&inY){
+         // Move the launcher up above Pay, leaving a visible 15px gap.
+         bottom=Math.max(96,Math.min(innerHeight-64,innerHeight-rect.top+15));
+       }
+     }
+   }
+   launcher.style.setProperty('--chat-launcher-bottom',bottom+'px');
+ }
+ let clearanceQueued=false;
+ function queueCheckoutClearance(){
+   if(clearanceQueued)return;
+   clearanceQueued=true;
+   requestAnimationFrame(()=>{clearanceQueued=false;ensureCheckoutClearance();});
+ }
+ window.addEventListener('scroll',queueCheckoutClearance,{passive:true,capture:true});
+ window.addEventListener('resize',queueCheckoutClearance,{passive:true});
  function updateUnread(total){
    const b=$('chatUnreadBadge');if(!b)return;
    b.textContent=total>99?'99+':String(total||'');
@@ -207,6 +236,7 @@
    if(!panel||!launcher)return;
    if(state.open)return close();
    state.open=true;
+   queueCheckoutClearance();
    panel.classList.remove('hidden');
    launcher.classList.add('is-open');
    launcher.setAttribute('aria-expanded','true');
@@ -241,6 +271,7 @@
    window.donmacChat.authenticated=!!id;
    if(!id){resetSession();return;}
    refreshContacts();
+   queueCheckoutClearance();
    if(!state.unreadTimer)state.unreadTimer=setInterval(()=>{
      if(!document.hidden&&window.donmacChat?.authenticated)refreshContacts();
    },15000);
