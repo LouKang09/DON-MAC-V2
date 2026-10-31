@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.29-mobile-bottom-nav';
+  const VERSION = '1.5.30-mobile-more-fix';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -60,6 +60,8 @@
       loadCss('mobileBottomNavV1529Css', '/mobile-nav-v1529.css');
 
 
+      // Critical navigation is initialized first; optional POS enhancements must not block More.
+      await loadScript('/mobile-nav-v1529.js');
       await loadScript('/live-refresh.js');
       await loadScript('/v15-safe.js');
       await loadScript('/v153-features.js');
@@ -70,12 +72,11 @@
       await loadScript('/dashboard-v1512.js');
       await loadScript('/pos-categories-admin.js');
       await loadScript('/internal-chat.js');
-      await loadScript('/mobile-nav-v1529.js');
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
 
 
 
-      console.info('Don Macchiatos POS v1.5.29 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.30 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
