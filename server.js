@@ -30,7 +30,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.32-dashboard-preview';
+const APP_VERSION = '1.5.33-feature-review-gallery';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
