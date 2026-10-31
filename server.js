@@ -759,7 +759,7 @@ async function dashboardData(params={},branchId=null){
   const hourFormatter=new Intl.DateTimeFormat('en-GB',{timeZone:MANILA_TZ,hour:'2-digit',hourCycle:'h23'});
   for(const row of trendRows.rows){
     const when=new Date(row.sold_at);
-    const slot=trendResult.grain==='hourly'?Number(hourFormatter.format(when)):dayIndex.get(manilaDateString(row.sold_at));
+    const slot=trendResult.grain==='hourly'?Number(hourFormatter.format(when)):dayIndex.get(manilaDateString(when.toISOString()));
     if(!Number.isInteger(slot)||slot<0||slot>=trendResult.trend.length)continue;
     const category=bool(row.is_add_on)?'Add-ons':bool(row.is_package)?'Packages':
       (['Coffee','Non Coffee','Food'].includes(row.category)?row.category:'Other');
