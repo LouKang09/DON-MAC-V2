@@ -29,7 +29,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.7-branches-dashboard';
+const APP_VERSION = '1.5.8-pos-layout';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -292,14 +292,23 @@ async function migrateSchema() {
     const names = new Set(cols.rows.map(x => x.name));
     if (!names.has('package_id')) await db.exec('ALTER TABLE sale_items ADD COLUMN package_id INTEGER REFERENCES packages(id);');
     if (!names.has('is_package')) await db.exec('ALTER TABLE sale_items ADD COLUMN is_package INTEGER NOT NULL DEFAULT 0;');
+    const productCols = await db.query('PRAGMA table_info(products)');
+    if (!productCols.rows.some(x => x.name === 'image_data')) await db.exec('ALTER TABLE products ADD COLUMN image_data TEXT;');
     const saleCols = await db.query('PRAGMA table_info(sales)');
     const saleNames = new Set(saleCols.rows.map(x => x.name));
     if (!saleNames.has('client_request_id')) await db.exec('ALTER TABLE sales ADD COLUMN client_request_id TEXT;');
+    if (!saleNames.has('order_type')) await db.exec("ALTER TABLE sales ADD COLUMN order_type TEXT DEFAULT 'Take Away';");
+    if (!saleNames.has('customer_name')) await db.exec('ALTER TABLE sales ADD COLUMN customer_name TEXT;');
+    if (!saleNames.has('table_label')) await db.exec('ALTER TABLE sales ADD COLUMN table_label TEXT;');
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_client_request_id ON sales(client_request_id) WHERE client_request_id IS NOT NULL;');
   } else {
     await db.exec('ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS package_id BIGINT REFERENCES packages(id);');
     await db.exec('ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS is_package BOOLEAN NOT NULL DEFAULT FALSE;');
     await db.exec('ALTER TABLE sales ADD COLUMN IF NOT EXISTS client_request_id VARCHAR(128);');
+    await db.exec('ALTER TABLE products ADD COLUMN IF NOT EXISTS image_data TEXT;');
+    await db.exec("ALTER TABLE sales ADD COLUMN IF NOT EXISTS order_type VARCHAR(24) DEFAULT 'Take Away';");
+    await db.exec('ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_name VARCHAR(120);');
+    await db.exec('ALTER TABLE sales ADD COLUMN IF NOT EXISTS table_label VARCHAR(80);');
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_client_request_id ON sales(client_request_id) WHERE client_request_id IS NOT NULL;');
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_ci ON users((LOWER(username)));');
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_products_name_ci ON products((LOWER(name)));');
@@ -322,7 +331,7 @@ function requireAdminRole(user) {
 }
 
 async function getCatalog(conn=db) {
-  const productsR=await conn.query(`SELECT id,sku,name,category,price,active FROM products WHERE active=$1 ORDER BY category,name`,[true]);
+  const productsR=await conn.query(`SELECT id,sku,name,category,price,image_data,active FROM products WHERE active=$1 ORDER BY category,name`,[true]);
   const addR=await conn.query(`SELECT id,name,price,exclude_from_costing,active FROM add_ons WHERE active=$1 ORDER BY name`,[true]);
   const promoR=await conn.query(`SELECT id,name,inclusion_label,promo_price,food_limit,coffee_limit,active FROM promos WHERE active=$1 ORDER BY id`,[true]);
   const packageR=await conn.query(`SELECT id,name,price,active FROM packages WHERE active=$1 ORDER BY id`,[true]);
@@ -344,7 +353,7 @@ async function getCatalog(conn=db) {
     const available=recipeConfigured&&issues.length===0;
     const availabilityStatus=!recipeConfigured?'recipe_required':issues.length?'insufficient_stock':'available';
     const availabilityMessage=!recipeConfigured?'Recipe required: add at least one ingredient before selling this product.':issues.length?'One or more recipe ingredients are unavailable or below the required quantity.':warnings.length?'Available, but one or more ingredients are low in stock.':'Available';
-    return {id:Number(p.id),sku:p.sku,name:p.name,category:p.category,price:Number(p.price),available,recipeConfigured,availabilityStatus,availabilityMessage,availabilityDetails:issues,stockWarnings:warnings};
+    return {id:Number(p.id),sku:p.sku,name:p.name,category:p.category,price:Number(p.price),imageData:p.image_data||null,available,recipeConfigured,availabilityStatus,availabilityMessage,availabilityDetails:issues,stockWarnings:warnings};
   });
   const itemsByPackage=new Map();
   for(const r of packItemsR.rows){const id=Number(r.package_id);if(!itemsByPackage.has(id))itemsByPackage.set(id,[]);itemsByPackage.get(id).push({productId:Number(r.product_id),name:r.product_name,qty:Number(r.quantity),active:bool(r.product_active)});}
@@ -486,10 +495,15 @@ async function createSale(user,body){
         return {reference:p.reference,paymentMode:p.payment_mode,tender:Number(p.tender||0),change:Number(p.change_amount||0),gross:Number(p.gross||0),adjustment:Number(p.adjustment||0),actual:Number(p.actual||0),idempotent:true};
       }
     }
+    const orderType=String(body.orderType||'Take Away').trim();
+    const customerName=String(body.customerName||'').trim();
+    const tableLabel=String(body.tableLabel||'').trim();
+    if(!['Dine In','Take Away','Order Online'].includes(orderType))throw Object.assign(new Error('Choose a valid order type.'),{status:400});
+    if(customerName.length>120||tableLabel.length>80)throw Object.assign(new Error('Customer name or table label is too long.'),{status:400});
     const quote=await quoteOrder(tx,body);let tender=quote.actual,change=0,paymentReference=null;
     if(mode==='Cash'){tender=money(Number(body.tender||0));if(!Number.isFinite(tender)||tender<quote.actual||tender>MAX_MONEY)throw Object.assign(new Error('Cash tender must cover the amount due and stay within the supported amount range.'),{status:400});change=money(tender-quote.actual);}else{paymentReference=String(body.paymentReference||'').trim();if(!paymentReference||paymentReference.length>150)throw Object.assign(new Error('Enter a GCash reference up to 150 characters.'),{status:400});}
     let reference=null;for(let tries=0;tries<8;tries++){const candidate=makeReference();const exists=await tx.query('SELECT id FROM sales WHERE reference=$1',[candidate]);if(!exists.rows.length){reference=candidate;break;}}if(!reference)throw new Error('Unable to generate a unique sale reference.');
-    const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id,branch_id) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null,branchId]);
+    const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id,branch_id,order_type,customer_name,table_label) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null,branchId,orderType,customerName||null,tableLabel||null]);
     const saleId=Number(saleR.rows[0].id);
     for(const line of quote.lines){
       const itemR=await tx.query(`INSERT INTO sale_items (sale_id,product_id,add_on_id,package_id,product_name_snapshot,quantity,unit_price,line_total,is_add_on,is_package,exclude_from_costing) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,[saleId,line.productId,line.addOnId,line.packageId,line.name,line.qty,line.unitPrice,line.lineTotal,line.isAddOn,line.isPackage,line.excludeFromCosting]);
@@ -498,7 +512,7 @@ async function createSale(user,body){
     }
     const locked=new Map();if(tx.engine==='postgres'&&quote.requirements.length){const ids=quote.requirements.map(r=>r.ingredientId).sort((a,b)=>a-b);const lr=await tx.query(`SELECT id,stock_qty FROM ingredients WHERE id IN (${placeholders(1,ids.length)}) ORDER BY id FOR UPDATE`,ids);for(const row of lr.rows)locked.set(Number(row.id),Number(row.stock_qty));}
     for(const req of quote.requirements){let current;if(locked.has(req.ingredientId))current=locked.get(req.ingredientId);else{const cr=await tx.query('SELECT stock_qty FROM ingredients WHERE id=$1',[req.ingredientId]);current=Number(cr.rows[0]?.stock_qty??0);}if(current+1e-9<req.needed)throw Object.assign(new Error(`Insufficient stock for ${req.name}.`),{status:409});const balance=current-req.needed;await tx.query('UPDATE ingredients SET stock_qty=$1,updated_at=$2 WHERE id=$3',[balance,nowIso(),req.ingredientId]);await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,reference,remarks,created_by,created_at) VALUES ($1,'SALE',$2,$3,$4,$5,$6,$7)`,[req.ingredientId,-req.needed,balance,reference,`Sale ${reference}`,user.id,nowIso()]);}
-    await logAction(user,`Sale completed: ${reference}`,'Sold',quote.remark,tx);return {reference,paymentMode:mode,tender,change,...quote};
+    await logAction(user,`Sale completed: ${reference}`,'Sold',quote.remark,tx);return {reference,paymentMode:mode,tender,change,orderType,customerName,tableLabel,...quote};
   });
 }
 
@@ -628,7 +642,7 @@ async function getSaleDetail(reference,user){
     paymentMode:s.payment_mode,paymentReference:s.payment_reference||null,tender:s.tender==null?null:Number(s.tender),change:Number(s.change_amount||0),
     promo:s.promo_id?{id:Number(s.promo_id),name:s.promo_name||s.remark||'Promo'}:null,
     remark:s.remark||null,seniorDetails:s.senior_details||null,discountAmount:Number(s.discount_amount||0),
-    gross:Number(s.gross||0),adjustment:Number(s.adjustment||0),actual:Number(s.actual||0),
+    gross:Number(s.gross||0),adjustment:Number(s.adjustment||0),actual:Number(s.actual||0),orderType:s.order_type||'Take Away',customerName:s.customer_name||null,tableLabel:s.table_label||null,
     deletedAt:s.deleted_at||null,deletedBy:s.deleted_by_username||null,
     items,inventoryMovements,auditEvents
   };
@@ -671,13 +685,27 @@ async function deleteUserAccount(actor,id){if(Number(id)===actor.id)throw Object
 
 async function updateUserAccount(actor,id,body){const targetR=await db.query('SELECT id,username,role,active,branch_id FROM users WHERE id=$1',[Number(id)]);const target=targetR.rows[0];if(!target)throw Object.assign(new Error('User not found.'),{status:404});const role=body.role===undefined?target.role:String(body.role),active=typeof body.active==='boolean'?body.active:bool(target.active),password=String(body.password||'');if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});if(Number(id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own signed-in account.'),{status:400});if((target.role==='Admin'&&bool(target.active))&&(role!=='Admin'||!active)){const c=await db.query(`SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL`,[true]);if(Number(c.rows[0].c)<=1)throw Object.assign(new Error('At least one active Web Admin must remain.'),{status:400});}if(password&&(password.length<8||password.length>256))throw Object.assign(new Error('Password must be 8-256 characters.'),{status:400});const branchId=await branchSupport.resolveAssignment(db,role,body.branchId===undefined?target.branch_id:body.branchId);if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3,branch_id=$4 WHERE id=$5',[role,active,hashPassword(password),branchId,Number(id)]);else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3 WHERE id=$4',[role,active,branchId,Number(id)]);if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);await logAction(actor,`Web user updated: ${target.username}`,'User Updated',`${role} / ${active?'Active':'Inactive'}`);return{ok:true};}
 
-async function listAdminProducts(){const r=await db.query(`SELECT p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at,COUNT(pi.ingredient_id) AS recipe_count,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at ORDER BY p.category,p.name`);return r.rows.map(x=>({id:Number(x.id),sku:x.sku,name:x.name,category:x.category,price:Number(x.price),active:bool(x.active),recipeCount:Number(x.recipe_count||0),unitCost:Number(x.unit_cost||0)}));}
+async function listAdminProducts(){const r=await db.query(`SELECT p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at,MAX(p.image_data) AS image_data,COUNT(pi.ingredient_id) AS recipe_count,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at ORDER BY p.category,p.name`);return r.rows.map(x=>({id:Number(x.id),sku:x.sku,name:x.name,category:x.category,price:Number(x.price),active:bool(x.active),imageData:x.image_data||null,recipeCount:Number(x.recipe_count||0),unitCost:Number(x.unit_cost||0)}));}
+function validatedProductImage(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string' || value.length > 280000 ||
+      !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value))
+    throw Object.assign(new Error('Please upload a JPEG, PNG or WebP picture under 200 KB.'), {status:400});
+  const raw=Buffer.from(value.slice(value.indexOf(',')+1),'base64');
+  if(!raw.length || raw.length>200000) throw Object.assign(new Error('Product photo is too large.'),{status:400});
+  const jpeg=raw[0]===0xff&&raw[1]===0xd8&&raw[2]===0xff;
+  const png=raw.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+  const webp=raw.toString('ascii',0,4)==='RIFF'&&raw.toString('ascii',8,12)==='WEBP';
+  if(!(jpeg||png||webp))throw Object.assign(new Error('Image contents do not match the selected image type.'),{status:400});
+  return value;
+}
 function validCategory(c){return['Coffee','Non Coffee','Food'].includes(c);}
 function slug(s){return normalize(s).replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'ITEM';}
-async function createProduct(user,body){const name=String(body.name||'').trim(),category=String(body.category||''),price=Number(body.price);if(!name||name.length>150||!validCategory(category)||!Number.isFinite(price)||price<0||price>MAX_MONEY)throw Object.assign(new Error('Product name (max 150 characters), valid category, and a supported non-negative price are required.'),{status:400});const dup=await db.query('SELECT id FROM products WHERE LOWER(name)=LOWER($1)',[name]);if(dup.rows.length)throw Object.assign(new Error('Product name already exists.'),{status:409});const active=body.active===undefined?true:!!body.active;const sku=`WEB-${slug(name)}-${Date.now().toString(36).toUpperCase()}`;const r=await db.query('INSERT INTO products (sku,name,category,price,active,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id',[sku,name,category,money(price),active,nowIso(),nowIso()]);await logAction(user,`Product added: ${name}`,'Product Added',category);return{id:Number(r.rows[0].id)};}
+async function createProduct(user,body){const name=String(body.name||'').trim(),category=String(body.category||''),price=Number(body.price);if(!name||name.length>150||!validCategory(category)||!Number.isFinite(price)||price<0||price>MAX_MONEY)throw Object.assign(new Error('Product name (max 150 characters), valid category, and a supported non-negative price are required.'),{status:400});const dup=await db.query('SELECT id FROM products WHERE LOWER(name)=LOWER($1)',[name]);if(dup.rows.length)throw Object.assign(new Error('Product name already exists.'),{status:409});const active=body.active===undefined?true:!!body.active;const imageData=validatedProductImage(body.imageData)??null;const sku=`WEB-${slug(name)}-${Date.now().toString(36).toUpperCase()}`;const r=await db.query('INSERT INTO products (sku,name,category,price,active,created_at,updated_at,image_data) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',[sku,name,category,money(price),active,nowIso(),nowIso(),imageData]);await logAction(user,`Product added: ${name}`,'Product Added',category);return{id:Number(r.rows[0].id)};}
 async function activePackagesUsingProduct(productId,conn=db){const r=await conn.query(`SELECT p.name FROM package_items pi JOIN packages p ON p.id=pi.package_id WHERE pi.product_id=$1 AND p.active=$2 ORDER BY p.name`,[Number(productId),true]);return r.rows.map(x=>x.name);}
 async function assertProductCanDeactivate(productId,conn=db){const packages=await activePackagesUsingProduct(productId,conn);if(packages.length)throw Object.assign(new Error(`This product is used by active package(s): ${packages.slice(0,5).join(', ')}. Remove it from those package compositions or disable the packages first.`),{status:409});}
-async function updateProduct(user,id,body){const r=await db.query('SELECT * FROM products WHERE id=$1',[Number(id)]);const p=r.rows[0];if(!p)throw Object.assign(new Error('Product not found.'),{status:404});const category=body.category===undefined?p.category:String(body.category),price=body.price===undefined?Number(p.price):Number(body.price),active=body.active===undefined?bool(p.active):!!body.active;if(!validCategory(category)||!Number.isFinite(price)||price<0||price>MAX_MONEY)throw Object.assign(new Error('Invalid product update.'),{status:400});if(bool(p.active)&&!active)await assertProductCanDeactivate(Number(id));await db.query('UPDATE products SET category=$1,price=$2,active=$3,updated_at=$4 WHERE id=$5',[category,money(price),active,nowIso(),Number(id)]);await logAction(user,`Product updated: ${p.name}`,'Product Updated',`${category} / PHP ${money(price)}`);return{ok:true};}
+async function updateProduct(user,id,body){const r=await db.query('SELECT * FROM products WHERE id=$1',[Number(id)]);const p=r.rows[0];if(!p)throw Object.assign(new Error('Product not found.'),{status:404});const category=body.category===undefined?p.category:String(body.category),price=body.price===undefined?Number(p.price):Number(body.price),active=body.active===undefined?bool(p.active):!!body.active;if(!validCategory(category)||!Number.isFinite(price)||price<0||price>MAX_MONEY)throw Object.assign(new Error('Invalid product update.'),{status:400});if(bool(p.active)&&!active)await assertProductCanDeactivate(Number(id));const nextImage=validatedProductImage(body.imageData);await db.query('UPDATE products SET category=$1,price=$2,active=$3,updated_at=$4,image_data=$5 WHERE id=$6',[category,money(price),active,nowIso(),nextImage===undefined?p.image_data||null:nextImage,Number(id)]);await logAction(user,`Product updated: ${p.name}`,'Product Updated',`${category} / PHP ${money(price)}`);return{ok:true};}
 async function archiveProduct(user,id){const r=await db.query('SELECT name,active FROM products WHERE id=$1',[Number(id)]);if(!r.rows[0])throw Object.assign(new Error('Product not found.'),{status:404});if(bool(r.rows[0].active))await assertProductCanDeactivate(Number(id));await db.query('UPDATE products SET active=$1,updated_at=$2 WHERE id=$3',[false,nowIso(),Number(id)]);await logAction(user,`Product archived: ${r.rows[0].name}`,'Product Archived',null);return{ok:true};}
 async function getRecipe(productId){const p=await db.query('SELECT id,name FROM products WHERE id=$1',[Number(productId)]);if(!p.rows[0])throw Object.assign(new Error('Product not found.'),{status:404});const r=await db.query(`SELECT pi.ingredient_id,i.code,i.display_name,i.uom,pi.quantity_required,pi.cost_contribution FROM product_ingredients pi JOIN ingredients i ON i.id=pi.ingredient_id WHERE pi.product_id=$1 ORDER BY i.id`,[Number(productId)]);return{product:{id:Number(p.rows[0].id),name:p.rows[0].name},items:r.rows.map(x=>({ingredientId:Number(x.ingredient_id),code:x.code,name:x.display_name,uom:x.uom,quantity:Number(x.quantity_required),cost:x.cost_contribution===null?null:Number(x.cost_contribution)}))};}
 async function saveRecipe(user,productId,body){const p=await db.query('SELECT id,name FROM products WHERE id=$1',[Number(productId)]);if(!p.rows[0])throw Object.assign(new Error('Product not found.'),{status:404});const items=Array.isArray(body.items)?body.items:[];const seen=new Set();for(const x of items){const iid=Number(x.ingredientId),qty=Number(x.quantity),cost=x.cost===null||x.cost===''?null:Number(x.cost);if(!Number.isInteger(iid)||iid<=0||!Number.isFinite(qty)||!(qty>0)||qty>MAX_RECIPE_VALUE||(cost!==null&&(!Number.isFinite(cost)||cost<0||cost>MAX_RECIPE_VALUE)))throw Object.assign(new Error('Every recipe row needs an ingredient, quantity greater than zero, and optional non-negative cost.'),{status:400});if(seen.has(iid))throw Object.assign(new Error('An ingredient can appear only once in a product recipe.'),{status:400});seen.add(iid);}await db.transaction(async tx=>{await tx.query('DELETE FROM product_ingredients WHERE product_id=$1',[Number(productId)]);for(const x of items){const check=await tx.query('SELECT id,active FROM ingredients WHERE id=$1',[Number(x.ingredientId)]);if(!check.rows.length)throw Object.assign(new Error('Recipe ingredient not found.'),{status:404});if(!bool(check.rows[0].active))throw Object.assign(new Error('Archived ingredients cannot be added to a recipe.'),{status:409});await tx.query('INSERT INTO product_ingredients (product_id,ingredient_id,quantity_required,cost_contribution) VALUES ($1,$2,$3,$4)',[Number(productId),Number(x.ingredientId),Number(x.quantity),x.cost===null||x.cost===''?null:Number(x.cost)]);}await logAction(user,`Recipe saved: ${p.rows[0].name}`,'Recipe Updated',`${items.length} ingredient(s)`,tx);});return{ok:true};}
