@@ -1,0 +1,224 @@
+/* Don Macchiatos POS v1.5.11 — accessible expandable sidebar only.
+   Preserves existing pages, permission rules, and checkout behavior. */
+
+.app{grid-template-columns:238px minmax(0,1fr)}
+.app.sidebar-collapsed{grid-template-columns:84px minmax(0,1fr)}
+
+.sidebar{
+  width:auto;min-width:0;height:100dvh;position:sticky;top:0;
+  padding:19px 13px 17px;display:flex;flex-direction:column;
+  background:#171d1b;color:#eef5ef;border-right:1px solid #2b332e;
+  overflow:visible;box-shadow:none;z-index:30;
+}
+.sidebar .sidebar-brand{
+  position:relative;display:flex;justify-content:center;align-items:center;
+  flex:none;min-height:112px;margin-bottom:19px;
+}
+.sidebar .brand{
+  display:flex!important;align-items:center;justify-content:center;min-height:0;
+  height:110px;margin:0;padding:0 32px 0 0;overflow:visible;
+}
+.sidebar .brand-logo{
+  display:block;width:104px;max-width:104px;height:104px;
+  object-fit:contain;object-position:center;filter:none;
+}
+.sidebar .sidebar-toggle{
+  display:grid;position:absolute;top:4px;right:0;margin:0;padding:0;
+  width:33px;height:33px;border-radius:10px;place-items:center;
+  background:transparent;border:1px solid #3b4b41;color:#c1d0c7;
+  cursor:pointer;transition:background .15s,color .15s;
+}
+.sidebar .sidebar-toggle svg{width:18px;height:18px}
+.sidebar .sidebar-toggle:hover,.sidebar .sidebar-toggle:focus-visible{
+  background:#2a4234;border-color:#649578;color:#f6fff9;
+}
+.sidebar .sidebar-toggle:focus-visible,
+.sidebar #mainNav .nav:focus-visible,
+.sidebar .sidebar-signout:focus-visible{outline:2px solid #85d39f;outline-offset:2px}
+
+.sidebar #mainNav{
+  display:flex;flex-direction:column;gap:22px;flex:1;min-height:0;
+  padding:0 0 10px;overflow-y:auto;overflow-x:visible;
+  scrollbar-width:thin;scrollbar-color:#3e5146 transparent;
+}
+.sidebar #mainNav .nav-section{
+  display:flex;flex-direction:column;align-items:stretch;gap:6px;
+}
+.sidebar #mainNav .nav-section-label{
+  display:block;margin:0 11px 6px;font-size:10px;letter-spacing:.11em;
+  font-weight:700;color:#99a9a0;white-space:nowrap;
+}
+.sidebar #mainNav .nav{
+  position:relative;min-width:0;min-height:44px;width:100%;
+  padding:10px 11px;display:flex;flex-direction:row;align-items:center;
+  justify-content:flex-start;gap:12px;white-space:nowrap;
+  color:#c4cec7;font-size:13px;font-weight:550;line-height:1.25;
+  border:1px solid transparent;border-radius:11px;background:transparent;
+  cursor:pointer;text-align:left;box-shadow:none;transition:background .15s,color .15s;
+}
+.sidebar #mainNav .nav .nav-icon{display:block;width:20px;height:20px;flex:0 0 20px;color:#aebcb3}
+.sidebar #mainNav .nav .nav-label{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sidebar #mainNav .nav:hover{background:#27362d;color:#fff}
+.sidebar #mainNav .nav:hover .nav-icon{color:#e9fff0}
+.sidebar #mainNav .nav.active{
+  background:#1a4730;border-color:#2c6544;color:#fff;font-weight:750;
+}
+.sidebar #mainNav .nav.active .nav-icon{color:#6be992}
+.sidebar #mainNav .nav.active:hover{background:#22583b}
+.sidebar #mainNav .nav::after{display:none}
+
+/* Account remains anchored at the bottom, without trapping navigation scroll. */
+.sidebar .sidebar-bottom{
+  flex:none;margin-top:auto;border-top:1px solid #324238;
+  padding:16px 3px 0;display:grid;gap:12px;
+}
+.sidebar .user-chip{
+  display:flex;align-items:center;gap:11px;min-width:0;
+}
+.sidebar .user-avatar{
+  width:39px;height:39px;flex:0 0 39px;border-radius:50%;
+  display:grid;place-items:center;color:#d4e7da;
+  border:1px solid #536958;background:#294235;
+}
+.sidebar .user-avatar svg{width:22px;height:22px;display:block}
+.sidebar .user-meta{min-width:0;display:grid;gap:3px}
+.sidebar .user-meta b{
+  display:block;color:#f4f8f5;font-size:12px;font-weight:700;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.sidebar .user-meta>span{
+  display:block;font-size:10px;color:#9aac9f;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.sidebar #logoutButton{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:35px;margin:0;padding:7px 9px;border:1px solid #3b4d41;
+  border-radius:10px;background:transparent;color:#cad9ce;font-size:11px;
+  font-weight:650;cursor:pointer;
+}
+.sidebar #logoutButton:hover{color:#fff;background:#2a4235;border-color:#5d836c}
+.sidebar #logoutButton svg{display:block;width:17px;height:17px;flex:0 0 17px}
+
+/* Condensed rail — icons, tooltips, logo, and avatar only. */
+.app.sidebar-collapsed .sidebar{padding:16px 10px}
+.app.sidebar-collapsed .sidebar .sidebar-brand{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;gap:8px;margin:0 0 20px;min-height:106px;
+}
+.app.sidebar-collapsed .sidebar .brand{
+  display:flex!important;justify-content:center;align-items:center;
+  height:65px;min-height:65px;padding:0;margin:0;
+}
+.app.sidebar-collapsed .sidebar .brand-logo{
+  width:59px;height:65px;max-width:59px;object-fit:contain;
+}
+.app.sidebar-collapsed .sidebar .sidebar-toggle{
+  display:grid;position:static;align-self:center;margin:0;
+  width:34px;height:29px;
+}
+.app.sidebar-collapsed .sidebar #mainNav{gap:19px;overflow:visible}
+.app.sidebar-collapsed .sidebar #mainNav .nav-section{align-items:center;gap:8px}
+.app.sidebar-collapsed .sidebar #mainNav .nav-section-label{
+  display:block;position:relative;width:100%;height:9px;
+  margin:0 0 4px;padding:0;text-align:center;color:#9fb1a6;
+  font-size:8px;letter-spacing:.04em;overflow:hidden;
+}
+.app.sidebar-collapsed .sidebar #mainNav .nav-section-label::first-letter{color:inherit}
+.app.sidebar-collapsed .sidebar #mainNav .nav{
+  width:47px;min-width:47px;min-height:47px;height:47px;
+  margin:0;display:flex;flex-direction:row;align-items:center;
+  justify-content:center;padding:0;border-radius:12px;
+}
+.app.sidebar-collapsed .sidebar #mainNav .nav .nav-icon{width:21px;height:21px;flex-basis:21px}
+.app.sidebar-collapsed .sidebar #mainNav .nav .nav-label{display:none!important}
+.app.sidebar-collapsed .sidebar #mainNav .nav.active{background:#1b5333;border-color:#306f47}
+.app.sidebar-collapsed .sidebar #mainNav .nav::after{
+  display:block;position:absolute;left:calc(100% + 14px);top:50%;
+  transform:translate(-5px,-50%);z-index:70;opacity:0;
+  pointer-events:none;white-space:nowrap;content:attr(data-tooltip);
+  padding:7px 11px;background:#26362d;color:#fff;font-size:11px;font-weight:650;
+  border:1px solid #536456;border-radius:8px;box-shadow:0 8px 22px #0003;
+  transition:opacity .12s,transform .12s;
+}
+.app.sidebar-collapsed .sidebar #mainNav .nav:hover::after,
+.app.sidebar-collapsed .sidebar #mainNav .nav:focus-visible::after{
+  opacity:1;transform:translate(0,-50%);
+}
+.app.sidebar-collapsed .sidebar .sidebar-bottom{
+  padding:14px 0 0;gap:10px;align-items:center;
+}
+.app.sidebar-collapsed .sidebar .user-chip{
+  display:flex;align-items:center;justify-content:center;
+}
+.app.sidebar-collapsed .sidebar .user-avatar{
+  width:42px;height:42px;flex-basis:42px;
+}
+.app.sidebar-collapsed .sidebar .user-meta{display:none!important}
+.app.sidebar-collapsed .sidebar #logoutButton{
+  display:grid!important;place-items:center;width:44px;height:40px;
+  min-height:40px;margin:0 auto;padding:0;font-size:0;
+}
+.app.sidebar-collapsed .sidebar #logoutButton .logout-label{display:none!important}
+.app.sidebar-collapsed .sidebar #logoutButton svg{width:19px;height:19px}
+
+/* Tablet: same deliberate expanded/condensed behavior as desktop. */
+@media(min-width:700px) and (max-width:1180px){
+  .app{grid-template-columns:205px minmax(0,1fr)}
+  .app.sidebar-collapsed{grid-template-columns:78px minmax(0,1fr)}
+  .sidebar{padding:14px 10px}
+  .sidebar .sidebar-brand{min-height:91px;margin-bottom:8px}
+  .sidebar .brand{height:90px;padding-right:25px}
+  .sidebar .brand-logo{height:86px;width:86px;max-width:86px}
+  .sidebar .sidebar-toggle{display:grid;right:0;top:0}
+  .sidebar #mainNav .nav{flex-direction:row;min-height:42px;padding:9px 10px;gap:9px;font-size:12px}
+  .sidebar #mainNav .nav .nav-label{display:block;white-space:nowrap;font-size:12px}
+  .sidebar .user-chip{display:flex}
+  .app.sidebar-collapsed .sidebar #mainNav .nav{flex-direction:row;padding:0;min-height:46px}
+  .app.sidebar-collapsed .sidebar #mainNav .nav .nav-label{display:none!important}
+  .app.sidebar-collapsed .sidebar .brand{height:65px;padding:0}
+  .app.sidebar-collapsed .sidebar .brand-logo{width:58px;height:65px}
+  .app.sidebar-collapsed .sidebar .sidebar-toggle{display:grid}
+  .app.sidebar-collapsed .sidebar #logoutButton{display:grid!important;width:44px;font-size:0}
+}
+
+/* Phone navigation stays usable rather than squeezing a desktop rail into the viewport. */
+@media(max-width:699px){
+  .app,.app.sidebar-collapsed{display:block}
+  .sidebar,.app.sidebar-collapsed .sidebar{
+    position:relative;top:auto;width:100%;height:auto;max-height:none;min-width:0;
+    display:flex;flex-direction:row;align-items:center;padding:5px 7px;
+    border-right:none;border-bottom:1px solid #34483b;z-index:25;
+  }
+  .sidebar .sidebar-brand,.app.sidebar-collapsed .sidebar .sidebar-brand{display:none!important}
+  .sidebar #mainNav,.app.sidebar-collapsed .sidebar #mainNav{
+    display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
+    flex:1;min-width:0;gap:8px;overflow-x:auto;overflow-y:hidden;padding:3px;
+    scrollbar-width:thin;
+  }
+  .sidebar #mainNav .nav-section,.app.sidebar-collapsed .sidebar #mainNav .nav-section{
+    display:flex;flex-direction:row;align-items:center;gap:5px;flex:none;
+  }
+  .sidebar #mainNav .nav-section-label,.app.sidebar-collapsed .sidebar #mainNav .nav-section-label{display:none}
+  .sidebar #mainNav .nav,.app.sidebar-collapsed .sidebar #mainNav .nav{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    flex:none;width:60px;min-width:60px;min-height:49px;height:49px;
+    gap:3px;padding:5px 3px;border-radius:9px;font-size:9px;
+  }
+  .sidebar #mainNav .nav .nav-icon,.app.sidebar-collapsed .sidebar #mainNav .nav .nav-icon{width:18px;height:18px;flex:0 0 18px}
+  .sidebar #mainNav .nav .nav-label,.app.sidebar-collapsed .sidebar #mainNav .nav .nav-label{
+    display:block!important;max-width:100%;font-size:9px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .app.sidebar-collapsed .sidebar #mainNav .nav::after{display:none}
+  .sidebar .sidebar-bottom,.app.sidebar-collapsed .sidebar .sidebar-bottom{
+    display:flex;flex:none;flex-direction:row;align-items:center;gap:4px;
+    margin:0;padding:0 2px 0 7px;border:0;
+  }
+  .sidebar .user-chip,.app.sidebar-collapsed .sidebar .user-chip{display:none}
+  .sidebar #logoutButton,.app.sidebar-collapsed .sidebar #logoutButton{
+    width:36px;height:40px;min-height:40px;display:grid!important;
+    place-items:center;padding:0;margin:0;font-size:0;
+  }
+  .sidebar #logoutButton .logout-label,.app.sidebar-collapsed .sidebar #logoutButton .logout-label{display:none!important}
+  .sidebar #logoutButton svg{width:17px;height:17px}
+}
