@@ -704,6 +704,75 @@ function validatedProductImage(value) {
   return value;
 }
 function validCategory(c){return['Coffee','Non Coffee','Food'].includes(c);}
+
+function validPosIcon(value){
+ if(value===undefined)return undefined;
+ if(value===null||value==='')return null;
+ if(typeof value!=='string'||value.length>46000||!/^data:image\/(?:png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value))
+   throw Object.assign(new Error('Use a valid compressed PNG or WebP icon up to 32 KB.'),{status:400});
+ const bytes=Buffer.from(value.slice(value.indexOf(',')+1),'base64');
+ const png=bytes.length>=8&&bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+ const webp=bytes.length>=12&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP';
+ if(bytes.length<32||bytes.length>32768||!(value.startsWith('data:image/png;')&&png||value.startsWith('data:image/webp;')&&webp))
+   throw Object.assign(new Error('Invalid or oversized category icon (32 KB maximum after compression).'),{status:400});
+ return value;
+}
+async function listPosCategories(){
+ const [rows,links]=await Promise.all([
+   db.query('SELECT name,icon_data,sort_order,builtin,active FROM pos_categories ORDER BY sort_order,name'),
+   db.query('SELECT category_name,product_id FROM pos_category_products ORDER BY category_name,product_id')
+ ]);
+ const products=new Map();
+ for(const link of links.rows){
+   if(!products.has(link.category_name))products.set(link.category_name,[]);
+   products.get(link.category_name).push(Number(link.product_id));
+ }
+ return rows.rows.map(c=>({name:c.name,iconData:c.icon_data||null,
+   sortOrder:Number(c.sort_order),builtin:bool(c.builtin),active:bool(c.active),productIds:products.get(c.name)||[]}));
+}
+async function savePosCategory(user,key,body){
+ const record=key?(await db.query('SELECT * FROM pos_categories WHERE name=$1',[key])).rows[0]:null;
+ if(key&&!record)throw Object.assign(new Error('Category not found.'),{status:404});
+ const name=record?.name||String(body.name||'').trim().replace(/\s+/g,' ');
+ if(name.length<2||name.length>32||/[<>]/.test(name))
+   throw Object.assign(new Error('Category name must have 2–32 characters.'),{status:400});
+ if(!record){
+   const duplicates=await db.query('SELECT name FROM pos_categories WHERE LOWER(name)=LOWER($1)',[name]);
+   if(duplicates.rows.length)throw Object.assign(new Error('Category already exists.'),{status:409});
+   const size=await db.query('SELECT COUNT(*) AS n FROM pos_categories');
+   if(Number(size.rows[0]?.n||0)>=30)throw Object.assign(new Error('Maximum 30 categories.'),{status:400});
+ }
+ const icon=body.iconData===undefined?record?.icon_data||null:validPosIcon(body.iconData);
+ const builtin=record?bool(record.builtin):false;
+ const active=builtin?true:body.active!==false;
+ const ids=Array.isArray(body.productIds)?[...new Set(body.productIds.map(Number))]:[];
+ if(ids.length>500||ids.some(x=>!Number.isInteger(x)||x<1))
+   throw Object.assign(new Error('Invalid product selections.'),{status:400});
+ if(ids.length){
+   const available=await db.query('SELECT id FROM products WHERE id IN ('+placeholders(1,ids.length)+')',ids);
+   if(available.rows.length!==ids.length)throw Object.assign(new Error('An assigned product was not found.'),{status:400});
+ }
+ await db.transaction(async tx=>{
+   if(record)await tx.query('UPDATE pos_categories SET icon_data=$1,active=$2 WHERE name=$3',[icon,active,name]);
+   else await tx.query('INSERT INTO pos_categories (name,icon_data,sort_order,builtin,active) VALUES ($1,$2,$3,$4,$5)',
+     [name,icon,100,false,active]);
+   if(!builtin){
+     await tx.query('DELETE FROM pos_category_products WHERE category_name=$1',[name]);
+     for(const id of ids)await tx.query('INSERT INTO pos_category_products (category_name,product_id) VALUES ($1,$2)',[name,id]);
+   }
+ });
+ await logAction(user, 'POS category saved: '+name,'POS Category Updated',null);
+ return {ok:true,name};
+}
+async function deletePosCategory(user,name){
+ const r=await db.query('SELECT builtin FROM pos_categories WHERE name=$1',[name]);
+ if(!r.rows.length)throw Object.assign(new Error('Category not found.'),{status:404});
+ if(bool(r.rows[0].builtin))throw Object.assign(new Error('Built-in categories cannot be deleted.'),{status:400});
+ await db.query('DELETE FROM pos_categories WHERE name=$1',[name]);
+ await logAction(user,'POS category deleted: '+name,'POS Category Deleted',null);
+ return {ok:true};
+}
+
 function slug(s){return normalize(s).replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'ITEM';}
 async function createProduct(user,body){const name=String(body.name||'').trim(),category=String(body.category||''),price=Number(body.price);if(!name||name.length>150||!validCategory(category)||!Number.isFinite(price)||price<0||price>MAX_MONEY)throw Object.assign(new Error('Product name (max 150 characters), valid category, and a supported non-negative price are required.'),{status:400});const dup=await db.query('SELECT id FROM products WHERE LOWER(name)=LOWER($1)',[name]);if(dup.rows.length)throw Object.assign(new Error('Product name already exists.'),{status:409});const active=body.active===undefined?true:!!body.active;const imageData=validatedProductImage(body.imageData)??null;const sku=`WEB-${slug(name)}-${Date.now().toString(36).toUpperCase()}`;const r=await db.query('INSERT INTO products (sku,name,category,price,active,created_at,updated_at,image_data) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',[sku,name,category,money(price),active,nowIso(),nowIso(),imageData]);await logAction(user,`Product added: ${name}`,'Product Added',category);return{id:Number(r.rows[0].id)};}
 async function activePackagesUsingProduct(productId,conn=db){const r=await conn.query(`SELECT p.name FROM package_items pi JOIN packages p ON p.id=pi.package_id WHERE pi.product_id=$1 AND p.active=$2 ORDER BY p.name`,[Number(productId),true]);return r.rows.map(x=>x.name);}
