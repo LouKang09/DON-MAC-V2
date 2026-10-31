@@ -38,7 +38,7 @@
 
 .sidebar #mainNav{
   display:flex;flex-direction:column;gap:22px;flex:1;min-height:0;
-  padding:0 0 10px;overflow-y:auto;overflow-x:visible;
+  padding:0 0 10px;overflow:visible;
   scrollbar-width:thin;scrollbar-color:#3e5146 transparent;
 }
 .sidebar #mainNav .nav-section{
