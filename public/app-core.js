@@ -256,16 +256,25 @@
   function renderDashboard(){
    const d=state.dashboard;if(!d)return;
    $('trendPeriodLabel').textContent=(d.grain==='hourly'?'HOURLY · ':'DAILY · ')+d.from+(d.to!==d.from?' TO '+d.to:'');
-   $('dashboardSummary').innerHTML=[
-     [d.grain==='hourly'?'Selected day Actual':'Range Actual',peso(d.rangeActual)],['Range Transactions',num(d.rangeTransactions,0)],
-     ['Today Actual',peso(d.metrics.todayActual)],['Today Gross',peso(d.metrics.todayGross)],
-     ['Month Actual',peso(d.metrics.monthActual)],['Low Stock',d.metrics.lowStockCount]
-   ].map(([a,b])=>`<div class="summary-card"><span>${esc(a)}</span><strong>${b}</strong></div>`).join('');
+   const statCards=[
+     {title:'Total Revenue',value:peso(d.rangeActual),caption:d.grain==='hourly'?'Selected day':'Selected range',glyph:'revenue'},
+     {title:'Orders',value:num(d.rangeTransactions,0),caption:'Completed · selected range',glyph:'orders'},
+     {title:'Today Sales',value:peso(d.metrics.todayActual),caption:'Gross '+peso(d.metrics.todayGross),glyph:'today'},
+     {title:'Month Revenue',value:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
+     {title:'Low Stock Alerts',value:num(d.metrics.lowStockCount,0),caption:'Ingredients needing attention',glyph:'alert'}
+   ];
+   const statIcons={
+     revenue:'<path d="M3 8h18v12H3zM3 11h18M7 16h3"/><path d="M7 4h10v4"/>',
+     orders:'<path d="M5 4h14v16l-2.5-1.5L14 20l-2.5-1.5L9 20l-2-1.5L5 20V4z"/><path d="M9 9h6M9 13h6"/>',
+     today:'<path d="M3 20h18M6 17v-5M12 17V7M18 17V4"/>',
+     month:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M8 17h6"/>',
+     alert:'<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.4h.01"/>'
+   };
+   $('dashboardSummary').innerHTML=statCards.map(c=>`<article class="summary-card"><div class="dash-summary-label"><span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${statIcons[c.glyph]}</svg></span><span>${esc(c.title)}</span></div><strong>${c.value}</strong><small>${esc(c.caption)}</small></article>`).join('');
    $('dashboardLowStock').innerHTML=d.lowStock.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(String(x.uom).toUpperCase())}</td><td class="num stock-low">${num(x.stock)}</td><td class="num">${num(x.lowStockThreshold)}</td></tr>`).join('')||'<tr><td colspan="4" class="stock-ok">No low-stock ingredients.</td></tr>';
    const max=Math.max(1,...d.categorySales.map(x=>x.amount));
    $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
-   drawLineChart($('salesTrendChart'),d.trend.map(x=>x.actual),d.trend.map(x=>x.label));
-   drawBarChart($('topProductsChart'),d.topProducts.map(x=>x.qty),d.topProducts.map(x=>x.name));
+   window.__donmacDashboardData=d;
    if(typeof window.renderDonMacDashboardExtras==='function')window.renderDonMacDashboardExtras(d);
   }
   function setupCanvas(canvas){const rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;canvas.width=Math.max(300,rect.width)*ratio;canvas.height=250*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);return{c,w:Math.max(300,rect.width),h:250};}
