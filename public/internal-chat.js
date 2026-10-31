@@ -172,36 +172,59 @@
    }catch(err){notice(err.message);}
  }
  async function makePhoto(file){
-   if(file.size>1024*1024)throw new Error('Photo must be 1 MB or smaller.');
+   if(!file||file.size>1024*1024)throw new Error('Photo must be no larger than 1 MB.');
    if(file.size<30||!['image/jpeg','image/png','image/webp'].includes(file.type))
-     throw new Error('Choose a valid JPG, PNG or WebP image.');
+     throw new Error('Select a valid JPG, PNG or WebP image.');
    const header=new Uint8Array(await file.slice(0,16).arrayBuffer());
    const valid=file.type==='image/jpeg'&&header[0]===255&&header[1]===216&&header[2]===255||
       file.type==='image/png'&&[137,80,78,71,13,10,26,10].every((x,i)=>header[i]===x)||
       file.type==='image/webp'&&String.fromCharCode(...header.slice(0,4))==='RIFF'&&String.fromCharCode(...header.slice(8,12))==='WEBP';
-   if(!valid)throw new Error('The selected file is not a valid photo.');
-   const url=URL.createObjectURL(file),img=new Image();
+   if(!valid)throw new Error('File extension does not match the image contents. Choose a valid picture.');
+   let bitmap=null,image=null,readerUrl=null;
    try{
-     await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Photo could not be decoded.'));img.src=url;});
-     if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth>10000||img.naturalHeight>10000)
+     // Prefer the browser's robust native bitmap decoder; unlike blob: URLs this
+     // does not depend on CSP support, and it respects JPEG EXIF orientation.
+     if(typeof createImageBitmap==='function'){
+       try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});}
+       catch(_){bitmap=null;}
+     }
+     if(!bitmap){
+       // Fallback for browsers without createImageBitmap or older decoders:
+       // use a data URL, rather than a blob URL that some CSP policies reject.
+       readerUrl=await new Promise((resolve,reject)=>{
+         const reader=new FileReader();
+         reader.onload=()=>resolve(reader.result);
+         reader.onerror=()=>reject(new Error('Could not read selected image.'));
+         reader.readAsDataURL(file);
+       });
+       image=new Image();
+       await new Promise((resolve,reject)=>{
+         image.onload=resolve;
+         image.onerror=()=>reject(new Error('The image could not be decoded. Re-save it as JPG or PNG and try again.'));
+         image.src=readerUrl;
+       });
+     }
+     const originalWidth=bitmap?bitmap.width:image.naturalWidth;
+     const originalHeight=bitmap?bitmap.height:image.naturalHeight;
+     if(!originalWidth||!originalHeight||originalWidth>10000||originalHeight>10000)
        throw new Error('The photo dimensions are not supported.');
      const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
-     if(!ctx)throw new Error('Your browser cannot compress photos.');
+     if(!ctx)throw new Error('Image compression is not supported on this browser.');
      for(const edge of [1100,900,700,560,420,320]){
-       const ratio=Math.min(1,edge/Math.max(img.naturalWidth,img.naturalHeight));
-       canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));
-       canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+       const ratio=Math.min(1,edge/Math.max(originalWidth,originalHeight));
+       canvas.width=Math.max(1,Math.round(originalWidth*ratio));
+       canvas.height=Math.max(1,Math.round(originalHeight*ratio));
        ctx.clearRect(0,0,canvas.width,canvas.height);
-       ctx.drawImage(img,0,0,canvas.width,canvas.height);
-       for(const quality of [.75,.62,.5]){
-         let data=canvas.toDataURL('image/webp',quality);
-         if(!data.startsWith('data:image/webp;'))data=canvas.toDataURL('image/jpeg',quality);
-         const bytes=Math.ceil((data.length-data.indexOf(',')-1)*3/4);
-         if(bytes<120*1024)return data;
+       ctx.drawImage(bitmap||image,0,0,canvas.width,canvas.height);
+       for(const quality of [.77,.62,.49,.36]){
+         let compressed=canvas.toDataURL('image/webp',quality);
+         if(!compressed.startsWith('data:image/webp;'))compressed=canvas.toDataURL('image/jpeg',quality);
+         const bytes=Math.ceil((compressed.length-compressed.indexOf(',')-1)*3/4);
+         if(bytes<120*1024)return compressed;
        }
      }
-     throw new Error('Photo could not be compressed to 120 KB. Choose another photo.');
-   }finally{URL.revokeObjectURL(url);}
+     throw new Error('Photo exceeds the compressed size limit. Choose a smaller image.');
+   }finally{bitmap?.close?.();readerUrl=null;}
  }
  function photoPreview(){
    const box=$('chatPhotoDraft');box.classList.toggle('hidden',!state.image);
