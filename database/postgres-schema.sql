@@ -173,3 +173,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_products_name_ci ON products((LOWER(name))
 CREATE UNIQUE INDEX IF NOT EXISTS idx_add_ons_name_ci ON add_ons((LOWER(name)));
 CREATE UNIQUE INDEX IF NOT EXISTS idx_packages_name_ci ON packages((LOWER(name)));
 CREATE UNIQUE INDEX IF NOT EXISTS idx_promos_name_ci ON promos((LOWER(name)));
+
+
+-- POS category presentation (does not change the product recipe/category rules).
+CREATE TABLE IF NOT EXISTS pos_categories (
+  name VARCHAR(60) PRIMARY KEY,
+  icon_data TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 100,
+  builtin BOOLEAN NOT NULL DEFAULT FALSE,
+  active BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE TABLE IF NOT EXISTS pos_category_products (
+  category_name VARCHAR(60) NOT NULL REFERENCES pos_categories(name) ON DELETE CASCADE,
+  product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  PRIMARY KEY (category_name, product_id)
+);
