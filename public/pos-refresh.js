@@ -1,4 +1,4 @@
-// Don Macchiatos v1.5.12: presentation only; pricing, stock and cashier actions stay in app-core.
+// Don Macchiatos v1.5.20: presentation only; pricing, stock and cashier actions stay in app-core.
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -67,25 +67,25 @@
   }
 
   const latest=[
-    'Dashboard now includes the item-performance radar and a table of recent completed transactions, with the existing charts and filters retained.',
-    'The sidebar collapse control now uses subtle directional chevrons instead of the previous heavy panel icon.',
-    'Choose Dine In, Take Away or Order Online; customer name is optional for every type.',
-    'Today’s order count is now in the checkout panel; the header welcomes the cashier.',
-    'Fixed PNG and JPEG upload previews blocked by browser image URL security rules. The 1 MB limit, compression and save verification remain in place.',
-    'Product stock restrictions, recipes, payments and branch reporting are unchanged.'
+    'Replaced all six POS category pictures with the uploaded coffee, iced-coffee, cookie, sugar, coupon and goods icons.',
+    'Removed Lottie and all category icon animations. Only the solid background hover-color change remains.',
+    'Catalog Admin now has POS Categories for changing category icons and creating custom category buttons.',
+    'Custom categories are collections of existing products and do not alter recipes, stock checks, or product types.',
+    'Product icon uploads are optimized and limited to 1 MB before processing.',
+    'Payment, inventory, historical sales and reporting are unchanged.'
   ];
   const list=$('whatsNewList');
   if(list)list.innerHTML=latest.map(item=>'<li>'+item+'</li>').join('');
   const version=$('whatsNewVersion');
-  if(version)version.textContent='v1.5.12';
+  if(version)version.textContent='v1.5.20';
   const history=document.querySelector('#versionHistorySection .version-history');
-  if(history&&!history.querySelector('[data-version="1.5.12"]')) {
+  if(history&&!history.querySelector('[data-version="1.5.20"]')) {
     history.querySelectorAll('.version-entry.current').forEach(el=>el.classList.remove('current'));
     const entry=document.createElement('details');
     entry.className='version-entry current';
     entry.open=true;
-    entry.dataset.version='1.5.12';
-    entry.innerHTML='<summary><span class="version-meta"><span class="version-chip">v1.5.12</span><span>Don Macchiatos navigation update</span></span></summary><ul>'+latest.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+    entry.dataset.version='1.5.20';
+    entry.innerHTML='<summary><span class="version-meta"><span class="version-chip">v1.5.20</span><span>Don Macchiatos category icons & catalog controls</span></span></summary><ul>'+latest.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
     history.prepend(entry);
   }
 
@@ -95,5 +95,5 @@
   clear?.addEventListener('click',()=>setOrderType('Dine In'));
   const receiptClose=$('receiptClose');
   receiptClose?.addEventListener('click',()=>setOrderType('Dine In'));
-  console.info('Don Macchiatos POS presentation v1.5.12 ready');
+  console.info('Don Macchiatos POS presentation v1.5.20 ready');
 })();
