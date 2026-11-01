@@ -302,6 +302,7 @@
     </div>
     <div class="inv-batch-layout">
       <section class="inv-batch-picker" aria-label="Replenish ingredient picker">
+        <p class="inv-picker-tip">Shift + click a checkbox to select a range. Long-press an ingredient row to highlight multiple items.</p>
         <div class="inv-picker-tools">
           <label class="inv-picker-search"><span class="inv-sr-only">Find ingredients</span><input id="replenishBatchSearch" type="search" placeholder="Find an ingredient…" autocomplete="off" /></label>
           <button type="button" id="replenishSelectAll" class="inv-batch-small-button">Select all</button>
@@ -333,6 +334,7 @@
     </div>
     <div class="inv-batch-layout">
       <section class="inv-batch-picker" aria-label="Transfer ingredient picker">
+        <p class="inv-picker-tip">Shift + click a checkbox to select a range. Long-press an ingredient row to highlight multiple items.</p>
         <div class="inv-picker-tools">
           <label class="inv-picker-search"><span class="inv-sr-only">Find ingredients</span><input id="transferBatchSearch" type="search" placeholder="Find an ingredient…" autocomplete="off" /></label>
           <button type="button" id="transferSelectAll" class="inv-batch-small-button">Select all</button>
@@ -360,7 +362,7 @@
             </div>
           </section>
         </div>
-        <div class="card spaced"><div class="card-head"><div><p class="eyebrow">MOVEMENT HISTORY</p><h3>Inventory Audit</h3></div><button id="refreshMovements" class="ghost">Refresh</button></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Balance</th><th>Reference / Branch</th><th>Actor</th></tr></thead><tbody id="movementBody"></tbody></table></div></div>
+        <div class="card spaced inv-audit-card"><div class="card-head"><div><p class="eyebrow">MOVEMENT HISTORY</p><h3>Inventory Audit</h3><p class="inv-audit-subtitle">One row per transaction. Expand a row to see every ingredient and stock change.</p></div><button id="refreshMovements" type="button" class="ghost">Refresh</button></div><div class="inv-audit-toolbar"><label class="inv-audit-search"><span class="inv-sr-only">Search inventory audit</span><input id="auditSearch" type="search" placeholder="Search transactions, ingredients, references..." autocomplete="off"></label></div><div class="table-wrap inv-audit-scroll"><table class="inv-audit-table"><thead><tr><th>Date &amp; time</th><th>Type</th><th>Transaction / Reference</th><th class="num">Ingredients</th><th>Source / Destination</th><th>Actor</th><th class="inv-audit-action-header">Action</th></tr></thead><tbody id="movementBody"></tbody></table></div><div class="inv-audit-pagination"><span id="auditPageInfo" aria-live="polite">Loading transactions…</span><div id="auditPageControls" class="inv-audit-page-controls" aria-label="Audit pages"></div></div></div>
       </section>
 
       <section id="view-reports" class="view">
