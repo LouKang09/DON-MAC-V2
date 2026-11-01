@@ -322,13 +322,189 @@
     buttons.push('<button type="button" data-inv-page="'+(inventoryUI.page+1)+'" aria-label="Next page" '+(inventoryUI.page===pages?'disabled':'')+'>›</button>');
     $('inventoryPageControls').innerHTML=buttons.join('');
     $('inventoryFilterSummary').textContent=inventoryUI.group!=='none'?'Grouped by '+(inventoryUI.group==='status'?'stock status':'unit'):'';
-    // Preserve selected ingredient across refreshes and replenishment/transfer.
-    const opts=all.map(i=>'<option value="'+i.id+'">'+esc(inventoryDisplayName(i))+' ('+esc(String(i.uom).toUpperCase())+')</option>').join('');
-    for(const id of ['replenishIngredient','transferIngredient']){
-      const select=$(id),selected=select.value;
-      select.innerHTML=opts;
-      if(all.some(i=>String(i.id)===selected))select.value=selected;
+    renderBatchEditors();
+  }
+  // Both editors are independent. The existing replenish/transfer backend already
+  // accepts and atomically records multiple {ingredientId,qty} items.
+  const batchEditors={
+    replenish:{items:new Map(),checked:new Set(),clipboard:null,query:''},
+    transfer:{items:new Map(),checked:new Set(),clipboard:null,query:''}
+  };
+  function batchSource(id){
+    return (state.inventory||[]).find(i=>Number(i.id)===Number(id))||null;
+  }
+  function batchUom(ingredient){return String(ingredient?.uom||'unit').toUpperCase();}
+  function batchFail(kind,message){
+    const el=$(kind+'BatchError');
+    el.textContent=message||'';
+    el.hidden=!message;
+    if(message)toast(message);
+  }
+  function batchAddMany(kind,ids){
+    const editor=batchEditors[kind];
+    if(!editor)return;
+    let count=0;
+    for(const raw of ids){
+      const id=Number(raw),ingredient=batchSource(id);
+      if(!Number.isSafeInteger(id)||id<=0||!ingredient||editor.items.has(id))continue;
+      if(editor.items.size>=150){batchFail(kind,'A maximum of 150 ingredients can be added in one submission.');break;}
+      editor.items.set(id,'');
+      count++;
     }
+    editor.checked.clear();
+    if(count)batchFail(kind,'');
+    renderBatchEditors();
+  }
+  function batchClear(kind){
+    const editor=batchEditors[kind];
+    if(!editor)return;
+    editor.items.clear();editor.checked.clear();editor.clipboard=null;
+    batchFail(kind,'');
+    renderBatchEditors();
+  }
+  function batchPickerItems(kind){
+    const editor=batchEditors[kind],q=normalize(editor.query.trim());
+    return (state.inventory||[]).filter(i=>!q||normalize(
+      [inventoryDisplayName(i),i.name,i.code,i.uom].join(' ')
+    ).includes(q)).sort((a,b)=>inventoryDisplayName(a).localeCompare(inventoryDisplayName(b),undefined,{sensitivity:'base',numeric:true}));
+  }
+  function renderBatchEditors(){
+    for(const kind of ['replenish','transfer']){
+      const editor=batchEditors[kind],ingredients=state.inventory||[],allIds=new Set(ingredients.map(i=>Number(i.id)));
+      for(const id of [...editor.checked])if(!allIds.has(id))editor.checked.delete(id);
+      // A row is retained if a catalog item is archived while the form is open.
+      // Submission will reject it until removed; do not silently change the order.
+      const picker=batchPickerItems(kind);
+      $(kind+'IngredientPicker').innerHTML=picker.map(i=>{
+        const id=Number(i.id),isAdded=editor.items.has(id);
+        return '<div class="inv-picker-item'+(isAdded?' is-added':'')+'" draggable="true" data-batch-ingredient="'+id+'" title="Drag to quantity editor">'+
+          '<input type="checkbox" data-batch-check="'+id+'" aria-label="Select '+esc(inventoryDisplayName(i))+'" '+(editor.checked.has(id)?'checked':'')+'>'+
+          '<span class="inv-picker-grip" aria-hidden="true">⠿</span>'+
+          '<span class="inv-picker-item-name"><strong>'+esc(inventoryDisplayName(i))+'</strong><small>'+esc(batchUom(i))+' · '+num(i.stock)+' available</small></span>'+
+          '<button type="button" data-batch-add="'+id+'" class="inv-picker-quickadd" '+(isAdded?'disabled':'')+' aria-label="Add '+esc(inventoryDisplayName(i))+'">'+(isAdded?'Added':'＋ Add')+'</button></div>';
+      }).join('')||'<p class="inv-picker-empty">No matching ingredients.</p>';
+      $(kind+'CheckedCount').textContent=editor.checked.size+' selected';
+      $(kind+'SelectionCount').textContent=editor.items.size+' ingredient'+(editor.items.size===1?'':'s');
+      $(kind+'AddSelected').disabled=!editor.checked.size;
+      const selectedIds=[...editor.items.keys()];
+      $(kind+'BatchRows').innerHTML=selectedIds.map((id,index)=>{
+        const ing=batchSource(id),name=ing?inventoryDisplayName(ing):'Unavailable ingredient #'+id;
+        const uom=batchUom(ing),amount=editor.items.get(id);
+        return '<div class="inv-batch-row'+(!ing?' is-missing':'')+'" data-batch-row="'+id+'">'+
+          '<span class="inv-batch-row-number">'+(index+1)+'</span>'+
+          '<div class="inv-batch-row-label"><strong>'+esc(name)+'</strong><small>'+esc(uom)+(ing&&kind==='transfer'?' · on hand: '+num(ing.stock):'')+'</small></div>'+
+          '<label class="inv-batch-quantity"><span class="inv-sr-only">Quantity for '+esc(name)+'</span>'+
+          '<input type="number" inputmode="decimal" min="0.000001" step="any" placeholder="0" data-batch-qty="'+id+'" value="'+esc(amount)+'" aria-label="Quantity for '+esc(name)+' in '+esc(uom)+'" required>'+
+          '<span>'+esc(uom)+'</span></label>'+
+          '<button type="button" class="inv-batch-copy" data-batch-copy="'+id+'" title="Copy this quantity" aria-label="Copy quantity for '+esc(name)+'">Copy</button>'+
+          '<button type="button" class="inv-batch-remove" data-batch-remove="'+id+'" title="Remove ingredient" aria-label="Remove '+esc(name)+'">×</button></div>';
+      }).join('')||'<div class="inv-drop-placeholder"><span class="inv-drop-symbol" aria-hidden="true">⇣</span><strong>Drop ingredients here</strong><small>Drag from the list or tap Add to build a batch.</small></div>';
+      const cb=editor.clipboard;
+      $(kind+'CopiedHint').textContent=cb==null?'Copy a quantity from any row.':
+        'Copied '+String(cb.qty)+' '+cb.uom+' · paste numeric amount into each row’s own unit.';
+      $(kind+'PasteAll').disabled=cb==null||!selectedIds.length;
+      const allVisible=picker.length>0&&picker.every(i=>editor.checked.has(Number(i.id)));
+      $(kind+'SelectAll').textContent=allVisible?'Deselect all':'Select all';
+    }
+  }
+  function batchPayload(kind){
+    const editor=batchEditors[kind];
+    if(!editor.items.size)throw new Error('Add at least one ingredient to the quantity editor.');
+    if(editor.items.size>150)throw new Error('Use at most 150 ingredients per batch.');
+    const items=[];
+    for(const [id,value] of editor.items.entries()){
+      const ingredient=batchSource(id);
+      if(!ingredient)throw new Error('An ingredient is no longer available. Remove it and try again.');
+      if(String(value).trim()==='')throw new Error('Enter a quantity for '+inventoryDisplayName(ingredient)+'.');
+      const qty=Number(value);
+      if(!Number.isFinite(qty)||qty<=0)throw new Error('Enter a positive quantity for '+inventoryDisplayName(ingredient)+'.');
+      if(kind==='transfer'&&qty>Number(ingredient.stock)+1e-9)
+        throw new Error('Not enough '+inventoryDisplayName(ingredient)+' stock (available: '+num(ingredient.stock)+' '+batchUom(ingredient)+').');
+      items.push({ingredientId:id,qty});
+    }
+    return items;
+  }
+  function initBatchEditors(){
+    for(const kind of ['replenish','transfer']){
+      const editor=batchEditors[kind],picker=$(kind+'IngredientPicker'),rows=$(kind+'BatchRows'),drop=$(kind+'BatchDropZone');
+      $(kind+'BatchSearch').addEventListener('input',e=>{
+        editor.query=e.target.value;
+        // The search box is outside the rendered picker, so typing is uninterrupted.
+        renderBatchEditors();
+      });
+      picker.addEventListener('change',e=>{
+        const el=e.target.closest('[data-batch-check]');
+        if(!el)return;
+        const id=Number(el.dataset.batchCheck);
+        if(!batchSource(id))return;
+        if(el.checked)editor.checked.add(id);else editor.checked.delete(id);
+        // Do not redraw checkboxes mid-tap; only update the footer and the button.
+        $(kind+'CheckedCount').textContent=editor.checked.size+' selected';
+        $(kind+'AddSelected').disabled=!editor.checked.size;
+      });
+      picker.addEventListener('click',e=>{
+        const add=e.target.closest('[data-batch-add]');
+        if(add)batchAddMany(kind,[Number(add.dataset.batchAdd)]);
+      });
+      $(kind+'SelectAll').addEventListener('click',()=>{
+        const visible=batchPickerItems(kind).map(i=>Number(i.id));
+        const all=visible.length&&visible.every(id=>editor.checked.has(id));
+        for(const id of visible){if(all)editor.checked.delete(id);else editor.checked.add(id);}
+        renderBatchEditors();
+      });
+      $(kind+'AddSelected').addEventListener('click',()=>batchAddMany(kind,[...editor.checked]));
+      picker.addEventListener('dragstart',e=>{
+        const row=e.target.closest('[data-batch-ingredient]');
+        if(!row||!e.dataTransfer)return;
+        const dragged=Number(row.dataset.batchIngredient);
+        const ids=editor.checked.has(dragged)?[...editor.checked]:[dragged];
+        e.dataTransfer.effectAllowed='copy';
+        e.dataTransfer.setData('application/x-donmac-stock-batch',JSON.stringify({kind,ids}));
+        e.dataTransfer.setData('text/plain','Ingredient selection');
+        row.classList.add('is-dragging');
+      });
+      picker.addEventListener('dragend',e=>e.target.closest('[data-batch-ingredient]')?.classList.remove('is-dragging'));
+      drop.addEventListener('dragover',e=>{e.preventDefault();if(e.dataTransfer)e.dataTransfer.dropEffect='copy';drop.classList.add('is-dragover');});
+      drop.addEventListener('dragleave',e=>{if(!drop.contains(e.relatedTarget))drop.classList.remove('is-dragover');});
+      drop.addEventListener('drop',e=>{
+        e.preventDefault();drop.classList.remove('is-dragover');
+        try{
+          const raw=e.dataTransfer?.getData('application/x-donmac-stock-batch');
+          if(!raw)return;
+          const payload=JSON.parse(raw);
+          if(payload.kind!==kind||!Array.isArray(payload.ids))return;
+          batchAddMany(kind,payload.ids.slice(0,150));
+        }catch(_){batchFail(kind,'Unable to add dragged ingredients. Use the Add button instead.');}
+      });
+      rows.addEventListener('input',e=>{
+        const input=e.target.closest('[data-batch-qty]');if(!input)return;
+        const id=Number(input.dataset.batchQty);
+        if(editor.items.has(id)){editor.items.set(id,input.value);batchFail(kind,'');}
+      });
+      rows.addEventListener('click',e=>{
+        const remove=e.target.closest('[data-batch-remove]');
+        if(remove){editor.items.delete(Number(remove.dataset.batchRemove));renderBatchEditors();return;}
+        const copy=e.target.closest('[data-batch-copy]');
+        if(!copy)return;
+        const id=Number(copy.dataset.batchCopy),raw=editor.items.get(id),ingredient=batchSource(id);
+        if(raw===undefined||String(raw).trim()===''||!Number.isFinite(Number(raw))||Number(raw)<=0){
+          batchFail(kind,'Enter a positive quantity before copying.');return;
+        }
+        editor.clipboard={qty:Number(raw),uom:batchUom(ingredient)};
+        batchFail(kind,'');renderBatchEditors();
+      });
+      $(kind+'PasteAll').addEventListener('click',()=>{
+        if(!editor.clipboard)return;
+        const qty=String(editor.clipboard.qty);
+        for(const id of editor.items.keys())editor.items.set(id,qty);
+        batchFail(kind,'');
+        renderBatchEditors();
+        // Units intentionally remain unchanged: e.g. 2 kg and 2 L, not conversion.
+        toast('Applied '+qty+' to all selected ingredient quantities. Each ingredient keeps its own unit.');
+      });
+      $(kind+'ClearTray').addEventListener('click',()=>batchClear(kind));
+    }
+    renderBatchEditors();
   }
   function setupInventoryRedesign(){
     $('inventorySearch').addEventListener('input',()=>{inventoryUI.page=1;renderInventory();});
@@ -371,12 +547,13 @@
       operation(openOperation==='transfer'?null:'transfer');
     });
     operation(null);
+    initBatchEditors();
   }
   setupInventoryRedesign();
   async function loadMovements(){try{const d=await api('/api/inventory/movements?limit=300');$('movementBody').innerHTML=d.items.map(x=>`<tr><td>${esc(formatDateTime(x.createdAt))}</td><td>${esc(x.type)}</td><td>${esc(x.ingredient)} <span class="tiny muted">${esc(String(x.uom).toUpperCase())}</span></td><td class="num ${x.quantityChange<0?'stock-low':'stock-ok'}">${x.quantityChange>0?'+':''}${num(x.quantityChange)}</td><td class="num">${num(x.balanceAfter)}</td><td>${esc(x.reference||x.branch||x.deliveredBy||'')}</td><td>${esc(x.createdBy||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No inventory movements.</td></tr>';}catch(err){toast(err.message);}}
   $('refreshMovements').onclick=loadMovements;
-  $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items:[{ingredientId:Number($('replenishIngredient').value),qty:Number($('replenishQty').value)}],deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast('Ingredients replenished successfully.');$('replenishQty').value='';await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
-  $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items:[{ingredientId:Number($('transferIngredient').value),qty:Number($('transferQty').value)}],branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast('Transfer complete.');$('transferQty').value='';await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
+  $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('replenish');batchFail('replenish','');}catch(err){batchFail('replenish',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items,deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' replenished successfully.');batchClear('replenish');await loadInventory();await loadCatalog();}catch(err){batchFail('replenish',err.message);}});});
+  $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});
 
   function reportQuery(){const qs=new URLSearchParams({period:$('reportPeriod').value,date:$('reportDate').value||manilaToday()});if($('reportCashier').value.trim())qs.set('cashier',$('reportCashier').value.trim());if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')qs.set('branchId',$('reportBranch').value);return qs;}
   $('reportDate').value=manilaToday();
