@@ -252,10 +252,16 @@
   }
   function inventoryStatus(item){
     const stock=Number(item.stock)||0,threshold=Number(item.lowStockThreshold)||0;
-    if(stock<=0)return {key:'out-of-stock',label:'Out of stock',rank:0,icon:'●'};
-    if(stock<=threshold&&threshold>0&&stock<=threshold*.5)return {key:'critical',label:'Critical',rank:1,icon:'!'};
-    if(stock<=threshold)return {key:'low-stock',label:'Low stock',rank:2,icon:'!'};
-    return {key:'in-stock',label:'In stock',rank:3,icon:'▮'};
+    if(stock<=0)return {key:'out-of-stock',label:'Out of stock',rank:0};
+    if(stock<=threshold&&threshold>0&&stock<=threshold*.5)return {key:'critical',label:'Critical',rank:1};
+    if(stock<=threshold)return {key:'low-stock',label:'Low stock',rank:2};
+    return {key:'in-stock',label:'In stock',rank:3};
+  }
+  function inventoryStatusIcon(key){
+    // Fixed trusted SVG markup (never user-supplied HTML).
+    if(key==='in-stock')return '<svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><rect x="2" y="15" width="4" height="7" rx="1.1"/><rect x="8" y="11" width="4" height="11" rx="1.1"/><rect x="14" y="6" width="4" height="16" rx="1.1"/><rect x="20" y="2" width="3" height="20" rx="1.1"/></svg>';
+    if(key==='low-stock')return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M10.3 3.7a2 2 0 0 1 3.4 0l8.3 14.1a2 2 0 0 1-1.7 3H3.7a2 2 0 0 1-1.7-3L10.3 3.7Z"/><path d="M12 9v5"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg>';
+    return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 6.5v7.4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.35" fill="#fff"/></svg>';
   }
   function renderInventory(){
     const all=Array.isArray(state.inventory)?state.inventory:[];
@@ -297,7 +303,7 @@
         '<td class="num inv-stock-number">'+num(i.stock)+'</td>'+
         '<td class="num">'+num(i.lowStockThreshold)+'</td>'+
         '<td class="inv-date">'+esc(i.updatedAt?formatDateTime(i.updatedAt):'—')+'</td>'+
-        '<td><span class="inv-status-badge inv-status-'+status.key+'"><span aria-hidden="true">'+esc(status.icon)+'</span>'+esc(status.label)+'</span></td>'+
+        '<td><span class="inv-status-badge inv-status-'+status.key+'"><span class="inv-status-glyph" aria-hidden="true">'+inventoryStatusIcon(status.key)+'</span>'+esc(status.label)+'</span></td>'+
         '</tr>';
     }).join('');
     $('inventoryBody').innerHTML=markup||'<tr><td colspan="6" class="inv-empty">No ingredients match your search or filters.</td></tr>';
@@ -343,17 +349,27 @@
       $('ingredientName').focus({preventScroll:true});
       $('admin-ingredients').scrollIntoView?.({block:'start',behavior:'smooth'});
     });
+    let openOperation=null;
     function operation(which){
-      const replenish=which==='replenish';
+      openOperation=which;
+      const replenish=which==='replenish',transfer=which==='transfer';
       $('replenishForm').classList.toggle('hidden',!replenish);
-      $('transferForm').classList.toggle('hidden',replenish);
-      for(const [id,on] of [['inventoryReplenishTab',replenish],['inventoryTransferTab',!replenish]]){
-        const button=$(id);button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));
+      $('transferForm').classList.toggle('hidden',!transfer);
+      for(const [id,on] of [['inventoryReplenishTab',replenish],['inventoryTransferTab',transfer]]){
+        const button=$(id);
+        button.classList.toggle('active',on);
+        button.setAttribute('aria-pressed',String(on));
+        button.setAttribute('aria-expanded',String(on));
+        button.closest('.inv-operation-card')?.classList.toggle('active',on);
       }
     }
-    $('inventoryReplenishTab').addEventListener('click',()=>operation('replenish'));
-    $('inventoryTransferTab').addEventListener('click',()=>operation('transfer'));
-    operation('replenish');
+    $('inventoryReplenishTab').addEventListener('click',()=>{
+      operation(openOperation==='replenish'?null:'replenish');
+    });
+    $('inventoryTransferTab').addEventListener('click',()=>{
+      operation(openOperation==='transfer'?null:'transfer');
+    });
+    operation(null);
   }
   setupInventoryRedesign();
   async function loadMovements(){try{const d=await api('/api/inventory/movements?limit=300');$('movementBody').innerHTML=d.items.map(x=>`<tr><td>${esc(formatDateTime(x.createdAt))}</td><td>${esc(x.type)}</td><td>${esc(x.ingredient)} <span class="tiny muted">${esc(String(x.uom).toUpperCase())}</span></td><td class="num ${x.quantityChange<0?'stock-low':'stock-ok'}">${x.quantityChange>0?'+':''}${num(x.quantityChange)}</td><td class="num">${num(x.balanceAfter)}</td><td>${esc(x.reference||x.branch||x.deliveredBy||'')}</td><td>${esc(x.createdBy||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No inventory movements.</td></tr>';}catch(err){toast(err.message);}}
