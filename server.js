@@ -347,11 +347,17 @@ async function subscriptionState(conn=db){
   const result=await conn.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[devSubscription.KEY]);
   return devSubscription.parse(result.rows[0]?.setting_value)||devSubscription.initial();
 }
-async function getSubscriptionForUi(){
+async function getSubscriptionForUi(user){
   const current=await subscriptionState();
-  return {...current,daysRemaining:devSubscription.remainingDays(current.renewAt),
+  const common={
+    plan:current.plan,status:current.status,developmentMode:true,
     entitlements:devSubscription.entitlements(current.plan),
-    notice:'Development preview only: no subscription payment or automatic renewal is processed.'};
+    notice:'Development preview only: no subscription payment or automatic renewal is processed.'
+  };
+  // Staff need to know only the permitted plan features. Keep plan history,
+  // renewal metadata and change actors on Admin-only Account Settings.
+  if(user?.role!=='Admin')return common;
+  return {...current,...common,daysRemaining:devSubscription.remainingDays(current.renewAt)};
 }
 async function saveDemoSubscription(user,input){
   requireAdminRole(user);
@@ -1119,7 +1125,7 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
   if(method==='GET'&&p==='/api/account/subscription')
-    return json(res,200,await getSubscriptionForUi(),safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,200,await getSubscriptionForUi(user),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/account/subscription/demo')
     return json(res,200,await saveDemoSubscription(user,await readJson(req)),safeHeaders({'Cache-Control':'no-store'}));
   if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
