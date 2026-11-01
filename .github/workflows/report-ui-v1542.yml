@@ -1,0 +1,26 @@
+name: Don Mac v1.5.42 Owner/Sales UI tests
+on:
+  push:
+    branches:
+      - main
+      - feature/owner-header-sales-metrics-cashier-multiselect-v1542
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript
+        run: |
+          node --check server.js
+          node --check public/app-core.js
+          node --check public/app.js
+          node --check public/pos-refresh.js
+      - name: Previous Sales Report regression
+        run: node report-ui-v1541-test.js
+      - name: Owner/Sales KPI and cashier multiselect integration
+        run: node report-ui-v1542-test.js
