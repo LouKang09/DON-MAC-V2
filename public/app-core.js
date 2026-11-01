@@ -360,7 +360,7 @@
       editor.items.set(id,'');
       count++;
     }
-    editor.checked.clear();
+    editor.checked.clear();editor.anchorId=null;
     if(count)batchFail(kind,'');
     renderBatchEditors();
   }
@@ -450,7 +450,17 @@
           visible.slice(Math.min(anchor,target),Math.max(anchor,target)+1):[id];
         ids.forEach(itemId=>{if(select)editor.checked.add(itemId);else editor.checked.delete(itemId);});
         if(!shift||anchor<0)editor.anchorId=id;
-        renderBatchEditors();
+        // Update DOM in place. Rebuilding while a finger is held can cancel
+        // mobile pointer movement and break long-press range highlighting.
+        picker.querySelectorAll('[data-batch-ingredient]').forEach(row=>{
+          const rowId=Number(row.dataset.batchIngredient),isChecked=editor.checked.has(rowId);
+          row.classList.toggle('is-selected',isChecked);
+          const checkbox=row.querySelector('[data-batch-check]');
+          if(checkbox)checkbox.checked=isChecked;
+        });
+        $(kind+'CheckedCount').textContent=editor.checked.size+' selected';
+        $(kind+'AddSelected').disabled=!editor.checked.size;
+        $(kind+'SelectAll').textContent=visible.length&&visible.every(rowId=>editor.checked.has(rowId))?'Deselect all':'Select all';
       }
       let hold=null,suppressRowClick=false;
       function stopHold(){
@@ -496,9 +506,8 @@
       picker.addEventListener('click',e=>{
         const input=e.target.closest('[data-batch-check]');
         if(input){
-          e.preventDefault();
           const id=Number(input.dataset.batchCheck);
-          selectPickerRange(id,!editor.checked.has(id),e.shiftKey);
+          selectPickerRange(id,input.checked,e.shiftKey);
           return;
         }
         if(suppressRowClick&&e.target.closest('[data-batch-ingredient]')){
@@ -511,6 +520,7 @@
         const visible=batchPickerItems(kind).map(i=>Number(i.id));
         const all=visible.length&&visible.every(id=>editor.checked.has(id));
         for(const id of visible){if(all)editor.checked.delete(id);else editor.checked.add(id);}
+        editor.anchorId=null;
         renderBatchEditors();
       });
       $(kind+'AddSelected').addEventListener('click',()=>batchAddMany(kind,[...editor.checked]));
