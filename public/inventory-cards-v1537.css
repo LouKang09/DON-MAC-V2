@@ -1,0 +1,186 @@
+/* Inventory v1.5.37: illustrated actions and accessible stock-status badges.
+   Scoped to inventory; preserves audit table and real stock endpoints. */
+#view-inventory .inv-status-badge{
+  display:inline-flex!important;
+  align-items:center;gap:7px;
+  border-radius:99px!important;
+  padding:7px 12px!important;
+  font-weight:850;letter-spacing:-.01em;
+  line-height:1;white-space:nowrap;
+  font-size:11px!important;
+}
+#view-inventory .inv-status-badge .inv-status-glyph{
+  display:inline-flex!important;
+  flex:0 0 21px;
+  width:21px!important;height:21px;
+  align-items:center;justify-content:center;
+  color:inherit;font-size:inherit;
+}
+#view-inventory .inv-status-badge .inv-status-glyph svg{
+  display:block;width:20px;height:20px;
+  fill:currentColor;
+}
+#view-inventory .inv-status-badge.inv-status-in-stock{
+  background:#d8efc9!important;color:#216d2e!important;
+}
+#view-inventory .inv-status-badge.inv-status-low-stock{
+  background:#ffe3a5!important;color:#8d5a06!important;
+}
+#view-inventory .inv-status-badge.inv-status-critical{
+  background:#ffc9c7!important;color:#ab282b!important;
+}
+#view-inventory .inv-status-badge.inv-status-out-of-stock{
+  background:#ffe4e1!important;color:#a8242b!important;
+}
+#view-inventory .inv-stock-operations{
+  padding:0!important;overflow:hidden;
+  background:#fff;border-radius:19px;
+  border:1px solid #e6e3dd;
+}
+#view-inventory .inv-operation-cards{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;gap:0;
+}
+#view-inventory .inv-operation-card{
+  position:relative;display:flex;align-items:stretch;
+  min-height:179px;min-width:0;
+  padding:23px 23px 21px;
+  background:linear-gradient(100deg,#fff 45%,#fdfaf6 100%);
+  overflow:hidden;
+  transition:background-color .15s ease;
+}
+#view-inventory .inv-operation-card + .inv-operation-card{
+  border-left:1px solid #dddeda;
+}
+#view-inventory .inv-operation-card.active{
+  background:linear-gradient(105deg,#f1f8f0 0%,#fcfbf6 100%);
+}
+#view-inventory .inv-operation-main{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;gap:16px;
+  align-items:flex-start;min-width:0;
+  flex:1 1 auto;max-width:calc(100% - 175px);
+}
+#view-inventory .inv-operation-top{
+  display:flex;align-items:flex-start;gap:13px;
+  min-width:0;
+}
+#view-inventory .inv-operation-top>svg{
+  color:#1c6040;flex:0 0 35px;
+  width:35px;height:35px;margin-top:2px;
+}
+#view-inventory .inv-operation-copy{min-width:0}
+#view-inventory .inv-operation-copy h3{
+  color:#193f2a;font-size:22px;
+  line-height:1.14;letter-spacing:-.035em;font-weight:850;
+  margin:1px 0 6px;
+}
+#view-inventory .inv-operation-copy p{
+  margin:0;color:#758478;
+  line-height:1.55;font-size:11px;
+  max-width:290px;
+}
+#view-inventory .inv-operation-launch{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:43px;gap:8px;
+  border:1px solid #145c38;
+  background:#105633;color:#fff;
+  font-family:inherit;
+  border-radius:11px;
+  font-size:11px;font-weight:850;
+  line-height:1.2;
+  cursor:pointer;
+  padding:11px 16px;
+  white-space:nowrap;max-width:100%;
+  box-shadow:0 5px 12px rgba(22,82,48,.13);
+}
+#view-inventory .inv-operation-launch>span{
+  font-size:21px;font-weight:550;
+  line-height:0.7;display:inline-flex;align-items:center;
+}
+#view-inventory .inv-operation-launch:hover{
+  background:#0b4327;transform:translateY(-1px);
+}
+#view-inventory .inv-operation-launch.active{
+  background:#266d49;
+  box-shadow:inset 0 0 0 2px #89bd9c;
+}
+#view-inventory .inv-operation-launch:focus-visible{
+  outline:3px solid #80b795;outline-offset:3px;
+}
+#view-inventory .inv-hero-illustration{
+  position:absolute;right:11px;bottom:7px;
+  width:clamp(144px,19vw,237px);height:145px;
+  max-width:45%;object-fit:contain;
+  pointer-events:none;z-index:0;
+}
+#view-inventory .inv-operations-body{
+  display:none;min-width:0;
+  border-top:1px solid #e1eae0;
+  background:#fbfdf9;
+  padding:9px 24px 18px;
+}
+#view-inventory .inv-operations-body.is-open{display:block}
+#view-inventory .inv-operations-body .form-card{
+  margin:0;padding:14px 0 0;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+#view-inventory .inv-operations-body .form-card:not(.hidden)>.eyebrow{
+  display:block;grid-column:1/-1;
+  margin-bottom:-10px;
+}
+#view-inventory .inv-operations-body .form-card:not(.hidden)>h3{
+  display:block;grid-column:1/-1;
+  font-size:17px;color:#285b3d;
+  margin:0 0 2px;
+}
+#view-inventory .inv-operations-body .form-card label{align-self:stretch}
+#view-inventory .inv-operations-body .form-card button[type="submit"]{
+  min-height:42px;
+}
+@media(max-width:1220px) and (min-width:801px){
+  #view-inventory .inv-operation-card{padding:20px 16px}
+  #view-inventory .inv-operation-main{max-width:calc(100% - 125px);gap:13px}
+  #view-inventory .inv-operation-copy h3{font-size:19px}
+  #view-inventory .inv-hero-illustration{width:160px;height:130px;right:3px;max-width:39%}
+}
+@media(max-width:940px){
+  #view-inventory .inv-operation-card{min-height:163px;padding:19px 13px}
+  #view-inventory .inv-operation-main{max-width:calc(100% - 88px);gap:13px}
+  #view-inventory .inv-operation-top{gap:8px}
+  #view-inventory .inv-operation-top>svg{width:27px;height:27px;flex-basis:27px}
+  #view-inventory .inv-operation-copy h3{font-size:18px}
+  #view-inventory .inv-operation-copy p{font-size:10px}
+  #view-inventory .inv-hero-illustration{width:139px;height:120px;max-width:37%;right:0;bottom:3px}
+  #view-inventory .inv-operation-launch{font-size:10px;padding:10px;min-height:40px}
+}
+@media(max-width:720px){
+  #view-inventory .inv-operation-cards{grid-template-columns:1fr}
+  #view-inventory .inv-operation-card{min-height:160px;padding:18px 16px}
+  #view-inventory .inv-operation-card + .inv-operation-card{
+    border-left:0;border-top:1px solid #dddeda;
+  }
+  #view-inventory .inv-operation-main{max-width:calc(100% - 117px)}
+  #view-inventory .inv-operation-copy h3{font-size:20px}
+  #view-inventory .inv-operation-copy p{font-size:10px}
+  #view-inventory .inv-hero-illustration{width:165px;height:125px;max-width:40%;right:3px}
+  #view-inventory .inv-operations-body{padding:8px 15px 17px}
+  #view-inventory .inv-operations-body .form-card{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:500px){
+  #view-inventory .inv-operation-card{padding:17px 13px;min-height:151px}
+  #view-inventory .inv-operation-main{max-width:calc(100% - 103px)}
+  #view-inventory .inv-operation-copy h3{font-size:18px}
+  #view-inventory .inv-operation-copy p{font-size:10px;line-height:1.4}
+  #view-inventory .inv-operation-launch{min-height:40px;font-size:10px}
+  #view-inventory .inv-hero-illustration{width:143px;max-width:40%}
+  #view-inventory .inv-operations-body .form-card{grid-template-columns:1fr}
+  #view-inventory .inv-operations-body .form-card label:has(textarea){grid-column:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  #view-inventory .inv-operation-launch,
+  #view-inventory .inv-operation-card{transition:none}
+}
+@media print{
+  #view-inventory .inv-operation-cards{display:none}
+}
