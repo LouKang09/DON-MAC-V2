@@ -1,0 +1,69 @@
+/* Don Macchiatos inventory batch selection and transaction audit v1.5.40 */
+#view-inventory .inv-picker-tip{
+  margin:0;padding:9px 12px;background:#f0f7ed;border-bottom:1px solid #dfebdc;
+  color:#376447;font-size:11px;line-height:1.5;
+}
+#view-inventory .inv-picker-item.is-selected{background:#e8f4e6!important;box-shadow:inset 3px 0 #367b51;}
+#view-inventory .inv-picker-item.is-selected .inv-picker-item-name strong{color:#174f30}
+#view-inventory .inv-picker-item{user-select:none;-webkit-user-select:none}
+#view-inventory .inv-picker-item-name{cursor:pointer}
+#view-inventory .inv-audit-subtitle{font-size:12px;color:#7c8b7f;margin:6px 0 0;line-height:1.55}
+#view-inventory .inv-audit-toolbar{padding:0 20px 14px;display:flex;justify-content:flex-end}
+#view-inventory .inv-audit-search{width:min(100%,390px)}
+#view-inventory .inv-audit-search input{
+  width:100%;min-height:40px;padding:9px 12px;
+  border:1px solid #d8e5da;border-radius:10px;background:#fff;color:#244335;font:inherit;font-size:12px;
+}
+#view-inventory .inv-audit-search input:focus{outline:2px solid #7bad8a;outline-offset:1px}
+#view-inventory .inv-audit-scroll{overflow-x:auto}
+#view-inventory .inv-audit-table{width:100%;border-collapse:collapse;min-width:780px}
+#view-inventory .inv-audit-table>thead th{background:#fafaf7;color:#79847b;text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:12px 13px}
+#view-inventory .inv-audit-table>tbody>.inv-audit-row>td{padding:13px;vertical-align:middle;border-bottom:1px solid #edf0e9;font-size:12px}
+#view-inventory .inv-audit-table .inv-audit-row:hover,
+#view-inventory .inv-audit-table .inv-audit-row.is-expanded{background:#f3f8f0}
+#view-inventory .inv-audit-reference{font-weight:750;color:#234e34;max-width:235px;word-break:break-word}
+#view-inventory .inv-audit-type{
+  display:inline-flex;border-radius:8px;padding:6px 9px;white-space:nowrap;
+  font-size:10px;font-weight:800;background:#f3efd9;color:#5c542e;
+}
+#view-inventory .inv-audit-type.type-transfer{background:#e8f0e6;color:#236644}
+#view-inventory .inv-audit-type.type-replenish{background:#e4f4e5;color:#257044}
+#view-inventory .inv-audit-type.type-sale_reversal{background:#f7ebdf;color:#8a5c2f}
+#view-inventory .inv-audit-view{
+  border:1px solid #cbdcce;border-radius:9px;background:#fff;color:#23633f;
+  font:inherit;font-size:11px;font-weight:750;min-width:65px;padding:7px 10px;cursor:pointer;
+}
+#view-inventory .inv-audit-view:hover{background:#e6f2e6}
+#view-inventory .inv-audit-view:focus-visible{outline:2px solid #44875c;outline-offset:2px}
+#view-inventory .inv-audit-details-row>td{padding:0 13px 14px!important;background:#f3f8f0!important}
+#view-inventory .inv-audit-detail-panel{
+  border:1px solid #e0e9de;border-radius:12px;background:#fff;padding:14px 16px;
+  box-shadow:0 4px 18px rgba(23,63,34,.035);
+}
+#view-inventory .inv-audit-detail-title{color:#224d32;font-size:13px;font-weight:850;margin:0 0 11px}
+#view-inventory .inv-audit-inner-table{width:100%;min-width:440px;border-collapse:collapse}
+#view-inventory .inv-audit-inner-table th{
+  font-size:10px;letter-spacing:.03em;text-transform:uppercase;
+  color:#849085;background:#f7f8f4;padding:10px 12px;
+}
+#view-inventory .inv-audit-inner-table td{font-size:12px;padding:10px 12px;border-bottom:1px solid #ecf0e9}
+#view-inventory .inv-audit-inner-table td small{font-size:10px;color:#8b9a8b;margin-left:6px}
+#view-inventory .inv-audit-details-table-wrap{overflow-x:auto}
+#view-inventory .inv-audit-meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;color:#617b66;font-size:11px}
+#view-inventory .inv-audit-meta b{color:#375740}
+#view-inventory .inv-audit-empty{text-align:center;color:#849186;padding:28px!important;font-size:12px}
+#view-inventory .inv-audit-pagination{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 20px;color:#738477;font-size:11px;
+}
+#view-inventory .inv-audit-page-controls{display:flex;align-items:center;gap:9px}
+#view-inventory .inv-audit-page-controls button{
+  border:1px solid #d8e3d7;background:#fff;color:#286446;
+  min-width:30px;min-height:30px;border-radius:8px;cursor:pointer;font-size:17px;
+}
+#view-inventory .inv-audit-page-controls button:disabled{opacity:.4;cursor:default}
+@media(max-width:700px){
+  #view-inventory .inv-audit-toolbar{padding:0 12px 12px}
+  #view-inventory .inv-audit-pagination{padding:12px;flex-wrap:wrap}
+  #view-inventory .inv-audit-detail-panel{padding:11px}
+}

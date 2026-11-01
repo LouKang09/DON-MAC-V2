@@ -336,8 +336,8 @@
   // Both editors are independent. The existing replenish/transfer backend already
   // accepts and atomically records multiple {ingredientId,qty} items.
   const batchEditors={
-    replenish:{items:new Map(),checked:new Set(),clipboard:null,query:''},
-    transfer:{items:new Map(),checked:new Set(),clipboard:null,query:''}
+    replenish:{items:new Map(),checked:new Set(),clipboard:null,query:'',anchorId:null},
+    transfer:{items:new Map(),checked:new Set(),clipboard:null,query:'',anchorId:null}
   };
   function batchSource(id){
     return (state.inventory||[]).find(i=>Number(i.id)===Number(id))||null;
@@ -360,14 +360,14 @@
       editor.items.set(id,'');
       count++;
     }
-    editor.checked.clear();
+    editor.checked.clear();editor.anchorId=null;
     if(count)batchFail(kind,'');
     renderBatchEditors();
   }
   function batchClear(kind){
     const editor=batchEditors[kind];
     if(!editor)return;
-    editor.items.clear();editor.checked.clear();editor.clipboard=null;
+    editor.items.clear();editor.checked.clear();editor.clipboard=null;editor.anchorId=null;
     batchFail(kind,'');
     renderBatchEditors();
   }
@@ -386,7 +386,7 @@
       const picker=batchPickerItems(kind);
       $(kind+'IngredientPicker').innerHTML=picker.map(i=>{
         const id=Number(i.id),isAdded=editor.items.has(id);
-        return '<div class="inv-picker-item'+(isAdded?' is-added':'')+'" draggable="true" data-batch-ingredient="'+id+'" title="Drag to quantity editor">'+
+        return '<div class="inv-picker-item'+(isAdded?' is-added':'')+(editor.checked.has(id)?' is-selected':'')+'" draggable="true" data-batch-ingredient="'+id+'" title="Drag to quantity editor or long-press to select">'+
           '<input type="checkbox" data-batch-check="'+id+'" aria-label="Select '+esc(inventoryDisplayName(i))+'" '+(editor.checked.has(id)?'checked':'')+'>'+
           '<span class="inv-picker-grip" aria-hidden="true">⠿</span>'+
           '<span class="inv-picker-item-name"><strong>'+esc(inventoryDisplayName(i))+'</strong><small>'+esc(batchUom(i))+' · '+num(i.stock)+' available</small></span>'+
@@ -441,17 +441,78 @@
         // The search box is outside the rendered picker, so typing is uninterrupted.
         renderBatchEditors();
       });
-      picker.addEventListener('change',e=>{
-        const el=e.target.closest('[data-batch-check]');
-        if(!el)return;
-        const id=Number(el.dataset.batchCheck);
+      // Shift selects or deselects a contiguous range in the filtered picker.
+      function selectPickerRange(id,select,shift){
         if(!batchSource(id))return;
-        if(el.checked)editor.checked.add(id);else editor.checked.delete(id);
-        // Do not redraw checkboxes mid-tap; only update the footer and the button.
+        const visible=batchPickerItems(kind).map(i=>Number(i.id));
+        const anchor=visible.indexOf(editor.anchorId),target=visible.indexOf(id);
+        const ids=shift&&anchor>=0&&target>=0?
+          visible.slice(Math.min(anchor,target),Math.max(anchor,target)+1):[id];
+        ids.forEach(itemId=>{if(select)editor.checked.add(itemId);else editor.checked.delete(itemId);});
+        if(!shift||anchor<0)editor.anchorId=id;
+        // Update DOM in place. Rebuilding while a finger is held can cancel
+        // mobile pointer movement and break long-press range highlighting.
+        picker.querySelectorAll('[data-batch-ingredient]').forEach(row=>{
+          const rowId=Number(row.dataset.batchIngredient),isChecked=editor.checked.has(rowId);
+          row.classList.toggle('is-selected',isChecked);
+          const checkbox=row.querySelector('[data-batch-check]');
+          if(checkbox)checkbox.checked=isChecked;
+        });
         $(kind+'CheckedCount').textContent=editor.checked.size+' selected';
         $(kind+'AddSelected').disabled=!editor.checked.size;
+        $(kind+'SelectAll').textContent=visible.length&&visible.every(rowId=>editor.checked.has(rowId))?'Deselect all':'Select all';
+      }
+      let hold=null,suppressRowClick=false;
+      function stopHold(){
+        if(!hold)return;
+        clearTimeout(hold.timer);
+        if(hold.active){
+          suppressRowClick=true;
+          setTimeout(()=>{suppressRowClick=false;},180);
+        }
+        hold=null;
+      }
+      function moveHold(e){
+        if(!hold)return;
+        if(!hold.active&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>12){stopHold();return;}
+        if(!hold.active)return;
+        if(e.cancelable)e.preventDefault();
+        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-batch-ingredient]');
+        if(!target||!picker.contains(target))return;
+        const nextId=Number(target.dataset.batchIngredient);
+        if(nextId!==hold.lastId){
+          hold.lastId=nextId;
+          selectPickerRange(nextId,true,true);
+        }
+      }
+      picker.addEventListener('pointerdown',e=>{
+        if(e.pointerType==='mouse'&&e.button!==0)return;
+        const row=e.target.closest('[data-batch-ingredient]');
+        if(!row||e.target.closest('button,input,.inv-picker-grip'))return;
+        stopHold();
+        const id=Number(row.dataset.batchIngredient);
+        hold={id,lastId:id,x:e.clientX,y:e.clientY,active:false,timer:null,pointerId:e.pointerId};
+        hold.timer=setTimeout(()=>{
+          if(!hold||hold.pointerId!==e.pointerId)return;
+          hold.active=true;
+          // A long-press selects the row; sliding adds the range.
+          selectPickerRange(id,true,false);
+        },500);
       });
+      document.addEventListener('pointermove',e=>{if(hold&&e.pointerId===hold.pointerId)moveHold(e);});
+      document.addEventListener('pointerup',e=>{if(hold&&e.pointerId===hold.pointerId)stopHold();});
+      document.addEventListener('pointercancel',e=>{if(hold&&e.pointerId===hold.pointerId)stopHold();});
+      picker.addEventListener('touchmove',e=>{if(hold?.active&&e.cancelable)e.preventDefault();},{passive:false});
       picker.addEventListener('click',e=>{
+        const input=e.target.closest('[data-batch-check]');
+        if(input){
+          const id=Number(input.dataset.batchCheck);
+          selectPickerRange(id,input.checked,e.shiftKey);
+          return;
+        }
+        if(suppressRowClick&&e.target.closest('[data-batch-ingredient]')){
+          e.preventDefault();return;
+        }
         const add=e.target.closest('[data-batch-add]');
         if(add)batchAddMany(kind,[Number(add.dataset.batchAdd)]);
       });
@@ -459,6 +520,7 @@
         const visible=batchPickerItems(kind).map(i=>Number(i.id));
         const all=visible.length&&visible.every(id=>editor.checked.has(id));
         for(const id of visible){if(all)editor.checked.delete(id);else editor.checked.add(id);}
+        editor.anchorId=null;
         renderBatchEditors();
       });
       $(kind+'AddSelected').addEventListener('click',()=>batchAddMany(kind,[...editor.checked]));
@@ -559,7 +621,119 @@
     initBatchEditors();
   }
   setupInventoryRedesign();
-  async function loadMovements(){try{const d=await api('/api/inventory/movements?limit=300');const rows=Array.isArray(d.items)?d.items:[];$('movementBody').innerHTML=rows.map(x=>`<tr><td>${esc(formatDateTime(x.createdAt))}</td><td>${esc(x.type)}</td><td>${esc(x.ingredient)} <span class="tiny muted">${esc(String(x.uom).toUpperCase())}</span></td><td class="num ${x.quantityChange<0?'stock-low':'stock-ok'}">${x.quantityChange>0?'+':''}${num(x.quantityChange)}</td><td class="num">${num(x.balanceAfter)}</td><td>${esc(x.reference||x.branch||x.deliveredBy||'')}</td><td>${esc(x.createdBy||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No inventory movements recorded yet.</td></tr>';}catch(err){console.error('Inventory audit failed:',err);$('movementBody').innerHTML='<tr><td colspan="7" class="muted">Could not load inventory movements. Use Refresh to retry.</td></tr>';toast('Inventory audit: '+err.message);}}
+  const auditUI={groups:[],expanded:new Set(),page:1,pageSize:20,query:''};
+  function groupInventoryMovements(rows){
+    const groups=[],byReference=new Map();
+    let previousLegacy=null;
+    for(const x of rows){
+      const type=String(x.type||'UNKNOWN'),ref=String(x.reference||'').trim();
+      let group;
+      if(ref){
+        const key=type+'|'+ref;
+        group=byReference.get(key);
+        if(!group){
+          group={key,type,reference:ref,createdAt:x.createdAt,id:Number(x.id),items:[],branch:x.branch,receivedBy:x.receivedBy,deliveredBy:x.deliveredBy,remarks:x.remarks,createdBy:x.createdBy};
+          byReference.set(key,group);groups.push(group);
+        }
+        previousLegacy=null;
+      }else{
+        // Historical batches lack references. Merge only adjacent records with
+        // matching metadata within two seconds; never hide individual movements.
+        const previous=previousLegacy?.row;
+        const close=previous&&Math.abs(new Date(previous.createdAt)-new Date(x.createdAt))<=2000;
+        const adjacent=previous&&Number(previous.id)-Number(x.id)===1;
+        const same=previous&&['type','createdBy','branch','receivedBy','deliveredBy','remarks'].every(k=>String(previous[k]||'')===String(x[k]||''));
+        const distinct=previousLegacy&&!previousLegacy.group.items.some(item=>String(item.ingredient)===String(x.ingredient));
+        if(close&&adjacent&&same&&distinct)group=previousLegacy.group;
+        else{
+          group={key:'legacy-'+x.id,type,reference:'',createdAt:x.createdAt,id:Number(x.id),items:[],branch:x.branch,receivedBy:x.receivedBy,deliveredBy:x.deliveredBy,remarks:x.remarks,createdBy:x.createdBy};
+          groups.push(group);
+        }
+        previousLegacy={row:x,group};
+      }
+      group.items.push(x);
+      if(new Date(x.createdAt)>new Date(group.createdAt))group.createdAt=x.createdAt;
+    }
+    return groups.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)||b.id-a.id);
+  }
+  function renderMovements(){
+    const query=normalize(auditUI.query),all=auditUI.groups;
+    const filtered=query?all.filter(g=>normalize([
+      g.type,g.reference,g.branch,g.deliveredBy,g.receivedBy,g.remarks,g.createdBy,
+      formatDateTime(g.createdAt),...g.items.map(i=>i.ingredient)
+    ].join(' ')).includes(query)):all;
+    const pages=Math.max(1,Math.ceil(filtered.length/auditUI.pageSize));
+    auditUI.page=Math.max(1,Math.min(pages,auditUI.page));
+    const first=(auditUI.page-1)*auditUI.pageSize;
+    const visible=filtered.slice(first,first+auditUI.pageSize);
+    $('movementBody').innerHTML=visible.map(g=>{
+      const expanded=auditUI.expanded.has(g.key),safeType=g.type.toLowerCase().replace(/[^a-z_]/g,'-');
+      const label=g.reference||(
+        g.type==='REPLENISH'?'Replenishment':
+        g.type==='TRANSFER'?'Stock transfer':g.type==='SALE'?'Sale':'Inventory adjustment');
+      const destination=g.branch||g.deliveredBy||g.receivedBy||'—';
+      const summary='<tr class="inv-audit-row'+(expanded?' is-expanded':'')+'">'+
+        '<td>'+esc(formatDateTime(g.createdAt))+'</td>'+
+        '<td><span class="inv-audit-type type-'+esc(safeType)+'">'+esc(g.type.replaceAll('_',' '))+'</span></td>'+
+        '<td class="inv-audit-reference" title="'+esc(label)+'">'+esc(label)+'</td>'+
+        '<td class="num">'+g.items.length+' item'+(g.items.length===1?'':'s')+'</td>'+
+        '<td>'+esc(destination)+'</td>'+
+        '<td>'+esc(g.createdBy||'—')+'</td>'+
+        '<td><button type="button" class="inv-audit-view" data-audit-toggle="'+esc(g.key)+'" aria-expanded="'+expanded+'" aria-label="'+(expanded?'Collapse':'View')+' '+esc(label)+' ingredient breakdown">'+(expanded?'▾ Hide':'▸ View')+'</button></td></tr>';
+      if(!expanded)return summary;
+      const details=g.items.map(i=>
+        '<tr><td><strong>'+esc(i.ingredient)+'</strong> <small>'+esc(String(i.uom||'').toUpperCase())+'</small></td>'+
+        '<td class="num '+(Number(i.quantityChange)<0?'stock-low':'stock-ok')+'">'+
+        (Number(i.quantityChange)>0?'+':'')+num(i.quantityChange)+'</td>'+
+        '<td class="num">'+num(i.balanceAfter)+'</td></tr>'
+      ).join('');
+      const metadata=[
+        g.reference?'<span><b>Reference:</b> '+esc(g.reference)+'</span>':'',
+        g.branch?'<span><b>Destination:</b> '+esc(g.branch)+'</span>':'',
+        g.deliveredBy?'<span><b>Delivered by:</b> '+esc(g.deliveredBy)+'</span>':'',
+        g.receivedBy?'<span><b>Received by:</b> '+esc(g.receivedBy)+'</span>':'',
+        g.remarks?'<span><b>Remarks:</b> '+esc(g.remarks)+'</span>':''
+      ].filter(Boolean).join('');
+      return summary+'<tr class="inv-audit-details-row"><td colspan="7"><div class="inv-audit-detail-panel">'+
+        '<div class="inv-audit-detail-title">Ingredient breakdown ('+g.items.length+')</div>'+
+        '<div class="inv-audit-details-table-wrap"><table class="inv-audit-inner-table"><thead><tr><th>Ingredient</th><th class="num">Change</th><th class="num">Balance after</th></tr></thead><tbody>'+
+        details+'</tbody></table></div>'+(metadata?'<div class="inv-audit-meta">'+metadata+'</div>':'')+
+        '</div></td></tr>';
+    }).join('')||'<tr><td colspan="7" class="inv-audit-empty">'+(all.length?'No transactions match your search.':'No inventory movements recorded yet.')+'</td></tr>';
+    $('auditPageInfo').textContent=filtered.length?
+      'Showing '+(first+1)+'–'+Math.min(filtered.length,first+auditUI.pageSize)+' of '+filtered.length+' transactions':
+      'Showing 0 transactions';
+    $('auditPageControls').innerHTML='<button type="button" data-audit-page="'+(auditUI.page-1)+'" '+(auditUI.page===1?'disabled':'')+' aria-label="Previous audit page">‹</button>'+
+      '<span>Page '+auditUI.page+' of '+pages+'</span>'+
+      '<button type="button" data-audit-page="'+(auditUI.page+1)+'" '+(auditUI.page===pages?'disabled':'')+' aria-label="Next audit page">›</button>';
+  }
+  async function loadMovements(){
+    try{
+      const d=await api('/api/inventory/movements?limit=1000');
+      auditUI.groups=groupInventoryMovements(Array.isArray(d.items)?d.items:[]);
+      renderMovements();
+    }catch(err){
+      console.error('Inventory audit failed:',err);
+      $('movementBody').innerHTML='<tr><td colspan="7" class="inv-audit-empty">Could not load inventory movements. Use Refresh to retry.</td></tr>';
+      $('auditPageInfo').textContent='Audit unavailable';
+      $('auditPageControls').innerHTML='';
+      toast('Inventory audit: '+err.message);
+    }
+  }
+  $('auditSearch').addEventListener('input',e=>{auditUI.query=e.target.value;auditUI.page=1;renderMovements();});
+  $('movementBody').addEventListener('click',e=>{
+    const button=e.target.closest('[data-audit-toggle]');
+    if(!button)return;
+    const key=button.dataset.auditToggle;
+    if(auditUI.expanded.has(key))auditUI.expanded.delete(key);else auditUI.expanded.add(key);
+    renderMovements();
+  });
+  $('auditPageControls').addEventListener('click',e=>{
+    const button=e.target.closest('[data-audit-page]');
+    if(!button||button.disabled)return;
+    auditUI.page=Number(button.dataset.auditPage)||1;
+    renderMovements();
+  });
   $('refreshMovements').onclick=loadMovements;
   $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('replenish');batchFail('replenish','');}catch(err){batchFail('replenish',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items,deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' replenished successfully.');batchClear('replenish');await loadInventory();await loadCatalog();}catch(err){batchFail('replenish',err.message);}});});
   $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});

@@ -30,7 +30,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.39-inventory-batch-audit-fix';
+const APP_VERSION = '1.5.40-inventory-range-grouped-audit';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -533,6 +533,8 @@ async function replenish(user,body){
   const deliveredBy=String(body.deliveredBy||'').trim(),remarks=String(body.remarks||'').trim();
   if(deliveredBy.length>150)throw Object.assign(new Error('Delivered By must be at most 150 characters.'),{status:400});
   if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});
+  const movementReference='RPL-'+crypto.randomUUID().toUpperCase();
+  const movementTime=nowIso();
   return db.transaction(async tx=>{
     const details=[];
     for(const x of body.items){
@@ -542,7 +544,7 @@ async function replenish(user,body){
       const qty=Number(x.qty),balance=Number(ing.stock_qty)+qty;
       if(!Number.isFinite(balance)||balance>MAX_STOCK)throw Object.assign(new Error(`Stock balance for ${ing.display_name} would exceed the supported range.`),{status:400});
       await tx.query('UPDATE ingredients SET stock_qty=$1,updated_at=$2 WHERE id=$3',[balance,nowIso(),Number(ing.id)]);
-      await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,delivered_by,remarks,created_by,created_at) VALUES ($1,'REPLENISH',$2,$3,$4,$5,$6,$7)`,[Number(ing.id),qty,balance,deliveredBy||null,remarks||null,user.id,nowIso()]);
+      await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,reference,delivered_by,remarks,created_by,created_at) VALUES ($1,'REPLENISH',$2,$3,$4,$5,$6,$7,$8)`,[Number(ing.id),qty,balance,movementReference,deliveredBy||null,remarks||null,user.id,movementTime]);
       details.push(`- ${ing.display_name}: (${qty}) ${String(ing.uom||'').toUpperCase()}`);
     }
     const activity=`Cashier: ${user.username}\nDelivered By: (${deliveredBy||'N/A'})\n\nItems Replenished:\n${details.join('\n')}`;
@@ -556,6 +558,8 @@ async function transfer(user,body){
   if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});
   if(branch.length>150||receivedBy.length>150)throw Object.assign(new Error('Transfer To and Received By must be at most 150 characters.'),{status:400});
   if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});
+  const movementReference='TRF-'+crypto.randomUUID().toUpperCase();
+  const movementTime=nowIso();
   return db.transaction(async tx=>{
     const details=[];
     for(const x of body.items){
@@ -566,7 +570,7 @@ async function transfer(user,body){
       if(current+1e-9<qty)throw Object.assign(new Error(`Not enough ${ing.display_name} stock for transfer.`),{status:409});
       const balance=current-qty;
       await tx.query('UPDATE ingredients SET stock_qty=$1,updated_at=$2 WHERE id=$3',[balance,nowIso(),Number(ing.id)]);
-      await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,branch,received_by,remarks,created_by,created_at) VALUES ($1,'TRANSFER',$2,$3,$4,$5,$6,$7,$8)`,[Number(ing.id),-qty,balance,branch,receivedBy,remarks||null,user.id,nowIso()]);
+      await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,reference,branch,received_by,remarks,created_by,created_at) VALUES ($1,'TRANSFER',$2,$3,$4,$5,$6,$7,$8,$9)`,[Number(ing.id),-qty,balance,movementReference,branch,receivedBy,remarks||null,user.id,movementTime]);
       details.push(`- ${ing.display_name}: (${qty}) ${String(ing.uom||'').toUpperCase()}`);
     }
     const activity=`Cashier: ${user.username}\nTransfer To: (${branch})\nReceived By: (${receivedBy})\n\nItems Transferred:\n${details.join('\n')}`;
@@ -574,7 +578,7 @@ async function transfer(user,body){
     return {ok:true,activity};
   });
 }
-async function listInventoryMovements(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.reference,m.branch,m.received_by,m.delivered_by,m.remarks,m.created_at,i.display_name,i.uom,u.username FROM inventory_movements m JOIN ingredients i ON i.id=m.ingredient_id LEFT JOIN users u ON u.id=m.created_by ORDER BY m.created_at DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),type:x.movement_type,ingredient:x.display_name,uom:x.uom,quantityChange:Number(x.quantity_change),balanceAfter:Number(x.balance_after),reference:x.reference,branch:x.branch,receivedBy:x.received_by,deliveredBy:x.delivered_by,remarks:x.remarks,createdBy:x.username,createdAt:x.created_at}));}
+async function listInventoryMovements(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.reference,m.branch,m.received_by,m.delivered_by,m.remarks,m.created_at,i.display_name,i.uom,u.username FROM inventory_movements m JOIN ingredients i ON i.id=m.ingredient_id LEFT JOIN users u ON u.id=m.created_by ORDER BY m.created_at DESC,m.id DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),type:x.movement_type,ingredient:x.display_name,uom:x.uom,quantityChange:Number(x.quantity_change),balanceAfter:Number(x.balance_after),reference:x.reference,branch:x.branch,receivedBy:x.received_by,deliveredBy:x.delivered_by,remarks:x.remarks,createdBy:x.username,createdAt:x.created_at}));}
 
 function manilaDateString(value){if(!value)return'';const raw=String(value);if(!/[zZ]|[+-]\d\d:\d\d$/.test(raw))return raw.slice(0,10);const d=new Date(raw);if(Number.isNaN(d.getTime()))return raw.slice(0,10);const parts=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${map.year}-${map.month}-${map.day}`;}
 function sundayOf(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d));dt.setUTCDate(dt.getUTCDate()-dt.getUTCDay());return dt.toISOString().slice(0,10);}
