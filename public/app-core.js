@@ -94,14 +94,119 @@
     $('topbarRole').textContent=state.user.role==='Admin'
       ?(state.user.isOwner?'Owner/Admin':'Co-Owner/Admin'):'Cashier';
   }
+
+  function planDisplayDate(iso){
+    if(!iso || Number.isNaN(new Date(iso).getTime()))return '—';
+    return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',
+      year:'numeric',month:'short',day:'numeric'}).format(new Date(iso));
+  }
+  function subscriptionBadge(status){
+    const options={
+      PAID:['paid','Paid','<path d="M4 20v-4m5 4V12m5 8V8m5 12V4"/>'],
+      ON_HOLD:['hold','On-hold','<path d="M12 4 22 21H2L12 4Z"/><path d="M12 10v5m0 3h.01"/>'],
+      UNPAID:['unpaid','Unpaid','<circle cx="12" cy="12" r="10"/><path d="M12 7v6m0 4h.01"/>']
+    };
+    const [key,label,path]=options[status]||options.UNPAID;
+    return '<span class="sub-status sub-status-'+key+'"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">'+path+'</svg>'+label+'</span>';
+  }
+  function renderDevSubscription(){
+    const sub=state.subscription;
+    if(!sub)return;
+    const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
+    $('planSwitcher').value=sub.plan;
+    $('planSwitcher').disabled=!admin;
+    $('accountPlanSelect').value=sub.plan;
+    $('accountStatusSelect').value=sub.status;
+    $('saveAccountPlan').disabled=!admin;
+    $('accountPlanName').textContent=business?'Business':'Pro';
+    $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
+    $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
+    $('accountRemaining').textContent=String(sub.daysRemaining||0);
+    $('transferPlanGate').classList.toggle('hidden',business);
+    $('inventoryTransferTab').disabled=!business;
+    $('inventoryTransferTab').title=business?'Transfer Inventory':
+      'For Business accounts only — use Upgrade to change your demo plan';
+    const card=$('inventoryTransferTab').closest('.inv-operation-card');
+    card?.classList.toggle('plan-locked',!business);
+    if(!business){
+      $('transferForm').classList.add('hidden');
+      $('inventoryTransferTab').classList.remove('active');
+      $('inventoryTransferTab').setAttribute('aria-expanded','false');
+      $('inventoryTransferTab').setAttribute('aria-pressed','false');
+      card?.classList.remove('active');
+    }
+    $('advancedPlanSubtitle').textContent=business
+      ?'Business access is active for transfer and inventory history.'
+      :'Gain deeper insight into your inventory with Business.';
+    $('advancedPlanNotice').textContent=business
+      ?'This is a development preview. Planned modules are clearly labeled below.'
+      :'Pro includes Replenish; Transfer and advanced access require Business.';
+    $('advancedUpgradeButton').classList.toggle('hidden',business);
+    $('advancedBusinessActions').classList.toggle('hidden',!business);
+    const history=Array.isArray(sub.history)?sub.history.slice().reverse():[];
+    $('subscriptionHistoryBody').innerHTML=history.map(row=>{
+      const remaining=Math.max(0,Math.ceil((new Date(row.renewDate)-Date.now())/86400000));
+      return '<tr><td>'+esc(planDisplayDate(row.date))+'</td><td><strong>'+
+        esc(row.plan==='BUSINESS'?'Business':'Pro')+'</strong></td><td>'+
+        esc(planDisplayDate(row.startDate))+'</td><td>'+esc(planDisplayDate(row.renewDate))+
+        '</td><td class="num">'+num(remaining,0)+'</td><td>'+
+        subscriptionBadge(row.status)+'</td></tr>';
+    }).join('')||'<tr><td colspan="6">No demo changes recorded.</td></tr>';
+  }
+  async function loadDevSubscription(){
+    if(!state.user)return;
+    try{
+      state.subscription=await api('/api/account/subscription');
+      renderDevSubscription();
+    }catch(error){
+      $('inventoryTransferTab').disabled=true;
+      $('transferPlanGate').classList.remove('hidden');
+      $('planSwitcher').disabled=true;
+      toast('Subscription: '+error.message);
+    }
+  }
+  async function changeDevSubscription(plan,status){
+    if(state.user?.role!=='Admin')return;
+    return withActionLock('dev-subscription',async()=>{
+      const top=$('planSwitcher'),save=$('saveAccountPlan');
+      top.disabled=true;save.disabled=true;
+      try{
+        state.subscription=await api('/api/account/subscription/demo',{
+          method:'POST',body:{plan,status}
+        });
+        renderDevSubscription();
+        toast('Preview plan: '+(plan==='BUSINESS'?'Business':'Pro')+' (no charge).');
+      }catch(error){
+        renderDevSubscription();
+        toast('Plan change failed: '+error.message);
+      }finally{
+        top.disabled=state.user?.role!=='Admin';
+        save.disabled=state.user?.role!=='Admin';
+      }
+    });
+  }
+  function openPlanUpgrade(){
+    switchView('account');
+    $('accountPlanSelect').value='BUSINESS';
+    $('accountPlanSelect').focus();
+  }
+  $('planSwitcher').addEventListener('change',e=>
+    changeDevSubscription(e.target.value,state.subscription?.status||'PAID'));
+  $('saveAccountPlan').addEventListener('click',()=>
+    changeDevSubscription($('accountPlanSelect').value,$('accountStatusSelect').value));
+  $('accountSettingsTop').addEventListener('click',()=>switchView('account'));
+  $('transferUpgradeButton').addEventListener('click',openPlanUpgrade);
+  $('advancedUpgradeButton').addEventListener('click',openPlanUpgrade);
+  $('advancedOpenInventory').addEventListener('click',()=>switchView('inventory'));
+  $('advancedOpenSales').addEventListener('click',()=>switchView('reports'));
   async function boot(){
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
     try{state.user=(await api('/api/auth/me')).user;}
     catch(err){if(err.status===401){state.user=null;resetOrderState({render:false});showAuth(false);return;}throw err;}
-    resetOrderState({render:false});showApp();await loadBranches();await loadCatalog();switchView('pos');
+    resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await loadBranches();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
   $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
 
   async function refreshPosDailyCount(){
@@ -120,14 +225,14 @@
   }
   function switchView(view){
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','Cashier Accounts'],advanced:['BUSINESS FEATURES','Advanced Report / Inventory Management'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
     $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
     if(view==='pos')refreshPosDailyCount();
-    if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
+    if(view==='dashboard')loadDashboard();if(view==='inventory'){loadInventory();loadDevSubscription();}if(view==='advanced'||view==='account')renderDevSubscription();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
   $('dashboardPrintReport').addEventListener('click',()=>{
@@ -627,6 +732,10 @@
       operation(openOperation==='replenish'?null:'replenish');
     });
     $('inventoryTransferTab').addEventListener('click',()=>{
+      if(state.subscription?.plan!=='BUSINESS'){
+        toast('Transfer Inventory requires Business. Use Upgrade to switch the demo plan.');
+        return;
+      }
       operation(openOperation==='transfer'?null:'transfer');
     });
     operation(null);
@@ -748,7 +857,13 @@
   });
   $('refreshMovements').onclick=loadMovements;
   $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('replenish');batchFail('replenish','');}catch(err){batchFail('replenish',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items,deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' replenished successfully.');batchClear('replenish');await loadInventory();await loadCatalog();}catch(err){batchFail('replenish',err.message);}});});
-  $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});
+  $('transferForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(state.subscription?.plan!=='BUSINESS'){
+      batchFail('transfer','Business plan required to transfer stock.');
+      return;
+    }
+    const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});
 
   const reportUI={request:0,debounce:null,pages:{products:1,promos:1,ingredients:1,transactions:1},ids:{
     products:'reportProductsPagination',promos:'reportPromosPagination',
@@ -1190,7 +1305,7 @@
   }
 
   function renderBranches(){
-   $('branchesBody').innerHTML=state.branches.map(b=>`<tr><td><b>${esc(b.name)}</b><div class="tiny muted">${esc(b.address)}</div></td><td>${num(b.usersCount,0)} users<div class="tiny muted">${num(b.salesCount,0)} sales</div></td><td class="${b.active?'stock-ok':'stock-low'}">${b.active?'ACTIVE':'INACTIVE'}</td><td><button class="table-btn" data-edit-branch="${b.id}">Edit</button><button class="danger-link" data-delete-branch="${b.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No branches.</td></tr>';
+   $('branchesBody').innerHTML=state.branches.map(b=>`<tr><td><b>${esc(b.name)}</b><div class="tiny muted">${esc(b.address)}</div></td><td>${num(b.usersCount,0)} accounts<div class="tiny muted">${num(b.salesCount,0)} sales</div></td><td class="${b.active?'stock-ok':'stock-low'}">${b.active?'ACTIVE':'INACTIVE'}</td><td><button class="table-btn" data-edit-branch="${b.id}">Edit</button><button class="danger-link" data-delete-branch="${b.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No branches.</td></tr>';
    $('branchesBody').querySelectorAll('[data-edit-branch]').forEach(b=>b.onclick=()=>editBranch(Number(b.dataset.editBranch)));
    $('branchesBody').querySelectorAll('[data-delete-branch]').forEach(b=>b.onclick=()=>deleteBranch(Number(b.dataset.deleteBranch)));
   }
@@ -1217,8 +1332,8 @@
 
   async function deleteUser(id){
    return withActionLock('delete-user:'+id,async()=>{
-     const u=state.userList.find(x=>x.id===id);if(!u||!confirm('Delete '+u.username+'? Users with transaction history must be deactivated instead.'))return;
-     try{await api('/api/users/'+id,{method:'DELETE'});toast('User deleted.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}
+     const u=state.userList.find(x=>x.id===id);if(!u||!confirm('Delete '+u.username+'? Cashiers with transaction history must be deactivated instead.'))return;
+     try{await api('/api/users/'+id,{method:'DELETE'});toast('Cashier deleted.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}
    });
   }
 
