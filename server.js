@@ -30,7 +30,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.41-sales-report-auto-pagination';
+const APP_VERSION = '1.5.42-owner-sales-metrics-cashiers';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -585,8 +585,53 @@ function sundayOf(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const dt=
 function addDays(dateStr,n){const[y,m,d]=dateStr.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d+n));return dt.toISOString().slice(0,10);}
 function matchesPeriod(soldAt,period,target){const d=manilaDateString(soldAt);if(!target)return true;if(period==='daily')return d===target;if(period==='monthly')return d.slice(0,7)===target.slice(0,7);if(period==='yearly')return d.slice(0,4)===target.slice(0,4);if(period==='weekly'){const start=sundayOf(target),end=addDays(start,6);return d>=start&&d<=end;}return d===target;}
 function validIsoDate(value){const s=String(value||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const[y,m,d]=s.split('-').map(Number),dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d;}
-function reportParams(params){const period=['daily','weekly','monthly','yearly'].includes(params.period)?params.period:'daily';const fallback=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ}).format(new Date());const raw=String(params.date||fallback).slice(0,10);if(!validIsoDate(raw))throw Object.assign(new Error('Report date must be a valid YYYY-MM-DD date.'),{status:400});const cashier=String(params.cashier||'').trim().toUpperCase();if(cashier.length>80)throw Object.assign(new Error('Cashier filter must be at most 80 characters.'),{status:400});return {period,target:raw,cashier};}
-async function periodSales(params){const {period,target,cashier}=reportParams(params);const r=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name FROM sales s LEFT JOIN promos p ON p.id=s.promo_id ORDER BY s.sold_at ASC`);const eligible=r.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&(!cashier||normalize(s.cashier_name_snapshot)===cashier)&&(params.branchId==null||Number(s.branch_id)===Number(params.branchId)));return {period,target,cashier,eligible,sold:eligible.filter(s=>s.status==='Sold')};}
+function reportParams(params){
+  const period=['daily','weekly','monthly','yearly'].includes(params.period)?params.period:'daily';
+  const fallback=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ}).format(new Date());
+  const raw=String(params.date||fallback).slice(0,10);
+  if(!validIsoDate(raw))throw Object.assign(new Error('Report date must be a valid YYYY-MM-DD date.'),{status:400});
+  const cashier=String(params.cashier||'').trim().toUpperCase();
+  if(cashier.length>80)throw Object.assign(new Error('Cashier filter must be at most 80 characters.'),{status:400});
+  // Multi-select arrives as an encoded JSON array so names containing commas,
+  // spaces and special characters remain unambiguous. Legacy single cashier
+  // queries continue to work (including emailed and older bookmarked reports).
+  let cashiers=[];
+  if(params.cashiers!==undefined && params.cashiers!==''){
+    let parsed;
+    try{parsed=JSON.parse(params.cashiers);}catch(_){
+      throw Object.assign(new Error('Invalid cashier selection.'),{status:400});
+    }
+    if(!Array.isArray(parsed)||parsed.length>200||parsed.some(name=>typeof name!=='string'||!name.trim()||name.length>80))
+      throw Object.assign(new Error('Choose up to 200 valid cashiers.'),{status:400});
+    cashiers=[...new Set(parsed.map(name=>normalize(name)))];
+  }else if(cashier){
+    cashiers=[normalize(cashier)];
+  }
+  return {period,target:raw,cashier,cashiers};
+}
+async function periodSales(params){
+  const {period,target,cashier,cashiers}=reportParams(params);
+  const r=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name
+    FROM sales s LEFT JOIN promos p ON p.id=s.promo_id ORDER BY s.sold_at ASC`);
+  const selected=new Set(cashiers);
+  const eligible=r.rows.filter(s=>
+    matchesPeriod(s.sold_at,period,target) &&
+    (!selected.size||selected.has(normalize(s.cashier_name_snapshot))) &&
+    (params.branchId==null||Number(s.branch_id)===Number(params.branchId))
+  );
+  return {period,target,cashier,cashiers,eligible,sold:eligible.filter(s=>s.status==='Sold')};
+}
+async function reportCashierChoices(branchId){
+  const query=branchId==null
+    ?`SELECT DISTINCT cashier_name_snapshot AS cashier FROM sales
+      WHERE cashier_name_snapshot IS NOT NULL AND TRIM(cashier_name_snapshot)<>''
+      ORDER BY cashier_name_snapshot`
+    :`SELECT DISTINCT cashier_name_snapshot AS cashier FROM sales
+      WHERE cashier_name_snapshot IS NOT NULL AND TRIM(cashier_name_snapshot)<>''
+      AND branch_id=$1 ORDER BY cashier_name_snapshot`;
+  const rows=(await db.query(query,branchId==null?[]:[branchId])).rows;
+  return {cashiers:rows.map(r=>r.cashier)};
+}
 
 async function productUnitCosts(conn=db){const r=await conn.query(`SELECT p.id,p.name,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.name`);return new Map(r.rows.map(x=>[Number(x.id),Number(x.unit_cost||0)]));}
 
@@ -602,7 +647,31 @@ async function salesReport(params){
   }
   const promoMap=new Map();for(const s of scope.sold){if(!s.promo_name)continue;const key=normalize(s.promo_name);if(!promoMap.has(key))promoMap.set(key,{name:s.promo_name,qty:0,gross:0,adjustment:0,actual:0});const x=promoMap.get(key);x.qty+=1;x.gross=money(x.gross+Number(s.gross));x.adjustment=money(x.adjustment+Number(s.adjustment));x.actual=money(x.actual+Number(s.actual));}
   const sum=f=>money(scope.sold.reduce((a,s)=>a+Number(s[f]||0),0));
-  return {period:scope.period,target:scope.target,cashier:scope.cashier||null,transactionCount:scope.sold.length,deletedCount:scope.eligible.length-scope.sold.length,gross:sum('gross'),adjustment:sum('adjustment'),actual:sum('actual'),products:[...productMap.values()].sort((a,b)=>b.qty-a.qty||a.name.localeCompare(b.name)),promos:[...promoMap.values()].sort((a,b)=>b.qty-a.qty||a.name.localeCompare(b.name)),transactions:scope.eligible.map(s=>({reference:s.reference,cashier:s.cashier_name_snapshot,paymentMode:s.payment_mode,paymentReference:s.payment_reference,status:s.status,soldAt:s.sold_at,remark:s.remark,seniorDetails:s.senior_details,gross:Number(s.gross),adjustment:Number(s.adjustment),actual:Number(s.actual)}))};
+  const discounts=money(scope.sold.reduce((a,s)=>a+Number(s.discount_amount||0),0));
+  const soldCost=money([...productMap.values()].reduce((a,p)=>a+p.costing,0));
+  const voided=scope.eligible.filter(s=>s.status==='Deleted');
+  const refund=money(voided.reduce((a,s)=>a+Number(s.actual||0),0));
+  return {
+    period:scope.period,target:scope.target,cashier:scope.cashier||null,
+    cashiers:scope.cashiers,
+    transactionCount:scope.sold.length,
+    allTransactionCount:scope.eligible.length,
+    deletedCount:scope.eligible.length-scope.sold.length,
+    gross:sum('gross'),
+    adjustment:sum('adjustment'),
+    discounts,
+    actual:sum('actual'),
+    grossProfit:money(sum('actual')-soldCost),
+    refund,
+    products:[...productMap.values()].sort((a,b)=>b.qty-a.qty||a.name.localeCompare(b.name)),
+    promos:[...promoMap.values()].sort((a,b)=>b.qty-a.qty||a.name.localeCompare(b.name)),
+    transactions:scope.eligible.map(s=>({
+      reference:s.reference,cashier:s.cashier_name_snapshot,paymentMode:s.payment_mode,
+      paymentReference:s.payment_reference,status:s.status,soldAt:s.sold_at,
+      remark:s.remark,seniorDetails:s.senior_details,gross:Number(s.gross),
+      adjustment:Number(s.adjustment),actual:Number(s.actual)
+    }))
+  };
 }
 
 async function getSaleDetail(reference,user){
@@ -1009,6 +1078,10 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/branches'){const all=await branchSupport.listBranches(db);return json(res,200,{branches:user.role==='Admin'?all:all.filter(b=>b.id===Number(user.branchId))},safeHeaders());}
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
+  if(method==='GET'&&p==='/api/reports/cashiers'){
+    const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
+    return json(res,200,await reportCashierChoices(branchId),safeHeaders());
+  }
   if(method==='GET'&&p==='/api/reports/sales')return json(res,200,await salesReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
   if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
   if(method==='GET'&&p==='/api/reports/sales/print'){
