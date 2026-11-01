@@ -611,7 +611,119 @@
     initBatchEditors();
   }
   setupInventoryRedesign();
-  async function loadMovements(){try{const d=await api('/api/inventory/movements?limit=300');const rows=Array.isArray(d.items)?d.items:[];$('movementBody').innerHTML=rows.map(x=>`<tr><td>${esc(formatDateTime(x.createdAt))}</td><td>${esc(x.type)}</td><td>${esc(x.ingredient)} <span class="tiny muted">${esc(String(x.uom).toUpperCase())}</span></td><td class="num ${x.quantityChange<0?'stock-low':'stock-ok'}">${x.quantityChange>0?'+':''}${num(x.quantityChange)}</td><td class="num">${num(x.balanceAfter)}</td><td>${esc(x.reference||x.branch||x.deliveredBy||'')}</td><td>${esc(x.createdBy||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No inventory movements recorded yet.</td></tr>';}catch(err){console.error('Inventory audit failed:',err);$('movementBody').innerHTML='<tr><td colspan="7" class="muted">Could not load inventory movements. Use Refresh to retry.</td></tr>';toast('Inventory audit: '+err.message);}}
+  const auditUI={groups:[],expanded:new Set(),page:1,pageSize:20,query:''};
+  function groupInventoryMovements(rows){
+    const groups=[],byReference=new Map();
+    let previousLegacy=null;
+    for(const x of rows){
+      const type=String(x.type||'UNKNOWN'),ref=String(x.reference||'').trim();
+      let group;
+      if(ref){
+        const key=type+'|'+ref;
+        group=byReference.get(key);
+        if(!group){
+          group={key,type,reference:ref,createdAt:x.createdAt,id:Number(x.id),items:[],branch:x.branch,receivedBy:x.receivedBy,deliveredBy:x.deliveredBy,remarks:x.remarks,createdBy:x.createdBy};
+          byReference.set(key,group);groups.push(group);
+        }
+        previousLegacy=null;
+      }else{
+        // Historical batches lack references. Merge only adjacent records with
+        // matching metadata within two seconds; never hide individual movements.
+        const previous=previousLegacy?.row;
+        const close=previous&&Math.abs(new Date(previous.createdAt)-new Date(x.createdAt))<=2000;
+        const adjacent=previous&&Number(previous.id)-Number(x.id)===1;
+        const same=previous&&['type','createdBy','branch','receivedBy','deliveredBy','remarks'].every(k=>String(previous[k]||'')===String(x[k]||''));
+        const distinct=previousLegacy&&!previousLegacy.group.items.some(item=>String(item.ingredient)===String(x.ingredient));
+        if(close&&adjacent&&same&&distinct)group=previousLegacy.group;
+        else{
+          group={key:'legacy-'+x.id,type,reference:'',createdAt:x.createdAt,id:Number(x.id),items:[],branch:x.branch,receivedBy:x.receivedBy,deliveredBy:x.deliveredBy,remarks:x.remarks,createdBy:x.createdBy};
+          groups.push(group);
+        }
+        previousLegacy={row:x,group};
+      }
+      group.items.push(x);
+      if(new Date(x.createdAt)>new Date(group.createdAt))group.createdAt=x.createdAt;
+    }
+    return groups.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)||b.id-a.id);
+  }
+  function renderMovements(){
+    const query=normalize(auditUI.query),all=auditUI.groups;
+    const filtered=query?all.filter(g=>normalize([
+      g.type,g.reference,g.branch,g.deliveredBy,g.receivedBy,g.remarks,g.createdBy,
+      formatDateTime(g.createdAt),...g.items.map(i=>i.ingredient)
+    ].join(' ')).includes(query)):all;
+    const pages=Math.max(1,Math.ceil(filtered.length/auditUI.pageSize));
+    auditUI.page=Math.max(1,Math.min(pages,auditUI.page));
+    const first=(auditUI.page-1)*auditUI.pageSize;
+    const visible=filtered.slice(first,first+auditUI.pageSize);
+    $('movementBody').innerHTML=visible.map(g=>{
+      const expanded=auditUI.expanded.has(g.key),safeType=g.type.toLowerCase().replace(/[^a-z_]/g,'-');
+      const label=g.reference||(
+        g.type==='REPLENISH'?'Replenishment':
+        g.type==='TRANSFER'?'Stock transfer':g.type==='SALE'?'Sale':'Inventory adjustment');
+      const destination=g.branch||g.deliveredBy||g.receivedBy||'—';
+      const summary='<tr class="inv-audit-row'+(expanded?' is-expanded':'')+'">'+
+        '<td>'+esc(formatDateTime(g.createdAt))+'</td>'+
+        '<td><span class="inv-audit-type type-'+esc(safeType)+'">'+esc(g.type.replaceAll('_',' '))+'</span></td>'+
+        '<td class="inv-audit-reference" title="'+esc(label)+'">'+esc(label)+'</td>'+
+        '<td class="num">'+g.items.length+' item'+(g.items.length===1?'':'s')+'</td>'+
+        '<td>'+esc(destination)+'</td>'+
+        '<td>'+esc(g.createdBy||'—')+'</td>'+
+        '<td><button type="button" class="inv-audit-view" data-audit-toggle="'+esc(g.key)+'" aria-expanded="'+expanded+'" aria-label="'+(expanded?'Collapse':'View')+' '+esc(label)+' ingredient breakdown">'+(expanded?'▾ Hide':'▸ View')+'</button></td></tr>';
+      if(!expanded)return summary;
+      const details=g.items.map(i=>
+        '<tr><td><strong>'+esc(i.ingredient)+'</strong> <small>'+esc(String(i.uom||'').toUpperCase())+'</small></td>'+
+        '<td class="num '+(Number(i.quantityChange)<0?'stock-low':'stock-ok')+'">'+
+        (Number(i.quantityChange)>0?'+':'')+num(i.quantityChange)+'</td>'+
+        '<td class="num">'+num(i.balanceAfter)+'</td></tr>'
+      ).join('');
+      const metadata=[
+        g.reference?'<span><b>Reference:</b> '+esc(g.reference)+'</span>':'',
+        g.branch?'<span><b>Destination:</b> '+esc(g.branch)+'</span>':'',
+        g.deliveredBy?'<span><b>Delivered by:</b> '+esc(g.deliveredBy)+'</span>':'',
+        g.receivedBy?'<span><b>Received by:</b> '+esc(g.receivedBy)+'</span>':'',
+        g.remarks?'<span><b>Remarks:</b> '+esc(g.remarks)+'</span>':''
+      ].filter(Boolean).join('');
+      return summary+'<tr class="inv-audit-details-row"><td colspan="7"><div class="inv-audit-detail-panel">'+
+        '<div class="inv-audit-detail-title">Ingredient breakdown ('+g.items.length+')</div>'+
+        '<div class="inv-audit-details-table-wrap"><table class="inv-audit-inner-table"><thead><tr><th>Ingredient</th><th class="num">Change</th><th class="num">Balance after</th></tr></thead><tbody>'+
+        details+'</tbody></table></div>'+(metadata?'<div class="inv-audit-meta">'+metadata+'</div>':'')+
+        '</div></td></tr>';
+    }).join('')||'<tr><td colspan="7" class="inv-audit-empty">'+(all.length?'No transactions match your search.':'No inventory movements recorded yet.')+'</td></tr>';
+    $('auditPageInfo').textContent=filtered.length?
+      'Showing '+(first+1)+'–'+Math.min(filtered.length,first+auditUI.pageSize)+' of '+filtered.length+' transactions':
+      'Showing 0 transactions';
+    $('auditPageControls').innerHTML='<button type="button" data-audit-page="'+(auditUI.page-1)+'" '+(auditUI.page===1?'disabled':'')+' aria-label="Previous audit page">‹</button>'+
+      '<span>Page '+auditUI.page+' of '+pages+'</span>'+
+      '<button type="button" data-audit-page="'+(auditUI.page+1)+'" '+(auditUI.page===pages?'disabled':'')+' aria-label="Next audit page">›</button>';
+  }
+  async function loadMovements(){
+    try{
+      const d=await api('/api/inventory/movements?limit=1000');
+      auditUI.groups=groupInventoryMovements(Array.isArray(d.items)?d.items:[]);
+      renderMovements();
+    }catch(err){
+      console.error('Inventory audit failed:',err);
+      $('movementBody').innerHTML='<tr><td colspan="7" class="inv-audit-empty">Could not load inventory movements. Use Refresh to retry.</td></tr>';
+      $('auditPageInfo').textContent='Audit unavailable';
+      $('auditPageControls').innerHTML='';
+      toast('Inventory audit: '+err.message);
+    }
+  }
+  $('auditSearch').addEventListener('input',e=>{auditUI.query=e.target.value;auditUI.page=1;renderMovements();});
+  $('movementBody').addEventListener('click',e=>{
+    const button=e.target.closest('[data-audit-toggle]');
+    if(!button)return;
+    const key=button.dataset.auditToggle;
+    if(auditUI.expanded.has(key))auditUI.expanded.delete(key);else auditUI.expanded.add(key);
+    renderMovements();
+  });
+  $('auditPageControls').addEventListener('click',e=>{
+    const button=e.target.closest('[data-audit-page]');
+    if(!button||button.disabled)return;
+    auditUI.page=Number(button.dataset.auditPage)||1;
+    renderMovements();
+  });
   $('refreshMovements').onclick=loadMovements;
   $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('replenish');batchFail('replenish','');}catch(err){batchFail('replenish',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items,deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' replenished successfully.');batchClear('replenish');await loadInventory();await loadCatalog();}catch(err){batchFail('replenish',err.message);}});});
   $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});
