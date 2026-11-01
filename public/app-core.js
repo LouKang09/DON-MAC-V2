@@ -355,6 +355,7 @@
       const replenish=which==='replenish',transfer=which==='transfer';
       $('replenishForm').classList.toggle('hidden',!replenish);
       $('transferForm').classList.toggle('hidden',!transfer);
+      $('replenishForm').parentElement?.classList.toggle('is-open',!!which);
       for(const [id,on] of [['inventoryReplenishTab',replenish],['inventoryTransferTab',transfer]]){
         const button=$(id);
         button.classList.toggle('active',on);
