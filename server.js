@@ -7,6 +7,7 @@ const { makePdf, salesReportLines, costingReportLines } = require('./lib/pdf');
 const { sendMail } = require('./lib/smtp');
 const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
+const devSubscription = require('./lib/development-subscriptions');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -30,7 +31,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.42-owner-sales-metrics-cashiers';
+const APP_VERSION = '1.5.43-dev-plans-advanced-inventory';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -323,6 +324,12 @@ async function migrateSchema() {
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_promos_name_ci ON promos((LOWER(name)));');
   }
   await db.query(`INSERT INTO meta (key,value) VALUES ('app_version',$1) ON CONFLICT (key) DO UPDATE SET value=excluded.value`, [APP_VERSION]);
+  // Persist one merchant-wide development plan on first deploy. Existing
+  // saved test plan and its history are not overwritten on subsequent starts.
+  await db.query(
+    'INSERT INTO app_settings (setting_key,setting_value,updated_at) VALUES ($1,$2,$3) ON CONFLICT (setting_key) DO NOTHING',
+    [devSubscription.KEY,JSON.stringify(devSubscription.initial()),nowIso()]
+  );
 }
 
 async function logAction(user, activity, status, remark=null, conn=db) {
@@ -334,6 +341,48 @@ async function logAction(user, activity, status, remark=null, conn=db) {
 
 function requireAdminRole(user) {
   if (!user || user.role !== 'Admin') throw Object.assign(new Error('Administrator access required.'), { status:403 });
+}
+
+async function subscriptionState(conn=db){
+  const result=await conn.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[devSubscription.KEY]);
+  return devSubscription.parse(result.rows[0]?.setting_value)||devSubscription.initial();
+}
+async function getSubscriptionForUi(){
+  const current=await subscriptionState();
+  return {...current,daysRemaining:devSubscription.remainingDays(current.renewAt),
+    entitlements:devSubscription.entitlements(current.plan),
+    notice:'Development preview only: no subscription payment or automatic renewal is processed.'};
+}
+async function saveDemoSubscription(user,input){
+  requireAdminRole(user);
+  const plan=String(input?.plan||'');
+  const status=String(input?.status||'PAID');
+  // The switch is an owner/admin development control and cannot be used as
+  // an externally verified subscription or payment record.
+  return db.transaction(async tx=>{
+    const lock=tx.engine==='postgres'?' FOR UPDATE':'';
+    const record=await tx.query('SELECT setting_value FROM app_settings WHERE setting_key=$1'+lock,[devSubscription.KEY]);
+    const previous=devSubscription.parse(record.rows[0]?.setting_value)||devSubscription.initial();
+    const next=devSubscription.transition(previous,plan,status,user.id);
+    if(next!==previous){
+      await tx.query(
+        'INSERT INTO app_settings (setting_key,setting_value,updated_at) VALUES ($1,$2,$3) ON CONFLICT (setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=excluded.updated_at',
+        [devSubscription.KEY,JSON.stringify(next),nowIso()]
+      );
+      await logAction(user,`Development plan changed: ${previous.plan} / ${previous.status} → ${plan} / ${status}`,
+        'Subscription Demo', 'No charge or actual subscription was created',tx);
+    }
+    return {...next,daysRemaining:devSubscription.remainingDays(next.renewAt),
+      entitlements:devSubscription.entitlements(next.plan),
+      notice:'Development preview only: no subscription payment or automatic renewal is processed.'};
+  });
+}
+async function requireBusinessPlan(){
+  const sub=await subscriptionState();
+  if(sub.plan!=='BUSINESS')
+    throw Object.assign(new Error('Inventory transfer requires a Business plan. Open Account Settings to upgrade (development preview).'),{
+      status:403,code:'BUSINESS_PLAN_REQUIRED'
+    });
 }
 
 async function getCatalog(conn=db) {
@@ -553,6 +602,9 @@ async function replenish(user,body){
   });
 }
 async function transfer(user,body){
+  // Enforce entitlements in the mutation route as well as the UI; direct
+  // API requests from Pro accounts cannot bypass the disabled button.
+  await requireBusinessPlan();
   validateMovementItems(body.items);
   const branch=String(body.branch||'').trim(),receivedBy=String(body.receivedBy||'').trim(),remarks=String(body.remarks||'').trim();
   if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});
@@ -622,18 +674,15 @@ async function periodSales(params){
   return {period,target,cashier,cashiers,eligible,sold:eligible.filter(s=>s.status==='Sold')};
 }
 async function reportCashierChoices(branchId){
-  const query=branchId==null
-    ?`SELECT DISTINCT cashier_name_snapshot AS cashier FROM sales
-      WHERE cashier_name_snapshot IS NOT NULL AND TRIM(cashier_name_snapshot)<>''
-      ORDER BY cashier_name_snapshot`
-    :`SELECT DISTINCT cashier_name_snapshot AS cashier FROM sales
-      WHERE cashier_name_snapshot IS NOT NULL AND TRIM(cashier_name_snapshot)<>''
-      AND branch_id=$1 ORDER BY cashier_name_snapshot`;
-  const rows=(await db.query(query,branchId==null?[]:[branchId])).rows;
-  return {cashiers:rows.map(r=>r.cashier)};
+  // Only accounts with the Cashier (internal 'User') role belong here.
+  // Admin, Owner, and Co-Owner accounts never appear as options.
+  // Keep inactive Cashier accounts so old transaction reports remain filterable.
+  const scoped=branchId!=null;
+  const sql='SELECT username AS cashier FROM users WHERE role=$1 '+
+    (scoped?'AND branch_id=$2 ':'')+'ORDER BY LOWER(username),username';
+  const rows=(await db.query(sql,scoped?['User',Number(branchId)]:['User'])).rows;
+  return {cashiers:rows.map(row=>row.cashier)};
 }
-
-async function productUnitCosts(conn=db){const r=await conn.query(`SELECT p.id,p.name,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.name`);return new Map(r.rows.map(x=>[Number(x.id),Number(x.unit_cost||0)]));}
 
 async function salesReport(params){
   const scope=await periodSales(params),saleIds=scope.sold.map(s=>Number(s.id));let items=[];
@@ -747,7 +796,7 @@ async function protectOwnerUpdate(actor,id,role,active){
    if(role!=='Admin'||!active)throw Object.assign(new Error('The original Owner must remain active and cannot be changed to another role.'),{status:403});
  }
 }
-async function listUsers(){const r=await db.query('SELECT u.id,u.username,u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name,w.owner_user_id FROM users u LEFT JOIN branches b ON b.id=u.branch_id LEFT JOIN chat_memberships m ON m.user_id=u.id LEFT JOIN chat_workspaces w ON w.id=m.workspace_id ORDER BY u.id');return r.rows.map(u=>({id:Number(u.id),username:u.username,role:u.role,roleLabel:Number(u.id)===Number(u.owner_user_id)?'Owner':u.role==='Admin'?'Co-Owner':'User',isOwner:Number(u.id)===Number(u.owner_user_id),active:bool(u.active),branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,hasWebPassword:!!u.password_hash,createdAt:u.created_at}));}
+async function listUsers(){const r=await db.query('SELECT u.id,u.username,u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name,w.owner_user_id FROM users u LEFT JOIN branches b ON b.id=u.branch_id LEFT JOIN chat_memberships m ON m.user_id=u.id LEFT JOIN chat_workspaces w ON w.id=m.workspace_id ORDER BY u.id');return r.rows.map(u=>({id:Number(u.id),username:u.username,role:u.role,roleLabel:Number(u.id)===Number(u.owner_user_id)?'Owner/Admin':u.role==='Admin'?'Co-Owner/Admin':'Cashier',isOwner:Number(u.id)===Number(u.owner_user_id),active:bool(u.active),branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,hasWebPassword:!!u.password_hash,createdAt:u.created_at}));}
 async function createOrActivateUser(body,actor=null){
   const username=String(body.username||'').trim(),password=String(body.password||''),role=String(body.role||'User'),active=body.active===undefined?true:!!body.active;
   if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});
@@ -1067,6 +1116,10 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
+  if(method==='GET'&&p==='/api/account/subscription')
+    return json(res,200,await getSubscriptionForUi(),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/account/subscription/demo')
+    return json(res,200,await saveDemoSubscription(user,await readJson(req)),safeHeaders({'Cache-Control':'no-store'}));
   if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
   if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(),safeHeaders());
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req)),safeHeaders());
