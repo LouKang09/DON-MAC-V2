@@ -321,11 +321,11 @@
     document.documentElement.dataset.v15SafeInit = '1';
     ensureWhatsNew();
     ensureLogFilters();
-    // Keep legacy log/release tools, but never mutate modern stock forms.
-    replaceInventoryForms();
+    // Inventory is owned by app-core; the old form writer is retired.
+    // Keeping it out of initialization avoids racing the batch editor.
     loadVersion();
     document.querySelector('.nav[data-view="logs"]')?.addEventListener('click', () => setTimeout(() => { ensureLogFilters(); filterLogRows(); }, 40));
-    document.querySelector('.nav[data-view="inventory"]')?.addEventListener('click', () => setTimeout(() => { preserveSelect('replenish'); preserveSelect('transfer'); }, 40));
+    // No legacy ingredient dropdowns exist in the current inventory UI.
     console.info('Coffee POS v1.5.2 safe features initialized.');
   }
 
