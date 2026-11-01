@@ -108,7 +108,7 @@
   }
   function switchView(view){
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales & Costing Reports'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','Catalog & System Setup'],users:['ADMINISTRATION','User Accounts'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
     $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
@@ -738,11 +738,71 @@
   $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('replenish');batchFail('replenish','');}catch(err){batchFail('replenish',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items,deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' replenished successfully.');batchClear('replenish');await loadInventory();await loadCatalog();}catch(err){batchFail('replenish',err.message);}});});
   $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});
 
+  const reportUI={request:0,debounce:null,pages:{products:1,promos:1,ingredients:1,transactions:1},ids:{
+    products:'reportProductsPagination',promos:'reportPromosPagination',
+    ingredients:'reportIngredientsPagination',transactions:'reportTransactionsPagination'
+  }};
+  function reportPageSlice(kind,items){
+    const page=window.DonMacReportPages.paginate(items,reportUI.pages[kind]);
+    reportUI.pages[kind]=page.page;
+    const make=(number,label,disabled=false,active=false)=>
+      '<button type="button" data-report-page="'+number+'" aria-label="'+esc(String(label))+'" '+
+      (disabled?'disabled ':'')+(active?'aria-current="page" ':'')+'>'+esc(String(label))+'</button>';
+    $(reportUI.ids[kind]).innerHTML=
+      '<span class="report-page-info">Showing '+page.from+'–'+page.to+' of '+page.total+' '+
+      (page.total===1?'row':'rows')+'</span><div class="report-page-buttons">'+
+      make(page.page-1,'Previous',page.page===1)+
+      window.DonMacReportPages.visiblePageNumbers(page.page,page.pages).map(n=>
+        n==='…'?'<span class="report-page-ellipsis" aria-hidden="true">…</span>':
+        make(n,n,false,n===page.page)).join('')+
+      make(page.page+1,'Next',page.page===page.pages)+'</div>';
+    return page.rows;
+  }
+  function resetReportPages(){for(const kind of Object.keys(reportUI.pages))reportUI.pages[kind]=1;}
   function reportQuery(){const qs=new URLSearchParams({period:$('reportPeriod').value,date:$('reportDate').value||manilaToday()});if($('reportCashier').value.trim())qs.set('cashier',$('reportCashier').value.trim());if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')qs.set('branchId',$('reportBranch').value);return qs;}
   $('reportDate').value=manilaToday();
-  async function loadReport(){if(!$('reportDate').value)$('reportDate').value=manilaToday();const qs=reportQuery();try{[state.report,state.costing]=await Promise.all([api(`/api/reports/sales?${qs}`),api(`/api/reports/costing?${qs}`)]);renderReport();renderCosting();}catch(err){toast(err.message);}}
-  function renderReport(){const r=state.report;if(!r)return;$('reportSummary').innerHTML=[['Transactions',r.transactionCount],['Gross',peso(r.gross)],['Adjustment',peso(r.adjustment)],['Actual',peso(r.actual)],['Deleted',r.deletedCount]].map(([a,b])=>`<div class="summary-card"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=r.products.map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=r.promos.map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=r.transactions.map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
-  function renderCosting(){const r=state.costing;if(!r)return;$('costingTotal').textContent=`Total Cost: ${peso(r.totalCost)}`;$('costingList').innerHTML=r.ingredients.map(g=>`<details class="costing-group"><summary><div><b>${esc(g.name)}</b><span>${num(g.totalQty)} ${esc(String(g.uom).toUpperCase())}</span></div><strong>${peso(g.totalCost)}</strong></summary><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Sold Qty</th><th class="num">Recipe Qty</th><th class="num">Total Usage</th><th class="num">Cost / Item</th><th class="num">Total Cost</th></tr></thead><tbody>${g.details.map(d=>`<tr><td>${esc(d.product)}</td><td class="num">${num(d.productQty,3)}</td><td class="num">${num(d.quantityRequired)}</td><td class="num">${num(d.usageQty)}</td><td class="num">${peso(d.costPerItem)}</td><td class="num">${peso(d.totalCost)}</td></tr>`).join('')}</tbody></table></div></details>`).join('')||'<div class="empty-state">No costed product sales for this period.</div>';}
+  async function loadReport(){
+    if(!$('reportDate').value)$('reportDate').value=manilaToday();
+    const request=++reportUI.request,qs=reportQuery();
+    $('reportLoadingStatus').textContent='Loading Sales Report…';
+    try{
+      const [report,costing]=await Promise.all([
+        api('/api/reports/sales?'+qs),api('/api/reports/costing?'+qs)
+      ]);
+      if(request!==reportUI.request)return;
+      state.report=report;state.costing=costing;resetReportPages();
+      renderReport();renderCosting();
+      $('reportLoadingStatus').textContent='Updated · '+$('reportPeriod').selectedOptions[0].text+
+        ' · '+$('reportDate').value;
+    }catch(err){
+      if(request!==reportUI.request)return;
+      $('reportLoadingStatus').textContent='Could not load reports: '+err.message;
+      toast(err.message);
+    }
+  }
+  function autoLoadReport(){
+    if(reportUI.debounce)clearTimeout(reportUI.debounce);
+    loadReport();
+  }
+  ['reportPeriod','reportDate','reportBranch'].forEach(id=>
+    $(id).addEventListener('change',autoLoadReport));
+  $('reportCashier').addEventListener('input',()=>{
+    if(reportUI.debounce)clearTimeout(reportUI.debounce);
+    reportUI.debounce=setTimeout(loadReport,350);
+  });
+  $('view-reports').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-report-page]');
+    if(!button||button.disabled)return;
+    const kind=button.closest('[data-report-section]')?.dataset.reportSection;
+    if(!Object.prototype.hasOwnProperty.call(reportUI.pages,kind))return;
+    const page=Number(button.dataset.reportPage);
+    if(!Number.isInteger(page)||page<1)return;
+    reportUI.pages[kind]=page;
+    if(kind==='ingredients')renderCosting();
+    else renderReport();
+  });
+  function renderReport(){const r=state.report;if(!r)return;$('reportSummary').innerHTML=[['Transactions',r.transactionCount],['Gross',peso(r.gross)],['Adjustment',peso(r.adjustment)],['Actual',peso(r.actual)],['Deleted',r.deletedCount]].map(([a,b])=>`<div class="summary-card"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=reportPageSlice('products',r.products).map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=reportPageSlice('promos',r.promos).map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=reportPageSlice('transactions',r.transactions).map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
+  function renderCosting(){const r=state.costing;if(!r)return;$('costingTotal').textContent=`Total Cost: ${peso(r.totalCost)}`;$('costingList').innerHTML=reportPageSlice('ingredients',r.ingredients).map(g=>`<details class="costing-group"><summary><div><b>${esc(g.name)}</b><span>${num(g.totalQty)} ${esc(String(g.uom).toUpperCase())}</span></div><strong>${peso(g.totalCost)}</strong></summary><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Sold Qty</th><th class="num">Recipe Qty</th><th class="num">Total Usage</th><th class="num">Cost / Item</th><th class="num">Total Cost</th></tr></thead><tbody>${g.details.map(d=>`<tr><td>${esc(d.product)}</td><td class="num">${num(d.productQty,3)}</td><td class="num">${num(d.quantityRequired)}</td><td class="num">${num(d.usageQty)}</td><td class="num">${peso(d.costPerItem)}</td><td class="num">${peso(d.totalCost)}</td></tr>`).join('')}</tbody></table></div></details>`).join('')||'<div class="empty-state">No costed product sales for this period.</div>';}
   function transactionInfo(label,value,{money=false,wide=false}={}){const shown=value===null||value===undefined||value===''?'—':money?peso(value):esc(value);return`<div class="transaction-info ${wide?'wide':''}"><span>${esc(label)}</span><strong>${shown}</strong></div>`;}
   function renderTransactionDetail(d){
     $('transactionReference').textContent=d.reference||'Transaction Details';
@@ -765,7 +825,8 @@
   async function viewTransaction(reference){return withActionLock(`view-sale:${reference}`,async()=>{const dialog=$('transactionDialog');$('transactionReference').textContent=reference;$('transactionStatus').textContent='';$('transactionDetailBody').innerHTML='<div class="empty-state">Loading transaction details…</div>';if(!dialog.open)dialog.showModal();try{renderTransactionDetail(await api(`/api/sales/${encodeURIComponent(reference)}`));}catch(err){$('transactionDetailBody').innerHTML=`<div class="empty-state"><div><b>Unable to load transaction</b>${esc(err.message)}</div></div>`;toast(err.message);}});}
   window.donmacOpenTransactionDetail=viewTransaction;
   $('transactionClose').onclick=()=>safeCloseDialog('transactionDialog');$('transactionDialog').addEventListener('click',e=>{if(e.target===$('transactionDialog'))safeCloseDialog('transactionDialog');});
-  $('loadReport').onclick=loadReport;$('salesPdf').onclick=()=>window.open(`/api/reports/sales.pdf?${reportQuery()}`,'_blank');$('costingPdf').onclick=()=>window.open(`/api/reports/costing.pdf?${reportQuery()}`,'_blank');$('emailReport').onclick=()=>withActionLock('email-report',async()=>{try{const qs=Object.fromEntries(reportQuery());const d=await api('/api/reports/email',{method:'POST',body:qs,timeoutMs:60000});toast(`Report emailed to ${d.to}.`);}catch(err){toast(err.message);}});
+  $('salesPdf').onclick=()=>window.open('/api/reports/sales.pdf?'+reportQuery(),'_blank');
+  $('costingPdf').onclick=()=>window.open('/api/reports/costing.pdf?'+reportQuery(),'_blank');
 
   async function loadDashboard(){
    try{
