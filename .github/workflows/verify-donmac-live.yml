@@ -1,0 +1,30 @@
+name: Verify deployed Don Mac POS version
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify public production health and current version
+        shell: bash
+        run: |
+          EXPECTED="$(sed -n "s/^const APP_VERSION = '\([^']*\)';/\1/p" server.js)"
+          echo "Expecting: $EXPECTED"
+          if [ -z "$EXPECTED" ]; then echo "Cannot read expected app version"; exit 1; fi
+          for attempt in $(seq 1 14); do
+            for url in https://donmacpos.com/api/health https://don-mac-v2-production.up.railway.app/api/health; do
+              response="$(curl --location --silent --show-error --max-time 8 "$url" || true)"
+              if printf '%s' "$response" | grep -F -q "\"version\":\"$EXPECTED\""; then
+                echo "Production version confirmed from: $url"
+                echo "$response"
+                exit 0
+              fi
+              echo "Attempt $attempt: production health at $url has not reported $EXPECTED"
+            done
+            sleep 6
+          done
+          echo "Production deployment could not be confirmed."
+          exit 1
