@@ -37,12 +37,13 @@ assert.match(html, /class="primary inv-audit-refresh"/);
 assert.equal(count(html, /id="reportPeriod"/g), 1);
 assert.equal(count(html, /id="reportDate"/g), 1);
 assert.equal(count(html, /id="reportBranch"/g), 1);
-assert.equal(count(html, /id="reportCashier"/g), 1);
+assert.equal(count(html, /id="reportCashierSelect"/g), 1);
+assert.equal(count(html, /id="reportCashierAll"/g), 1);
 assert.equal(count(html, /id="salesPdf"/g), 1);
 assert.equal(count(html, /id="costingPdf"/g), 1);
 assert.doesNotMatch(html, /id="loadReport"|id="emailReport"|Sales \+ Costing|Gross \/ Adjusted \/ Actual \/ Costing \/ Net/i);
-assert.match(html, /Download Sales Report/);
-assert.match(html, /Download Costing Report/);
+assert.match(html, />Sales Report<\/span>/);
+assert.match(html, />Costing Report<\/span>/);
 assert.match(html, /data-view="reports" data-tooltip="Sales Report"/);
 assert.match(html, /report-pagination-v1541\.js\?v=1\.5\.41/);
 
@@ -53,12 +54,12 @@ for (const kind of ['products','promos','ingredients','transactions']) {
 for (const id of ['reportProductsPagination','reportPromosPagination','reportIngredientsPagination','reportTransactionsPagination']) {
   assert.equal(count(html, new RegExp('id="'+id+'"', 'g')), 1);
 }
-assert.match(core, /\['reportPeriod','reportDate','reportBranch'\]\.forEach/);
-assert.match(core, /\$\('reportCashier'\)\.addEventListener\('input'/);
+assert.match(core, /\['reportPeriod','reportDate'\]\.forEach/);
+assert.match(core, /\$\('reportCashierList'\)\.addEventListener\('change'/);
 assert.match(core, /reportUI\.request/);
 assert.match(core, /resetReportPages\(\)/);
 assert.doesNotMatch(core, /\$\('loadReport'\)|\$\('emailReport'\)/);
 assert.match(loader, /salesReportV1541Css/);
 assert.match(css, /\.report-filter-fields/);
 assert.match(css, /\.inv-audit-refresh/);
-console.log('Don Mac v1.5.41 audit and Sales Report regression tests passed.');
+console.log('Don Mac audit and Sales Report regression tests passed.');
