@@ -1,0 +1,229 @@
+/* Don Macchiatos v1.5.41 — compact Sales Report, audit search and result pagers */
+
+/* Inventory Audit has ONE search, in the same toolbar as Refresh. */
+#view-inventory .inv-audit-card > .card-head {
+  padding-bottom: 0;
+}
+#view-inventory .inv-audit-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  justify-content: stretch;
+  gap: 12px;
+  margin: 18px 0 4px;
+  padding: 14px;
+  background: #f8f7f3;
+  border: 1px solid #e9e1d6;
+  border-radius: 13px;
+}
+#view-inventory .inv-audit-toolbar .inv-audit-search {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+}
+#view-inventory .inv-audit-toolbar .inv-audit-search input {
+  width: 100%;
+  height: 44px;
+  min-width: 0;
+  font-size: 13px;
+  background: #fff;
+}
+#view-inventory .inv-audit-toolbar .inv-audit-refresh {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid #196143;
+  border-radius: 10px;
+  background: #176541;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(22, 88, 59, .08);
+}
+#view-inventory .inv-audit-toolbar .inv-audit-refresh:hover {
+  border-color: #144c33;
+  background: #134d33;
+}
+#view-inventory .inv-audit-refresh svg { width: 16px; height: 16px; flex-shrink: 0; }
+#view-inventory .inv-audit-scroll { margin-top: 14px; }
+
+/* No giant title-column or full-width stacked select boxes in Sales Report. */
+#view-reports .report-toolbar-compact {
+  display: block;
+  padding: clamp(16px, 2vw, 23px);
+}
+#view-reports .report-filter-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+#view-reports .report-filter-fields {
+  display: grid;
+  grid-template-columns: minmax(110px, 155px) minmax(145px, 175px) minmax(135px, 180px) minmax(160px, 220px);
+  align-items: end;
+  gap: 12px;
+  width: fit-content;
+  max-width: 100%;
+}
+#view-reports .report-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  margin: 0;
+  color: #587064;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+#view-reports .report-field > span {
+  display: block;
+  padding-left: 1px;
+}
+#view-reports .report-field input,
+#view-reports .report-field select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 43px;
+  padding: 9px 11px;
+  background: #fff;
+  border: 1px solid #e1dcd3;
+  border-radius: 10px;
+  color: #203e2d;
+  font-size: 12px;
+}
+#view-reports .report-field input:focus,
+#view-reports .report-field select:focus {
+  outline: 2px solid #9bc6aa;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+#view-reports .report-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+#view-reports .report-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 43px;
+  padding: 10px 15px;
+  border: 1px solid #176443;
+  border-radius: 10px;
+  background: #176541;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+#view-reports .report-download:hover {
+  border-color: #134c33;
+  background: #134c33;
+}
+#view-reports .report-download svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+#view-reports .report-loading-status {
+  margin: 13px 0 0;
+  color: #728379;
+  font-size: 11px;
+  line-height: 1.45;
+}
+#view-reports .report-loading-status:empty { display: none; }
+#view-reports .report-results-card > .card-head { min-height: 30px; }
+#view-reports .report-results-card > .card-head h3 {
+  font-size: 16px;
+  letter-spacing: -.015em;
+  color: #1e3529;
+}
+#view-reports .report-results-card > .card-head strong {
+  color: #1f6746;
+  font-size: 12px;
+}
+
+/* Consistent 10-row pagination for Products, Promos, Ingredients and Logs. */
+#view-reports .report-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  margin-top: 12px;
+  border-top: 1px solid #eee9e0;
+}
+#view-reports .report-pagination:empty { display: none; }
+#view-reports .report-page-info {
+  color: #748377;
+  font-size: 11px;
+  line-height: 1.4;
+}
+#view-reports .report-page-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+#view-reports .report-page-buttons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid #d9e4d9;
+  border-radius: 9px;
+  background: #fff;
+  color: #2d6244;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 780;
+}
+#view-reports .report-page-buttons button:hover:not(:disabled) {
+  border-color: #a2c5aa;
+  background: #edf6ef;
+}
+#view-reports .report-page-buttons button[aria-current="page"] {
+  color: #fff;
+  border-color: #176541;
+  background: #176541;
+}
+#view-reports .report-page-buttons button:disabled { opacity: .38; cursor: default; }
+#view-reports .report-page-ellipsis { color: #8a9c8a; padding: 0 3px; }
+#view-reports .costing-list { margin-top: 16px; }
+
+@media (max-width: 1090px) {
+  #view-reports .report-filter-fields {
+    grid-template-columns: repeat(2, minmax(145px, 1fr));
+    width: min(100%, 580px);
+  }
+}
+@media (max-width: 620px) {
+  #view-reports .report-filter-fields { width: 100%; }
+  #view-inventory .inv-audit-toolbar { margin-top: 14px; padding: 10px; }
+  #view-reports .report-downloads { display: grid; grid-template-columns: 1fr; }
+  #view-reports .report-download { width: 100%; }
+  #view-reports .report-pagination { align-items: flex-start; }
+}
+@media (max-width: 420px) {
+  #view-inventory .inv-audit-toolbar { grid-template-columns: minmax(0, 1fr); }
+  #view-inventory .inv-audit-refresh { width: 100%; }
+  #view-reports .report-filter-fields { grid-template-columns: minmax(0, 1fr); }
+}
+@media print {
+  #view-reports .report-pagination, #view-reports .report-loading-status { display: none !important; }
+}
