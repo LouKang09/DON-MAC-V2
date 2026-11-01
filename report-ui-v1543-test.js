@@ -93,7 +93,11 @@ const admin={id:1,role:'Admin',username:'Owner'};
 const cashier={id:2,role:'User',username:'Cashier'};
 scope.validateMovementItems=()=>{throw Error('VALIDATION_CALLED');};
 (async()=>{
-  let state=await scope.getSubscriptionForUi();
+  let state=await scope.getSubscriptionForUi(admin);
+  const cashierView=await scope.getSubscriptionForUi(cashier);
+  assert.equal(cashierView.plan,'PRO');
+  assert.equal(cashierView.entitlements.transfer,false);
+  assert.equal(cashierView.history,undefined,'Staff must not receive subscription history');
   assert.equal(state.plan,'PRO');
   assert.equal(state.entitlements.transfer,false);
   assert.equal(state.history.length,1);
