@@ -186,6 +186,8 @@
     observer.observe(select,{childList:true});
   }
   function replaceInventoryForms() {
+    // Modern inventory editor is mounted in the original form; never replace it.
+    if ($('replenishIngredientPicker') && $('transferIngredientPicker')) return;
     const replenish=$('replenishForm'), transfer=$('transferForm'); if(!replenish||!transfer||replenish.dataset.v15==='1')return;
     replenish.dataset.v15='1';transfer.dataset.v15='1';
     replenish.innerHTML = `<p class="eyebrow">SUPPLY</p><h3>Replenish</h3><div class="batch-entry"><label>Ingredient<select id="replenishIngredient"></select></label><label>Quantity<input id="replenishQty" type="number" min="0.000001" step="any" placeholder="Qty" /></label><button id="replenishAddItem" class="ghost batch-add" type="button">+ Add Item</button></div><div id="replenishBatch" class="batch-list"></div><div class="batch-footer"><span id="replenishBatchCount" class="tiny muted">No items added</span><button id="replenishClearBatch" class="text-button" type="button">Clear List</button></div><label>Delivered By<input id="deliveredBy" maxlength="150" required placeholder="Who will deliver? e.g. Marlou" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" required placeholder="Product was delivered by Marlou, phone: 09XXXXXXXXX"></textarea></label><button class="primary" type="submit">Replenish Selected Items</button>`;
