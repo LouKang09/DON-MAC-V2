@@ -1,0 +1,237 @@
+/* Don Macchiatos v1.5.42 — compact sidebar + logo header, cashier filter and KPIs. */
+
+/* Logo follows the current section heading, not the navigation column. */
+.topbar .topbar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  gap: 13px;
+}
+.topbar .topbar-heading .topbar-logo {
+  display: grid;
+  place-items: center;
+  width: 49px;
+  height: 49px;
+  flex: 0 0 49px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e3db;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(10,38,19,.045);
+}
+.topbar .topbar-logo img {
+  display: block;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.topbar .topbar-heading-copy { min-width: 0; }
+.topbar .topbar-heading-copy h2 {
+  margin: 1px 0 0;
+  font-size: clamp(16px,1.65vw,23px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.topbar .topbar-heading-copy .eyebrow:empty { display: none; }
+.topbar .topbar-heading-copy #posDate { display: block; }
+
+/* Sidebar begins with a familiar three-line collapse control. No brand tile,
+   extra username or avatar before the Sign out button. */
+@media(min-width:700px) {
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-brand.sidebar-controls,
+  .app.sidebar-collapsed .sidebar .sidebar-brand.sidebar-controls,
+  .sidebar .sidebar-brand.sidebar-controls {
+    display: flex !important;
+    position: relative !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    width: 100%;
+    min-height: 40px !important;
+    height: 40px !important;
+    max-height: 40px !important;
+    padding: 0 !important;
+    margin: 0 0 8px !important;
+    gap: 0 !important;
+  }
+  .sidebar .sidebar-brand.sidebar-controls .sidebar-toggle,
+  .app.sidebar-collapsed .sidebar .sidebar-brand.sidebar-controls .sidebar-toggle,
+  .app:not(.sidebar-collapsed) .sidebar .sidebar-brand.sidebar-controls .sidebar-toggle {
+    display: grid !important;
+    place-items: center;
+    position: static !important;
+    width: 39px;
+    height: 39px;
+    min-width: 39px;
+    padding: 0;
+    margin: 0 !important;
+    border-radius: 10px;
+    background: #26382e;
+    border: 1px solid #3a5443;
+    color: #e0f1e5;
+  }
+  .sidebar .sidebar-brand.sidebar-controls .sidebar-toggle:hover { background: #315341; }
+  .sidebar .sidebar-brand.sidebar-controls .sidebar-toggle svg { width: 21px; height: 21px; }
+  .app.sidebar-collapsed .sidebar .sidebar-brand.sidebar-controls { justify-content: center !important; }
+  .sidebar #mainNav { gap: 18px; }
+  .sidebar .sidebar-bottom { margin-top: auto; padding-top: 12px; }
+  .sidebar .sidebar-bottom .user-chip { display: none !important; }
+  .app.sidebar-collapsed .sidebar .sidebar-bottom .user-chip { display: none !important; }
+}
+@media (min-width:700px) and (max-width:1180px) {
+  .sidebar .sidebar-brand.sidebar-controls { min-height: 40px !important; }
+  .app.sidebar-collapsed .sidebar .sidebar-brand.sidebar-controls { min-height: 40px !important; }
+}
+
+/* Compact seven-metric layout; retain Deleted unchanged. */
+#view-reports .report-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+#view-reports .report-metric-grid .summary-card {
+  min-width: 0;
+  min-height: 84px;
+  padding: 16px;
+}
+#view-reports .report-metric-grid .summary-card span {
+  font-size: 11px;
+  color: #5d6b60;
+}
+#view-reports .report-metric-grid .summary-card strong {
+  font-size: clamp(17px,1.65vw,22px);
+  color: #183e2a;
+  overflow-wrap: anywhere;
+}
+
+/* Custom accessible checkbox menu supports all/one/multiple cashiers. */
+#view-reports .report-filter-fields { position: relative; }
+#view-reports .report-field-cashier { position: relative; z-index: 18; }
+#view-reports .report-cashier-select {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+#view-reports .report-cashier-select > summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 43px;
+  padding: 10px 32px 10px 12px;
+  border: 1px solid #e1dcd3;
+  border-radius: 10px;
+  color: #203e2d;
+  background: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  cursor: pointer;
+  list-style: none;
+}
+#view-reports .report-cashier-select > summary::-webkit-details-marker { display: none; }
+#view-reports .report-cashier-select > summary::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 15px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #526d5c;
+  border-bottom: 2px solid #526d5c;
+  transform: rotate(45deg);
+}
+#view-reports .report-cashier-select[open] > summary {
+  outline: 2px solid #9bc6aa;
+  outline-offset: 1px;
+}
+#view-reports .report-cashier-popover {
+  display: grid;
+  position: absolute;
+  z-index: 200;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(310px, calc(100vw - 42px));
+  max-height: min(370px, 60vh);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d7e2d8;
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(20,49,28,.14);
+}
+#view-reports .report-cashier-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 41px;
+  padding: 9px 13px;
+  color: #294333;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  font-weight: 600;
+}
+#view-reports .report-cashier-option:hover { background: #f2f8f3; }
+#view-reports .report-cashier-option input[type="checkbox"] {
+  width: 17px !important;
+  height: 17px !important;
+  min-width: 17px !important;
+  max-width: 17px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  accent-color: #176541;
+  flex: 0 0 17px;
+}
+#view-reports .report-cashier-option > span { min-width: 0; overflow-wrap: anywhere; }
+#view-reports .report-cashier-all {
+  border-bottom: 1px solid #e8eee8;
+  background: #f5faf6;
+  font-weight: 800;
+}
+#view-reports .report-cashier-list {
+  display: block;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+#view-reports .report-cashier-empty {
+  margin: 0;
+  padding: 16px 13px;
+  color: #718274;
+  font-size: 12px;
+}
+#view-reports .report-cashier-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 9px 12px;
+  background: #fafbf8;
+  border-top: 1px solid #e8eee8;
+}
+#view-reports .report-cashier-actions button {
+  min-height: 33px;
+  padding: 7px 16px;
+  font-size: 11px;
+}
+#view-reports .report-toolbar { position: relative; z-index: 2; }
+#view-reports .report-download { background: #176541; border-color: #176541; }
+
+@media(max-width:1100px) {
+  #view-reports .report-metric-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+@media(max-width:720px) {
+  #view-reports .report-metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .topbar .topbar-heading { gap: 9px; }
+  .topbar .topbar-heading .topbar-logo { width: 40px; height: 40px; flex-basis: 40px; border-radius: 10px; }
+  .topbar .topbar-logo img { width: 38px; height: 38px; }
+}
+@media(max-width:420px) {
+  #view-reports .report-metric-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #view-reports .report-metric-grid .summary-card { min-height: 78px; padding: 12px; }
+}
+@media print {
+  #view-reports .report-metric-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
