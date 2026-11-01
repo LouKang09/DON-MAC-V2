@@ -1,0 +1,193 @@
+/* Don Macchiatos inventory refresh — real data, table-first composition.
+   Audit section intentionally untouched. */
+#view-inventory{min-width:0}
+#view-inventory .inventory-redesign{display:grid;grid-template-columns:minmax(0,1fr);gap:17px;margin:0 0 18px}
+#view-inventory .inv-main-card{padding:17px 18px 10px;border-radius:19px;min-width:0;overflow:hidden}
+#view-inventory .inv-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:13px;
+  min-width:0;padding-bottom:14px;flex-wrap:wrap;
+}
+#view-inventory .inv-new-button{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border-radius:10px;min-height:39px;min-width:98px;padding:8px 16px;
+  font-size:12px;font-weight:800;line-height:1.1;
+  box-shadow:0 3px 10px rgba(25,75,44,.11);
+}
+#view-inventory .inv-new-button span{font-size:21px;line-height:1;font-weight:400;margin-top:-2px}
+#view-inventory .inv-toolbar-right{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;
+  gap:8px;min-width:0;flex:1 1 540px;
+}
+#view-inventory .inv-search-control{
+  display:flex;align-items:center;gap:8px;
+  border:1px solid #d7e1d8;border-radius:10px;background:#fbfcfa;
+  padding:0 11px;height:39px;flex:1 1 185px;max-width:370px;
+  color:#628473;min-width:145px;
+}
+#view-inventory .inv-search-control:focus-within{border-color:#81ac8c;box-shadow:0 0 0 3px #257e4113}
+#view-inventory .inv-search-control svg{flex:0 0 17px;width:17px;height:17px}
+#view-inventory .inv-search-control input{
+  flex:1 1 auto;min-width:0;width:100%;
+  border:0;outline:0;box-shadow:none;background:transparent;
+  font-size:11px;font-family:inherit;color:#274635;padding:7px 0;
+}
+#view-inventory .inv-search-control input:focus{border:0;box-shadow:none}
+#view-inventory .inv-search-control input::placeholder{color:#90a095}
+#view-inventory .inv-select-wrap{display:flex;position:relative;flex:0 1 auto;min-width:0}
+#view-inventory .inv-select-wrap select{
+  min-width:0;max-width:175px;
+  border:1px solid #d9e2d9;background:#fff;
+  border-radius:10px;height:39px;padding:0 24px 0 11px;
+  color:#425d4b;font-size:11px;font-weight:700;
+  cursor:pointer;outline:none;box-shadow:none;
+}
+#view-inventory .inv-select-wrap select:focus-visible{outline:2px solid #8ebc9d;outline-offset:1px}
+#view-inventory .inv-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;clip:rect(0,0,0,0);overflow:hidden;white-space:nowrap;border:0}
+#view-inventory .inv-filter-summary:empty{display:none}
+#view-inventory .inv-filter-summary{font-size:10px;color:#728779;padding:0 2px 9px;font-weight:700}
+#view-inventory .inv-table-scroll{
+  width:100%;margin:0;
+  overflow-x:auto;border:1px solid #e2e8e1;border-radius:12px;
+  scrollbar-width:thin;scrollbar-color:#bfd2c1 transparent;
+}
+#view-inventory .inv-table{margin:0;width:100%;border-collapse:separate;border-spacing:0;font-size:11px;min-width:680px;table-layout:auto}
+#view-inventory .inv-table thead th{
+  text-transform:none;letter-spacing:0;font-size:11px;
+  background:#f4f5f0;color:#475f4f;font-weight:850;
+  padding:13px 14px;border-bottom:1px solid #dce4dc;
+  white-space:nowrap;
+}
+#view-inventory .inv-table tbody tr:not(.inv-group-heading):hover{background:#f8fbf6}
+#view-inventory .inv-table tbody td{
+  padding:12px 14px;border-bottom:1px solid #ebefea;
+  color:#40564a;font-size:11px;white-space:nowrap;
+  vertical-align:middle;
+}
+#view-inventory .inv-table tbody tr:last-child td{border-bottom:none}
+#view-inventory .inv-table .inv-ingredient-name{min-width:145px;max-width:340px}
+#view-inventory .inv-table .inv-ingredient-name strong{
+  display:block;color:#233e2d;font-weight:800;
+  overflow:hidden;text-overflow:ellipsis;max-width:340px;
+}
+#view-inventory .inv-table .num{text-align:right;font-variant-numeric:tabular-nums}
+#view-inventory .inv-table .inv-stock-number{font-weight:850;color:#243f2f}
+#view-inventory .inv-table .inv-unit{
+  display:inline-flex;align-items:center;border-radius:7px;
+  background:#f0f3eb;color:#506b54;padding:4px 8px;
+  font-size:10px;font-weight:750;
+}
+#view-inventory .inv-table .inv-date{color:#84948a;font-size:10px}
+#view-inventory .inv-status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  border-radius:99px;padding:6px 10px;
+  font-size:10px;white-space:nowrap;font-weight:800;
+  line-height:1.1;
+}
+#view-inventory .inv-status-badge>span{font-size:10px;width:11px;text-align:center;line-height:1}
+#view-inventory .inv-status-in-stock{background:#ddf1df;color:#287c43}
+#view-inventory .inv-status-low-stock{background:#fff0c9;color:#9d690e}
+#view-inventory .inv-status-critical{background:#ffe1ce;color:#af572a}
+#view-inventory .inv-status-out-of-stock{background:#fde1df;color:#b83636}
+#view-inventory .inv-group-heading td{
+  padding:9px 14px!important;background:#ebf4ea;color:#427653!important;
+  font-size:10px!important;font-weight:900;letter-spacing:.055em;text-transform:uppercase;
+}
+#view-inventory .inv-empty{white-space:normal!important;text-align:center;padding:30px 12px!important;color:#718c7c!important}
+#view-inventory .inv-pagination{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:12px;padding:14px 2px 3px;
+}
+#view-inventory .inv-pagination p{margin:0;color:#819285;font-size:11px}
+#view-inventory .inv-page-controls{display:flex;align-items:center;gap:5px}
+#view-inventory .inv-page-controls button{
+  display:grid;place-items:center;min-width:34px;height:34px;padding:0 9px;
+  border:1px solid #dce5db;border-radius:9px;background:#fff;
+  color:#52705c;font-size:11px;font-weight:800;cursor:pointer;
+}
+#view-inventory .inv-page-controls button.active{
+  background:#1a613d;color:#fff;border-color:#1a613d;
+  box-shadow:0 2px 6px #1b633d24;
+}
+#view-inventory .inv-page-controls button:disabled{opacity:.35;cursor:not-allowed}
+#view-inventory .inv-page-controls button:focus-visible{outline:2px solid #68b17e;outline-offset:2px}
+#view-inventory .inv-page-dots{color:#a0aba1;padding:0 4px}
+#view-inventory .inv-stock-operations{padding:17px 19px;border-radius:18px;overflow:hidden}
+#view-inventory .inv-operations-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:15px;
+  flex-wrap:wrap;border-bottom:1px solid #e7ece5;padding-bottom:14px;
+}
+#view-inventory .inv-operations-heading h3{margin:4px 0 5px;font-size:17px;color:#213d2c}
+#view-inventory .inv-operations-heading p:last-child{margin:0;font-size:10px;line-height:1.5;color:#7b8d80}
+#view-inventory .inv-operation-toggle{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#eaf0e8;border:1px solid #dce5d8;border-radius:12px;
+  padding:4px;
+}
+#view-inventory .inv-operation-toggle button{
+  border:0;background:transparent;color:#58715d;
+  font-size:11px;font-weight:800;border-radius:9px;
+  min-width:112px;min-height:35px;padding:8px 12px;
+  cursor:pointer;
+}
+#view-inventory .inv-operation-toggle button.active{
+  color:#1b623f;background:#fff;box-shadow:0 2px 7px #233e2912;
+}
+#view-inventory .inv-operation-toggle button:focus-visible{outline:2px solid #78ad85;outline-offset:1px}
+#view-inventory .inv-operations-body{min-width:0}
+#view-inventory .inv-operations-body .form-card{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:end;gap:13px 14px;
+  background:transparent;border:0;
+  border-radius:0;box-shadow:none;
+  margin:0;padding:15px 0 2px;
+}
+#view-inventory .inv-operations-body .form-card.hidden{display:none!important}
+#view-inventory .inv-operations-body .form-card>.eyebrow,
+#view-inventory .inv-operations-body .form-card>h3{display:none}
+#view-inventory .inv-operations-body .form-card label{
+  min-width:0;display:grid;gap:6px;font-size:11px;color:#617867;
+}
+#view-inventory .inv-operations-body .form-card input,
+#view-inventory .inv-operations-body .form-card select,
+#view-inventory .inv-operations-body .form-card textarea{
+  background:#fcfdfa;border:1px solid #dae5db;border-radius:9px;
+  padding:10px;min-height:41px;font-size:12px;
+  width:100%;min-width:0;max-width:100%;
+}
+#view-inventory .inv-operations-body .form-card label:has(textarea){grid-column:span 2}
+#view-inventory .inv-operations-body .form-card textarea{min-height:41px;max-height:110px;resize:vertical}
+#view-inventory .inv-operations-body .form-card button[type="submit"]{
+  min-height:41px;padding:11px 18px;justify-self:start;
+}
+@media(max-width:1150px){
+ #view-inventory .inv-toolbar-right{flex:1 1 100%;justify-content:flex-start}
+ #view-inventory .inv-search-control{max-width:none;flex:1 1 210px}
+}
+@media(max-width:800px){
+ #view-inventory .inv-operations-body .form-card{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #view-inventory .inv-operations-body .form-card label:has(textarea){grid-column:span 2}
+ #view-inventory .inv-toolbar-right{gap:7px}
+ #view-inventory .inv-select-wrap{flex:1 1 110px}
+ #view-inventory .inv-select-wrap select{width:100%;max-width:none}
+}
+@media(max-width:699px){
+ #view-inventory .inv-main-card{padding:12px 11px 8px}
+ #view-inventory .inv-toolbar{gap:9px}
+ #view-inventory .inv-new-button{min-height:39px}
+ #view-inventory .inv-toolbar-right{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ #view-inventory .inv-search-control{grid-column:1/-1;max-width:none;min-width:0;width:100%}
+ #view-inventory .inv-select-wrap select{font-size:10px;padding:0 18px 0 7px;max-width:none;width:100%}
+ #view-inventory .inv-table{min-width:670px}
+ #view-inventory .inv-table tbody td{padding:11px 10px}
+ #view-inventory .inv-table thead th{padding:11px 10px}
+ #view-inventory .inv-pagination{align-items:flex-start}
+ #view-inventory .inv-stock-operations{padding:13px 12px}
+ #view-inventory .inv-operation-toggle{width:100%}
+ #view-inventory .inv-operation-toggle button{flex:1;min-width:0}
+ #view-inventory .inv-operations-body .form-card{grid-template-columns:1fr;gap:10px}
+ #view-inventory .inv-operations-body .form-card label:has(textarea){grid-column:auto}
+ #view-inventory .inv-operations-body .form-card button[type="submit"]{width:100%}
+}
+@media print{
+ #view-inventory .inv-new-button,#view-inventory .inv-operation-toggle,#view-inventory .inv-page-controls{display:none!important}
+}
