@@ -249,15 +249,53 @@
             </div>
           </section>
           <section class="card inv-stock-operations" aria-label="Inventory stock actions">
-            <div class="inv-operations-heading">
-              <div><p class="eyebrow">STOCK OPERATIONS</p><h3>Replenish & Transfer</h3><p>Manage incoming stock or record stock movement from one compact workspace.</p></div>
-              <div class="inv-operation-toggle" role="group" aria-label="Stock operation">
-                <button id="inventoryReplenishTab" type="button" class="active" aria-pressed="true" aria-controls="replenishForm">＋ Replenish</button>
-                <button id="inventoryTransferTab" type="button" aria-pressed="false" aria-controls="transferForm">⇄ Transfer</button>
-              </div>
+            <div class="inv-operation-cards" role="group" aria-label="Stock operation options">
+              <article class="inv-operation-card inv-operation-replenish">
+                <div class="inv-operation-main">
+                  <div class="inv-operation-top"><svg viewBox="0 0 28 28" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" aria-hidden="true"><path d="m14 2 11 6v12l-11 6L3 20V8L14 2Z"/><path d="m3 8 11 6 11-6M14 14v12M8.5 5 19 11"/></svg>
+                    <div class="inv-operation-copy">
+                      <h3>Replenish</h3>
+                      <p>Record incoming stocks from suppliers to increase ingredient quantities.</p>
+                    </div>
+                  </div>
+                  <button id="inventoryReplenishTab" class="inv-operation-launch" type="button" aria-pressed="false" aria-expanded="false" aria-controls="replenishForm">
+                    <span aria-hidden="true">＋</span> Replenish Inventory
+                  </button>
+                </div>
+                <svg class="inv-hero-illustration inv-replenish-illustration" viewBox="0 0 244 145" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of packages arriving into stock">
+  <ellipse cx="125" cy="122" rx="107" ry="12" fill="#D8B58C" opacity=".2"/>
+  <circle cx="160" cy="64" r="61" fill="#F3E7DB" opacity=".57"/>
+  <path d="m58 83 44-24 45 24-44 24-45-24Z" fill="#DCA66D"/><path d="M58 83v42l45 13v-31L58 83Z" fill="#B97840"/><path d="m103 107 44-24v42l-44 13v-31Z" fill="#C88A51"/><path d="m79 72 44 24" stroke="#F3D4AC" stroke-width="4"/>
+  <path d="m95 45 34-18 34 18-34 18-34-18Z" fill="#ECC394"/><path d="M95 45v39l34 16V63L95 45Z" fill="#C88A50"/><path d="m129 63 34-18v39l-34 16V63Z" fill="#DCA970"/><path d="m110 36 34 18" stroke="#F7DAB4" stroke-width="4"/>
+  <path d="m147 98 30-15 28 15-29 16-29-16Z" fill="#E5B985"/><path d="M147 98v28l29 12v-24l-29-16Z" fill="#B57740"/><path d="m176 114 29-16v28l-29 12v-24Z" fill="#CD8F54"/>
+  <path d="M176 125v-18m0 0-7 7m7-7 7 7" stroke="#235C40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m66 25-11-12m3 25-13-5m34-17 2-13" stroke="#C08A50" stroke-width="3.2" stroke-linecap="round"/>
+</svg>
+              </article>
+              <article class="inv-operation-card inv-operation-transfer">
+                <div class="inv-operation-main">
+                  <div class="inv-operation-top"><svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h23m-7-6 7 6-7 6M28 22H5m7-6-7 6 7 6"/></svg>
+                    <div class="inv-operation-copy">
+                      <h3>Transfer</h3>
+                      <p>Move ingredient stocks between branches or storage locations.</p>
+                    </div>
+                  </div>
+                  <button id="inventoryTransferTab" class="inv-operation-launch" type="button" aria-pressed="false" aria-expanded="false" aria-controls="transferForm">
+                    <span aria-hidden="true">⇄</span> Transfer Inventory
+                  </button>
+                </div>
+                <svg class="inv-hero-illustration inv-transfer-illustration" viewBox="0 0 244 145" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of inventory boxes moving between two locations">
+  <circle cx="190" cy="70" r="57" fill="#F3E9DE" opacity=".65"/><ellipse cx="125" cy="124" rx="105" ry="11" fill="#D5B38B" opacity=".18"/>
+  <path d="M66 78c28-39 70-40 117-9" stroke="#295944" stroke-width="2.5" stroke-dasharray="4.5 7" stroke-linecap="round"/><path d="m171 67 13 4-3-13" stroke="#295944" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 88 58 74l27 14-27 14-26-14Z" fill="#E7B780"/><path d="M32 88v34l26 12v-32L32 88Z" fill="#C5894A"/><path d="m58 102 27-14v34l-27 12v-32Z" fill="#DAA16A"/>
+  <path d="m171 89 30-16 29 16-30 16-29-16Z" fill="#EAC18D"/><path d="M171 89v34l29 12v-30l-29-16Z" fill="#BE8041"/><path d="m200 105 30-16v34l-30 12v-30Z" fill="#D99B5D"/>
+  <path d="M53 29c-9 0-15 7-15 16 0 12 15 24 15 24s15-12 15-24c0-9-6-16-15-16Z" fill="#225B41"/><circle cx="53" cy="45" r="6" fill="#F6F6EE"/>
+  <path d="M203 16c-9 0-15 7-15 16 0 12 15 24 15 24s15-12 15-24c0-9-6-16-15-16Z" fill="#225B41"/><circle cx="203" cy="32" r="6" fill="#F6F6EE"/>
+</svg>
+              </article>
             </div>
             <div class="inv-operations-body">
-              <form id="replenishForm" class="card form-card"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><label>Ingredient<select id="replenishIngredient"></select></label><label>Quantity<input id="replenishQty" type="number" min="0.000001" step="any" required /></label><label>Delivered By<input id="deliveredBy" maxlength="150" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Add Stock</button></form>
+              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><label>Ingredient<select id="replenishIngredient"></select></label><label>Quantity<input id="replenishQty" type="number" min="0.000001" step="any" required /></label><label>Delivered By<input id="deliveredBy" maxlength="150" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Add Stock</button></form>
               <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><label>Ingredient<select id="transferIngredient"></select></label><label>Quantity<input id="transferQty" type="number" min="0.000001" step="any" required /></label><label>Transfer To<input id="transferBranch" maxlength="150" required /></label><label>Received By<input id="receivedBy" maxlength="150" required /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Transfer Stock</button></form>
             </div>
           </section>
