@@ -295,8 +295,68 @@
               </article>
             </div>
             <div class="inv-operations-body">
-              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><label>Ingredient<select id="replenishIngredient"></select></label><label>Quantity<input id="replenishQty" type="number" min="0.000001" step="any" required /></label><label>Delivered By<input id="deliveredBy" maxlength="150" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Add Stock</button></form>
-              <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><label>Ingredient<select id="transferIngredient"></select></label><label>Quantity<input id="transferQty" type="number" min="0.000001" step="any" required /></label><label>Transfer To<input id="transferBranch" maxlength="150" required /></label><label>Received By<input id="receivedBy" maxlength="150" required /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Transfer Stock</button></form>
+              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><div class="inv-batch-editor" data-batch-kind="replenish">
+    <div class="inv-batch-heading">
+      <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
+      <span id="replenishSelectionCount" class="inv-batch-count">0 ingredients</span>
+    </div>
+    <div class="inv-batch-layout">
+      <section class="inv-batch-picker" aria-label="Replenish ingredient picker">
+        <div class="inv-picker-tools">
+          <label class="inv-picker-search"><span class="inv-sr-only">Find ingredients</span><input id="replenishBatchSearch" type="search" placeholder="Find an ingredient…" autocomplete="off" /></label>
+          <button type="button" id="replenishSelectAll" class="inv-batch-small-button">Select all</button>
+        </div>
+        <div id="replenishIngredientPicker" class="inv-picker-list" aria-label="Available ingredients"></div>
+        <div class="inv-picker-footer">
+          <span id="replenishCheckedCount">0 selected</span>
+          <button id="replenishAddSelected" type="button" class="inv-batch-add-button">＋ Add selected</button>
+        </div>
+      </section>
+      <section id="replenishBatchDropZone" class="inv-batch-drop-zone" aria-label="Replenish quantity editor">
+        <div class="inv-drop-header">
+          <div><strong>Quantity editor</strong><p>Each ingredient keeps its own unit.</p></div>
+          <button type="button" id="replenishClearTray" class="inv-batch-small-button">Clear</button>
+        </div>
+        <div id="replenishBatchRows" class="inv-batch-rows"></div>
+        <div class="inv-batch-clipboard">
+          <span id="replenishCopiedHint">Copy a quantity from any row.</span>
+          <button id="replenishPasteAll" type="button" class="inv-batch-small-button" disabled>Paste to all</button>
+        </div>
+      </section>
+    </div>
+    <p id="replenishBatchError" class="inv-batch-error" role="alert" hidden></p>
+  </div><label>Delivered By<input id="deliveredBy" maxlength="150" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Add Stock</button></form>
+              <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><div class="inv-batch-editor" data-batch-kind="transfer">
+    <div class="inv-batch-heading">
+      <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
+      <span id="transferSelectionCount" class="inv-batch-count">0 ingredients</span>
+    </div>
+    <div class="inv-batch-layout">
+      <section class="inv-batch-picker" aria-label="Transfer ingredient picker">
+        <div class="inv-picker-tools">
+          <label class="inv-picker-search"><span class="inv-sr-only">Find ingredients</span><input id="transferBatchSearch" type="search" placeholder="Find an ingredient…" autocomplete="off" /></label>
+          <button type="button" id="transferSelectAll" class="inv-batch-small-button">Select all</button>
+        </div>
+        <div id="transferIngredientPicker" class="inv-picker-list" aria-label="Available ingredients"></div>
+        <div class="inv-picker-footer">
+          <span id="transferCheckedCount">0 selected</span>
+          <button id="transferAddSelected" type="button" class="inv-batch-add-button">＋ Add selected</button>
+        </div>
+      </section>
+      <section id="transferBatchDropZone" class="inv-batch-drop-zone" aria-label="Transfer quantity editor">
+        <div class="inv-drop-header">
+          <div><strong>Quantity editor</strong><p>Each ingredient keeps its own unit.</p></div>
+          <button type="button" id="transferClearTray" class="inv-batch-small-button">Clear</button>
+        </div>
+        <div id="transferBatchRows" class="inv-batch-rows"></div>
+        <div class="inv-batch-clipboard">
+          <span id="transferCopiedHint">Copy a quantity from any row.</span>
+          <button id="transferPasteAll" type="button" class="inv-batch-small-button" disabled>Paste to all</button>
+        </div>
+      </section>
+    </div>
+    <p id="transferBatchError" class="inv-batch-error" role="alert" hidden></p>
+  </div><label>Transfer To<input id="transferBranch" maxlength="150" required /></label><label>Received By<input id="receivedBy" maxlength="150" required /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Transfer Stock</button></form>
             </div>
           </section>
         </div>
