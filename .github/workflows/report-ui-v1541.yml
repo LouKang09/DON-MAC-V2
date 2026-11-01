@@ -1,0 +1,25 @@
+name: Don Mac Sales Report UI validation
+on:
+  push:
+    branches:
+      - main
+      - 'feature/sales-report-audit-ui-v1541'
+  pull_request:
+    branches:
+      - main
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check public/app-core.js
+          node --check public/app.js
+          node --check public/report-pagination-v1541.js
+          node --check server.js
+      - name: Validate report UI and pagination
+        run: node report-ui-v1541-test.js
