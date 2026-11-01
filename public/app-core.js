@@ -336,8 +336,8 @@
   // Both editors are independent. The existing replenish/transfer backend already
   // accepts and atomically records multiple {ingredientId,qty} items.
   const batchEditors={
-    replenish:{items:new Map(),checked:new Set(),clipboard:null,query:''},
-    transfer:{items:new Map(),checked:new Set(),clipboard:null,query:''}
+    replenish:{items:new Map(),checked:new Set(),clipboard:null,query:'',anchorId:null},
+    transfer:{items:new Map(),checked:new Set(),clipboard:null,query:'',anchorId:null}
   };
   function batchSource(id){
     return (state.inventory||[]).find(i=>Number(i.id)===Number(id))||null;
@@ -367,7 +367,7 @@
   function batchClear(kind){
     const editor=batchEditors[kind];
     if(!editor)return;
-    editor.items.clear();editor.checked.clear();editor.clipboard=null;
+    editor.items.clear();editor.checked.clear();editor.clipboard=null;editor.anchorId=null;
     batchFail(kind,'');
     renderBatchEditors();
   }
@@ -386,7 +386,7 @@
       const picker=batchPickerItems(kind);
       $(kind+'IngredientPicker').innerHTML=picker.map(i=>{
         const id=Number(i.id),isAdded=editor.items.has(id);
-        return '<div class="inv-picker-item'+(isAdded?' is-added':'')+'" draggable="true" data-batch-ingredient="'+id+'" title="Drag to quantity editor">'+
+        return '<div class="inv-picker-item'+(isAdded?' is-added':'')+(editor.checked.has(id)?' is-selected':'')+'" draggable="true" data-batch-ingredient="'+id+'" title="Drag to quantity editor or long-press to select">'+
           '<input type="checkbox" data-batch-check="'+id+'" aria-label="Select '+esc(inventoryDisplayName(i))+'" '+(editor.checked.has(id)?'checked':'')+'>'+
           '<span class="inv-picker-grip" aria-hidden="true">⠿</span>'+
           '<span class="inv-picker-item-name"><strong>'+esc(inventoryDisplayName(i))+'</strong><small>'+esc(batchUom(i))+' · '+num(i.stock)+' available</small></span>'+
@@ -441,17 +441,69 @@
         // The search box is outside the rendered picker, so typing is uninterrupted.
         renderBatchEditors();
       });
-      picker.addEventListener('change',e=>{
-        const el=e.target.closest('[data-batch-check]');
-        if(!el)return;
-        const id=Number(el.dataset.batchCheck);
+      // Shift selects or deselects a contiguous range in the filtered picker.
+      function selectPickerRange(id,select,shift){
         if(!batchSource(id))return;
-        if(el.checked)editor.checked.add(id);else editor.checked.delete(id);
-        // Do not redraw checkboxes mid-tap; only update the footer and the button.
-        $(kind+'CheckedCount').textContent=editor.checked.size+' selected';
-        $(kind+'AddSelected').disabled=!editor.checked.size;
+        const visible=batchPickerItems(kind).map(i=>Number(i.id));
+        const anchor=visible.indexOf(editor.anchorId),target=visible.indexOf(id);
+        const ids=shift&&anchor>=0&&target>=0?
+          visible.slice(Math.min(anchor,target),Math.max(anchor,target)+1):[id];
+        ids.forEach(itemId=>{if(select)editor.checked.add(itemId);else editor.checked.delete(itemId);});
+        if(!shift||anchor<0)editor.anchorId=id;
+        renderBatchEditors();
+      }
+      let hold=null,suppressRowClick=false;
+      function stopHold(){
+        if(!hold)return;
+        clearTimeout(hold.timer);
+        if(hold.active){
+          suppressRowClick=true;
+          setTimeout(()=>{suppressRowClick=false;},180);
+        }
+        hold=null;
+      }
+      function moveHold(e){
+        if(!hold)return;
+        if(!hold.active&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>12){stopHold();return;}
+        if(!hold.active)return;
+        if(e.cancelable)e.preventDefault();
+        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-batch-ingredient]');
+        if(!target||!picker.contains(target))return;
+        const nextId=Number(target.dataset.batchIngredient);
+        if(nextId!==hold.lastId){
+          hold.lastId=nextId;
+          selectPickerRange(nextId,true,true);
+        }
+      }
+      picker.addEventListener('pointerdown',e=>{
+        if(e.pointerType==='mouse'&&e.button!==0)return;
+        const row=e.target.closest('[data-batch-ingredient]');
+        if(!row||e.target.closest('button,input,.inv-picker-grip'))return;
+        stopHold();
+        const id=Number(row.dataset.batchIngredient);
+        hold={id,lastId:id,x:e.clientX,y:e.clientY,active:false,timer:null,pointerId:e.pointerId};
+        hold.timer=setTimeout(()=>{
+          if(!hold||hold.pointerId!==e.pointerId)return;
+          hold.active=true;
+          // A long-press selects the row; sliding adds the range.
+          selectPickerRange(id,true,false);
+        },500);
       });
+      document.addEventListener('pointermove',e=>{if(hold&&e.pointerId===hold.pointerId)moveHold(e);});
+      document.addEventListener('pointerup',e=>{if(hold&&e.pointerId===hold.pointerId)stopHold();});
+      document.addEventListener('pointercancel',e=>{if(hold&&e.pointerId===hold.pointerId)stopHold();});
+      picker.addEventListener('touchmove',e=>{if(hold?.active&&e.cancelable)e.preventDefault();},{passive:false});
       picker.addEventListener('click',e=>{
+        const input=e.target.closest('[data-batch-check]');
+        if(input){
+          e.preventDefault();
+          const id=Number(input.dataset.batchCheck);
+          selectPickerRange(id,!editor.checked.has(id),e.shiftKey);
+          return;
+        }
+        if(suppressRowClick&&e.target.closest('[data-batch-ingredient]')){
+          e.preventDefault();return;
+        }
         const add=e.target.closest('[data-batch-add]');
         if(add)batchAddMany(kind,[Number(add.dataset.batchAdd)]);
       });
