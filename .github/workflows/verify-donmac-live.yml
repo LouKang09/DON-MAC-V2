@@ -23,6 +23,7 @@ jobs:
                 exit 0
               fi
               echo "Attempt $attempt: production health at $url has not reported $EXPECTED"
+              echo "Public health response: ${response:0:260}"
             done
             sleep 6
           done
