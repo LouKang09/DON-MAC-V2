@@ -26,9 +26,12 @@
 
   <div id="app" class="app hidden">
     <aside class="sidebar" aria-label="Don Macchiatos navigation">
-      <div class="sidebar-brand">
-        <div class="brand sidebar-brand-card"><div class="sidebar-logo-shell"><img class="brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos barista logo" loading="eager" decoding="async" /></div><div class="sidebar-brand-copy"><strong class="sidebar-brand-title">Don Macchiatos</strong></div></div>
-        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" aria-controls="mainNav" title="Collapse navigation"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m8-12-4 4 4 4"/></svg></button>
+      <div class="sidebar-brand sidebar-controls">
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" aria-controls="mainNav" title="Collapse navigation">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
       </div>
       <nav id="mainNav" aria-label="Main navigation">
         <div class="nav-section">
@@ -50,10 +53,6 @@
         </div>
       </nav>
       <div class="sidebar-bottom">
-        <div class="user-chip" title="Signed-in account">
-          <span class="user-avatar" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.1 20a7 7 0 0 1 13.8 0"/></svg></span>
-          <div class="user-meta"><b id="currentUser">—</b><span id="currentRole">—</span></div>
-        </div>
         <button id="logoutButton" class="ghost sidebar-signout" type="button" title="Sign out" aria-label="Sign out"><svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3.5h-4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4M13 7.5l4.5 4.5L13 16.5M17.5 12H8.5"/></svg><span class="logout-label">Sign out</span></button>
       </div>
     </aside>
@@ -75,7 +74,10 @@
 
     <main class="main">
       <header class="topbar">
-        <div class="topbar-heading"><p class="eyebrow" id="viewEyebrow"></p><h2 id="viewTitle">Welcome to Don Macchiatos POS</h2><span id="posDate" class="pos-header-date"></span></div>
+        <div class="topbar-heading">
+          <span class="topbar-logo" aria-hidden="true"><img src="/donmac-logo-hires.svg" alt="" width="48" height="48" /></span>
+          <div class="topbar-heading-copy"><p class="eyebrow" id="viewEyebrow"></p><h2 id="viewTitle">Welcome to Don Macchiatos POS</h2><span id="posDate" class="pos-header-date"></span></div>
+        </div>
         <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine">DATABASE</span><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><div class="topbar-profile"><span class="topbar-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span></div></div>
       </header>
 
@@ -376,16 +378,26 @@
               <label class="report-field report-field-period"><span>Period</span><select id="reportPeriod"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label>
               <label class="report-field report-field-date"><span>Report date</span><input id="reportDate" type="date" /></label>
               <label class="report-field report-field-branch admin-only"><span>Branch</span><select id="reportBranch" aria-label="Report branch"><option value="all">All branches</option></select></label>
-              <label class="report-field report-field-cashier"><span>Cashier</span><input id="reportCashier" maxlength="80" placeholder="All cashiers (optional)" autocomplete="off" /></label>
+              <div class="report-field report-field-cashier">
+                <span id="reportCashierLabel">Cashiers</span>
+                <details class="report-cashier-select" id="reportCashierSelect">
+                  <summary id="reportCashierSummary" aria-labelledby="reportCashierLabel reportCashierSummary" aria-controls="reportCashierOptions">All cashiers</summary>
+                  <div class="report-cashier-popover" id="reportCashierOptions">
+                    <label class="report-cashier-option report-cashier-all"><input type="checkbox" id="reportCashierAll" checked /><span>All cashiers</span></label>
+                    <div id="reportCashierList" class="report-cashier-list" role="group" aria-label="Select cashiers"></div>
+                    <div class="report-cashier-actions"><button type="button" id="reportCashierDone" class="primary">Done</button></div>
+                  </div>
+                </details>
+              </div>
             </div>
             <div class="report-downloads">
-              <button id="salesPdf" class="primary report-download" type="button"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg><span>Download Sales Report</span></button>
-              <button id="costingPdf" class="primary report-download" type="button"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg><span>Download Costing Report</span></button>
+              <button id="salesPdf" class="primary report-download" type="button"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg><span>Sales Report</span></button>
+              <button id="costingPdf" class="primary report-download" type="button"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg><span>Costing Report</span></button>
             </div>
           </div>
           <p id="reportLoadingStatus" class="report-loading-status" role="status" aria-live="polite">Choose a reporting period to view results.</p>
         </div>
-        <div id="reportSummary" class="summary-grid"></div>
+        <div id="reportSummary" class="summary-grid report-metric-grid" aria-live="polite"></div>
         <div class="card spaced report-results-card"><div class="card-head"><h3>Product Summary</h3></div><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th><th class="num">Costing</th><th class="num">Net Sales</th></tr></thead><tbody id="reportProducts"></tbody></table></div><nav id="reportProductsPagination" class="report-pagination" data-report-section="products" aria-label="Product Summary pages"></nav></div>
         <div class="card spaced report-results-card"><div class="card-head"><h3>Promo Purchases</h3></div><div class="table-wrap"><table><thead><tr><th>Promo</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th></tr></thead><tbody id="reportPromos"></tbody></table></div><nav id="reportPromosPagination" class="report-pagination" data-report-section="promos" aria-label="Promo Purchases pages"></nav></div>
         <div class="card spaced report-results-card"><div class="card-head"><h3>Ingredient Usage and Cost</h3><strong id="costingTotal"></strong></div><div id="costingList" class="costing-list"></div><nav id="reportIngredientsPagination" class="report-pagination" data-report-section="ingredients" aria-label="Ingredient Usage and Cost pages"></nav></div>
