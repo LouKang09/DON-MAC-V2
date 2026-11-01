@@ -8,6 +8,7 @@
   const state={status:null,user:null,catalog:null,category:'Coffee',query:'',cart:[],promoId:null,quote:null,inventory:[],report:null,costing:null,dashboard:null,adminProducts:[],adminIngredients:[],adminPromos:[],adminPackages:[],recipeRows:[],compositionRows:[],pendingSaleRequestId:null,checkoutBusy:false,branches:[],userList:[],posBranchId:null};
   const categories=['Coffee','Non Coffee','Food','Add-ons','Promos','Packages'];
   let quoteTimer=null,quoteSeq=0,recipeLoadSeq=0;
+  let closeTransferEditorIfOpen=()=>{};
 
   function safeCloseDialog(id){const d=$(id);if(d?.open){try{d.close();}catch(_){}}}
   async function withFormLock(form,work){
@@ -129,6 +130,7 @@
     const card=$('inventoryTransferTab').closest('.inv-operation-card');
     card?.classList.toggle('plan-locked',!business);
     if(!business){
+      closeTransferEditorIfOpen();
       $('transferForm').classList.add('hidden');
       $('inventoryTransferTab').classList.remove('active');
       $('inventoryTransferTab').setAttribute('aria-expanded','false');
@@ -728,6 +730,9 @@
         button.closest('.inv-operation-card')?.classList.toggle('active',on);
       }
     }
+    closeTransferEditorIfOpen=()=>{
+      if(openOperation==='transfer')operation(null);
+    };
     $('inventoryReplenishTab').addEventListener('click',()=>{
       operation(openOperation==='replenish'?null:'replenish');
     });
