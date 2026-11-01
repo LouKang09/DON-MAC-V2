@@ -78,11 +78,18 @@ const items=[
 ];
 const db={
   async query(sql,params=[]){
-    if(sql.includes('SELECT DISTINCT cashier_name_snapshot')) {
-      const values=[...new Set(testSales
-        .filter(x=>!sql.includes('branch_id=$1')||x.branch_id===params[0])
-        .map(x=>x.cashier_name_snapshot))].sort();
-      return {rows:values.map(cashier=>({cashier}))};
+    if(sql.includes('SELECT username AS cashier FROM users')) {
+      const accounts=[
+        {username:'Ana, Jr.',role:'User',branchId:1},
+        {username:'Second Cashier',role:'User',branchId:1},
+        {username:'Other Branch',role:'User',branchId:2},
+        {username:'The Owner',role:'Admin',branchId:1},
+        {username:'The Co-Owner',role:'Admin',branchId:1}
+      ];
+      const scoped=sql.includes('branch_id=$2');
+      const rows=accounts.filter(x=>x.role===params[0]&&(!scoped||x.branchId===params[1]))
+        .map(x=>({cashier:x.username}));
+      return {rows};
     }
     if(sql.includes('FROM sales s LEFT JOIN promos'))return {rows:testSales};
     if(sql.includes('FROM sale_items WHERE sale_id IN'))return {rows:items.filter(x=>params.includes(x.sale_id))};
