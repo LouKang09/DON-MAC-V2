@@ -483,7 +483,7 @@
       <section id="view-users" class="view admin-only">
         <div class="users-section-title"><div><p class="eyebrow">MULTI-BRANCH SETUP</p><h3>Manage branches</h3><p class="muted tiny">Create, rename, disable or delete unused branches. Account plans are currently simulated for development.</p></div></div>
         <div class="section-grid users-layout">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">LOCATIONS</p><h3>Branches</h3></div></div><div class="table-wrap"><table><thead><tr><th>Branch</th><th>Cashiers / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
+          <div class="card"><div class="card-head"><div><p class="eyebrow">LOCATIONS</p><h3>Branches</h3></div></div><div class="table-wrap"><table><thead><tr><th>Branch</th><th>Accounts / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
           <form id="branchForm" class="card form-card"><p class="eyebrow">BRANCH DETAILS</p><h3 id="branchFormTitle">New Branch</h3><input id="branchEditId" type="hidden" /><label>Branch name<input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label><label>Address (optional)<input id="branchAddress" maxlength="250" placeholder="Location or landmark" /></label><label class="check-row"><input id="branchActive" type="checkbox" checked /> Active branch</label><button class="primary" type="submit">Save Branch</button><button id="branchFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Branches with linked sales cannot be permanently removed. Disable them instead to keep reporting and audit records.</p></form>
         </div>
         <div class="users-section-title users-subsection"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Cashiers & branch assignments</h3><p class="muted tiny">Assign each staff account to a branch. Administrators can review all branches.</p></div></div>
@@ -636,6 +636,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.42"></script>
+  <script src="/app.js?v=1.5.43"></script>
 </body>
 </html>
