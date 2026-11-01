@@ -325,7 +325,7 @@
       </section>
     </div>
     <p id="replenishBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><label>Delivered By<input id="deliveredBy" maxlength="150" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Add Stock</button></form>
+  </div><label>Delivered By<input id="deliveredBy" maxlength="150" required placeholder="Who will deliver? e.g. Marlou" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" required placeholder="Product was delivered by Marlou, phone: 09XXXXXXXXX"></textarea></label><button class="primary" type="submit">Replenish Selected Items</button></form>
               <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><div class="inv-batch-editor" data-batch-kind="transfer">
     <div class="inv-batch-heading">
       <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
@@ -356,7 +356,7 @@
       </section>
     </div>
     <p id="transferBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><label>Transfer To<input id="transferBranch" maxlength="150" required /></label><label>Received By<input id="receivedBy" maxlength="150" required /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500"></textarea></label><button class="primary" type="submit">Transfer Stock</button></form>
+  </div><label>Transfer To<input id="transferBranch" maxlength="150" required placeholder="Branch / destination" /></label><label>Received By<input id="receivedBy" maxlength="150" required placeholder="Who will receive? e.g. Marlou" /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Transfer Selected Items</button></form>
             </div>
           </section>
         </div>
