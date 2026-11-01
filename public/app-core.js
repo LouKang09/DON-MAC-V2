@@ -240,9 +240,124 @@
   $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();if(!state.quote||state.checkoutBusy)return;state.checkoutBusy=true;const submit=$('paymentSubmit'),close=$('paymentClose');if(submit){submit.disabled=true;submit.textContent='Processing…';}if(close)close.disabled=true;const payload={...quotePayload(),branchId:state.user.role==='Admin'?state.posBranchId:state.user.branchId,clientRequestId:state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`),paymentMode:$('paymentMode').value,tender:Number($('cashTender').value||0),paymentReference:$('gcashReference').value.trim(),orderType:$('posOrderType').value,customerName:$('posCustomerName').value.trim(),tableLabel:$('posOrderType').value==='Dine In'?$('posTableLabel').value.trim():''};state.pendingSaleRequestId=payload.clientRequestId;try{const sale=await api('/api/sales',{method:'POST',body:payload,timeoutMs:30000});$('paymentDialog').close();$('receiptText').textContent=`${sale.reference} · ${sale.paymentMode} · ${peso(sale.actual)}${sale.change?` · Change ${peso(sale.change)}`:''}${sale.idempotent?' · Safe retry recovered':''}`;resetOrderState({render:true});$('receiptDialog').showModal();refreshPosDailyCount();try{await loadCatalog();}catch(refreshErr){console.error(refreshErr);toast('Sale recorded successfully. Catalog refresh will retry on the next action.');}}catch(err){toast(err.message);if(err.status===409)try{await loadCatalog();}catch(_){}}finally{state.checkoutBusy=false;if(submit){submit.disabled=false;submit.textContent='Confirm Payment';}if(close)close.disabled=false;}});$('receiptClose').onclick=()=>{$('receiptDialog').close();resetOrderState({render:true});$('searchBox')?.focus();};
 
   async function loadInventory(){try{state.inventory=(await api('/api/inventory')).items;renderInventory();await loadMovements();}catch(err){toast(err.message);}}
-  function renderInventory(){const q=normalize($('inventorySearch').value),rows=state.inventory.filter(i=>!q||normalize(i.name).includes(q)||normalize(i.uom).includes(q)||normalize(i.code).includes(q));$('inventoryBody').innerHTML=rows.map(i=>`<tr><td><b>${esc(i.name)}</b><div class="tiny muted">${esc(i.code)}</div></td><td>${esc(String(i.uom).toUpperCase())}</td><td class="num">${num(i.stock)}</td><td class="num">${num(i.lowStockThreshold)}</td><td class="${i.low?'stock-low':'stock-ok'}">${i.low?'LOW':'OK'}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No ingredients found.</td></tr>';const opts=state.inventory.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(String(i.uom).toUpperCase())})</option>`).join('');$('replenishIngredient').innerHTML=opts;$('transferIngredient').innerHTML=opts;}
+  const inventoryUI={page:1,pageSize:10,group:"none",sort:"nameAsc",status:"all"};
+  function inventoryDisplayName(item){
+    const raw=String(item?.name||item?.code||'Unnamed Ingredient').trim();
+    // Legacy imported names sometimes duplicate a stock code. Keep those codes
+    // searchable but never display the ING_001_COFFEE identifier in a row.
+    if(/^ING[_-]\d+[_-]/i.test(raw)){
+      return raw.replace(/^ING[_-]\d+[_-]/i,'').replace(/[_-]+/g,' ').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
+    }
+    return raw;
+  }
+  function inventoryStatus(item){
+    const stock=Number(item.stock)||0,threshold=Number(item.lowStockThreshold)||0;
+    if(stock<=0)return {key:'out-of-stock',label:'Out of stock',rank:0,icon:'●'};
+    if(stock<=threshold&&threshold>0&&stock<=threshold*.5)return {key:'critical',label:'Critical',rank:1,icon:'!'};
+    if(stock<=threshold)return {key:'low-stock',label:'Low stock',rank:2,icon:'!'};
+    return {key:'in-stock',label:'In stock',rank:3,icon:'▮'};
+  }
+  function renderInventory(){
+    const all=Array.isArray(state.inventory)?state.inventory:[];
+    const q=normalize($('inventorySearch').value.trim());
+    let rows=all.filter(i=>{
+      const status=inventoryStatus(i).key;
+      const matches=!q||[inventoryDisplayName(i),i.name,i.code,i.uom,status.replace(/-/g,' ')].some(x=>normalize(String(x||'')).includes(q));
+      return matches&&(inventoryUI.status==='all'||status===inventoryUI.status);
+    });
+    const byName=(a,b)=>inventoryDisplayName(a).localeCompare(inventoryDisplayName(b),undefined,{sensitivity:'base',numeric:true});
+    rows.sort((a,b)=>{
+      if(inventoryUI.sort==='nameDesc')return -byName(a,b);
+      if(inventoryUI.sort==='stockAsc')return Number(a.stock)-Number(b.stock)||byName(a,b);
+      if(inventoryUI.sort==='stockDesc')return Number(b.stock)-Number(a.stock)||byName(a,b);
+      if(inventoryUI.sort==='recent')return new Date(b.updatedAt||0)-new Date(a.updatedAt||0)||byName(a,b);
+      if(inventoryUI.sort==='status')return inventoryStatus(a).rank-inventoryStatus(b).rank||byName(a,b);
+      return byName(a,b);
+    });
+    const groupLabel=i=>inventoryUI.group==='status'?inventoryStatus(i).label:
+      inventoryUI.group==='uom'?String(i.uom||'—').toUpperCase():'';
+    if(inventoryUI.group!=='none'){
+      const groups=new Map();
+      rows.forEach(i=>{const label=groupLabel(i);if(!groups.has(label))groups.set(label,[]);groups.get(label).push(i);});
+      rows=[...groups.entries()].sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).flatMap(([,items])=>items);
+    }
+    const pages=Math.max(1,Math.ceil(rows.length/inventoryUI.pageSize));
+    inventoryUI.page=Math.min(pages,Math.max(1,inventoryUI.page));
+    const from=(inventoryUI.page-1)*inventoryUI.pageSize;
+    const current=rows.slice(from,from+inventoryUI.pageSize);
+    let lastGroup=null;
+    const markup=current.map(i=>{
+      const label=groupLabel(i),status=inventoryStatus(i);
+      const group=inventoryUI.group!=='none'&&label!==lastGroup?
+        '<tr class="inv-group-heading"><td colspan="6">'+esc(label)+'</td></tr>':'';
+      lastGroup=label;
+      return group+'<tr>'+
+        '<td class="inv-ingredient-name" title="'+esc(inventoryDisplayName(i))+'"><strong>'+esc(inventoryDisplayName(i))+'</strong></td>'+
+        '<td><span class="inv-unit">'+esc(String(i.uom||'—').toUpperCase())+'</span></td>'+
+        '<td class="num inv-stock-number">'+num(i.stock)+'</td>'+
+        '<td class="num">'+num(i.lowStockThreshold)+'</td>'+
+        '<td class="inv-date">'+esc(i.updatedAt?formatDateTime(i.updatedAt):'—')+'</td>'+
+        '<td><span class="inv-status-badge inv-status-'+status.key+'"><span aria-hidden="true">'+esc(status.icon)+'</span>'+esc(status.label)+'</span></td>'+
+        '</tr>';
+    }).join('');
+    $('inventoryBody').innerHTML=markup||'<tr><td colspan="6" class="inv-empty">No ingredients match your search or filters.</td></tr>';
+    $('inventoryPageInfo').textContent=rows.length?
+      'Showing '+(from+1)+'–'+Math.min(rows.length,from+inventoryUI.pageSize)+' of '+rows.length+' ingredients':
+      'Showing 0 of 0 ingredients';
+    const pageNumbers=new Set([1,pages,inventoryUI.page-1,inventoryUI.page,inventoryUI.page+1]);
+    const visible=[...pageNumbers].filter(x=>x>=1&&x<=pages).sort((a,b)=>a-b);
+    const buttons=['<button type="button" data-inv-page="'+(inventoryUI.page-1)+'" aria-label="Previous page" '+(inventoryUI.page===1?'disabled':'')+'>‹</button>'];
+    let previous=0;
+    visible.forEach(p=>{
+      if(p-previous>1)buttons.push('<span class="inv-page-dots" aria-hidden="true">…</span>');
+      buttons.push('<button type="button" data-inv-page="'+p+'" aria-label="Page '+p+'" '+(p===inventoryUI.page?'class="active" aria-current="page"':'')+'>'+p+'</button>');
+      previous=p;
+    });
+    buttons.push('<button type="button" data-inv-page="'+(inventoryUI.page+1)+'" aria-label="Next page" '+(inventoryUI.page===pages?'disabled':'')+'>›</button>');
+    $('inventoryPageControls').innerHTML=buttons.join('');
+    $('inventoryFilterSummary').textContent=inventoryUI.group!=='none'?'Grouped by '+(inventoryUI.group==='status'?'stock status':'unit'):'';
+    // Preserve selected ingredient across refreshes and replenishment/transfer.
+    const opts=all.map(i=>'<option value="'+i.id+'">'+esc(inventoryDisplayName(i))+' ('+esc(String(i.uom).toUpperCase())+')</option>').join('');
+    for(const id of ['replenishIngredient','transferIngredient']){
+      const select=$(id),selected=select.value;
+      select.innerHTML=opts;
+      if(all.some(i=>String(i.id)===selected))select.value=selected;
+    }
+  }
+  function setupInventoryRedesign(){
+    $('inventorySearch').addEventListener('input',()=>{inventoryUI.page=1;renderInventory();});
+    for(const [id,field] of [['inventoryGroupBy','group'],['inventorySortBy','sort'],['inventoryStatusFilter','status']]){
+      $(id).addEventListener('change',e=>{inventoryUI[field]=e.target.value;inventoryUI.page=1;renderInventory();});
+    }
+    $('inventoryPageControls').addEventListener('click',e=>{
+      const b=e.target.closest('button[data-inv-page]');if(!b||b.disabled)return;
+      inventoryUI.page=Math.max(1,Number(b.dataset.invPage)||1);
+      renderInventory();
+      $('inventoryPageInfo').scrollIntoView?.({block:'nearest',behavior:'auto'});
+    });
+    $('inventoryNewIngredient').addEventListener('click',()=>{
+      if(state.user?.role!=='Admin')return;
+      switchView('catalog');
+      activateAdminTab('ingredients');
+      clearIngredientForm();
+      $('ingredientName').focus({preventScroll:true});
+      $('admin-ingredients').scrollIntoView?.({block:'start',behavior:'smooth'});
+    });
+    function operation(which){
+      const replenish=which==='replenish';
+      $('replenishForm').classList.toggle('hidden',!replenish);
+      $('transferForm').classList.toggle('hidden',replenish);
+      for(const [id,on] of [['inventoryReplenishTab',replenish],['inventoryTransferTab',!replenish]]){
+        const button=$(id);button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));
+      }
+    }
+    $('inventoryReplenishTab').addEventListener('click',()=>operation('replenish'));
+    $('inventoryTransferTab').addEventListener('click',()=>operation('transfer'));
+    operation('replenish');
+  }
+  setupInventoryRedesign();
   async function loadMovements(){try{const d=await api('/api/inventory/movements?limit=300');$('movementBody').innerHTML=d.items.map(x=>`<tr><td>${esc(formatDateTime(x.createdAt))}</td><td>${esc(x.type)}</td><td>${esc(x.ingredient)} <span class="tiny muted">${esc(String(x.uom).toUpperCase())}</span></td><td class="num ${x.quantityChange<0?'stock-low':'stock-ok'}">${x.quantityChange>0?'+':''}${num(x.quantityChange)}</td><td class="num">${num(x.balanceAfter)}</td><td>${esc(x.reference||x.branch||x.deliveredBy||'')}</td><td>${esc(x.createdBy||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No inventory movements.</td></tr>';}catch(err){toast(err.message);}}
-  $('inventorySearch').oninput=renderInventory;$('refreshMovements').onclick=loadMovements;
+  $('refreshMovements').onclick=loadMovements;
   $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items:[{ingredientId:Number($('replenishIngredient').value),qty:Number($('replenishQty').value)}],deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast('Ingredients replenished successfully.');$('replenishQty').value='';await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
   $('transferForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items:[{ingredientId:Number($('transferIngredient').value),qty:Number($('transferQty').value)}],branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast('Transfer complete.');$('transferQty').value='';await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
 
