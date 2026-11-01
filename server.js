@@ -684,6 +684,8 @@ async function reportCashierChoices(branchId){
   return {cashiers:rows.map(row=>row.cashier)};
 }
 
+async function productUnitCosts(conn=db){const r=await conn.query(`SELECT p.id,p.name,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.name`);return new Map(r.rows.map(x=>[Number(x.id),Number(x.unit_cost||0)]));}
+
 async function salesReport(params){
   const scope=await periodSales(params),saleIds=scope.sold.map(s=>Number(s.id));let items=[];
   if(saleIds.length){const r=await db.query(`SELECT id,sale_id,product_id,add_on_id,package_id,product_name_snapshot,quantity,line_total,is_add_on,is_package,exclude_from_costing FROM sale_items WHERE sale_id IN (${placeholders(1,saleIds.length)}) ORDER BY sale_id,id`,saleIds);items=r.rows;}
