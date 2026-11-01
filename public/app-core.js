@@ -81,7 +81,19 @@
   }
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');$('app').classList.add('hidden');$('authScreen').classList.remove('hidden');$('authTitle').textContent=setupRequired?'Create Owner Account':'Sign in';$('authHint').textContent=setupRequired?'Your first account is the Owner. Additional Admin accounts will be Co-Owners.':'Use your web POS account.';$('authSubmit').textContent=setupRequired?'Create Owner':'Sign in';$('authPassword').autocomplete=setupRequired?'new-password':'current-password';}
-  function showApp(){window.donmacChatUserId=state.user.id;window.donmacChat?.loggedIn(state.user.id);$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('currentUser').textContent=state.user.username;$('currentRole').textContent=state.user.role==='Admin'?(state.user.isOwner?'Admin':'Co-Owner'):'User';document.querySelectorAll('.admin-only,.staff-hidden').forEach(x=>x.classList.toggle('hidden',state.user.role!=='Admin'));$('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();$('appVersion').textContent=state.status?.version||'FINAL';$('topbarUsername').textContent=state.user.username;$('topbarRole').textContent=state.user.role==='Admin'?(state.user.isOwner?'Owner':'Co-Owner'):'Cashier';}
+  function showApp(){
+    window.donmacChatUserId=state.user.id;
+    window.donmacChat?.loggedIn(state.user.id);
+    $('authScreen').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    document.querySelectorAll('.admin-only,.staff-hidden').forEach(x=>
+      x.classList.toggle('hidden',state.user.role!=='Admin'));
+    $('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();
+    $('appVersion').textContent=state.status?.version||'FINAL';
+    $('topbarUsername').textContent=state.user.username;
+    $('topbarRole').textContent=state.user.role==='Admin'
+      ?(state.user.isOwner?'Owner/Admin':'Co-Owner/Admin'):'Cashier';
+  }
   async function boot(){
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
@@ -115,7 +127,7 @@
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
     if(view==='pos')refreshPosDailyCount();
-    if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports')loadReport();if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
+    if(view==='dashboard')loadDashboard();if(view==='inventory')loadInventory();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
   $('dashboardPrintReport').addEventListener('click',()=>{
@@ -742,6 +754,60 @@
     products:'reportProductsPagination',promos:'reportPromosPagination',
     ingredients:'reportIngredientsPagination',transactions:'reportTransactionsPagination'
   }};
+  // Cashier choices come from recorded sale snapshots, not only active users.
+  // This includes previous cashiers in old sales and in deleted transactions.
+  const reportCashierUI={selected:new Set(),choices:[],request:0};
+  function renderReportCashierChoices(){
+    const selected=reportCashierUI.selected;
+    $('reportCashierAll').checked=selected.size===0;
+    const count=selected.size;
+    $('reportCashierSummary').textContent=count===0?'All cashiers'
+      :count===1?[...selected][0]:count+' cashiers selected';
+    $('reportCashierList').innerHTML=reportCashierUI.choices.map((name,index)=>
+      '<label class="report-cashier-option"><input type="checkbox" data-cashier-index="'+
+      index+'" '+(selected.has(name)?'checked ':'')+
+      '/><span>'+esc(name)+'</span></label>'
+    ).join('')||'<p class="report-cashier-empty">No recorded cashiers for this branch yet.</p>';
+  }
+  async function loadReportCashiers(reset=false){
+    if(reset)reportCashierUI.selected.clear();
+    const request=++reportCashierUI.request;
+    const q=new URLSearchParams();
+    if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')
+      q.set('branchId',$('reportBranch').value);
+    try{
+      const response=await api('/api/reports/cashiers?'+q);
+      if(request!==reportCashierUI.request)return;
+      reportCashierUI.choices=(response.cashiers||[]).filter(x=>typeof x==='string');
+      const choices=new Set(reportCashierUI.choices);
+      for(const chosen of reportCashierUI.selected)
+        if(!choices.has(chosen))reportCashierUI.selected.delete(chosen);
+      renderReportCashierChoices();
+    }catch(err){
+      if(request!==reportCashierUI.request)return;
+      $('reportCashierList').innerHTML='<p class="report-cashier-empty">Could not load cashier list.</p>';
+      toast('Cashier options: '+err.message);
+    }
+  }
+  $('reportCashierAll').addEventListener('change',()=>{
+    reportCashierUI.selected.clear();
+    renderReportCashierChoices();
+    loadReport();
+  });
+  $('reportCashierList').addEventListener('change',event=>{
+    const field=event.target.closest('input[data-cashier-index]');
+    if(!field)return;
+    const index=Number(field.dataset.cashierIndex);
+    const name=reportCashierUI.choices[index];
+    if(!name)return;
+    if(field.checked)reportCashierUI.selected.add(name);
+    else reportCashierUI.selected.delete(name);
+    renderReportCashierChoices();
+    loadReport();
+  });
+  $('reportCashierDone').addEventListener('click',()=>{
+    $('reportCashierSelect').open=false;
+  });
   function reportPageSlice(kind,items){
     const page=window.DonMacReportPages.paginate(items,reportUI.pages[kind]);
     reportUI.pages[kind]=page.page;
@@ -759,7 +825,19 @@
     return page.rows;
   }
   function resetReportPages(){for(const kind of Object.keys(reportUI.pages))reportUI.pages[kind]=1;}
-  function reportQuery(){const qs=new URLSearchParams({period:$('reportPeriod').value,date:$('reportDate').value||manilaToday()});if($('reportCashier').value.trim())qs.set('cashier',$('reportCashier').value.trim());if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')qs.set('branchId',$('reportBranch').value);return qs;}
+  function reportQuery(){
+    const qs=new URLSearchParams({
+      period:$('reportPeriod').value,
+      date:$('reportDate').value||manilaToday()
+    });
+    // JSON, rather than comma-separated names, preserves spaces and punctuation
+    // and applies the same selection to the on-screen report and both PDFs.
+    if(reportCashierUI.selected.size)
+      qs.set('cashiers',JSON.stringify([...reportCashierUI.selected]));
+    if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')
+      qs.set('branchId',$('reportBranch').value);
+    return qs;
+  }
   $('reportDate').value=manilaToday();
   async function loadReport(){
     if(!$('reportDate').value)$('reportDate').value=manilaToday();
@@ -784,11 +862,13 @@
     if(reportUI.debounce)clearTimeout(reportUI.debounce);
     loadReport();
   }
-  ['reportPeriod','reportDate','reportBranch'].forEach(id=>
+  ['reportPeriod','reportDate'].forEach(id=>
     $(id).addEventListener('change',autoLoadReport));
-  $('reportCashier').addEventListener('input',()=>{
-    if(reportUI.debounce)clearTimeout(reportUI.debounce);
-    reportUI.debounce=setTimeout(loadReport,350);
+  $('reportBranch').addEventListener('change',()=>{
+    reportCashierUI.selected.clear();
+    renderReportCashierChoices();
+    loadReportCashiers(true);
+    loadReport();
   });
   $('view-reports').addEventListener('click',event=>{
     const button=event.target.closest('button[data-report-page]');
@@ -801,7 +881,15 @@
     if(kind==='ingredients')renderCosting();
     else renderReport();
   });
-  function renderReport(){const r=state.report;if(!r)return;$('reportSummary').innerHTML=[['Transactions',r.transactionCount],['Gross',peso(r.gross)],['Adjustment',peso(r.adjustment)],['Actual',peso(r.actual)],['Deleted',r.deletedCount]].map(([a,b])=>`<div class="summary-card"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=reportPageSlice('products',r.products).map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=reportPageSlice('promos',r.promos).map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=reportPageSlice('transactions',r.transactions).map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
+  function renderReport(){const r=state.report;if(!r)return;$('reportSummary').innerHTML=[
+    ['All Transactions',r.allTransactionCount??r.transactionCount,'All recorded sales including voided transactions.'],
+    ['Gross Sales',peso(r.gross),'Gross sales from non-voided transactions.'],
+    ['Discounts',peso(r.discounts??0),'Discounts on non-voided sales.'],
+    ['Net Sales',peso(r.actual),'Net sales after adjustments, excluding voided transactions.'],
+    ['Gross Profit',peso(r.grossProfit??0),'Net sales minus product costing.'],
+    ['Refund',peso(r.refund??0),'Value of voided sales; not confirmation that cash was repaid.'],
+    ['Deleted',r.deletedCount,'Number of deleted or voided transactions.']
+  ].map(([a,b,help])=>`<div class="summary-card" title="${esc(help)}"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=reportPageSlice('products',r.products).map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=reportPageSlice('promos',r.promos).map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=reportPageSlice('transactions',r.transactions).map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
   function renderCosting(){const r=state.costing;if(!r)return;$('costingTotal').textContent=`Total Cost: ${peso(r.totalCost)}`;$('costingList').innerHTML=reportPageSlice('ingredients',r.ingredients).map(g=>`<details class="costing-group"><summary><div><b>${esc(g.name)}</b><span>${num(g.totalQty)} ${esc(String(g.uom).toUpperCase())}</span></div><strong>${peso(g.totalCost)}</strong></summary><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Sold Qty</th><th class="num">Recipe Qty</th><th class="num">Total Usage</th><th class="num">Cost / Item</th><th class="num">Total Cost</th></tr></thead><tbody>${g.details.map(d=>`<tr><td>${esc(d.product)}</td><td class="num">${num(d.productQty,3)}</td><td class="num">${num(d.quantityRequired)}</td><td class="num">${num(d.usageQty)}</td><td class="num">${peso(d.costPerItem)}</td><td class="num">${peso(d.totalCost)}</td></tr>`).join('')}</tbody></table></div></details>`).join('')||'<div class="empty-state">No costed product sales for this period.</div>';}
   function transactionInfo(label,value,{money=false,wide=false}={}){const shown=value===null||value===undefined||value===''?'—':money?peso(value):esc(value);return`<div class="transaction-info ${wide?'wide':''}"><span>${esc(label)}</span><strong>${shown}</strong></div>`;}
   function renderTransactionDetail(d){
