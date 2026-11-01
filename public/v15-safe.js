@@ -261,6 +261,9 @@
   }
 
   function replaceInventoryForms() {
+    // v1.5.39+: the current batch editor is owned by app-core and must NEVER
+    // be replaced by this legacy single-select UI (which used innerHTML).
+    if ($('replenishIngredientPicker') && $('transferIngredientPicker')) return;
     const replenish = $('replenishForm'), transfer = $('transferForm');
     if (!replenish || !transfer || replenish.dataset.v15safe === '1') return;
     replenish.dataset.v15safe = '1';
@@ -318,6 +321,7 @@
     document.documentElement.dataset.v15SafeInit = '1';
     ensureWhatsNew();
     ensureLogFilters();
+    // Keep legacy log/release tools, but never mutate modern stock forms.
     replaceInventoryForms();
     loadVersion();
     document.querySelector('.nav[data-view="logs"]')?.addEventListener('click', () => setTimeout(() => { ensureLogFilters(); filterLogRows(); }, 40));
