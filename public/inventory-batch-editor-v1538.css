@@ -1,0 +1,230 @@
+/* Don Macchiatos batch inventory workflow.
+   Fully scoped inside the inventory stock-operation forms. */
+#view-inventory .inv-operations-body .form-card .inv-batch-editor{
+  grid-column:1/-1;min-width:0;
+  display:block;padding:0 0 14px;
+  border-bottom:1px solid #e4ebe2;
+}
+#view-inventory .inv-operations-body .form-card .inv-batch-editor *,
+#view-inventory .inv-operations-body .form-card .inv-batch-editor *::before,
+#view-inventory .inv-operations-body .form-card .inv-batch-editor *::after{box-sizing:border-box}
+#view-inventory .inv-batch-heading{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  margin:4px 0 14px;
+}
+#view-inventory .inv-batch-heading strong{display:block;font-size:15px;color:#21492e;letter-spacing:-.02em}
+#view-inventory .inv-batch-heading p{font-size:11px;color:#819081;margin:5px 0 0;line-height:1.5}
+#view-inventory .inv-batch-heading p b{font-weight:750;color:#47765a}
+#view-inventory .inv-batch-count{
+  display:inline-flex;padding:6px 10px;background:#e3f2e4;color:#317246;
+  font-weight:800;font-size:10px;white-space:nowrap;border-radius:99px;
+}
+#view-inventory .inv-batch-layout{
+  display:grid;grid-template-columns:minmax(220px,.82fr) minmax(360px,1.35fr);
+  gap:14px;align-items:stretch;min-width:0;
+}
+#view-inventory .inv-batch-picker,
+#view-inventory .inv-batch-drop-zone{
+  display:flex;flex-direction:column;gap:0;
+  min-width:0;border-radius:16px;border:1px solid #dbe8dc;
+  background:#fff;overflow:hidden;
+}
+#view-inventory .inv-picker-tools{
+  display:flex;align-items:center;gap:7px;padding:11px;
+  border-bottom:1px solid #e7ede5;background:#fafcf9;
+}
+#view-inventory .inv-picker-search{min-width:0;flex:1;display:block}
+#view-inventory .inv-picker-search input{
+  width:100%;min-width:0;min-height:38px;padding:8px 10px!important;
+  background:white!important;border:1px solid #d8e6d9!important;border-radius:9px;
+  font-size:11px!important;
+}
+#view-inventory .inv-batch-small-button{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:34px;flex:0 0 auto;
+  font-size:10px;font-weight:800;font-family:inherit;
+  padding:7px 10px;background:#fff;color:#3d7250;
+  border-radius:9px;border:1px solid #cfddce;
+  cursor:pointer;white-space:nowrap;
+}
+#view-inventory .inv-batch-small-button:hover{background:#eaf4e9}
+#view-inventory .inv-batch-small-button:disabled{cursor:not-allowed;opacity:.4}
+#view-inventory .inv-picker-list{
+  display:flex;flex-direction:column;min-height:202px;max-height:290px;
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+}
+#view-inventory .inv-picker-item{
+  display:flex;align-items:center;gap:9px;padding:10px 11px;min-width:0;
+  border-bottom:1px solid #eef2eb;touch-action:auto;
+  background:#fff;transition:background-color .14s ease;
+}
+#view-inventory .inv-picker-item:hover,
+#view-inventory .inv-picker-item:has([data-batch-check]:checked){background:#f2f8ef}
+#view-inventory .inv-picker-item.is-added{background:#fbfcf8}
+#view-inventory .inv-picker-item.is-dragging{opacity:.5}
+#view-inventory .inv-picker-item [data-batch-check]{
+  width:16px;height:16px;flex:0 0 16px;
+  accent-color:#266d47;cursor:pointer;
+  margin:0;
+}
+#view-inventory .inv-picker-grip{
+  color:#a5b7a7;font-size:17px;cursor:grab;
+  line-height:1;
+}
+#view-inventory .inv-picker-item-name{display:flex;flex-direction:column;flex:1;min-width:0;gap:4px}
+#view-inventory .inv-picker-item-name strong{
+  color:#2f523a;font-size:11px;font-weight:800;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#view-inventory .inv-picker-item-name small{font-size:10px;color:#839684;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#view-inventory .inv-picker-quickadd{
+  flex:0 0 auto;min-height:31px;
+  background:#e9f5e8;border:1px solid #bcdcc4;
+  border-radius:8px;color:#2b7347;
+  font-size:10px;font-weight:850;font-family:inherit;
+  padding:6px 9px;cursor:pointer;
+}
+#view-inventory .inv-picker-quickadd:disabled{color:#8fa592;background:#f4f7f2;border-color:#e0e8de;cursor:default}
+#view-inventory .inv-picker-empty{padding:35px 12px;font-size:11px;color:#859689;text-align:center}
+#view-inventory .inv-picker-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#f6faf4;padding:10px 12px;border-top:1px solid #dfe9db;
+  margin-top:auto;
+}
+#view-inventory .inv-picker-footer>span{color:#708573;font-size:10px;font-weight:750}
+#view-inventory .inv-batch-add-button{
+  min-height:35px;border:0;border-radius:9px;
+  background:#216540;color:#fff;font-size:10px;font-family:inherit;
+  font-weight:850;padding:8px 14px;cursor:pointer;
+}
+#view-inventory .inv-batch-add-button:hover{background:#104f2c}
+#view-inventory .inv-batch-add-button:disabled{opacity:.42;cursor:not-allowed}
+#view-inventory .inv-batch-drop-zone{
+  border:1.5px dashed #bcd3bc;background:#f8fbf6;
+  transition:border-color .14s ease,background-color .14s ease;
+}
+#view-inventory .inv-batch-drop-zone.is-dragover{
+  border-color:#287c4c;background:#e8f7eb;
+  box-shadow:inset 0 0 0 2px rgba(40,124,76,.09);
+}
+#view-inventory .inv-drop-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:9px;padding:12px 13px;border-bottom:1px solid #e0ebe0;
+}
+#view-inventory .inv-drop-header strong{display:block;font-size:12px;color:#2b563b}
+#view-inventory .inv-drop-header p{margin:4px 0 0;color:#869789;font-size:10px}
+#view-inventory .inv-batch-rows{
+  flex:1 1 auto;display:flex;flex-direction:column;gap:8px;
+  min-height:205px;max-height:340px;overflow:auto;
+  padding:12px;scrollbar-width:thin;
+}
+#view-inventory .inv-drop-placeholder{
+  flex:1;min-height:176px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;
+  color:#829b85;text-align:center;
+}
+#view-inventory .inv-drop-symbol{
+  font-size:32px;font-weight:400;color:#87b391;
+  display:grid;place-items:center;
+  width:54px;height:54px;border-radius:15px;
+  border:2px dashed #b3d2b5;background:#f0f7ef;
+}
+#view-inventory .inv-drop-placeholder strong{font-size:12px;color:#678b6c}
+#view-inventory .inv-drop-placeholder small{font-size:10px;max-width:280px;line-height:1.5}
+#view-inventory .inv-batch-row{
+  display:grid;grid-template-columns:21px minmax(110px,1fr) minmax(100px,128px) auto 29px;
+  align-items:center;gap:8px;
+  border:1px solid #e3eae0;background:#fff;
+  border-radius:11px;padding:9px;min-width:0;
+}
+#view-inventory .inv-batch-row.is-missing{border-color:#e2baba;background:#fff3f3}
+#view-inventory .inv-batch-row-number{
+  font-size:10px;font-weight:850;color:#8ba08d;
+  text-align:center;
+}
+#view-inventory .inv-batch-row-label{display:flex;flex-direction:column;gap:5px;min-width:0}
+#view-inventory .inv-batch-row-label strong{
+  font-size:11px;color:#284e33;
+  font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#view-inventory .inv-batch-row-label small{font-size:9px;color:#849888}
+#view-inventory .inv-batch-quantity{
+  display:flex!important;flex-direction:row!important;align-items:center;gap:0!important;
+  min-width:0;height:40px;border:1px solid #cfdecf;border-radius:9px;background:#fbfdf9;overflow:hidden;
+}
+#view-inventory .inv-batch-quantity:focus-within{border-color:#6da77b;box-shadow:0 0 0 2px #85b88e2a}
+#view-inventory .inv-batch-quantity input{
+  width:100%!important;min-width:0!important;min-height:0!important;
+  height:100%!important;padding:7px 5px 7px 9px!important;
+  border:0!important;box-shadow:none!important;outline:0!important;
+  background:transparent!important;font-size:12px!important;
+  color:#1e4d30;font-weight:800;font-variant-numeric:tabular-nums;
+}
+#view-inventory .inv-batch-quantity span:last-child{
+  flex:0 0 auto;padding:0 8px;
+  font-weight:850;font-size:10px;color:#54765c;
+  border-left:1px solid #e2eadf;
+}
+#view-inventory .inv-batch-copy{
+  border:1px solid #caddcb;background:#f1f8f0;color:#40784e;
+  min-height:34px;border-radius:8px;padding:7px 9px;
+  font-size:10px;font-family:inherit;font-weight:800;
+  cursor:pointer;
+}
+#view-inventory .inv-batch-copy:hover{background:#dcf0de}
+#view-inventory .inv-batch-remove{
+  min-height:30px;min-width:28px;border:0;background:transparent;
+  color:#b66c6c;font-size:19px;font-weight:650;cursor:pointer;
+  border-radius:8px;
+}
+#view-inventory .inv-batch-remove:hover{background:#ffeeec;color:#a13b3b}
+#view-inventory .inv-batch-clipboard{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-top:1px solid #dfeadf;background:#f0f7ee;
+  padding:10px 13px;min-height:55px;
+}
+#view-inventory .inv-batch-clipboard>span{
+  color:#65826c;font-size:10px;line-height:1.4;min-width:0;
+}
+#view-inventory .inv-batch-clipboard button{flex:0 0 auto;background:#fff}
+#view-inventory .inv-batch-error{
+  border-radius:9px;margin:10px 0 0;padding:9px 12px;
+  border:1px solid #f0b3a9;background:#fff2ee;
+  color:#a43e36;font-size:11px;line-height:1.5;
+}
+#view-inventory .inv-batch-error[hidden]{display:none}
+#view-inventory .inv-sr-only{position:absolute;left:-9999px;overflow:hidden;width:1px;height:1px}
+#view-inventory .inv-batch-editor button:focus-visible,
+#view-inventory .inv-batch-editor input:focus-visible{outline:2px solid #5f9f6e;outline-offset:1px}
+@media(max-width:1040px){
+  #view-inventory .inv-batch-layout{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:10px}
+  #view-inventory .inv-batch-row{grid-template-columns:19px minmax(80px,1fr) minmax(82px,110px) auto 25px;gap:5px;padding:7px}
+  #view-inventory .inv-batch-copy{padding:7px}
+}
+@media(max-width:800px){
+  #view-inventory .inv-batch-layout{grid-template-columns:1fr}
+  #view-inventory .inv-picker-list{max-height:205px;min-height:100px}
+  #view-inventory .inv-batch-rows{max-height:340px;min-height:150px}
+  #view-inventory .inv-batch-row{grid-template-columns:20px minmax(95px,1fr) minmax(100px,135px) auto 29px}
+}
+@media(max-width:500px){
+  #view-inventory .inv-batch-heading{align-items:flex-start}
+  #view-inventory .inv-batch-heading p{font-size:10px}
+  #view-inventory .inv-batch-row{grid-template-columns:17px minmax(0,1fr) 93px 27px;gap:5px;padding:8px}
+  #view-inventory .inv-batch-row-label strong{font-size:10px}
+  #view-inventory .inv-batch-copy{grid-column:2;grid-row:2;justify-self:start;min-height:28px}
+  #view-inventory .inv-batch-remove{grid-column:4;grid-row:1}
+  #view-inventory .inv-batch-quantity{grid-column:3;grid-row:1}
+  #view-inventory .inv-batch-quantity input{padding-left:5px!important;font-size:11px!important}
+  #view-inventory .inv-batch-quantity span:last-child{font-size:9px;padding:0 4px}
+  #view-inventory .inv-picker-grip{display:none}
+  #view-inventory .inv-picker-tools{padding:8px}
+  #view-inventory .inv-picker-item{padding:9px 7px}
+  #view-inventory .inv-drop-header{padding:10px}
+  #view-inventory .inv-batch-clipboard{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){
+  #view-inventory .inv-picker-item,
+  #view-inventory .inv-batch-drop-zone{transition:none!important}
+}
+@media print{#view-inventory .inv-batch-editor{display:none!important}}
