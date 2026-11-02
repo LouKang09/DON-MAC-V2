@@ -30,10 +30,14 @@ assert.deepEqual(visiblePageNumbers(1, 21), [1,2,'…',20,21]);
 assert.deepEqual(visiblePageNumbers(10, 21), [1,2,'…',9,10,11,'…',20,21]);
 
 const count = (text, pattern) => [...text.matchAll(pattern)].length;
-assert.equal(count(html, /id="auditSearch"/g), 1, 'Inventory audit should have one search field');
+assert.equal(count(html, /id="movementSearch"/g), 1, 'Inventory audit should have one search field');
+assert.equal(count(html, /id="movementTypeFilter"/g), 1);
 assert.equal(count(html, /id="refreshMovements"/g), 1);
-assert.match(html, /class="inv-audit-toolbar"[\s\S]*id="auditSearch"[\s\S]*id="refreshMovements"/);
+assert.equal(count(html, /id="auditSearch"/g), 0, 'Duplicate audit search must be removed');
+assert.match(html, /class="audit-filter-toolbar inv-audit-unified-toolbar"[\s\S]*id="movementSearch"[\s\S]*id="refreshMovements"/);
 assert.match(html, /class="primary inv-audit-refresh"/);
+assert.match(core, /pageSize:10,query:''/);
+assert.match(core, /auditUI\.type/);
 assert.equal(count(html, /id="reportPeriod"/g), 1);
 assert.equal(count(html, /id="reportDate"/g), 1);
 assert.equal(count(html, /id="reportBranch"/g), 1);
