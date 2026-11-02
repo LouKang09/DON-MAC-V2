@@ -19,9 +19,14 @@
    }finally{clearTimeout(t);}
  }
  function notice(msg){$('chatDraftError').textContent=msg;$('chatDraftError').classList.toggle('hidden',!msg);}
+ function safeAvatarSrc(value){
+   return typeof value==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(value)?value:null;
+ }
  function formatContact(c){
    const badge=c.isGroup?(c.groupKind==='all'?'ALL':'GC'):initials(c.username);
-   return '<span class="chat-avatar'+(c.isGroup?' is-group':'')+'" aria-hidden="true">'+esc(badge)+'</span>'+
+   const src=!c.isGroup&&safeAvatarSrc(c.photoData);
+   const contents=src?'<img src="'+esc(src)+'" alt="" loading="lazy" decoding="async" />':esc(badge);
+   return '<span class="chat-avatar'+(c.isGroup?' is-group':'')+'" aria-hidden="true">'+contents+'</span>'+
      '<span class="chat-person-info"><strong>'+esc(c.label)+'</strong><small>'+esc(c.subtitle)+'</small></span>';
  }
  function contactById(id){return state.contacts.find(c=>Number(c.id)===Number(id));}
@@ -105,6 +110,7 @@
         username:g.kind==='all'?'All':g.label,label:g.kind==='all'?'All':g.label,
         subtitle:g.kind==='all'?'All Branches · Group Chat':'Branch Group Chat'}));
      state.contacts=[...groupItems,...(data.people||[])];updateUnread(data.unreadTotal||0);renderContacts();
+     if(state.selected&&contactById(state.selected))renderHeader();
      if(state.selected&&!contactById(state.selected)){
        state.selected=0;state.messages=[];renderHeader();renderMessages();
      }
@@ -136,7 +142,9 @@
      emojis.map(e=>'<button class="chat-emoji'+(myReaction===e?' is-mine':'')+'" type="button" data-message="'+m.id+'" data-emoji="'+e+'" aria-label="React '+e+'">'+e+'</button>').join('')+
      (byMe?'<button type="button" class="chat-delete-message" data-delete="'+m.id+'" aria-label="Delete message">Delete</button>':'')+'</div>';
    return '<article class="chat-message '+(byMe?'is-mine':'is-theirs')+'" data-message-id="'+m.id+'">'+
-     (m.senderLabel&&!byMe?'<div class="chat-message-sender">'+esc(m.senderLabel)+'</div>':'')+
+     (m.senderLabel&&!byMe?'<div class="chat-message-sender">'+
+       (safeAvatarSrc(m.senderPhoto)?'<img class="chat-message-sender-photo" src="'+esc(m.senderPhoto)+'" loading="lazy" alt="" />':'')+
+       esc(m.senderLabel)+'</div>':'')+
      '<div class="chat-bubble">'+image+text+'<div class="chat-msg-meta">'+esc(dateString(m.createdAt))+
      (byMe&&!m.deleted?' · '+(m.readAt?'Seen':'Sent'):'')+'</div></div>'+
      (row?'<div class="chat-reaction-list">'+row+'</div>':'')+actions+'</article>';
@@ -429,7 +437,7 @@
  });
  $('chatPhotoClose').addEventListener('click',()=>$('chatPhotoViewer').close());
  $('chatPhotoViewer').addEventListener('close',()=>{$('chatPhotoLarge').removeAttribute('src');});
- window.donmacChat={open,close,loggedIn,onViewChange,syncChatLayout,userId:0,authenticated:false};
+ window.donmacChat={open,close,loggedIn,onViewChange,syncChatLayout,refreshContacts,userId:0,authenticated:false};
  syncChatLayout();
  // View Order is inserted after initial load; reposition when it appears.
  const orderObserver=new MutationObserver(mutations=>{
