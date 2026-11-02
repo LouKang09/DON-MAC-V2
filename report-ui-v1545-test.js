@@ -23,10 +23,10 @@ for(const [key,filename] of Object.entries({...tabs,save:'save.png',question:'qu
  const w=buf.readUInt32BE(16),h=buf.readUInt32BE(20);
  assert(w>=40 && h>=40,'Insufficient icon resolution: '+file);
 }
-const matchTabs=html.match(/<div class="admin-tabs" id="adminTabs">([\s\S]*?)<\/div>/);
+const matchTabs=html.match(/<div class="admin-tabs catalog-tiles" id="adminTabs"[^>]*>([\s\S]*?)<\/div>/);
 assert(matchTabs,'POS Catalog tabs missing');
 for(const [kind,filename] of Object.entries(tabs)){
- const re=new RegExp('<button[^>]+data-admin-tab="'+kind+'"[^>]*>\\s*<img[^>]+src="/assets/catalog/'+filename.replace('.','\\.')+'"');
+ const re=new RegExp('<button[^>]+data-admin-tab="'+kind+'"[^>]*>[\\s\\S]*?<img[^>]+src="/assets/catalog/'+filename.replace('.','\\.')+'"');
  assert(re.test(matchTabs[1]),'Wrong or missing user icon for '+kind);
 }
 assert(!/<span aria-hidden="true">[☕▦◈⚖★▣⤓]<\/span>/.test(matchTabs[1]),
@@ -83,7 +83,7 @@ assert(css.includes('@media (max-width: 700px)'),'Mobile layout needed');
 assert(css.includes('.catalog-tab-icon') && css.includes('.catalog-save-icon') && css.includes('.catalog-question-icon'));
 assert(loader.includes("loadCss('catalogIconsPackagesV1545Css', '/catalog-icons-packages-v1545.css')"),
  'Icon/layout CSS not loaded');
-assert(loader.includes("const VERSION = '1.5.45-catalog-icons-package-layout';"));
-assert(server.includes("const APP_VERSION = '1.5.45-catalog-icons-package-layout';"));
-assert(html.includes('/app.js?v=1.5.45'));
+assert(loader.includes("const VERSION = '1.5.46-pos-style-catalog-cards';"));
+assert(server.includes("const APP_VERSION = '1.5.46-pos-style-catalog-cards';"));
+assert(html.includes('/app.js?v=1.5.46'));
 console.log('v1.5.45 icon assets, form wiring, and responsive Packages layout checks passed.');

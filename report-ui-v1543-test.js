@@ -38,7 +38,7 @@ assert(core.includes("changeDevSubscription(e.target.value"));
 assert(core.includes("if(state.subscription?.plan!=='BUSINESS')"));
 assert(core.includes("if(!business){"));
 assert(core.includes('subscriptionBadge(row.status)'));
-assert(server.includes("const APP_VERSION = '1.5.45-catalog-icons-package-layout';"));
+assert(server.includes("const APP_VERSION = '1.5.46-pos-style-catalog-cards';"));
 assert(server.includes("if(method==='GET'&&p==='/api/account/subscription')"));
 assert(server.includes("if(method==='POST'&&p==='/api/account/subscription/demo')"));
 assert(server.includes("await requireBusinessPlan();"));
