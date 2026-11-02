@@ -1,0 +1,277 @@
+/* v1.5.45 — supplied POS Catalog icons and full-width Package editor. */
+
+/* Each tab uses its corresponding uploaded PNG, not emoji or font glyphs. */
+#view-catalog #adminTabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+#view-catalog #adminTabs .catalog-tab-icon {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  object-fit: contain;
+  opacity: .88;
+}
+#view-catalog #adminTabs button.active .catalog-tab-icon {
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+#view-catalog #adminTabs button:not(.active):hover .catalog-tab-icon {
+  opacity: 1;
+}
+
+/* The actual uploaded floppy-disk artwork is used on every Save action. */
+#view-catalog .catalog-save-icon {
+  display: inline-block;
+  width: 19px;
+  height: 19px;
+  max-width: none;
+  flex: 0 0 19px;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: brightness(0) invert(1);
+}
+#view-catalog button:disabled > .catalog-save-icon { opacity: .75; }
+
+/* Use the supplied question-mark gear image while retaining the tooltip
+   text and keyboard focus from the existing informative control. */
+#view-catalog .catalog-active-row .catalog-help {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #305642;
+}
+#view-catalog .catalog-question-icon {
+  width: 21px;
+  height: 21px;
+  max-width: none;
+  display: block;
+  object-fit: contain;
+  transition: transform .12s ease;
+}
+#view-catalog .catalog-help:hover .catalog-question-icon,
+#view-catalog .catalog-help:focus-visible .catalog-question-icon {
+  transform: scale(1.08);
+}
+#view-catalog .catalog-help:focus-visible {
+  outline: 2px solid #368457;
+  outline-offset: 3px;
+}
+
+/* Package list spans the full content width. Package Master and Composition
+   sit below the table instead of in the old 340px right-hand rail. */
+#view-catalog #admin-packages.admin-panel.section-grid.active {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: start;
+  gap: 20px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+#view-catalog #admin-packages > .card,
+#view-catalog #admin-packages > #packageForm {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+#view-catalog #admin-packages > .card .table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+#view-catalog #admin-packages > .card table {
+  width: 100%;
+  min-width: 520px;
+  table-layout: auto;
+}
+#view-catalog #packageForm.package-editor-full {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  justify-items: stretch;
+  gap: 0;
+  overflow: visible;
+  padding: clamp(18px, 2.5vw, 28px);
+}
+#view-catalog #packageForm.package-editor-full > * {
+  min-width: 0;
+  max-width: 100%;
+}
+#view-catalog #packageForm .package-editor-heading h3,
+#view-catalog #packageForm .package-composition-heading h3 {
+  margin: 6px 0 7px;
+  font-size: 19px;
+  line-height: 1.3;
+  color: #1d3d2a;
+}
+#view-catalog #packageForm .package-editor-heading p.muted,
+#view-catalog #packageForm .package-composition-heading p.muted {
+  margin: 0;
+  line-height: 1.5;
+}
+#view-catalog #packageForm .package-master-fields {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) minmax(150px, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  margin: 21px 0 16px;
+  max-width: 960px;
+  min-width: 0;
+}
+#view-catalog #packageForm .package-master-fields > label {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  gap: 7px;
+  margin: 0;
+  align-content: end;
+}
+#view-catalog #packageForm .package-master-fields input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+  height: 43px;
+  box-sizing: border-box;
+  margin: 0;
+}
+#view-catalog #packageForm .package-master-fields .package-active-field {
+  width: fit-content;
+  min-width: 132px;
+  height: 43px;
+  align-self: end;
+}
+#view-catalog #packageForm .package-master-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 11px;
+  padding-bottom: 22px;
+}
+#view-catalog #packageForm .package-master-actions > button {
+  width: auto;
+  min-width: 130px;
+  max-width: 100%;
+  margin: 0;
+}
+#view-catalog #packageForm .package-composition-section {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  padding-top: 24px;
+  border-top: 1px solid #e6ece5;
+}
+#view-catalog #packageForm .package-composition-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 17px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+#view-catalog #packageForm .package-composition-heading > div {
+  min-width: 0;
+  flex: 1 1 250px;
+}
+#view-catalog #packageForm .package-composition-select {
+  width: min(330px, 100%);
+  min-width: 0;
+  flex: 0 1 330px;
+  display: grid;
+  gap: 7px;
+}
+#view-catalog #packageForm .package-composition-select select {
+  width: 100%;
+  min-width: 0;
+  min-height: 43px;
+  max-width: 100%;
+}
+#view-catalog #packageForm .catalog-batch-area {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(13px, 2vw, 22px);
+  overflow: hidden;
+}
+#view-catalog #packageForm .catalog-batch-grid {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  gap: 17px;
+  width: 100%;
+  min-width: 0;
+}
+#view-catalog #packageForm .catalog-batch-picker,
+#view-catalog #packageForm .catalog-batch-drop {
+  min-width: 0;
+  max-width: 100%;
+}
+#view-catalog #packageForm .catalog-batch-top p {
+  max-width: 64ch;
+  white-space: normal;
+}
+#view-catalog #packageForm .catalog-batch-fallback {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(85px, .5fr) auto;
+  gap: 11px;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 17px 0;
+}
+#view-catalog #packageForm .catalog-batch-fallback > * {
+  min-width: 0;
+  max-width: 100%;
+}
+#view-catalog #packageForm #compositionList {
+  width: 100%;
+  min-width: 0;
+  max-height: 340px;
+  overflow-x: auto;
+}
+#view-catalog #packageForm #saveComposition {
+  width: fit-content;
+  max-width: 100%;
+  margin: 15px 0 10px;
+}
+#view-catalog #packageForm .package-composition-section > p.muted {
+  display: block;
+  max-width: 72ch;
+  line-height: 1.6;
+}
+@media (max-width: 1000px) {
+  #view-catalog #packageForm .package-master-fields {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+  #view-catalog #packageForm .package-active-field {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 700px) {
+  #view-catalog #admin-packages.admin-panel.section-grid.active { gap: 14px; }
+  #view-catalog #packageForm .package-master-fields,
+  #view-catalog #packageForm .catalog-batch-grid,
+  #view-catalog #packageForm .catalog-batch-fallback {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #view-catalog #packageForm .package-composition-select {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  #view-catalog #packageForm .package-master-actions > button {
+    flex: 1 1 140px;
+  }
+  #view-catalog #packageForm .catalog-batch-top > button {
+    width: 100%;
+  }
+}
