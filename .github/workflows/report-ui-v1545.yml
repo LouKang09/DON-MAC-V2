@@ -1,0 +1,30 @@
+name: Don Mac v1.5.45 Catalog icons and Packages layout
+on:
+  push:
+    branches:
+      - main
+      - fix/pos-catalog-icons-package-layout-v1545
+  pull_request:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax check
+        run: |
+          node --check server.js
+          node --check public/app.js
+          node --check public/app-core.js
+          node --check public/catalog-batch-v1544.js
+      - name: Verify new assets, layout and UI
+        run: node report-ui-v1545-test.js
+      - name: Verify earlier Catalog, sales and plans regressions
+        run: |
+          node report-ui-v1541-test.js
+          node report-ui-v1542-test.js
+          node report-ui-v1543-test.js
+          node report-ui-v1544-test.js
