@@ -82,6 +82,16 @@
   }
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');$('app').classList.add('hidden');$('authScreen').classList.remove('hidden');$('authTitle').textContent=setupRequired?'Create Owner Account':'Sign in';$('authHint').textContent=setupRequired?'Your first account is the Owner. Additional Admin accounts will be Co-Owners.':'Use your web POS account.';$('authSubmit').textContent=setupRequired?'Create Owner':'Sign in';$('authPassword').autocomplete=setupRequired?'new-password':'current-password';}
+  function applyTopbarPhoto(){
+    const target=$('topbarAvatar');
+    if(!target)return;
+    const source=state.user?.photoData;
+    if(typeof source==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(source)){
+      target.innerHTML='<img src="'+esc(source)+'" alt="" loading="eager" decoding="async" onerror="this.hidden=true"/>';
+    }else{
+      target.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>';
+    }
+  }
   function showApp(){
     window.donmacChatUserId=state.user.id;
     window.donmacChat?.loggedIn(state.user.id);
@@ -92,6 +102,7 @@
     $('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();
     $('appVersion').textContent=state.status?.version||'FINAL';
     $('topbarUsername').textContent=state.user.username;
+    applyTopbarPhoto();
     $('topbarRole').textContent=state.user.role==='Admin'
       ?(state.user.isOwner?'Owner/Admin':'Co-Owner/Admin'):'Cashier';
   }
@@ -1498,8 +1509,64 @@
     if(state.user?.role!=='Admin')return;
     try{await loadBranches();const d=await api('/api/users');state.userList=d.users||[];renderUsers();}catch(err){toast(err.message);}
   }
+  let cashierPhotoProcessing=false;
+  function cashierPhotoNotice(message){
+    const el=$('cashierPhotoError');el.textContent=message||'';
+    el.classList.toggle('hidden',!message);
+  }
+  function showCashierPhoto(data){
+    const avatar=$('cashierPhotoAvatar');
+    const image=typeof data==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(data);
+    if(image){
+      avatar.innerHTML='<img src="'+esc(data)+'" alt="Cashier profile preview" decoding="async"/>';
+      $('cashierPhotoRemove').disabled=false;
+    }else{
+      avatar.innerHTML='<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+      $('cashierPhotoRemove').disabled=true;
+    }
+  }
+  async function decodeCashierPhoto(file){
+    if(file.size>1024*1024)throw new Error('Photo is larger than 1 MB. Select an image under 1 MB.');
+    if(file.size<32||!['image/jpeg','image/png','image/webp'].includes(file.type))
+      throw new Error('Invalid photo. Use JPG, PNG, or WebP under 1 MB.');
+    const header=new Uint8Array(await file.slice(0,16).arrayBuffer());
+    const valid=file.type==='image/jpeg'&&header[0]===255&&header[1]===216&&header[2]===255||
+      file.type==='image/png'&&[137,80,78,71,13,10,26,10].every((x,i)=>header[i]===x)||
+      file.type==='image/webp'&&String.fromCharCode(...header.slice(0,4))==='RIFF'&&String.fromCharCode(...header.slice(8,12))==='WEBP';
+    if(!valid)throw new Error('Photo could not be decoded. File type and contents do not match.');
+    const url=URL.createObjectURL(file);
+    try{
+      const img=new Image();img.src=url;
+      try{await img.decode();}catch(_){throw new Error('Photo could not be decoded. Select a different JPG, PNG, or WebP image.');}
+      if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth>12000||img.naturalHeight>12000)
+        throw new Error('Photo dimensions are invalid or too large.');
+      const max=200,ratio=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+      const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));
+      canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+      const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Unable to process this photo.');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      const data=canvas.toDataURL('image/jpeg',.82);
+      if(!/^data:image\/jpeg;base64,/.test(data)||data.length>165000)
+        throw new Error('Photo processing failed. Try a smaller or simpler picture.');
+      return data;
+    }finally{URL.revokeObjectURL(url);}
+  }
+  $('cashierPhotoFile').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    cashierPhotoNotice('');
+    cashierPhotoProcessing=true;
+    try{
+      const encoded=await decodeCashierPhoto(file);
+      $('cashierPhotoData').value=encoded;showCashierPhoto(encoded);
+    }catch(err){cashierPhotoNotice(err.message||'Photo could not be decoded.');}
+    finally{cashierPhotoProcessing=false;$('cashierPhotoFile').value='';}
+  });
+  $('cashierPhotoRemove').addEventListener('click',()=>{
+    $('cashierPhotoData').value='';showCashierPhoto(null);cashierPhotoNotice('');
+  });
   function clearUserForm(){
-    $('userEditId').value='';
+    $('userEditId').value='';$('cashierPhotoData').value='';showCashierPhoto(null);cashierPhotoNotice('');
     for(const id of ['newUsername','newFullName','newUserEmail','newUserPhone','newPassword'])$(id).value='';
     $('newUsername').readOnly=false;$('newPassword').required=true;$('newPassword').type='password';
     $('toggleCashierPassword').setAttribute('aria-label','Show cashier password');
@@ -1509,6 +1576,7 @@
   function editUser(id,users){
     const u=users.find(x=>x.id===id);if(!u)return;
     $('userEditId').value=id;$('newUsername').value=u.username;$('newUsername').readOnly=true;
+    $('cashierPhotoData').value=u.photoData||'';showCashierPhoto(u.photoData);cashierPhotoNotice('');
     $('newFullName').value=u.fullName||'';$('newUserEmail').value=u.email||'';$('newUserPhone').value=u.phone||'';
     $('newPassword').value='';$('newPassword').required=false;$('newPassword').type='password';
     $('newRole').value=u.role;$('newRole').disabled=!!u.isOwner;
@@ -1526,17 +1594,21 @@
   $('userFormClear').onclick=clearUserForm;
   $('userForm').addEventListener('submit',async e=>{
     e.preventDefault();const form=e.currentTarget;
+    if(cashierPhotoProcessing){cashierPhotoNotice('Photo is still processing. Retry Save when ready.');return;}
     await withFormLock(form,async()=>{
       const id=Number($('userEditId').value||0);
       const body={username:$('newUsername').value.trim(),password:$('newPassword').value,
         fullName:$('newFullName').value.trim(),email:$('newUserEmail').value.trim(),
+        photoData:$('cashierPhotoData').value||null,
         phone:$('newUserPhone').value.trim(),role:$('newRole').value,
         branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,
         active:$('newUserActive').checked};
       try{
         if(id)await api(`/api/users/${id}`,{method:'PUT',body});
         else await api('/api/users',{method:'POST',body});
-        toast(id?'Cashier updated.':'Cashier created.');clearUserForm();await loadUsers();
+        toast(id?'Cashier updated.':'Cashier created.');
+        if(id===Number(state.user?.id)){state.user=(await api('/api/auth/me')).user;applyTopbarPhoto();}
+        window.donmacChat?.refreshContacts?.();clearUserForm();await loadUsers();
       }catch(err){toast(err.message);}
     });
   });
