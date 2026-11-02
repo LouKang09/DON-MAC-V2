@@ -827,6 +827,19 @@ async function requireSameOwnerWorkspace(actor,targetId){
   if(!own||!target||own!==target)throw Object.assign(new Error('This account is outside your owner workspace.'),{status:403});
   return own;
 }
+async function ensureBranchInOwnerWorkspace(actor,branchId){
+  if(!branchId)return;
+  const workspaceId=await workspaceIdForUser(actor.id);
+  const r=await db.query('SELECT 1 FROM chat_workspace_branches WHERE branch_id=$1 AND workspace_id=$2',[Number(branchId),workspaceId]);
+  if(!r.rows.length)throw Object.assign(new Error('Selected branch does not belong to your owner account.'),{status:403});
+}
+async function accessibleBranches(actor){
+  const ws=await workspaceIdForUser(actor.id);
+  const all=await branchSupport.listBranches(db);
+  const r=await db.query('SELECT branch_id FROM chat_workspace_branches WHERE workspace_id=$1',[ws]);
+  const allowed=new Set(r.rows.map(x=>Number(x.branch_id)));
+  return all.filter(b=>allowed.has(Number(b.id))&&(actor.role==='Admin'||Number(actor.branchId)===Number(b.id)));
+}
 async function usernameAtScope(username,workspaceId,branchId,exceptId=0){
   const r=await db.query(
     'SELECT u.id,u.username,u.password_hash,u.role,u.active,u.branch_id FROM users u '+
@@ -868,6 +881,7 @@ async function createOrActivateUser(body,actor=null){
   if(password.length<8||password.length>256)throw Object.assign(new Error('Password must be 8–256 characters.'),{status:400});
   const profile=staffProfile(body);
   const branchId=await branchSupport.resolveAssignment(db,role,body.branchId);
+  if(actor)await ensureBranchInOwnerWorkspace(actor,branchId);
   const ws=actor?await workspaceIdForUser(actor.id):0;
   if(actor&&!ws)throw Object.assign(new Error('Owner workspace unavailable.'),{status:403});
   const existing=actor
@@ -934,6 +948,7 @@ async function updateUserAccount(actor,id,body){
     if(Number(c.rows[0].c)<=1)throw Object.assign(new Error('At least one active Admin must remain.'),{status:400});
   }
   const branchId=await branchSupport.resolveAssignment(db,role,body.branchId===undefined?target.branch_id:body.branchId);
+  await ensureBranchInOwnerWorkspace(actor,branchId);
   if(await usernameAtScope(target.login_name,ws,branchId,id))
     throw Object.assign(new Error('Another user in the selected branch already has this username.'),{status:409});
   const profile=staffProfile({...body,fullName:body.fullName===undefined?target.full_name:body.fullName,
@@ -1350,7 +1365,7 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'))},safeHeaders());
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
-  if(method==='GET'&&p==='/api/branches'){const all=await branchSupport.listBranches(db);return json(res,200,{branches:user.role==='Admin'?all:all.filter(b=>b.id===Number(user.branchId))},safeHeaders());}
+  if(method==='GET'&&p==='/api/branches')return json(res,200,{branches:await accessibleBranches(user)},safeHeaders());
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/cashiers'){
     const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
@@ -1377,7 +1392,7 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/users'){const created=await createOrActivateUser(await readJson(req),user);await logAction(user,`Web user saved: ${created.username}`,'User Updated',`${created.role} / ${created.active?'Active':'Inactive'}`);return json(res,201,{user:created},safeHeaders());}
   const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&userMatch)return json(res,200,await deleteUserAccount(user,Number(userMatch[1])),safeHeaders());
   if(method==='POST'&&p==='/api/branches'){const branch=await branchSupport.saveBranch(db,user,await readJson(req),null,logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,201,{branch},safeHeaders());}
-  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT'){const branch=await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,200,{branch},safeHeaders());}if(branchMatch&&method==='DELETE')return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());
+  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT'){await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));const branch=await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,200,{branch},safeHeaders());}if(branchMatch&&method==='DELETE'){await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());}
 
    if(method==='GET'&&p==='/api/admin/pos-categories')
      return json(res,200,{categories:await listPosCategories()},safeHeaders());
