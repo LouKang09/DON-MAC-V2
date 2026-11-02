@@ -10,8 +10,9 @@ const loader=read('public/app.js');
 const server=read('server.js');
 
 const tabs={
- products:'products.png', categories:'categories.png', ingredients:'ingredients.png',
- recipes:'recipes.png',promos:'promos.png',packages:'packages.png',backups:'backups.png'
+ products:'coffee-pack.png', categories:'category-removebg-preview.png',
+ ingredients:'coffee-removebg-preview.png',recipes:'recipe-removebg-preview.png',
+ promos:'promo-removebg-preview.png',packages:'goods.png',backups:'backup-removebg-preview.png'
 };
 const assetDir='public/assets/catalog';
 for(const [key,filename] of Object.entries({...tabs,save:'save.png',question:'question.png'})){
