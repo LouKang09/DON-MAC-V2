@@ -7,7 +7,8 @@
   <title>Don Macchiatos Web POS</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/branch-v157.css" />
-  <link rel="stylesheet" href="/topbar-green-v1549.css?v=1.5.51" />
+  <link rel="stylesheet" href="/topbar-green-v1549.css?v=1.5.52" />
+  <link rel="stylesheet" href="/audit-logs-compact-v1552.css?v=1.5.52" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
 </head>
 <body>
@@ -89,7 +90,7 @@
           <span class="topbar-logo" aria-hidden="true"><img src="/donmac-logo-hires.svg" alt="" width="108" height="108" /></span>
           <div class="topbar-heading-copy"><p class="eyebrow" id="viewEyebrow"></p><h2 id="viewTitle">Welcome to Don Macchiatos POS</h2><span id="posDate" class="pos-header-date"></span></div>
         </div>
-        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine" hidden style="display:none">DATABASE</span><label class="account-plan-top-control" for="planSwitcher">Account Type: <select id="planSwitcher" aria-label="Account Type"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><button id="accountSettingsTop" type="button" class="account-settings-quick admin-only" title="Account Settings" aria-label="Open Account Settings"><img class="account-settings-gear-icon" src="/assets/catalog/question.png?v=1.5.51" alt="" width="23" height="23" aria-hidden="true" decoding="async" /></button><button id="topbarProfileButton" type="button" class="topbar-profile" title="Open Account Settings" aria-label="Open Account Settings"><span class="topbar-avatar" id="topbarAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span><svg class="topbar-profile-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine" hidden style="display:none">DATABASE</span><label class="account-plan-top-control" for="planSwitcher">Account Type: <select id="planSwitcher" aria-label="Account Type"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><button id="topbarProfileButton" type="button" class="topbar-profile" title="Open Account Settings" aria-label="Open Account Settings"><span class="topbar-avatar" id="topbarAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span><svg class="topbar-profile-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
       </header>
 
       <section id="view-dashboard" class="view">
@@ -380,9 +381,10 @@
           </section>
         </div>
         <div class="card spaced inv-audit-card"><div class="card-head"><div><p class="eyebrow">MOVEMENT HISTORY</p><h3>Inventory Audit</h3><p class="inv-audit-subtitle">One row per transaction. Expand a row to see every ingredient and stock change.</p></div></div>
-          <div class="inv-audit-toolbar" role="search" aria-label="Filter inventory transactions">
-            <label class="inv-audit-search"><span class="inv-sr-only">Search inventory audit</span><input id="auditSearch" type="search" placeholder="Search transactions, ingredients, references..." autocomplete="off"></label>
-            <button id="refreshMovements" type="button" class="primary inv-audit-refresh"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.4 9a7 7 0 0 1 11.7-1.7L20 12M4 12l1.9 4.7A7 7 0 0 0 18 15"/></svg><span>Refresh</span></button>
+          <div class="audit-filter-toolbar inv-audit-unified-toolbar" role="search" aria-label="Filter inventory transactions">
+            <label>Movement<select id="movementTypeFilter" aria-label="Movement type"><option value="all">All Movements</option><option value="sale">Sales Usage</option><option value="reversal">Sale Reversals</option><option value="replenish">Replenish</option><option value="transfer">Transfer</option><option value="other">Other</option></select></label>
+            <label class="audit-search-label">Search<input id="movementSearch" type="search" placeholder="Ingredient, reference, branch, actor..." autocomplete="off" /></label>
+            <div class="inv-audit-toolbar-actions"><span id="movementResultCount" class="log-result-count" aria-live="polite">0 of 0 movements</span><button id="refreshMovements" type="button" class="primary inv-audit-refresh" title="Refresh movement history" aria-label="Refresh inventory audit"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.4 9a7 7 0 0 1 11.7-1.7L20 12M4 12l1.9 4.7A7 7 0 0 0 18 15"/></svg><span>Refresh</span></button></div>
           </div><div class="table-wrap inv-audit-scroll"><table class="inv-audit-table"><thead><tr><th>Date &amp; time</th><th>Type</th><th>Transaction / Reference</th><th class="num">Ingredients</th><th>Source / Destination</th><th>Actor</th><th class="inv-audit-action-header">Action</th></tr></thead><tbody id="movementBody"></tbody></table></div><div class="inv-audit-pagination"><span id="auditPageInfo" aria-live="polite">Loading transactions…</span><div id="auditPageControls" class="inv-audit-page-controls" aria-label="Audit pages"></div></div></div>
       </section>
 
@@ -482,7 +484,7 @@
     </div>
     <div class="catalog-batch-drop" id="recipeBatchDrop" aria-label="Drop ingredients into this recipe" tabindex="0"><strong>Recipe editor</strong><p>Drop selected ingredients here or click Add selected. Enter quantity and optional cost per item below.</p></div>
   </div>
-</div><div class="recipe-add catalog-batch-fallback"><select id="recipeIngredient"></select><input id="recipeQty" type="number" min="0.000000001" step="any" placeholder="Qty required" /><input id="recipeCost" type="number" min="0" step="0.000001" placeholder="Cost contribution" /><button id="recipeAdd" class="ghost"><span class="catalog-btn-icon" aria-hidden="true">＋</span> Add / Update Row</button></div><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Qty Required</th><th class="num">Cost Contribution</th><th></th></tr></thead><tbody id="recipeBody"></tbody></table></div><div class="form-actions"><strong id="recipeUnitCost">Unit Cost: ₱0.00</strong><button id="saveRecipe" class="primary"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Recipe</button></div></div>
+</div><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Qty Required</th><th class="num">Cost Contribution</th><th></th></tr></thead><tbody id="recipeBody"></tbody></table></div><div class="form-actions"><strong id="recipeUnitCost">Unit Cost: ₱0.00</strong><button id="saveRecipe" class="primary"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Recipe</button></div></div>
         </div>
 
         <div id="admin-promos" class="admin-panel section-grid admin-layout">
@@ -649,7 +651,7 @@
         </div>
       </section>
 
-      <section id="view-logs" class="view"><div class="card"><div class="card-head"><div><p class="eyebrow">AUDIT</p><h3>System Logs</h3></div><button id="refreshLogs" class="ghost">Refresh</button></div><div id="logsList" class="logs-list"></div></div></section>
+      <section id="view-logs" class="view"><div class="card"><div class="card-head"><div><p class="eyebrow">AUDIT</p><h3>System Logs</h3></div><button id="refreshLogs" class="primary system-logs-refresh" type="button"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.4 9a7 7 0 0 1 11.7-1.7L20 12M4 12l1.9 4.7A7 7 0 0 0 18 15"/></svg><span>Refresh</span></button></div><div id="logsList" class="logs-list"></div><nav id="systemLogsPagination" class="system-logs-pagination" aria-label="System log pages"></nav></div></section>
     </main>
     <div id="chatFloatingDock" class="chat-floating-dock" aria-label="Internal team messages">
       <div id="chatFloatingPanel" class="chat-floating-panel hidden" role="dialog" aria-label="Team messages" aria-modal="false">
@@ -726,6 +728,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.51"></script>
+  <script src="/app.js?v=1.5.52"></script>
 </body>
 </html>
