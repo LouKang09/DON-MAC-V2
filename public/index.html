@@ -20,6 +20,11 @@
       <p id="authHint" class="muted">Use your web POS account.</p>
       <label>Username<input id="authUsername" autocomplete="username" minlength="2" maxlength="80" required /></label>
       <label>Password<input id="authPassword" type="password" minlength="8" maxlength="256" required /></label>
+      <details class="auth-scope-details" id="authScopeDetails"><summary>Account / Branch <span class="muted tiny">(if usernames are shared)</span></summary>
+        <label>Owner username<input id="authOwnerUsername" maxlength="80" autocomplete="off" placeholder="Owner account username" /></label>
+        <label>Branch name<input id="authBranchName" maxlength="120" autocomplete="off" placeholder="Cashier's assigned branch" /></label>
+        <p class="tiny muted">Only needed when more than one account shares a cashier username. Owner accounts do not need a branch.</p>
+      </details>
       <button id="authSubmit" class="primary big" type="submit">Sign in</button>
       <p class="tiny muted">Excel passwords are intentionally not imported. Web passwords are stored as secure hashes.</p>
     </form>
