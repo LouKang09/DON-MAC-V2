@@ -1307,7 +1307,52 @@
   async function loadSettings(){try{const s=await api('/api/admin/settings');$('shopName').value=s.shopName||'';$('defaultReportEmail').value=s.defaultReportEmail||'';$('smtpStatus').innerHTML=`<b class="${s.smtp.configured?'stock-ok':'stock-low'}">${s.smtp.configured?'CONFIGURED':'NOT CONFIGURED'}</b><br>Host: ${esc(s.smtp.host)}:${s.smtp.port}<br>User: ${esc(s.smtp.user||'—')}<br><span class="tiny muted">Set SMTP_USER and SMTP_PASS on the server. Gmail App Passwords are supported over TLS port 465.</span>`;}catch(err){toast(err.message);}}
   $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/admin/settings',{method:'PUT',body:{shopName:$('shopName').value.trim(),defaultReportEmail:$('defaultReportEmail').value.trim()}});toast('Settings saved.');await loadSettings();}catch(err){toast(err.message);}});});
 
-  async function loadBackups(){try{const d=await api('/api/backups');$('backupNote').textContent=d.supported?'SQLite backups are stored on the server. One automatic backup is created daily and up to 30 automatic backups are retained.':d.note;$('createBackup').disabled=!d.supported;$('backupBody').innerHTML=d.items.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td>${esc(formatDateTime(x.createdAt))}</td><td class="num">${(x.size/1024).toFixed(1)} KB</td><td><a class="table-btn" href="/api/backups/${encodeURIComponent(x.name)}">Download</a> <button class="danger-link" data-restore="${esc(x.name)}">Restore</button></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No backups yet.</td></tr>';$('backupBody').querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>restoreBackup(b.dataset.restore));}catch(err){toast(err.message);}}
+  async function loadBackups(){
+    try{
+      const [d,preview]=await Promise.all([
+        api('/api/backups'),api('/api/backups/retention-preview')
+      ]);
+      $('backupNote').textContent=d.supported
+        ?'SQLite native backup and restore are available. Download copies to a separate safe location.'
+        :'This installation runs PostgreSQL. Use Download Data Archive to save a read-only copy of business data. Native full-database backups and one-click restore require separate PostgreSQL backup infrastructure.';
+      $('createBackup').disabled=!d.supported;
+      $('createBackup').title=d.supported?'Create a native SQLite backup':
+        'Native backups require PostgreSQL managed backup infrastructure.';
+      $('backupBody').innerHTML=d.items.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td>${esc(formatDateTime(x.createdAt))}</td><td class="num">${(x.size/1024).toFixed(1)} KB</td><td><a class="table-btn" href="/api/backups/${encodeURIComponent(x.name)}">Download</a> <button class="danger-link" data-restore="${esc(x.name)}">Restore</button></td></tr>`).join('')||
+        '<tr><td colspan="4" class="muted">No native server backups to list. Business data can be exported using Download Data Archive.</td></tr>';
+      $('backupBody').querySelectorAll('[data-restore]').forEach(b=>
+        b.onclick=()=>restoreBackup(b.dataset.restore));
+      $('retentionDemoEnabled').checked=preview.demoEnabled;
+      $('retentionFrequency').value=preview.frequency;
+      $('retentionFrequency').disabled=!preview.demoEnabled;
+      $('retentionBackupStatus').textContent=preview.note;
+    }catch(err){toast(err.message);}
+  }
+  $('downloadDataArchive').addEventListener('click',()=>{
+    const link=document.createElement('a');
+    link.href='/api/backups/data-export';
+    link.download='DonMac_Data_Archive.json';
+    document.body.appendChild(link);link.click();link.remove();
+    toast('Requesting business data archive. Keep the downloaded file in a secure location.');
+  });
+  $('retentionDemoEnabled').addEventListener('change',e=>{
+    $('retentionFrequency').disabled=!e.target.checked;
+  });
+  $('saveRetentionPreference').onclick=()=>withActionLock('save-retention',async()=>{
+    const button=$('saveRetentionPreference');
+    button.disabled=true;
+    try{
+      const p=await api('/api/backups/retention-preview',{
+        method:'PUT',
+        body:{demoEnabled:$('retentionDemoEnabled').checked,
+          frequency:$('retentionFrequency').value}
+      });
+      $('retentionBackupStatus').textContent=p.note;
+      toast('Development retention preference saved. No subscription or automated backup was activated.');
+    }catch(err){toast(err.message);}
+    finally{button.disabled=false;}
+  });
+
   $('createBackup').onclick=()=>withActionLock('create-backup',async()=>{try{const d=await api('/api/backups',{method:'POST',timeoutMs:60000});toast(`Backup created: ${d.name}`);await loadBackups();}catch(err){toast(err.message);}});
   async function restoreBackup(name){return withActionLock(`restore-backup:${name}`,async()=>{if(!confirm(`Restore ${name}? This will replace the current SQLite database.`))return;if(!confirm('Final warning: a pre-restore backup will be created automatically. Continue with restore?'))return;try{await api(`/api/backups/${encodeURIComponent(name)}/restore`,{method:'POST',timeoutMs:60000});alert('Database restored. Please sign in again.');location.reload();}catch(err){toast(err.message);}});}
 
