@@ -210,7 +210,6 @@
     changeDevSubscription(e.target.value,state.subscription?.status||'PAID'));
   $('saveAccountPlan').addEventListener('click',()=>
     changeDevSubscription($('accountPlanSelect').value,$('accountStatusSelect').value));
-  $('accountSettingsTop').addEventListener('click',()=>switchView('account'));
   $('topbarProfileButton').addEventListener('click',()=>{
     if(state.user?.role!=='Admin'){
       toast('Account Settings are available to the Owner and Co-Owners.');
@@ -768,7 +767,7 @@
     initBatchEditors();
   }
   setupInventoryRedesign();
-  const auditUI={groups:[],expanded:new Set(),page:1,pageSize:20,query:''};
+  const auditUI={groups:[],expanded:new Set(),page:1,pageSize:10,query:'',type:'all'};
   function groupInventoryMovements(rows){
     const groups=[],byReference=new Map();
     let previousLegacy=null;
@@ -805,10 +804,19 @@
   }
   function renderMovements(){
     const query=normalize(auditUI.query),all=auditUI.groups;
-    const filtered=query?all.filter(g=>normalize([
-      g.type,g.reference,g.branch,g.deliveredBy,g.receivedBy,g.remarks,g.createdBy,
-      formatDateTime(g.createdAt),...g.items.map(i=>i.ingredient)
-    ].join(' ')).includes(query)):all;
+    const groupType=g=>{
+      const value=String(g.type||'').toUpperCase();
+      if(value==='SALE')return 'sale';
+      if(value==='SALE_REVERSAL')return 'reversal';
+      if(value==='REPLENISH')return 'replenish';
+      if(value==='TRANSFER')return 'transfer';
+      return 'other';
+    };
+    const filtered=all.filter(g=>(auditUI.type==='all'||groupType(g)===auditUI.type)&&
+      (!query||normalize([
+        g.type,g.reference,g.branch,g.deliveredBy,g.receivedBy,g.remarks,g.createdBy,
+        formatDateTime(g.createdAt),...g.items.map(i=>i.ingredient)
+      ].join(' ')).includes(query)));
     const pages=Math.max(1,Math.ceil(filtered.length/auditUI.pageSize));
     auditUI.page=Math.max(1,Math.min(pages,auditUI.page));
     const first=(auditUI.page-1)*auditUI.pageSize;
@@ -850,6 +858,7 @@
     $('auditPageInfo').textContent=filtered.length?
       'Showing '+(first+1)+'–'+Math.min(filtered.length,first+auditUI.pageSize)+' of '+filtered.length+' transactions':
       'Showing 0 transactions';
+    $('movementResultCount').textContent=filtered.length+' of '+all.length+' movement'+(all.length===1?'':'s');
     $('auditPageControls').innerHTML='<button type="button" data-audit-page="'+(auditUI.page-1)+'" '+(auditUI.page===1?'disabled':'')+' aria-label="Previous audit page">‹</button>'+
       '<span>Page '+auditUI.page+' of '+pages+'</span>'+
       '<button type="button" data-audit-page="'+(auditUI.page+1)+'" '+(auditUI.page===pages?'disabled':'')+' aria-label="Next audit page">›</button>';
@@ -867,7 +876,8 @@
       toast('Inventory audit: '+err.message);
     }
   }
-  $('auditSearch').addEventListener('input',e=>{auditUI.query=e.target.value;auditUI.page=1;renderMovements();});
+  $('movementSearch').addEventListener('input',e=>{auditUI.query=e.target.value;auditUI.page=1;renderMovements();});
+  $('movementTypeFilter').addEventListener('change',e=>{auditUI.type=e.target.value;auditUI.page=1;renderMovements();});
   $('movementBody').addEventListener('click',e=>{
     const button=e.target.closest('[data-audit-toggle]');
     if(!button)return;
@@ -1125,7 +1135,7 @@
   function activateAdminTab(tab){document.querySelectorAll('#adminTabs button').forEach(b=>b.classList.toggle('active',b.dataset.adminTab===tab));document.querySelectorAll('.admin-panel').forEach(p=>p.classList.toggle('active',p.id===`admin-${tab}`));if(tab==='recipes')loadRecipe();if(tab==='backups')loadBackups();}
   document.querySelectorAll('#adminTabs button').forEach(b=>b.onclick=()=>activateAdminTab(b.dataset.adminTab));
   async function loadAdminAll(){if(state.user?.role!=='Admin')return;try{const selectedRecipe=$('recipeProduct').value,selectedPackage=$('compositionPackage').value;const [p,i,pr,pa]=await Promise.all([api('/api/admin/products'),api('/api/admin/ingredients'),api('/api/admin/promos'),api('/api/admin/packages')]);state.adminProducts=p.products;state.adminIngredients=i.ingredients;state.adminPromos=pr.promos;state.adminPackages=pa.packages;renderAdminProducts();renderAdminIngredients();renderAdminPromos();renderAdminPackages();fillAdminSelects(selectedRecipe,selectedPackage);}catch(err){toast(err.message);}}
-  function fillAdminSelects(selectedRecipe='',selectedPackage=''){const activeProducts=state.adminProducts.filter(x=>x.active),productOpts=activeProducts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('recipeProduct').innerHTML=productOpts;const ingOpts=state.adminIngredients.filter(x=>x.active).map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(String(i.uom).toUpperCase())})</option>`).join('');$('recipeIngredient').innerHTML=ingOpts;$('compositionPackage').innerHTML=state.adminPackages.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');if(selectedRecipe&&activeProducts.some(p=>String(p.id)===String(selectedRecipe)))$('recipeProduct').value=String(selectedRecipe);if(selectedPackage&&state.adminPackages.some(p=>String(p.id)===String(selectedPackage)))$('compositionPackage').value=String(selectedPackage);if(activeProducts.length)loadRecipe();else{state.recipeRows=[];renderRecipe();}if(state.adminPackages.length)loadComposition();else{state.compositionRows=[];renderComposition();}}
+  function fillAdminSelects(selectedRecipe='',selectedPackage=''){const activeProducts=state.adminProducts.filter(x=>x.active),productOpts=activeProducts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('recipeProduct').innerHTML=productOpts;$('compositionPackage').innerHTML=state.adminPackages.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');if(selectedRecipe&&activeProducts.some(p=>String(p.id)===String(selectedRecipe)))$('recipeProduct').value=String(selectedRecipe);if(selectedPackage&&state.adminPackages.some(p=>String(p.id)===String(selectedPackage)))$('compositionPackage').value=String(selectedPackage);if(activeProducts.length)loadRecipe();else{state.recipeRows=[];renderRecipe();}if(state.adminPackages.length)loadComposition();else{state.compositionRows=[];renderComposition();}}
 
   const catalogPages={products:1,ingredients:1,promos:1,packages:1};
   const catalogPageIds={products:'adminProductsBodyPagination',ingredients:'adminIngredientsBodyPagination',promos:'adminPromosBodyPagination',packages:'adminPackagesBodyPagination'};
@@ -1301,7 +1311,7 @@
     if(c){const row=state.recipeRows[Number(c.dataset.recipeCost)];if(row)row.cost=c.value===''?null:Number(c.value);}
     $('recipeUnitCost').textContent='Unit Cost: '+peso(state.recipeRows.reduce((a,x)=>a+Number(x.cost||0),0));
   });
-  $('recipeProduct').onchange=loadRecipe;$('recipeAdd').onclick=()=>{const iid=Number($('recipeIngredient').value),ing=state.adminIngredients.find(x=>x.id===iid),qty=Number($('recipeQty').value),cost=$('recipeCost').value===''?null:Number($('recipeCost').value);if(!ing||!Number.isFinite(qty)||!(qty>0)||cost!==null&&(!Number.isFinite(cost)||cost<0)){toast('Choose an ingredient, quantity greater than zero, and optional non-negative cost.');return;}const existing=state.recipeRows.find(x=>x.ingredientId===iid);const row={ingredientId:iid,code:ing.code,name:ing.name,uom:ing.uom,quantity:qty,cost};if(existing)Object.assign(existing,row);else state.recipeRows.push(row);$('recipeQty').value='';$('recipeCost').value='';renderRecipe();};$('saveRecipe').onclick=()=>withActionLock('save-recipe',async()=>{const pid=Number($('recipeProduct').value);if(!pid){toast('Choose a product first.');return;}try{await api(`/api/admin/products/${pid}/recipe`,{method:'PUT',body:{items:state.recipeRows.map(x=>({ingredientId:x.ingredientId,quantity:x.quantity,cost:x.cost}))}});toast('Recipe and costing saved.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});
+  $('recipeProduct').onchange=loadRecipe;$('saveRecipe').onclick=()=>withActionLock('save-recipe',async()=>{const pid=Number($('recipeProduct').value);if(!pid){toast('Choose a product first.');return;}try{await api(`/api/admin/products/${pid}/recipe`,{method:'PUT',body:{items:state.recipeRows.map(x=>({ingredientId:x.ingredientId,quantity:x.quantity,cost:x.cost}))}});toast('Recipe and costing saved.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});
 
   function renderAdminPromos(){$('adminPromosBody').innerHTML=catalogPage('promos',state.adminPromos).map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.inclusion)}</td><td class="num">${peso(p.price)}</td><td>${p.foodLimit} Food / ${p.coffeeLimit} Coffee</td><td class="${p.active?'stock-ok':'stock-low'}">${p.active?'ACTIVE':'DISABLED'}</td><td><button class="table-btn" data-edit-promo="${p.id}">Edit</button>${p.active?`<button class="danger-link" data-archive-promo="${p.id}">Disable</button>`:''}</td></tr>`).join('');$('adminPromosBody').querySelectorAll('[data-edit-promo]').forEach(b=>b.onclick=()=>editPromo(Number(b.dataset.editPromo)));$('adminPromosBody').querySelectorAll('[data-archive-promo]').forEach(b=>b.onclick=()=>archivePromo(Number(b.dataset.archivePromo)));}
   catalogRenders.promos=renderAdminPromos;
