@@ -300,8 +300,8 @@
   function canAddAddon(a){if(!state.promoId)return false;const c=cartCounts(),line=cartItem('addon',a.id),next=(line?.qty||0)+1,n=normalize(a.name);if(n==='FLAVORED FRIES'&&next>c.food)return false;if(n==='PREMIUM COFFEE'&&next>c.coffee)return false;return true;}
   function availabilityTip(item){
     if(!item)return'';const lines=[];
-    if(item.availabilityStatus==='recipe_required')lines.push('RECIPE REQUIRED','Add at least one ingredient in Catalog Admin → Recipes before this item can be sold.');
-    else if(item.availabilityStatus==='composition_required')lines.push('PACKAGE COMPOSITION REQUIRED','Add the package contents in Catalog Admin → Packages.');
+    if(item.availabilityStatus==='recipe_required')lines.push('RECIPE REQUIRED','Add at least one ingredient in POS Catalog → Recipes before this item can be sold.');
+    else if(item.availabilityStatus==='composition_required')lines.push('PACKAGE COMPOSITION REQUIRED','Add the package contents in POS Catalog → Packages.');
     else if(item.availabilityStatus==='component_unavailable')lines.push('PACKAGE COMPONENT UNAVAILABLE');
     else if(item.available&&item.stockWarnings?.length)lines.push('LOW STOCK WARNING');
     else if(!item.available)lines.push('WHY THIS ITEM IS NOT AVAILABLE');

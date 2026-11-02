@@ -192,3 +192,21 @@
   #view-catalog .catalog-batch-grid,#admin-backups .catalog-backup-options {grid-template-columns:1fr;}
   #admin-categories .pos-category-product-choices {grid-template-columns:1fr!important;}
 }
+
+/* Editor actions sit in plain cards instead of the .form-card: match same green UI. */
+#view-catalog #recipeAdd,
+#view-catalog #compositionAdd,
+#view-catalog #saveRecipe,
+#view-catalog #saveComposition {
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:42px;padding:10px 15px;
+  border:1px solid #1b6543;border-radius:10px;
+  background:#1b6543;color:#fff;font-size:12px;font-weight:800;
+  cursor:pointer;
+}
+#view-catalog #recipeAdd:hover,
+#view-catalog #compositionAdd:hover,
+#view-catalog #saveRecipe:hover,
+#view-catalog #saveComposition:hover { background:#134d34; }
+#view-catalog #recipeAdd .catalog-btn-icon,
+#view-catalog #compositionAdd .catalog-btn-icon { color:#fff; }

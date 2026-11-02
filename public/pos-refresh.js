@@ -70,7 +70,7 @@
   const latest=[
     'Replaced all six POS category pictures with the uploaded coffee, iced-coffee, cookie, sugar, coupon and goods icons.',
     'Removed Lottie and all category icon animations. Only the solid background hover-color change remains.',
-    'Catalog Admin now has POS Categories for changing category icons and creating custom category buttons.',
+    'POS Catalog now has POS Categories for changing category icons and creating custom category buttons.',
     'Custom categories are collections of existing products and do not alter recipes, stock checks, or product types.',
     'Product icon uploads are optimized and limited to 1 MB before processing.',
     'Payment, inventory, historical sales and reporting are unchanged.'
