@@ -194,3 +194,9 @@
     font-size: 8px;
   }
 }
+
+/* Supplied opaque-white backup icon stays readable on selected dark-green cards. */
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile[data-admin-tab="backups"] img.catalog-tab-icon{
+  background:#fff!important;border:2px solid #fff;border-radius:10px;
+  padding:4px;box-sizing:border-box;object-fit:contain;
+}
