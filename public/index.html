@@ -7,6 +7,7 @@
   <title>Don Macchiatos Web POS</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/branch-v157.css" />
+  <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -420,7 +421,7 @@
 <button class="catalog-tile" type="button" data-admin-tab="recipes" aria-label="Recipes & Costing"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Recipes &amp; Costing</span><img class="catalog-tab-icon" src="/assets/catalog/recipe-removebg-preview.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="promos" aria-label="Promos"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Promos</span><img class="catalog-tab-icon" src="/assets/catalog/promo-removebg-preview.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="packages" aria-label="Packages"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Packages</span><img class="catalog-tab-icon" src="/assets/catalog/goods.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
-<button class="catalog-tile" type="button" data-admin-tab="backups" aria-label="Backups"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Backups</span><img class="catalog-tab-icon" src="/assets/catalog/backup-removebg-preview.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
+<button class="catalog-tile" type="button" data-admin-tab="backups" aria-label="Backups"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Backups</span><img class="catalog-tab-icon" src="/assets/catalog/backup-v1547.png?v=1.5.47" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 </div>
 
         <div id="admin-products" class="admin-panel active section-grid admin-layout">
@@ -517,15 +518,51 @@
       </section>
 
       <section id="view-users" class="view admin-only">
-        <div class="users-section-title"><div><p class="eyebrow">MULTI-BRANCH SETUP</p><h3>Manage branches</h3><p class="muted tiny">Create, rename, disable or delete unused branches. Account plans are currently simulated for development.</p></div></div>
-        <div class="section-grid users-layout">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">LOCATIONS</p><h3>Branches</h3></div></div><div class="table-wrap"><table><thead><tr><th>Branch</th><th>Accounts / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
-          <form id="branchForm" class="card form-card"><p class="eyebrow">BRANCH DETAILS</p><h3 id="branchFormTitle">New Branch</h3><input id="branchEditId" type="hidden" /><label>Branch name<input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label><label>Address (optional)<input id="branchAddress" maxlength="250" placeholder="Location or landmark" /></label><label class="check-row"><input id="branchActive" type="checkbox" checked /> Active branch</label><button class="primary" type="submit">Save Branch</button><button id="branchFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Branches with linked sales cannot be permanently removed. Disable them instead to keep reporting and audit records.</p></form>
-        </div>
-        <div class="users-section-title users-subsection"><div><p class="eyebrow">ACCESS CONTROL</p><h3>Cashiers & branch assignments</h3><p class="muted tiny">Assign each staff account to a branch. Administrators can review all branches.</p></div></div>
-        <div class="section-grid users-layout">
-          <div class="card"><div class="card-head"><div><p class="eyebrow">WEB ACCOUNTS</p><h3>Cashiers</h3></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
-          <form id="userForm" class="card form-card"><p class="eyebrow">ADD / EDIT CASHIER</p><h3>Cashier Account</h3><input id="userEditId" type="hidden" /><label>Username<input id="newUsername" minlength="2" maxlength="80" required /></label><label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" /></label><label>Role<select id="newRole"><option value="User">Cashier</option><option value="Admin">Co-Owner</option></select></label><label id="newUserBranchWrap">Assigned branch<select id="newUserBranch" required></select></label><label class="check-row"><input id="newUserActive" type="checkbox" checked /> Active</label><button class="primary" type="submit">Save Cashier</button><button id="userFormClear" class="ghost" type="button">Clear</button><p class="muted tiny">Leave the password blank to preserve it when editing. Accounts with transaction history can be deactivated rather than deleted.</p></form>
+        <div class="users-heading"><p class="eyebrow">ACCESS &amp; LOCATIONS</p><h2>Branches &amp; Cashiers</h2><p class="muted">Manage branch information and staff access in one workspace.</p></div>
+        <div class="card users-management-shell">
+          <section class="users-management-group" aria-labelledby="branchManagerHeading">
+            <div class="users-group-heading"><div><span class="users-group-symbol" aria-hidden="true">⌂</span><h3 id="branchManagerHeading">Branches</h3><p class="muted tiny">Locations, contacts and operational status</p></div><span class="users-help" title="Inactive branches cannot process new sales. Branches with sales history cannot be deleted." aria-label="Branch settings information"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.12 2.12-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.52V21h-3v-.09a1.65 1.65 0 0 0-1-1.52 1.65 1.65 0 0 0-1.82.33l-.06.06L6.79 17.7l.06-.06A1.65 1.65 0 0 0 7.18 15a1.65 1.65 0 0 0-1.52-1H5v-3h.66A1.65 1.65 0 0 0 7.18 10a1.65 1.65 0 0 0-.33-1.82l-.06-.06L8.91 6l.06.06A1.65 1.65 0 0 0 10.79 6a1.65 1.65 0 0 0 1-1.52V4h3v.48a1.65 1.65 0 0 0 1 1.52 1.65 1.65 0 0 0 1.82-.33l.06-.06L19.79 8l-.06.06A1.65 1.65 0 0 0 19.4 10a1.65 1.65 0 0 0 1.52 1H21v3h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg></span></div>
+            <div class="users-manage-layout">
+              <div class="users-list-panel"><div class="users-list-heading"><strong>Branch directory</strong><span class="muted tiny">10 per page</span></div>
+                <div class="table-wrap"><table aria-label="Branch directory"><thead><tr><th>Branch</th><th>Accounts / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div><nav id="branchesPagination" class="users-pagination" aria-label="Branch pages"></nav>
+              </div>
+              <form id="branchForm" class="users-detail-form">
+                <div class="users-form-intro"><div class="users-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18v11H3zM2 10l3-7h14l3 7M9 21v-7h6v7M7 10v4m10-4v4"/></svg></div><div><p class="eyebrow">BRANCH PROFILE</p><h3 id="branchFormTitle">New Branch</h3></div></div>
+                <input id="branchEditId" type="hidden" />
+                <label>Branch name <span class="required">*</span><input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label>
+                <label>Street address<input id="branchAddress" maxlength="250" placeholder="Building, street, barangay" /></label>
+                <div class="users-form-fields"><label>City<input id="branchCity" maxlength="100" placeholder="City / municipality" /></label><label>Province<input id="branchProvince" maxlength="100" placeholder="Province" /></label></div>
+                <div class="users-form-fields"><label>Postal code<input id="branchPostalCode" maxlength="12" placeholder="ZIP code" /></label><label>Country<select id="branchCountry"><option value="Philippines">Philippines</option><option value="Other">Other</option></select></label></div>
+                <label>Phone number<input id="branchPhone" type="tel" maxlength="32" placeholder="+63..." /></label>
+                <label>Description<textarea id="branchDescription" maxlength="500" rows="2" placeholder="Landmark or branch details"></textarea></label>
+                <label class="users-active-row"><input id="branchActive" type="checkbox" checked /><span>Active branch</span><span class="users-help" tabindex="0" role="note" title="When unchecked, the branch is unavailable for new POS sales. Existing history is retained."><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></span></label>
+                <div class="users-form-actions"><button class="users-action users-action-save" type="submit"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h14l3 3v15H3V3z"/><path d="M7 3v6h10V3M7 21v-9h10v9"/></svg> Save Branch</button><button id="branchFormClear" class="users-action users-action-clear" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6M10 10v7m4-7v7"/></svg> Clear</button></div>
+                <p class="muted tiny">Branches linked to sales cannot be deleted; deactivate them to preserve audit history.</p>
+              </form>
+            </div>
+          </section>
+          <div class="users-splitter" role="separator" aria-label="Branches and cashiers"><span>STAFF ACCESS</span></div>
+          <section class="users-management-group" aria-labelledby="cashierManagerHeading">
+            <div class="users-group-heading"><div><span class="users-group-symbol" aria-hidden="true">♙</span><h3 id="cashierManagerHeading">Cashiers</h3><p class="muted tiny">Staff credentials and branch assignments</p></div><span class="users-help" title="Cashier usernames must be unique inside the assigned branch and owner account." aria-label="Cashier account information"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.12 2.12-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.52V21h-3v-.09a1.65 1.65 0 0 0-1-1.52 1.65 1.65 0 0 0-1.82.33l-.06.06L6.79 17.7l.06-.06A1.65 1.65 0 0 0 7.18 15a1.65 1.65 0 0 0-1.52-1H5v-3h.66A1.65 1.65 0 0 0 7.18 10a1.65 1.65 0 0 0-.33-1.82l-.06-.06L8.91 6l.06.06A1.65 1.65 0 0 0 10.79 6a1.65 1.65 0 0 0 1-1.52V4h3v.48a1.65 1.65 0 0 0 1 1.52 1.65 1.65 0 0 0 1.82-.33l.06-.06L19.79 8l-.06.06A1.65 1.65 0 0 0 19.4 10a1.65 1.65 0 0 0 1.52 1H21v3h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg></span></div>
+            <div class="users-manage-layout">
+              <div class="users-list-panel"><div class="users-list-heading"><strong>Staff directory</strong><span class="muted tiny">10 per page</span></div>
+                <div class="table-wrap"><table aria-label="Cashier accounts"><thead><tr><th>Cashier</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Actions</th></tr></thead><tbody id="usersBody"></tbody></table></div><nav id="usersPagination" class="users-pagination" aria-label="Cashier pages"></nav>
+              </div>
+              <form id="userForm" class="users-detail-form">
+                <div class="users-form-intro"><div class="users-avatar staff" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div><p class="eyebrow">STAFF PROFILE</p><h3>Cashier Account</h3></div></div>
+                <input id="userEditId" type="hidden" />
+                <label>Full name<input id="newFullName" maxlength="120" placeholder="Cashier name" /></label>
+                <label>Email<input id="newUserEmail" type="email" maxlength="180" placeholder="cashier@example.com" /></label>
+                <label>Phone number<input id="newUserPhone" type="tel" maxlength="32" placeholder="+63..." /></label>
+                <label>Username <span class="required">*</span><input id="newUsername" minlength="2" maxlength="80" required autocomplete="off" /></label>
+                <label>Password <span class="required">*</span><span class="users-password-wrap"><input id="newPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" /><button id="toggleCashierPassword" class="users-password-toggle" type="button" aria-label="Show cashier password" title="Show password"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
+                <div class="users-form-fields"><label>Role<select id="newRole"><option value="User">Cashier</option><option value="Admin">Co-Owner</option></select></label><label id="newUserBranchWrap">Assigned branch<select id="newUserBranch" required></select></label></div>
+                <label class="users-active-row"><input id="newUserActive" type="checkbox" checked /><span>Active account</span><span class="users-help" tabindex="0" role="note" title="Inactive cashiers cannot sign in or process sales; sales history remains unchanged."><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></span></label>
+                <div class="users-form-actions"><button class="users-action users-action-save" type="submit"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h14l3 3v15H3V3z"/><path d="M7 3v6h10V3M7 21v-9h10v9"/></svg> Save Cashier</button><button id="userFormClear" class="users-action users-action-clear" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6M10 10v7m4-7v7"/></svg> Clear</button></div>
+                <p class="muted tiny">Leave password blank when editing to keep the existing password. Duplicate cashier usernames are checked within each owner's branch.</p>
+              </form>
+            </div>
+          </section>
         </div>
       </section>
 
@@ -672,6 +709,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.46"></script>
+  <script src="/app.js?v=1.5.47"></script>
 </body>
 </html>
