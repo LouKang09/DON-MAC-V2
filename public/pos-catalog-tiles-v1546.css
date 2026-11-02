@@ -1,7 +1,7 @@
-/* POS Catalog v1.5.46 – same 3-column tile scale as POS categories. */
+/* POS Catalog v1.5.47 – five compact tiles per desktop row. */
 #view-catalog #adminTabs.catalog-tiles {
   display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   align-items: stretch;
   gap: 10px !important;
   flex-wrap: initial !important;
@@ -17,8 +17,8 @@
   width: 100%;
   max-width: none;
   min-width: 0;
-  min-height: 110px !important;
-  height: 110px !important;
+  min-height: 108px !important;
+  height: 108px !important;
   padding: 14px !important;
   gap: 4px;
   border: 1px solid #e3e9e2;
@@ -78,9 +78,9 @@
   position: relative;
   z-index: 1;
   display: block;
-  width: calc(100% - 85px);
+  width: calc(100% - 66px);
   min-width: 0;
-  font-size: 15px !important;
+  font-size: 13px !important;
   font-weight: 800;
   line-height: 1.15;
   white-space: normal;
@@ -93,10 +93,10 @@
   right: 10px;
   bottom: 10px;
   display: block !important;
-  width: 67px !important;
-  height: 67px !important;
+  width: 58px !important;
+  height: 58px !important;
   max-width: none;
-  flex: 0 0 67px;
+  flex: 0 0 58px;
   object-fit: contain;
   opacity: 1 !important;
   filter: none !important;
@@ -107,7 +107,7 @@
 }
 #view-catalog #adminTabs.catalog-tiles .catalog-tile[data-admin-tab='backups'] .catalog-tile-label,
 #view-catalog #adminTabs.catalog-tiles .catalog-tile[data-admin-tab='recipes'] .catalog-tile-label {
-  width: calc(100% - 80px);
+  width: calc(100% - 66px);
 }
 
 /* Both archive and native-backup buttons use the same green compact design
@@ -157,10 +157,16 @@
   outline: 2px solid #379568;
   outline-offset: 3px;
 }
+@media (max-width: 1199px) {
+  #view-catalog #adminTabs.catalog-tiles {grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+}
 @media (max-width: 900px) {
   #view-catalog #adminTabs.catalog-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+}
+@media (max-width: 700px) {
+  #view-catalog #adminTabs.catalog-tiles {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
 }
 @media (max-width: 540px) {
   #view-catalog #adminTabs.catalog-tiles {
