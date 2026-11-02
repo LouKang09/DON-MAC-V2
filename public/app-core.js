@@ -1387,19 +1387,38 @@
    if(state.user.role==='Admin')renderBranches();
   }
 
+
+  let branchPage=1, cashiersPage=1;
+  const managementPageSize=10;
+  function renderManagementPager(navId,page,total,onPage){
+    const nav=$(navId);if(!nav)return;
+    const pages=Math.max(1,Math.ceil(total/managementPageSize));
+    const current=Math.min(Math.max(1,page),pages);
+    nav.innerHTML='<span>Page '+current+' of '+pages+' · '+total+' total</span>'+
+      '<button type="button" data-page-nav="prev" '+(current===1?'disabled':'')+'>Previous</button>'+
+      '<button type="button" data-page-nav="next" '+(current===pages?'disabled':'')+'>Next</button>';
+    nav.querySelectorAll('[data-page-nav]').forEach(btn=>btn.onclick=()=>{
+      onPage(Math.max(1,Math.min(pages,current+(btn.dataset.pageNav==='next'?1:-1))));
+    });
+  }
   function renderBranches(){
-   $('branchesBody').innerHTML=state.branches.map(b=>`<tr><td><b>${esc(b.name)}</b><div class="tiny muted">${esc(b.address)}</div></td><td>${num(b.usersCount,0)} accounts<div class="tiny muted">${num(b.salesCount,0)} sales</div></td><td class="${b.active?'stock-ok':'stock-low'}">${b.active?'ACTIVE':'INACTIVE'}</td><td><button class="table-btn" data-edit-branch="${b.id}">Edit</button><button class="danger-link" data-delete-branch="${b.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No branches.</td></tr>';
-   $('branchesBody').querySelectorAll('[data-edit-branch]').forEach(b=>b.onclick=()=>editBranch(Number(b.dataset.editBranch)));
-   $('branchesBody').querySelectorAll('[data-delete-branch]').forEach(b=>b.onclick=()=>deleteBranch(Number(b.dataset.deleteBranch)));
+    const branches=state.branches||[];
+    const totalPages=Math.max(1,Math.ceil(branches.length/managementPageSize));
+    branchPage=Math.min(Math.max(1,branchPage),totalPages);
+    const page=branches.slice((branchPage-1)*managementPageSize,branchPage*managementPageSize);
+    $('branchesBody').innerHTML=page.map(b=>`<tr><td><b>${esc(b.name)}</b><div class="tiny muted">${esc([b.address,b.city,b.province].filter(Boolean).join(', '))}</div></td><td>${num(b.usersCount,0)} accounts<div class="tiny muted">${num(b.salesCount,0)} sales</div></td><td class="${b.active?'stock-ok':'stock-low'}">${b.active?'ACTIVE':'INACTIVE'}</td><td><button class="table-btn" data-edit-branch="${b.id}">Edit</button><button class="danger-link" data-delete-branch="${b.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No branches.</td></tr>';
+    $('branchesBody').querySelectorAll('[data-edit-branch]').forEach(b=>b.onclick=()=>editBranch(Number(b.dataset.editBranch)));
+    $('branchesBody').querySelectorAll('[data-delete-branch]').forEach(b=>b.onclick=()=>deleteBranch(Number(b.dataset.deleteBranch)));
+    renderManagementPager('branchesPagination',branchPage,branches.length,next=>{branchPage=next;renderBranches();});
   }
 
   function clearBranchForm(){
-   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';
+   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';
   }
 
   function editBranch(id){
    const b=state.branches.find(x=>x.id===id);if(!b)return;
-   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;$('branchActive').checked=b.active;$('branchFormTitle').textContent='Edit Branch';$('branchName').focus();
+   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';$('branchName').focus();
   }
 
   async function deleteBranch(id){
@@ -1425,7 +1444,7 @@
    $('newRole').onchange=toggleUserBranch;$('branchFormClear').onclick=clearBranchForm;
    $('branchForm').addEventListener('submit',async e=>{
      e.preventDefault();await withFormLock(e.currentTarget,async()=>{
-       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),active:$('branchActive').checked};
+       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),city:$('branchCity').value.trim(),province:$('branchProvince').value.trim(),postalCode:$('branchPostalCode').value.trim(),country:$('branchCountry').value,phone:$('branchPhone').value.trim(),description:$('branchDescription').value.trim(),active:$('branchActive').checked};
        try{await api('/api/branches'+(id?'/'+id:''),{method:id?'PUT':'POST',body});toast(id?'Branch updated.':'Branch created.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
      });
    });
@@ -1444,10 +1463,63 @@
    toggleRange();
   }
 
-  async function loadUsers(){if(state.user?.role!=='Admin')return;try{await loadBranches();const d=await api('/api/users');state.userList=d.users;$('usersBody').innerHTML=d.users.map(u=>`<tr><td><b>${esc(u.username)}</b></td><td>${esc(u.roleLabel||u.role)}</td><td>${esc(u.branchName||'All branches')}</td><td class="${u.active?'stock-ok':'stock-low'}">${u.active?'ACTIVE':'INACTIVE'}</td><td>${u.hasWebPassword?'SET':'RESET REQUIRED'}</td><td><button class="table-btn" data-edit-user="${u.id}">Edit</button>${u.isOwner?'':`<button class="danger-link" data-delete-user="${u.id}">Delete</button>`}</td></tr>`).join('');$('usersBody').querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>editUser(Number(b.dataset.editUser),d.users));$('usersBody').querySelectorAll('[data-delete-user]').forEach(b=>b.onclick=()=>deleteUser(Number(b.dataset.deleteUser)));}catch(err){toast(err.message);}}
-  function clearUserForm(){$('userEditId').value='';$('newUsername').value='';$('newUsername').readOnly=false;$('newPassword').value='';$('newPassword').required=true;$('newRole').disabled=false;$('newRole').options[1].text='Co-Owner';$('newRole').value='User';$('newUserActive').disabled=false;$('newUserActive').checked=true;toggleUserBranch();}
-  function editUser(id,users){const u=users.find(x=>x.id===id);if(!u)return;$('userEditId').value=id;$('newUsername').value=u.username;$('newUsername').readOnly=true;$('newPassword').value='';$('newPassword').required=false;$('newRole').value=u.role;$('newRole').disabled=!!u.isOwner;$('newRole').options[1].text=u.isOwner?'Owner/Admin (fixed)':'Co-Owner/Admin';$('newUserBranch').value=String(u.branchId||'');$('newUserActive').checked=u.active;$('newUserActive').disabled=!!u.isOwner;toggleUserBranch();}
-  $('userFormClear').onclick=clearUserForm;$('userForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('userEditId').value||0),body={username:$('newUsername').value.trim(),password:$('newPassword').value,role:$('newRole').value,branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,active:$('newUserActive').checked};try{if(id)await api(`/api/users/${id}`,{method:'PUT',body});else await api('/api/users',{method:'POST',body});toast('User account saved.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}});});
+
+  function renderUsers(){
+    const rows=state.userList||[];
+    const pages=Math.max(1,Math.ceil(rows.length/managementPageSize));
+    cashiersPage=Math.min(Math.max(1,cashiersPage),pages);
+    const page=rows.slice((cashiersPage-1)*managementPageSize,cashiersPage*managementPageSize);
+    $('usersBody').innerHTML=page.map(u=>`<tr><td><b>${esc(u.fullName||u.username)}</b><div class="tiny muted">${esc(u.username)}</div></td><td>${esc(u.roleLabel||u.role)}</td><td>${esc(u.branchName||'All branches')}</td><td class="${u.active?'stock-ok':'stock-low'}">${u.active?'ACTIVE':'INACTIVE'}</td><td>${u.hasWebPassword?'SET':'RESET REQUIRED'}</td><td><button class="table-btn" data-edit-user="${u.id}">Edit</button>${u.isOwner?'':`<button class="danger-link" data-delete-user="${u.id}">Delete</button>`}</td></tr>`).join('')||'<tr><td colspan="6">No staff accounts found.</td></tr>';
+    $('usersBody').querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>editUser(Number(b.dataset.editUser),rows));
+    $('usersBody').querySelectorAll('[data-delete-user]').forEach(b=>b.onclick=()=>deleteUser(Number(b.dataset.deleteUser)));
+    renderManagementPager('usersPagination',cashiersPage,rows.length,next=>{cashiersPage=next;renderUsers();});
+  }
+  async function loadUsers(){
+    if(state.user?.role!=='Admin')return;
+    try{await loadBranches();const d=await api('/api/users');state.userList=d.users||[];renderUsers();}catch(err){toast(err.message);}
+  }
+  function clearUserForm(){
+    $('userEditId').value='';
+    for(const id of ['newUsername','newFullName','newUserEmail','newUserPhone','newPassword'])$(id).value='';
+    $('newUsername').readOnly=false;$('newPassword').required=true;$('newPassword').type='password';
+    $('toggleCashierPassword').setAttribute('aria-label','Show cashier password');
+    $('newRole').disabled=false;$('newRole').options[1].text='Co-Owner';$('newRole').value='User';
+    $('newUserActive').disabled=false;$('newUserActive').checked=true;toggleUserBranch();
+  }
+  function editUser(id,users){
+    const u=users.find(x=>x.id===id);if(!u)return;
+    $('userEditId').value=id;$('newUsername').value=u.username;$('newUsername').readOnly=true;
+    $('newFullName').value=u.fullName||'';$('newUserEmail').value=u.email||'';$('newUserPhone').value=u.phone||'';
+    $('newPassword').value='';$('newPassword').required=false;$('newPassword').type='password';
+    $('newRole').value=u.role;$('newRole').disabled=!!u.isOwner;
+    $('newRole').options[1].text=u.isOwner?'Owner/Admin (fixed)':'Co-Owner/Admin';
+    $('newUserBranch').value=String(u.branchId||'');
+    $('newUserActive').checked=!!u.active;$('newUserActive').disabled=!!u.isOwner;
+    toggleUserBranch();
+  }
+  $('toggleCashierPassword').onclick=()=>{
+    const input=$('newPassword');
+    input.type=input.type==='password'?'text':'password';
+    $('toggleCashierPassword').setAttribute('aria-label',input.type==='text'?'Hide cashier password':'Show cashier password');
+    $('toggleCashierPassword').setAttribute('title',input.type==='text'?'Hide password':'Show password');
+  };
+  $('userFormClear').onclick=clearUserForm;
+  $('userForm').addEventListener('submit',async e=>{
+    e.preventDefault();const form=e.currentTarget;
+    await withFormLock(form,async()=>{
+      const id=Number($('userEditId').value||0);
+      const body={username:$('newUsername').value.trim(),password:$('newPassword').value,
+        fullName:$('newFullName').value.trim(),email:$('newUserEmail').value.trim(),
+        phone:$('newUserPhone').value.trim(),role:$('newRole').value,
+        branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,
+        active:$('newUserActive').checked};
+      try{
+        if(id)await api(`/api/users/${id}`,{method:'PUT',body});
+        else await api('/api/users',{method:'POST',body});
+        toast(id?'Cashier updated.':'Cashier created.');clearUserForm();await loadUsers();
+      }catch(err){toast(err.message);}
+    });
+  });
 
   function formatDateTime(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(d);}
   function formatDateTimeDetailed(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'medium'}).format(d);}
