@@ -28,7 +28,7 @@ assert(css.includes('.catalog-batch-grid'));
 assert(css.includes('.catalog-active-row'));
 assert(loader.includes('catalog-batch-v1544.js'));
 assert(loader.includes('pos-catalog-v1544.css'));
-assert(server.includes("const APP_VERSION = '1.5.44-pos-catalog-batch-and-backups';"));
+assert(server.includes("const APP_VERSION = '1.5.45-catalog-icons-package-layout';"));
 assert(!server.includes('DELETE FROM sales WHERE sold_at <'));
 assert(server.includes("/api/backups/data-export"));
 assert(server.includes("makePortableDataExport"));
