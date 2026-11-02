@@ -31,7 +31,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.43-dev-plans-advanced-inventory';
+const APP_VERSION = '1.5.44-pos-catalog-batch-and-backups';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1078,6 +1078,76 @@ async function restoreBackup(user,name){
   }
 }
 
+// Portable non-credential business data export, not an automated database
+// snapshot or a restorable native PostgreSQL dump. Admin-only and read-only.
+const DATA_EXPORT_TABLES=Object.freeze([
+  'branches','products','add_ons','ingredients','product_ingredients',
+  'packages','package_items','promos','pos_categories','pos_category_products',
+  'sales','sale_items','sale_item_components','inventory_movements','system_logs'
+]);
+async function makePortableDataExport(){
+  const result=await db.transaction(async tx=>{
+    if(tx.engine==='postgres')
+      await tx.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
+    const manifest={},rows={};
+    for(const table of DATA_EXPORT_TABLES){
+      // Table names come only from this fixed allowlist, never from the client.
+      const existing=tx.engine==='postgres'
+        ?await tx.query('SELECT 1 FROM information_schema.tables WHERE table_schema=$1 AND table_name=$2',['public',table])
+        :await tx.query("SELECT 1 FROM sqlite_master WHERE type='table' AND name=$1",[table]);
+      if(!existing.rows.length)continue;
+      const result=await tx.query('SELECT * FROM '+table+' LIMIT 75001');
+      if(result.rows.length>75000)
+        throw Object.assign(new Error('Data export exceeds the per-table row limit. Use a full PostgreSQL database dump for this dataset.'),{status:413});
+      rows[table]=result.rows;
+      manifest[table]=result.rows.length;
+    }
+    return {manifest,rows};
+  });
+  const body={
+    format:'donmac-business-data-archive',
+    version:1,
+    exportedAt:nowIso(),
+    databaseEngine:db.engine,
+    restoreSupported:false,
+    note:'Read-only business data archive; not a replacement for a restorable full database backup. Auth credentials, sessions, and private chat messages are excluded.',
+    tables:result.rows,
+    counts:result.manifest
+  };
+  const buffer=Buffer.from(JSON.stringify(body));
+  if(buffer.length>60*1024*1024)
+    throw Object.assign(new Error('Archive exceeds 60 MB. Request a managed PostgreSQL database dump for larger exports.'),{status:413});
+  return {buffer,filename:'DonMac_Data_Archive_'+nowIso().slice(0,10)+'.json'};
+}
+const RETENTION_PREF_KEY='retention_preview_frequency_v1';
+async function getRetentionPreview(){
+  const r=await db.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[RETENTION_PREF_KEY]);
+  let p=null;
+  try{p=JSON.parse(r.rows[0]?.setting_value||'null');}catch(_){}
+  const enabled=p?.demoEnabled===true;
+  const frequency=['monthly','quarterly','yearly'].includes(p?.frequency)?p.frequency:'monthly';
+  return {demoEnabled:enabled,frequency,subscriptionActive:false,
+    automaticOffsiteBackupActive:false,automaticRetentionActive:false,
+    historicDataAccessRestricted:false,
+    priceMonthly:299,priceYearly:2990,
+    note:'Saved preferences only; no real subscription, billing, automatic off-site backup, expiration or annual data-locking is active.'};
+}
+async function saveRetentionPreview(user,input){
+  requireAdminRole(user);
+  const enabled=input?.demoEnabled===true;
+  const frequency=String(input?.frequency||'monthly');
+  if(!['monthly','quarterly','yearly'].includes(frequency))
+    throw Object.assign(new Error('Choose Monthly, Quarterly or Yearly.'),{status:400});
+  const value={demoEnabled:enabled,frequency,updatedAt:nowIso(),updatedBy:user.id};
+  await db.transaction(async tx=>{
+    await tx.query('INSERT INTO app_settings (setting_key,setting_value,updated_at) VALUES ($1,$2,$3) ON CONFLICT (setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=excluded.updated_at',
+      [RETENTION_PREF_KEY,JSON.stringify(value),nowIso()]);
+    await logAction(user,'Retention preview preference saved','Retention Preview',
+      (enabled?'Enabled':'Disabled')+' / '+frequency+' (no billing or automatic storage)',tx);
+  });
+  return getRetentionPreview();
+}
+
 async function deleteSale(user,reference,body){
   if(typeof body.restoreStock!=='boolean')throw Object.assign(new Error('Specify whether stock should be restored.'),{status:400});
   return db.transaction(async tx=>{
@@ -1196,6 +1266,15 @@ async function handleApi(req,res,url){
 
   if(method==='GET'&&p==='/api/admin/settings')return json(res,200,await getSettings(),safeHeaders());
   if(method==='PUT'&&p==='/api/admin/settings')return json(res,200,await saveSettings(user,await readJson(req)),safeHeaders());
+  if(method==='GET'&&p==='/api/backups/data-export'){
+    const archive=await makePortableDataExport();
+    return binary(res,200,archive.buffer,'application/json; charset=utf-8',
+      {'Content-Disposition':'attachment; filename="'+archive.filename+'"','Cache-Control':'no-store'});
+  }
+  if(method==='GET'&&p==='/api/backups/retention-preview')
+    return json(res,200,await getRetentionPreview(),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='PUT'&&p==='/api/backups/retention-preview')
+    return json(res,200,await saveRetentionPreview(user,await readJson(req)),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/backups')return json(res,200,await listBackups(),safeHeaders());
   if(method==='POST'&&p==='/api/backups')return json(res,201,await createBackup(user,'manual'),safeHeaders());
   const backupDownload=p.match(/^\/api\/backups\/([^/]+)$/);if(method==='GET'&&backupDownload){const name=safeBackupName(decodeURIComponent(backupDownload[1])),file=path.join(BACKUP_DIR,name);if(!fs.existsSync(file))return json(res,404,{error:'Backup file not found.'},safeHeaders());return binary(res,200,fs.readFileSync(file),'application/vnd.sqlite3',{'Content-Disposition':`attachment; filename="${name}"`});}
