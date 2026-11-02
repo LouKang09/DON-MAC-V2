@@ -116,62 +116,89 @@
   }
 
   let savedLogScroll = 0;
+  let logPage=1;
+  const LOGS_PER_PAGE=10;
   function categoryLabel(category) {
     return ({sales:'Sales',reports:'Reports',inventory:'Inventory',catalog:'Catalog / Setup',users:'Users / Access',database:'Database / Backup',other:'Other'})[category] || 'Other';
   }
 
   function ensureLogFilters() {
-    const list = $('logsList');
-    if (!list || $('logCategoryFilter')) return;
+    const list=$('logsList');
+    if(!list||$('logCategoryFilter'))return;
     list.closest('.card')?.classList.add('logs-card');
-    const toolbar = document.createElement('div');
-    toolbar.className = 'logs-toolbar';
-    toolbar.innerHTML = `<label>Category<select id="logCategoryFilter"><option value="all">All Activity</option><option value="sales">Sales</option><option value="reports">Reports</option><option value="inventory">Inventory</option><option value="catalog">Catalog & Setup</option><option value="users">Users & Access</option><option value="database">Database & Backup</option><option value="other">Other</option></select></label><label class="logs-search-label">Search<input id="logSearch" type="search" placeholder="Search status, user, reference, remarks..." /></label><div id="logResultCount" class="log-result-count">0 logs</div>`;
-    list.parentNode.insertBefore(toolbar, list);
-    list.setAttribute('tabindex', '0');
-    list.addEventListener('scroll', () => { savedLogScroll = list.scrollTop; });
-    $('logCategoryFilter').addEventListener('change', filterLogRows);
-    $('logSearch').addEventListener('input', filterLogRows);
-    const observer = new MutationObserver(() => {
+    const toolbar=document.createElement('div');
+    toolbar.className='logs-toolbar';
+    toolbar.innerHTML=`<label>Category<select id="logCategoryFilter"><option value="all">All Activity</option><option value="sales">Sales</option><option value="reports">Reports</option><option value="inventory">Inventory</option><option value="catalog">Catalog & Setup</option><option value="users">Users & Access</option><option value="database">Database & Backup</option><option value="other">Other</option></select></label><label class="logs-search-label">Search<input id="logSearch" type="search" placeholder="Search status, user, reference, remarks..." /></label><div id="logResultCount" class="log-result-count" aria-live="polite">0 logs</div>`;
+    list.parentNode.insertBefore(toolbar,list);
+    list.setAttribute('tabindex','0');
+    list.addEventListener('scroll',()=>{savedLogScroll=list.scrollTop;});
+    // Only user-driven changes reset pagination; re-rendering the current list
+    // (including auto-refresh) preserves the current page when it remains valid.
+    $('logCategoryFilter').addEventListener('change',()=>{logPage=1;filterLogRows();});
+    $('logSearch').addEventListener('input',()=>{logPage=1;filterLogRows();});
+    $('systemLogsPagination')?.addEventListener('click',event=>{
+      const control=event.target.closest('button[data-log-page]');
+      if(!control||control.disabled)return;
+      logPage=Number(control.dataset.logPage)||1;
+      savedLogScroll=0;
+      list.scrollTop=0;
       filterLogRows();
-      requestAnimationFrame(() => { list.scrollTop = savedLogScroll; });
     });
-    observer.observe(list, { childList: true });
+    const observer=new MutationObserver(()=>{
+      filterLogRows();
+      requestAnimationFrame(()=>{list.scrollTop=savedLogScroll;});
+    });
+    observer.observe(list,{childList:true});
     filterLogRows();
   }
 
   function filterLogRows() {
-    const list = $('logsList');
-    if (!list) return;
-    const category = $('logCategoryFilter')?.value || 'all';
-    const query = String($('logSearch')?.value || '').trim().toUpperCase();
-    const rows = [...list.querySelectorAll('.log-row')];
-    let visible = 0;
-    for (const row of rows) {
-      const text = row.textContent || '';
-      const cat = UI.classifyLogEntry ? UI.classifyLogEntry({ activity: text }) : 'other';
-      row.dataset.category = cat;
-      let pill = row.querySelector('.log-category');
-      if (!pill) {
-        pill = document.createElement('span');
-        pill.className = 'log-category';
+    const list=$('logsList');
+    if(!list)return;
+    const category=$('logCategoryFilter')?.value||'all';
+    const query=String($('logSearch')?.value||'').trim().toUpperCase();
+    const rows=[...list.querySelectorAll('.log-row')];
+    const matched=[];
+    for(const row of rows){
+      // Prefer the server-backed log category from the enhanced audit renderer.
+      // Fall back to classification for legacy records.
+      const raw=row.textContent||'';
+      const cat=row.dataset.category||
+        (UI.classifyLogEntry?UI.classifyLogEntry({activity:raw}):'other');
+      row.dataset.category=cat;
+      let pill=row.querySelector('.log-category');
+      if(!pill){
+        pill=document.createElement('span');
+        pill.className='log-category';
         row.querySelector('.log-meta')?.prepend(pill);
       }
-      if (pill) pill.textContent = categoryLabel(cat);
-      const show = (category === 'all' || category === cat) && (!query || text.toUpperCase().includes(query));
-      row.style.display = show ? '' : 'none';
-      if (show) visible++;
+      if(pill)pill.textContent=categoryLabel(cat);
+      if((category==='all'||category===cat)&&(!query||raw.toUpperCase().includes(query)))
+        matched.push(row);
     }
-    if ($('logResultCount')) $('logResultCount').textContent = `${visible} of ${rows.length} log${rows.length === 1 ? '' : 's'}`;
-    let empty = $('logFilterEmpty');
-    if (!empty) {
-      empty = document.createElement('div');
-      empty.id = 'logFilterEmpty';
-      empty.className = 'empty-state hidden';
-      empty.innerHTML = '<div><b>No matching logs</b>Try another category or search.</div>';
-      list.parentNode.insertBefore(empty, list.nextSibling);
+    const total=matched.length, pages=Math.max(1,Math.ceil(total/LOGS_PER_PAGE));
+    logPage=Math.max(1,Math.min(pages,logPage));
+    const first=(logPage-1)*LOGS_PER_PAGE;
+    const current=new Set(matched.slice(first,first+LOGS_PER_PAGE));
+    for(const row of rows)row.style.display=current.has(row)?'':'none';
+    if($('logResultCount'))
+      $('logResultCount').textContent=total?
+        'Showing '+(first+1)+'–'+Math.min(first+LOGS_PER_PAGE,total)+' of '+total+' logs':
+        '0 of '+rows.length+' logs';
+    const controls=$('systemLogsPagination');
+    if(controls){
+      controls.innerHTML='<span>Page '+logPage+' of '+pages+'</span>'+
+        '<button type="button" data-log-page="'+(logPage-1)+'" '+(logPage===1?'disabled':'')+'>Previous</button>'+
+        '<button type="button" data-log-page="'+(logPage+1)+'" '+(logPage===pages?'disabled':'')+'>Next</button>';
     }
-    empty.classList.toggle('hidden', !(rows.length && visible === 0));
+    let empty=$('logFilterEmpty');
+    if(!empty){
+      empty=document.createElement('div');
+      empty.id='logFilterEmpty';empty.className='empty-state hidden';
+      empty.innerHTML='<div><b>No matching logs</b>Try another category or search.</div>';
+      list.parentNode.insertBefore(empty,list.nextSibling);
+    }
+    empty.classList.toggle('hidden',!(rows.length&&total===0));
   }
 
   const batches = { replenish: [], transfer: [] };
