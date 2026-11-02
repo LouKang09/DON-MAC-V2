@@ -211,6 +211,13 @@
   $('saveAccountPlan').addEventListener('click',()=>
     changeDevSubscription($('accountPlanSelect').value,$('accountStatusSelect').value));
   $('accountSettingsTop').addEventListener('click',()=>switchView('account'));
+  $('topbarProfileButton').addEventListener('click',()=>{
+    if(state.user?.role!=='Admin'){
+      toast('Account Settings are available to the Owner and Co-Owners.');
+      return;
+    }
+    switchView('account');
+  });
   $('transferUpgradeButton').addEventListener('click',openPlanUpgrade);
   $('advancedUpgradeButton').addEventListener('click',openPlanUpgrade);
   $('advancedOpenInventory').addEventListener('click',()=>switchView('inventory'));
