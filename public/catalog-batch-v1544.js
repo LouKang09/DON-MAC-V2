@@ -70,14 +70,15 @@
       if(e.target.closest('input[type=checkbox]'))return;
       const box=row.querySelector('input[type=checkbox]');
       box.checked=!box.checked;
-      box.dispatchEvent(new Event('change',{bubbles:true,shiftKey:e.shiftKey}));
+      box.dataset.shiftHeld=e.shiftKey?'1':'0';
+      box.dispatchEvent(new Event('change',{bubbles:true}));
     });
     f.list.addEventListener('change',e=>{
       const field=e.target.closest('[data-batch-check]');
       if(!field)return;
       const id=Number(field.dataset.batchCheck),ids=visible(kind).map(x=>Number(x.id));
       // Shift selection works between the first and last clicked checkbox.
-      if(e.shiftKey&&m.anchor!==null&&ids.includes(m.anchor)){
+      if((field.dataset.shiftHeld==='1'||e.shiftKey)&&m.anchor!==null&&ids.includes(m.anchor)){
         const first=ids.indexOf(m.anchor),last=ids.indexOf(id);
         for(let index=Math.min(first,last);index<=Math.max(first,last);index++){
           if(field.checked)m.selected.add(ids[index]);else m.selected.delete(ids[index]);
@@ -85,6 +86,7 @@
       }else if(field.checked)m.selected.add(id);
       else m.selected.delete(id);
       m.anchor=id;
+      field.dataset.shiftHeld='0';
       refresh(kind);
     });
     f.list.addEventListener('pointerdown',e=>{
