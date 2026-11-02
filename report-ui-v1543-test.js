@@ -12,7 +12,7 @@ function count(id){return [...html.matchAll(new RegExp('id="'+id+'"','g'))].leng
 for(const id of ['planSwitcher','view-advanced','view-account','transferPlanGate',
   'transferUpgradeButton','advancedUpgradeButton','subscriptionHistoryBody',
   'accountPlanSelect','accountStatusSelect','saveAccountPlan','accountStartedAt',
-  'accountRenewAt','accountRemaining','accountSettingsTop']){
+  'accountRenewAt','accountRemaining','topbarProfileButton']){
   assert.equal(count(id),1,'Missing/duplicate subscription element: '+id);
 }
 assert(/<option value="User">Cashier<\/option>/.test(html));
