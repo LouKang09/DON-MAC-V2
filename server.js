@@ -636,7 +636,7 @@ async function transfer(user,body){
     return {ok:true,activity};
   });
 }
-async function listInventoryMovements(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.reference,m.branch,m.received_by,m.delivered_by,m.remarks,m.created_at,i.display_name,i.uom,u.username FROM inventory_movements m JOIN ingredients i ON i.id=m.ingredient_id LEFT JOIN users u ON u.id=m.created_by ORDER BY m.created_at DESC,m.id DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),type:x.movement_type,ingredient:x.display_name,uom:x.uom,quantityChange:Number(x.quantity_change),balanceAfter:Number(x.balance_after),reference:x.reference,branch:x.branch,receivedBy:x.received_by,deliveredBy:x.delivered_by,remarks:x.remarks,createdBy:x.username,createdAt:x.created_at}));}
+async function listInventoryMovements(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.reference,m.branch,m.received_by,m.delivered_by,m.remarks,m.created_at,i.display_name,i.uom,COALESCE(u.login_username,u.username) AS username FROM inventory_movements m JOIN ingredients i ON i.id=m.ingredient_id LEFT JOIN users u ON u.id=m.created_by ORDER BY m.created_at DESC,m.id DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),type:x.movement_type,ingredient:x.display_name,uom:x.uom,quantityChange:Number(x.quantity_change),balanceAfter:Number(x.balance_after),reference:x.reference,branch:x.branch,receivedBy:x.received_by,deliveredBy:x.delivered_by,remarks:x.remarks,createdBy:x.username,createdAt:x.created_at}));}
 
 function manilaDateString(value){if(!value)return'';const raw=String(value);if(!/[zZ]|[+-]\d\d:\d\d$/.test(raw))return raw.slice(0,10);const d=new Date(raw);if(Number.isNaN(d.getTime()))return raw.slice(0,10);const parts=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${map.year}-${map.month}-${map.day}`;}
 function sundayOf(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d));dt.setUTCDate(dt.getUTCDate()-dt.getUTCDay());return dt.toISOString().slice(0,10);}
@@ -734,7 +734,7 @@ async function salesReport(params){
 async function getSaleDetail(reference,user){
   const ref=String(reference||'').trim();
   if(!ref||ref.length>200)throw Object.assign(new Error('Invalid transaction reference.'),{status:400});
-  const saleR=await db.query(`SELECT s.*,p.name AS promo_name,du.username AS deleted_by_username
+  const saleR=await db.query(`SELECT s.*,p.name AS promo_name,COALESCE(du.login_username,du.username) AS deleted_by_username
     FROM sales s
     LEFT JOIN promos p ON p.id=s.promo_id
     LEFT JOIN users du ON du.id=s.deleted_by
@@ -763,7 +763,7 @@ async function getSaleDetail(reference,user){
   }));
 
   const movementsR=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.remarks,m.created_at,
-      i.display_name,i.uom,u.username AS created_by_username
+      i.display_name,i.uom,COALESCE(u.login_username,u.username) AS created_by_username
     FROM inventory_movements m
     JOIN ingredients i ON i.id=m.ingredient_id
     LEFT JOIN users u ON u.id=m.created_by
@@ -819,7 +819,7 @@ async function migrateCashierProfiles(){
   await db.exec('CREATE INDEX IF NOT EXISTS idx_cashier_login_name ON users(login_username)');
   // Database-enforced uniqueness, including concurrent account creation.
   await db.query('UPDATE users SET owner_scope_id=(SELECT workspace_id FROM chat_memberships WHERE user_id=users.id) WHERE owner_scope_id IS NULL');
-  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS ux_cashier_name_owner_branch ON users(owner_scope_id,COALESCE(branch_id,0),LOWER(login_username)) WHERE owner_scope_id IS NOT NULL');
+  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS ux_cashier_name_owner_branch ON users(owner_scope_id,(COALESCE(branch_id,0)),LOWER(login_username)) WHERE owner_scope_id IS NOT NULL');
 }
 async function workspaceIdForUser(id){
   const r=await db.query('SELECT workspace_id FROM chat_memberships WHERE user_id=$1',[Number(id)]);
