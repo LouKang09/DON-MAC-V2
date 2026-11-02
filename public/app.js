@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.46-pos-style-catalog-cards';
+  const VERSION = '1.5.47-branch-cashier-management';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
