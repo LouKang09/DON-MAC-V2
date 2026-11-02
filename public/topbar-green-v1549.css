@@ -1,4 +1,4 @@
-/* Don Macchiatos v1.5.50 — cohesive green, high-contrast header.
+/* Don Macchiatos v1.5.51 — cohesive green, high-contrast header.
    Override cream header styles from earlier POS/dashboard layers without
    changing the logo dimensions, page layout or interactive behavior. */
 .app .topbar {
@@ -124,4 +124,63 @@
 }
 @media print {
   .app .topbar { display: none !important; }
+}
+
+/* v1.5.51: use the user's supplied question-mark gear asset, not a Unicode symbol.
+   The source is black on transparent; tint it white for the dark green header. */
+.app .topbar #accountSettingsTop .account-settings-gear-icon {
+  width: 23px !important;
+  height: 23px !important;
+  display: block;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  pointer-events: none;
+}
+.app .topbar #accountSettingsTop,
+.app .topbar .account-plan-top-control,
+.app .topbar .topbar-profile,
+.app .topbar .whats-new-button {
+  border-width: 1.5px !important;
+  border-style: solid !important;
+  border-color: rgba(178,230,196,.72) !important;
+  background: rgba(10,85,54,.75) !important;
+}
+.app .topbar #topbarProfileButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 44px;
+  padding: 6px 10px 6px 6px;
+}
+.app .topbar #topbarProfileButton .topbar-profile-chevron {
+  display: block;
+  flex: 0 0 14px;
+  color: #ffffff !important;
+  margin-left: auto;
+}
+.app .topbar #topbarProfileButton:hover,
+.app .topbar #accountSettingsTop:hover {
+  background: rgba(22,111,72,.9) !important;
+}
+.app .topbar #topbarProfileButton:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 3px;
+}
+.app .topbar #topbarProfileButton:disabled {
+  cursor: default;
+  opacity: .76;
+}
+@media (max-width:699px) {
+  .app .topbar #topbarProfileButton {
+    min-height: 38px;
+    padding: 3px;
+  }
+  .app .topbar #topbarProfileButton .topbar-profile-chevron {
+    display: none;
+  }
 }
