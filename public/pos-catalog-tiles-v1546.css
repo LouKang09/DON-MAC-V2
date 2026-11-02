@@ -1,0 +1,190 @@
+/* POS Catalog v1.5.46 – same 3-column tile scale as POS categories. */
+#view-catalog #adminTabs.catalog-tiles {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: 10px !important;
+  flex-wrap: initial !important;
+  width: 100%;
+  margin-bottom: 20px !important;
+}
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile {
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 110px !important;
+  height: 110px !important;
+  padding: 14px !important;
+  gap: 4px;
+  border: 1px solid #e3e9e2;
+  border-radius: 17px !important;
+  background: #fff;
+  box-shadow: none;
+  color: #22372c;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease;
+}
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile.active {
+  background: #07603d !important;
+  border-color: #07603d !important;
+  color: #fff !important;
+}
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile:not(.active):hover {
+  background: #edf6ef !important;
+  border-color: #a9cab6;
+}
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile.active:hover {
+  background: #075337 !important;
+}
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile:focus-visible {
+  outline: 2px solid #197b51;
+  outline-offset: 3px;
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile-status {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid #d8e7dc;
+  border-radius: 999px;
+  color: #536e5d;
+  background: #fcfefd;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.1;
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile-status::before {
+  content: 'Browse';
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile.active .catalog-tile-status {
+  background: transparent;
+  border-color: #d1efdc;
+  color: #effff5;
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile.active .catalog-tile-status::before {
+  content: 'Selected';
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: calc(100% - 85px);
+  min-width: 0;
+  font-size: 15px !important;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: inherit;
+}
+#view-catalog #adminTabs.catalog-tiles img.catalog-tab-icon {
+  position: absolute;
+  z-index: 0;
+  right: 10px;
+  bottom: 10px;
+  display: block !important;
+  width: 67px !important;
+  height: 67px !important;
+  max-width: none;
+  flex: 0 0 67px;
+  object-fit: contain;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: none;
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile.active img.catalog-tab-icon {
+  filter: none !important;
+}
+#view-catalog #adminTabs.catalog-tiles .catalog-tile[data-admin-tab='backups'] .catalog-tile-label,
+#view-catalog #adminTabs.catalog-tiles .catalog-tile[data-admin-tab='recipes'] .catalog-tile-label {
+  width: calc(100% - 80px);
+}
+
+/* Both archive and native-backup buttons use the same green compact design
+   with a white outline download icon; disabled SQLite-only backup stays clear. */
+#view-catalog #admin-backups button.catalog-download-button,
+#view-catalog #admin-backups #createBackup,
+#view-catalog #admin-backups #downloadDataArchive {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 9px;
+  min-width: 165px;
+  min-height: 43px;
+  width: auto;
+  max-width: 100%;
+  padding: 11px 17px !important;
+  margin: 0;
+  border: 1px solid #146040 !important;
+  border-radius: 11px !important;
+  background: #146040 !important;
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: normal;
+  text-align: center;
+  box-shadow: none;
+}
+#view-catalog #admin-backups .catalog-download-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  flex: 0 0 18px;
+  stroke: currentColor;
+}
+#view-catalog #admin-backups button.catalog-download-button:hover:not(:disabled) {
+  background: #0b4f32 !important;
+  border-color: #0b4f32 !important;
+}
+#view-catalog #admin-backups button.catalog-download-button:disabled {
+  opacity: .55 !important;
+  cursor: not-allowed;
+}
+#view-catalog #admin-backups button.catalog-download-button:focus-visible {
+  outline: 2px solid #379568;
+  outline-offset: 3px;
+}
+@media (max-width: 900px) {
+  #view-catalog #adminTabs.catalog-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 540px) {
+  #view-catalog #adminTabs.catalog-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  #view-catalog #adminTabs.catalog-tiles button.catalog-tile {
+    height: 105px !important;
+    min-height: 105px !important;
+    padding: 11px !important;
+  }
+  #view-catalog #adminTabs.catalog-tiles .catalog-tile-label {
+    font-size: 12px !important;
+    width: calc(100% - 58px);
+  }
+  #view-catalog #adminTabs.catalog-tiles img.catalog-tab-icon {
+    width: 50px !important;
+    height: 50px !important;
+    right: 6px;
+    bottom: 9px;
+  }
+  #view-catalog #adminTabs.catalog-tiles .catalog-tile-status {
+    top: 8px;
+    left: 9px;
+    font-size: 8px;
+  }
+}
