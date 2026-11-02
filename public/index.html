@@ -88,7 +88,7 @@
           <span class="topbar-logo" aria-hidden="true"><img src="/donmac-logo-hires.svg" alt="" width="108" height="108" /></span>
           <div class="topbar-heading-copy"><p class="eyebrow" id="viewEyebrow"></p><h2 id="viewTitle">Welcome to Don Macchiatos POS</h2><span id="posDate" class="pos-header-date"></span></div>
         </div>
-        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine" hidden style="display:none">DATABASE</span><label class="account-plan-top-control" for="planSwitcher">Account Type: <select id="planSwitcher" aria-label="Account Type"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><button id="accountSettingsTop" type="button" class="account-settings-quick admin-only" title="Account Settings" aria-label="Open Account Settings">⚙</button><div class="topbar-profile"><span class="topbar-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span></div></div>
+        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine" hidden style="display:none">DATABASE</span><label class="account-plan-top-control" for="planSwitcher">Account Type: <select id="planSwitcher" aria-label="Account Type"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><button id="accountSettingsTop" type="button" class="account-settings-quick admin-only" title="Account Settings" aria-label="Open Account Settings">⚙</button><div class="topbar-profile"><span class="topbar-avatar" id="topbarAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span></div></div>
       </header>
 
       <section id="view-dashboard" class="view">
@@ -426,7 +426,7 @@
 <button class="catalog-tile" type="button" data-admin-tab="recipes" aria-label="Recipes & Costing"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Recipes &amp; Costing</span><img class="catalog-tab-icon" src="/assets/catalog/recipe-removebg-preview.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="promos" aria-label="Promos"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Promos</span><img class="catalog-tab-icon" src="/assets/catalog/promo-removebg-preview.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="packages" aria-label="Packages"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Packages</span><img class="catalog-tab-icon" src="/assets/catalog/goods.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
-<button class="catalog-tile" type="button" data-admin-tab="backups" aria-label="Backups"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Backups</span><img class="catalog-tab-icon" src="/assets/catalog/backup-v1547.png?v=1.5.47" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
+<button class="catalog-tile" type="button" data-admin-tab="backups" aria-label="Backups"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Backups</span><img class="catalog-tab-icon" src="/assets/catalog/backup-white-v1548.png?v=1.5.48" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 </div>
 
         <div id="admin-products" class="admin-panel active section-grid admin-layout">
@@ -505,7 +505,7 @@
     </div>
     <div class="catalog-batch-drop" id="compositionBatchDrop" aria-label="Drop products into package composition" tabindex="0"><strong>Package composition</strong><p>Drop products here or use Add selected. Edit quantities below.</p></div>
   </div>
-</div><div class="recipe-add compact-add catalog-batch-fallback"><select id="compositionProduct"></select><input id="compositionQty" type="number" min="1" step="1" placeholder="Qty" /><button id="compositionAdd" class="ghost" type="button"><span class="catalog-btn-icon" aria-hidden="true">＋</span> Add / Update</button></div><div id="compositionList" class="mini-list"></div><button id="saveComposition" class="primary" type="button"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Composition</button><p class="tiny muted">The uploaded PackageList does not contain component products. Enter the client-approved contents here; packages remain unsellable until composition is saved.</p></section></form>
+</div><div id="compositionList" class="mini-list"></div><button id="saveComposition" class="primary" type="button"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Composition</button><p class="tiny muted">The uploaded PackageList does not contain component products. Enter the client-approved contents here; packages remain unsellable until composition is saved.</p></section></form>
         </div>
 
         <div id="admin-settings" class="admin-panel section-grid admin-layout">
@@ -525,7 +525,12 @@
       <section id="view-users" class="view admin-only">
         <div class="users-heading"><p class="eyebrow">ACCESS &amp; LOCATIONS</p><h2>Branches &amp; Cashiers</h2><p class="muted">Manage branch information and staff access in one workspace.</p></div>
         <div class="card users-management-shell">
-          <section class="users-management-group" aria-labelledby="branchManagerHeading">
+          <div class="users-page-tabs" role="tablist" aria-label="Branches and cashier management">
+            <button id="usersTabBranches" class="users-page-tab active" type="button" role="tab" aria-controls="usersBranchesPage" aria-selected="true" data-users-page="branches">Branches</button>
+            <span class="users-tab-divider" aria-hidden="true"></span>
+            <button id="usersTabCashiers" class="users-page-tab" type="button" role="tab" aria-controls="usersCashiersPage" aria-selected="false" data-users-page="cashiers">Cashiers</button>
+          </div>
+          <section id="usersBranchesPage" class="users-management-group" role="tabpanel" aria-labelledby="usersTabBranches">
             <div class="users-group-heading"><div><span class="users-group-symbol" aria-hidden="true">⌂</span><h3 id="branchManagerHeading">Branches</h3><p class="muted tiny">Locations, contacts and operational status</p></div><span class="users-help" title="Inactive branches cannot process new sales. Branches with sales history cannot be deleted." aria-label="Branch settings information"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.12 2.12-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.52V21h-3v-.09a1.65 1.65 0 0 0-1-1.52 1.65 1.65 0 0 0-1.82.33l-.06.06L6.79 17.7l.06-.06A1.65 1.65 0 0 0 7.18 15a1.65 1.65 0 0 0-1.52-1H5v-3h.66A1.65 1.65 0 0 0 7.18 10a1.65 1.65 0 0 0-.33-1.82l-.06-.06L8.91 6l.06.06A1.65 1.65 0 0 0 10.79 6a1.65 1.65 0 0 0 1-1.52V4h3v.48a1.65 1.65 0 0 0 1 1.52 1.65 1.65 0 0 0 1.82-.33l.06-.06L19.79 8l-.06.06A1.65 1.65 0 0 0 19.4 10a1.65 1.65 0 0 0 1.52 1H21v3h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg></span></div>
             <div class="users-manage-layout">
               <div class="users-list-panel"><div class="users-list-heading"><strong>Branch directory</strong><span class="muted tiny">10 per page</span></div>
@@ -546,16 +551,22 @@
               </form>
             </div>
           </section>
-          <div class="users-splitter" role="separator" aria-label="Branches and cashiers"><span>STAFF ACCESS</span></div>
-          <section class="users-management-group" aria-labelledby="cashierManagerHeading">
+          <section id="usersCashiersPage" class="users-management-group" role="tabpanel" aria-labelledby="usersTabCashiers" hidden>
             <div class="users-group-heading"><div><span class="users-group-symbol" aria-hidden="true">♙</span><h3 id="cashierManagerHeading">Cashiers</h3><p class="muted tiny">Staff credentials and branch assignments</p></div><span class="users-help" title="Cashier usernames must be unique inside the assigned branch and owner account." aria-label="Cashier account information"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.12 2.12-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.52V21h-3v-.09a1.65 1.65 0 0 0-1-1.52 1.65 1.65 0 0 0-1.82.33l-.06.06L6.79 17.7l.06-.06A1.65 1.65 0 0 0 7.18 15a1.65 1.65 0 0 0-1.52-1H5v-3h.66A1.65 1.65 0 0 0 7.18 10a1.65 1.65 0 0 0-.33-1.82l-.06-.06L8.91 6l.06.06A1.65 1.65 0 0 0 10.79 6a1.65 1.65 0 0 0 1-1.52V4h3v.48a1.65 1.65 0 0 0 1 1.52 1.65 1.65 0 0 0 1.82-.33l.06-.06L19.79 8l-.06.06A1.65 1.65 0 0 0 19.4 10a1.65 1.65 0 0 0 1.52 1H21v3h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg></span></div>
             <div class="users-manage-layout">
               <div class="users-list-panel"><div class="users-list-heading"><strong>Staff directory</strong><span class="muted tiny">10 per page</span></div>
                 <div class="table-wrap"><table aria-label="Cashier accounts"><thead><tr><th>Cashier</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Actions</th></tr></thead><tbody id="usersBody"></tbody></table></div><nav id="usersPagination" class="users-pagination" aria-label="Cashier pages"></nav>
               </div>
               <form id="userForm" class="users-detail-form">
-                <div class="users-form-intro"><div class="users-avatar staff" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div><p class="eyebrow">STAFF PROFILE</p><h3>Cashier Account</h3></div></div>
+                <div class="users-form-intro"><div class="users-avatar staff" id="cashierPhotoAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div><p class="eyebrow">STAFF PROFILE</p><h3>Cashier Account</h3></div></div>
                 <input id="userEditId" type="hidden" />
+                <div class="cashier-photo-upload">
+                  <label for="cashierPhotoFile">Cashier photo <span class="muted tiny">(JPG, PNG or WebP · max 1 MB)</span></label>
+                  <input id="cashierPhotoFile" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="cashierPhotoError" />
+                  <input id="cashierPhotoData" type="hidden" />
+                  <button id="cashierPhotoRemove" type="button" class="users-photo-remove">Remove photo</button>
+                  <p id="cashierPhotoError" role="alert" aria-live="polite" class="users-photo-error hidden"></p>
+                </div>
                 <label>Full name<input id="newFullName" maxlength="120" placeholder="Cashier name" /></label>
                 <label>Email<input id="newUserEmail" type="email" maxlength="180" placeholder="cashier@example.com" /></label>
                 <label>Phone number<input id="newUserPhone" type="tel" maxlength="32" placeholder="+63..." /></label>
@@ -714,6 +725,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.47"></script>
+  <script src="/app.js?v=1.5.48"></script>
 </body>
 </html>
