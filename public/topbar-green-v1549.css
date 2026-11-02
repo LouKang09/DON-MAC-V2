@@ -1,0 +1,127 @@
+/* Don Macchiatos v1.5.49 — cohesive green, high-contrast header.
+   Override cream header styles from earlier POS/dashboard layers without
+   changing the logo dimensions, page layout or interactive behavior. */
+.app .topbar {
+  background: #075739 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #05452e !important;
+  box-shadow: 0 3px 14px rgba(3, 46, 30, .18);
+}
+.app .topbar .topbar-heading,
+.app .topbar .topbar-heading-copy,
+.app .topbar .topbar-right {
+  color: #ffffff !important;
+}
+.app .topbar .topbar-heading h2,
+.app .topbar .topbar-heading #viewTitle,
+.app .topbar .topbar-heading #viewEyebrow,
+.app .topbar .topbar-heading .eyebrow,
+.app .topbar .topbar-heading #posDate,
+.app .topbar .topbar-heading .pos-header-date,
+.app .topbar .topbar-right #clock,
+.app .topbar .topbar-right .pos-daily-count,
+.app .topbar .topbar-right .db-pill,
+.app .topbar .topbar-right #appVersion,
+.app .topbar .topbar-profile-text b,
+.app .topbar .topbar-profile-text small {
+  color: #ffffff !important;
+}
+/* Preserve the actual artwork against the green bar. */
+.app .topbar .topbar-heading .topbar-logo {
+  background: #ffffff !important;
+  border-color: rgba(255, 255, 255, .74) !important;
+  box-shadow: 0 2px 8px rgba(2, 36, 23, .16) !important;
+}
+/* Controls should read as part of the green header, not cream islands. */
+.app .topbar .account-plan-top-control,
+.app .topbar .topbar-profile,
+.app .topbar .dashboard-print-report,
+.app .topbar .account-settings-quick,
+.app .topbar .whats-new-button {
+  background: rgba(255, 255, 255, .12) !important;
+  border-color: rgba(255, 255, 255, .32) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+.app .topbar .account-plan-top-control,
+.app .topbar .account-plan-top-control > *,
+.app .topbar .topbar-profile-text,
+.app .topbar .topbar-profile-text > *,
+.app .topbar .dashboard-print-report > span,
+.app .topbar .dashboard-print-report svg,
+.app .topbar .account-settings-quick,
+.app .topbar .account-settings-quick svg,
+.app .topbar .whats-new-button,
+.app .topbar .whats-new-button svg,
+.app .topbar .whats-new-button .whats-new-icon {
+  color: #ffffff !important;
+}
+.app .topbar .dashboard-print-report svg,
+.app .topbar .account-settings-quick svg,
+.app .topbar .whats-new-button svg {
+  stroke: currentColor !important;
+}
+/* Native select keeps a visible indicator and readable options. */
+.app .topbar .account-plan-top-control select,
+.app .topbar #planSwitcher {
+  background-color: #105d40 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, .48) !important;
+  color-scheme: dark;
+}
+.app .topbar #planSwitcher option {
+  color: #ffffff;
+  background-color: #105d40;
+}
+.app .topbar .account-plan-top-control select:focus-visible,
+.app .topbar .dashboard-print-report:focus-visible,
+.app .topbar .account-settings-quick:focus-visible,
+.app .topbar .whats-new-button:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 3px;
+}
+.app .topbar .dashboard-print-report:hover,
+.app .topbar .account-settings-quick:hover,
+.app .topbar .whats-new-button:hover,
+.app .topbar .account-plan-top-control:hover {
+  background: rgba(255, 255, 255, .20) !important;
+}
+.app .topbar .topbar-avatar {
+  background: rgba(255, 255, 255, .16) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, .45) !important;
+}
+.app .topbar .topbar-avatar svg {
+  color: #ffffff !important;
+  stroke: currentColor !important;
+}
+.app .topbar .topbar-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Other selected, green-filled primary controls keep white labels too. */
+.app button.primary,
+.app button.primary > span,
+.app button.primary svg,
+.app #view-catalog .catalog-tiles .catalog-tile.active,
+.app #view-catalog .catalog-tiles .catalog-tile.active .catalog-tile-label,
+.app #view-users .users-page-tab.active,
+.app #view-users .users-action {
+  color: #ffffff !important;
+}
+@media (max-width: 699px) {
+  .app .topbar {
+    background: #075739 !important;
+    border-bottom-color: #05452e !important;
+  }
+  .app .topbar .topbar-heading,
+  .app .topbar .topbar-right {
+    min-width: 0;
+  }
+}
+@media print {
+  .app .topbar { display: none !important; }
+}
