@@ -1,0 +1,79 @@
+/* Don Mac v1.5.52: consolidated inventory audit and ten-entry system log pages. */
+#view-inventory .inv-audit-card .inv-audit-unified-toolbar {
+  display:flex;align-items:end;flex-wrap:wrap;gap:12px;
+  margin:14px 0 15px;padding:14px 16px;
+  background:#f6faf6;border:1px solid #d4e5d9;border-radius:13px;
+}
+#view-inventory .inv-audit-unified-toolbar > label {
+  display:flex;flex-direction:column;gap:7px;min-width:0;
+  color:#435b4c;font-size:11px;font-weight:800;
+}
+#view-inventory .inv-audit-unified-toolbar select,
+#view-inventory .inv-audit-unified-toolbar input {
+  min-height:42px;border:1px solid #cadccf;border-radius:9px;
+  background:#fff;color:#274435;padding:9px 12px;
+}
+#view-inventory .inv-audit-unified-toolbar .audit-search-label {
+  flex:1 1 270px;max-width:none;
+}
+#view-inventory .inv-audit-unified-toolbar .audit-search-label input {width:100%}
+#view-inventory .inv-audit-toolbar-actions {
+  display:flex;flex:0 0 auto;align-items:center;justify-content:flex-end;gap:12px;
+  margin-left:auto;align-self:end;min-height:42px;
+}
+#view-inventory .inv-audit-toolbar-actions #movementResultCount{
+  padding:0;white-space:nowrap;min-width:max-content;
+  font-size:11px;font-weight:800;color:#506958;
+}
+#view-inventory .inv-audit-toolbar-actions #refreshMovements{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:42px;padding:9px 16px;border:1px solid #145c3c!important;
+  border-radius:9px;background:#176942!important;color:white!important;
+  font-size:12px;font-weight:800;cursor:pointer;
+}
+#view-inventory #refreshMovements svg {flex:0 0 16px;color:#fff;stroke:currentColor}
+#view-inventory #refreshMovements:hover {background:#0f5535!important}
+#view-inventory #refreshMovements:focus-visible,
+#view-logs #refreshLogs:focus-visible{
+  outline:3px solid #85c9a0;outline-offset:2px;
+}
+#view-inventory .inv-audit-pagination{padding:12px 10px}
+#view-inventory .inv-audit-page-controls{display:flex;align-items:center;gap:10px}
+#view-logs .system-logs-refresh {
+  display:inline-flex!important;align-items:center;justify-content:center;gap:8px;
+  min-height:40px;padding:9px 15px;border:1px solid #155b3d!important;
+  border-radius:10px;background:#176942!important;color:#fff!important;
+  font-size:12px;font-weight:800;cursor:pointer;
+}
+#view-logs .system-logs-refresh:hover{background:#0c5334!important}
+#view-logs .system-logs-refresh svg{stroke:currentColor!important;color:#fff!important;flex:0 0 17px}
+#view-logs .system-logs-pagination {
+  display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;
+  gap:10px;padding:14px 4px 0;margin-top:12px;
+  border-top:1px solid #e3eae5;color:#436550;font-size:12px;font-weight:750;
+}
+#view-logs .system-logs-pagination button{
+  min-height:34px;min-width:76px;border:1px solid #bcd6c5;
+  border-radius:9px;background:#f5faf7;color:#185b3c;
+  padding:7px 12px;font:inherit;cursor:pointer;
+}
+#view-logs .system-logs-pagination button:hover:not(:disabled){
+  background:#dff1e6;border-color:#8ac2a1;
+}
+#view-logs .system-logs-pagination button:disabled{opacity:.42;cursor:default}
+#view-logs .system-logs-pagination button:focus-visible{outline:2px solid #238d58;outline-offset:2px}
+@media(max-width:840px){
+  #view-inventory .inv-audit-unified-toolbar .audit-search-label{flex:1 1 210px}
+  #view-inventory .inv-audit-toolbar-actions{width:100%;flex:1 1 100%;margin-left:0}
+}
+@media(max-width:520px){
+  #view-inventory .inv-audit-unified-toolbar{padding:11px;gap:10px}
+  #view-inventory .inv-audit-unified-toolbar>label{flex:1 1 100%}
+  #view-inventory .inv-audit-toolbar-actions{justify-content:space-between;gap:7px}
+  #view-inventory .inv-audit-toolbar-actions #refreshMovements{padding:9px 12px}
+  #view-logs .system-logs-pagination{justify-content:center}
+}
+@media print{
+  #view-inventory .inv-audit-unified-toolbar,
+  #view-logs .system-logs-pagination{display:none!important}
+}
