@@ -1104,7 +1104,7 @@
   function activateAdminTab(tab){document.querySelectorAll('#adminTabs button').forEach(b=>b.classList.toggle('active',b.dataset.adminTab===tab));document.querySelectorAll('.admin-panel').forEach(p=>p.classList.toggle('active',p.id===`admin-${tab}`));if(tab==='recipes')loadRecipe();if(tab==='backups')loadBackups();}
   document.querySelectorAll('#adminTabs button').forEach(b=>b.onclick=()=>activateAdminTab(b.dataset.adminTab));
   async function loadAdminAll(){if(state.user?.role!=='Admin')return;try{const selectedRecipe=$('recipeProduct').value,selectedPackage=$('compositionPackage').value;const [p,i,pr,pa]=await Promise.all([api('/api/admin/products'),api('/api/admin/ingredients'),api('/api/admin/promos'),api('/api/admin/packages')]);state.adminProducts=p.products;state.adminIngredients=i.ingredients;state.adminPromos=pr.promos;state.adminPackages=pa.packages;renderAdminProducts();renderAdminIngredients();renderAdminPromos();renderAdminPackages();fillAdminSelects(selectedRecipe,selectedPackage);}catch(err){toast(err.message);}}
-  function fillAdminSelects(selectedRecipe='',selectedPackage=''){const activeProducts=state.adminProducts.filter(x=>x.active),productOpts=activeProducts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('recipeProduct').innerHTML=productOpts;$('compositionProduct').innerHTML=productOpts;const ingOpts=state.adminIngredients.filter(x=>x.active).map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(String(i.uom).toUpperCase())})</option>`).join('');$('recipeIngredient').innerHTML=ingOpts;$('compositionPackage').innerHTML=state.adminPackages.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');if(selectedRecipe&&activeProducts.some(p=>String(p.id)===String(selectedRecipe)))$('recipeProduct').value=String(selectedRecipe);if(selectedPackage&&state.adminPackages.some(p=>String(p.id)===String(selectedPackage)))$('compositionPackage').value=String(selectedPackage);if(activeProducts.length)loadRecipe();else{state.recipeRows=[];renderRecipe();}if(state.adminPackages.length)loadComposition();else{state.compositionRows=[];renderComposition();}}
+  function fillAdminSelects(selectedRecipe='',selectedPackage=''){const activeProducts=state.adminProducts.filter(x=>x.active),productOpts=activeProducts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('recipeProduct').innerHTML=productOpts;const ingOpts=state.adminIngredients.filter(x=>x.active).map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(String(i.uom).toUpperCase())})</option>`).join('');$('recipeIngredient').innerHTML=ingOpts;$('compositionPackage').innerHTML=state.adminPackages.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');if(selectedRecipe&&activeProducts.some(p=>String(p.id)===String(selectedRecipe)))$('recipeProduct').value=String(selectedRecipe);if(selectedPackage&&state.adminPackages.some(p=>String(p.id)===String(selectedPackage)))$('compositionPackage').value=String(selectedPackage);if(activeProducts.length)loadRecipe();else{state.recipeRows=[];renderRecipe();}if(state.adminPackages.length)loadComposition();else{state.compositionRows=[];renderComposition();}}
 
   const catalogPages={products:1,ingredients:1,promos:1,packages:1};
   const catalogPageIds={products:'adminProductsBodyPagination',ingredients:'adminIngredientsBodyPagination',promos:'adminPromosBodyPagination',packages:'adminPackagesBodyPagination'};
@@ -1302,7 +1302,7 @@
     const row=state.compositionRows[Number(field.dataset.compQty)];
     if(row)row.qty=field.value===''?0:Number(field.value);
   });
-  $('compositionPackage').onchange=loadComposition;$('compositionAdd').onclick=()=>{const pid=Number($('compositionProduct').value),p=state.adminProducts.find(x=>x.id===pid),qty=Number($('compositionQty').value);if(!p||!Number.isInteger(qty)||!(qty>0)){toast('Choose a product and a positive whole-number quantity.');return;}const existing=state.compositionRows.find(x=>x.productId===pid),row={productId:pid,name:p.name,qty};if(existing)Object.assign(existing,row);else state.compositionRows.push(row);$('compositionQty').value='';renderComposition();};$('saveComposition').onclick=()=>withActionLock('save-composition',async()=>{const id=Number($('compositionPackage').value);if(!id){toast('Choose a package first.');return;}try{await api(`/api/admin/packages/${id}/items`,{method:'PUT',body:{items:state.compositionRows.map(x=>({productId:x.productId,qty:x.qty}))}});toast('Package composition saved.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});
+  $('compositionPackage').onchange=loadComposition;$('saveComposition').onclick=()=>withActionLock('save-composition',async()=>{const id=Number($('compositionPackage').value);if(!id){toast('Choose a package first.');return;}try{await api(`/api/admin/packages/${id}/items`,{method:'PUT',body:{items:state.compositionRows.map(x=>({productId:x.productId,qty:x.qty}))}});toast('Package composition saved.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});
 
   async function loadSettings(){try{const s=await api('/api/admin/settings');$('shopName').value=s.shopName||'';$('defaultReportEmail').value=s.defaultReportEmail||'';$('smtpStatus').innerHTML=`<b class="${s.smtp.configured?'stock-ok':'stock-low'}">${s.smtp.configured?'CONFIGURED':'NOT CONFIGURED'}</b><br>Host: ${esc(s.smtp.host)}:${s.smtp.port}<br>User: ${esc(s.smtp.user||'—')}<br><span class="tiny muted">Set SMTP_USER and SMTP_PASS on the server. Gmail App Passwords are supported over TLS port 465.</span>`;}catch(err){toast(err.message);}}
   $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/admin/settings',{method:'PUT',body:{shopName:$('shopName').value.trim(),defaultReportEmail:$('defaultReportEmail').value.trim()}});toast('Settings saved.');await loadSettings();}catch(err){toast(err.message);}});});
@@ -1388,6 +1388,26 @@
   }
 
 
+  function showUsersPage(page){
+    const cashier=page==='cashiers';
+    $('usersBranchesPage').hidden=cashier;
+    $('usersCashiersPage').hidden=!cashier;
+    for(const [id,chosen] of [['usersTabBranches',!cashier],['usersTabCashiers',cashier]]){
+      const button=$(id);button.classList.toggle('active',chosen);
+      button.setAttribute('aria-selected',String(chosen));
+      button.tabIndex=chosen?0:-1;
+    }
+  }
+  for(const button of document.querySelectorAll('[data-users-page]')){
+    button.addEventListener('click',()=>showUsersPage(button.dataset.usersPage));
+    button.addEventListener('keydown',e=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+      e.preventDefault();const next=e.key==='Home'?'branches':e.key==='End'?'cashiers':
+        button.dataset.usersPage==='cashiers'?'branches':'cashiers';
+      showUsersPage(next);$(next==='branches'?'usersTabBranches':'usersTabCashiers').focus();
+    });
+  }
+  showUsersPage('branches');
   let branchPage=1, cashiersPage=1;
   const managementPageSize=10;
   function renderManagementPager(navId,page,total,onPage){
