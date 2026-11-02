@@ -1,0 +1,28 @@
+name: Don Mac v1.5.44 POS Catalog and Backups
+on:
+  push:
+    branches:
+      - main
+      - feature/pos-catalog-modernization-v1544
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JS syntax and regression tests
+        run: |
+          node --check server.js
+          node --check public/app-core.js
+          node --check public/catalog-batch-v1544.js
+          node --check public/pos-categories-admin.js
+          node --check public/app.js
+          node report-ui-v1541-test.js
+          node report-ui-v1542-test.js
+          node report-ui-v1543-test.js
+      - name: Catalog controls, batch selection, archives, and retention safety
+        run: node report-ui-v1544-test.js
