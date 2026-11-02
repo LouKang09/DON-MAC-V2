@@ -56,3 +56,12 @@
 #view-users button:focus-visible,#view-users .users-help:focus-visible{outline:3px solid #6db78a;outline-offset:2px}
 @media(max-width:1150px){#view-users .users-manage-layout{grid-template-columns:minmax(0,1fr)}#view-users .users-detail-form{max-width:100%}}
 @media(max-width:620px){#view-users .users-management-shell{padding:13px}#view-users .users-list-panel,#view-users .users-detail-form{padding:12px}#view-users .users-manage-layout{gap:13px}#view-users .users-form-fields{grid-template-columns:1fr 1fr;gap:9px}#view-users .users-form-actions .users-action{flex:1}#view-users .users-group-heading h3{font-size:16px}}
+
+/* Optional disambiguation for cashiers who share a username across branches. */
+.auth-scope-details{border:1px solid #d6e4d8;border-radius:10px;padding:10px 12px;margin:4px 0;background:#f8fbf8}
+.auth-scope-details summary{cursor:pointer;color:#256344;font-size:12px;font-weight:800;line-height:1.45}
+.auth-scope-details[open]{display:flex;flex-direction:column;gap:12px}
+.auth-scope-details[open] summary{margin-bottom:3px}
+.auth-scope-details label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#385847}
+.auth-scope-details input{min-height:40px;width:100%;padding:9px 10px;border-radius:9px;border:1px solid #d7e3da;background:#fff}
+.auth-scope-details p{margin:0;font-size:11px;line-height:1.5}
