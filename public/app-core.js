@@ -87,7 +87,10 @@
     if(!target)return;
     const source=state.user?.photoData;
     if(typeof source==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(source)){
-      target.innerHTML='<img src="'+esc(source)+'" alt="" loading="eager" decoding="async" onerror="this.hidden=true"/>';
+      target.innerHTML='<img src="'+esc(source)+'" alt="" loading="eager" decoding="async"/>';
+      target.querySelector('img')?.addEventListener('error',()=>{
+        target.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>';
+      },{once:true});
     }else{
       target.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>';
     }
