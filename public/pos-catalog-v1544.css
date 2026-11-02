@@ -1,0 +1,194 @@
+/* Don Macchiatos v1.5.44: professional POS Catalog and data retention UI. */
+#view-catalog .admin-tabs {
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;
+}
+#view-catalog .admin-tabs button {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:40px; padding:10px 14px;
+  background:#fff; color:#385b43; border:1px solid #dbe5dc;
+  border-radius:10px; font-weight:800; font-size:12px;
+}
+#view-catalog .admin-tabs button.active { background:#1b6242;color:#fff;border-color:#1b6242; }
+#view-catalog .admin-tabs button span { font-size:15px; }
+#view-catalog .card-head { margin-bottom:8px; }
+#view-catalog .card-head h3 { font-size:17px; }
+#view-catalog .form-card { gap:13px; padding:clamp(16px,2.5vw,24px); }
+#view-catalog .form-card label { min-width:0; }
+#view-catalog .form-card .catalog-active-row {
+  display:flex!important;flex-direction:row!important; align-items:center!important;
+  justify-content:flex-start!important;gap:11px!important;
+  width:fit-content;max-width:100%; min-height:43px;
+  padding:9px 13px; border:1px solid #dce7dd;
+  border-radius:11px;background:#f5faf6;color:#284f39;
+  font-size:12px;font-weight:800;cursor:pointer;
+}
+#view-catalog .form-card .catalog-active-row input[type=checkbox] {
+  appearance:auto!important;display:block!important; width:18px!important;
+  min-width:18px!important;max-width:18px!important;height:18px!important;
+  margin:0!important;padding:0!important; flex:0 0 18px!important;
+  accent-color:#196842;box-shadow:none!important;
+}
+#view-catalog .catalog-active-row .catalog-help {
+  display:inline-grid; place-items:center;
+  width:20px;height:20px; flex:0 0 20px;
+  border:1px solid #afc8b2;border-radius:50%;
+  color:#417457;background:#fff;
+  cursor:help; position:relative;font-size:14px;
+  font-weight:800;line-height:1;
+}
+#view-catalog .catalog-active-row .catalog-help:hover::after,
+#view-catalog .catalog-active-row .catalog-help:focus-visible::after {
+  content:attr(data-tooltip);
+  position:absolute;top:calc(100% + 9px);left:-80px;z-index:90;
+  width:max-content;max-width:min(285px,80vw);
+  white-space:normal;line-height:1.5; padding:10px 13px;
+  color:#f9fdf9;background:#1e3d2c;border-radius:10px;
+  font:600 11px/1.5 system-ui,sans-serif;letter-spacing:normal;
+  box-shadow:0 12px 30px rgba(20,50,30,.19);
+  pointer-events:none;
+}
+#view-catalog .form-card .primary,
+#view-catalog .form-card button.ghost,
+#view-catalog .catalog-batch-action,
+#view-catalog #createBackup,
+#view-catalog #downloadDataArchive,
+#view-catalog #saveRetentionPreference {
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:42px;padding:10px 15px;border:1px solid #1b6543;
+  border-radius:10px;background:#1b6543;color:#fff;
+  font-size:12px;font-weight:800;cursor:pointer;
+  text-align:center;
+}
+#view-catalog .form-card button.ghost:hover,
+#view-catalog .form-card .primary:hover,
+#view-catalog .catalog-batch-action:hover { background:#134d34; }
+#view-catalog .form-card button:disabled { opacity:.45;cursor:not-allowed; }
+#view-catalog .catalog-btn-icon { font-size:16px;line-height:1; }
+#view-catalog .catalog-list-pagination {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:15px 1px 2px;border-top:1px solid #e9eee8;margin-top:10px;
+}
+#view-catalog .catalog-list-pagination .report-page-info { font-size:11px;color:#697e70; }
+#view-catalog .catalog-list-pagination .report-page-buttons { display:flex;flex-wrap:wrap;gap:6px; }
+#view-catalog .catalog-list-pagination .report-page-buttons button {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:34px;min-width:34px;padding:7px 9px;
+  background:#fff;color:#246446;border:1px solid #dce5df;
+  border-radius:9px;cursor:pointer;font-size:12px;font-weight:800;
+}
+#view-catalog .catalog-list-pagination button[aria-current=page] {
+  color:#fff;background:#1b6543;border-color:#1b6543;
+}
+#view-catalog .catalog-list-pagination button:disabled { opacity:.35;cursor:default; }
+#view-catalog .table-wrap.tall { max-height:none;overflow-x:auto;overflow-y:visible; }
+#view-catalog .catalog-inline-quantity {
+  width:110px;max-width:100%;min-width:70px;
+  min-height:36px;padding:8px 10px;border-radius:8px;
+  border:1px solid #d7e2d8;background:#fff;color:#264b34;
+  font-size:12px;font-weight:700;text-align:right;
+}
+#view-catalog .catalog-comp-row { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
+#view-catalog .catalog-comp-row>span { flex:1 1 150px; }
+#view-catalog .catalog-comp-row label { display:inline-flex;align-items:center;gap:7px; }
+#admin-recipes .catalog-batch-area,
+#admin-packages .catalog-batch-area {
+  border:1px solid #dde8dd;background:#f8faf7;
+  padding:16px;border-radius:15px;margin:14px 0;
+}
+#view-catalog .catalog-batch-top {
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:15px;
+}
+#view-catalog .catalog-batch-top strong { font-size:13px;color:#234a31; }
+#view-catalog .catalog-batch-top p { margin:6px 0 0;color:#78897a;font-size:11px;line-height:1.5; }
+#view-catalog .catalog-batch-grid {
+  display:grid;grid-template-columns: minmax(235px,1fr) minmax(175px,.9fr);
+  gap:14px;align-items:stretch;
+}
+#view-catalog .catalog-batch-picker {
+  min-width:0;padding:12px;border:1px solid #d9e4d9;background:#fff;border-radius:12px;
+}
+#view-catalog .catalog-batch-picker>input[type=search] {
+  width:100%;height:41px;padding:9px 12px;border:1px solid #d5e1d6;border-radius:9px;
+  background:#fff;font-size:12px;
+}
+#view-catalog .catalog-batch-picker-actions {
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:11px 0 8px;font-size:11px;color:#5d7464;
+}
+#view-catalog .catalog-batch-picker-actions label {
+  display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;
+  font-size:11px;font-weight:700;
+}
+#view-catalog .catalog-batch-picker-actions input[type=checkbox],
+#view-catalog .catalog-batch-choice input[type=checkbox],
+#admin-categories .pos-category-product-option input[type=checkbox] {
+  appearance:auto!important;display:inline-block!important;
+  width:17px!important;height:17px!important;
+  min-width:17px!important;max-width:17px!important;
+  flex:0 0 17px!important;margin:0!important;padding:0!important;
+  accent-color:#1b6543;
+}
+#view-catalog .catalog-batch-choices {
+  display:grid;gap:6px;max-height:295px;overflow-y:auto;overflow-x:hidden;
+}
+#view-catalog .catalog-batch-choice {
+  display:flex;align-items:center;gap:9px;min-width:0;
+  padding:9px;background:#fbfdfb;border:1px solid #e8efe9;
+  border-radius:10px;cursor:grab;
+}
+#view-catalog .catalog-batch-choice.selected { background:#eef7ef;border-color:#8fbda0; }
+#view-catalog .catalog-batch-name { min-width:0;flex:1;overflow-wrap:anywhere; }
+#view-catalog .catalog-batch-name strong { font-size:11px;color:#285039;display:block; }
+#view-catalog .catalog-batch-name small { font-size:10px;color:#819184;margin-top:3px;display:block; }
+#view-catalog .catalog-batch-choice button {
+  display:inline-flex;min-height:30px;align-items:center;
+  padding:6px 9px;border:1px solid #a4c7a9;color:#1c6543;
+  background:#f1f8f2;border-radius:8px;cursor:pointer;
+  font-size:10px;font-weight:800;white-space:nowrap;
+}
+#view-catalog .catalog-batch-choice button:disabled { opacity:.55;cursor:default; }
+#view-catalog .catalog-batch-drop {
+  min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  gap:10px;text-align:center;padding:21px;
+  border:2px dashed #aecdb6;background:#f2f8f2;border-radius:12px;
+}
+#view-catalog .catalog-batch-drop.dragover {
+  background:#e1f2e4;border-color:#20734c;
+  box-shadow:inset 0 0 0 2px #80c89b;
+}
+#view-catalog .catalog-batch-drop strong { color:#245439;font-size:13px; }
+#view-catalog .catalog-batch-drop p { max-width:270px;line-height:1.55;color:#708978;font-size:11px; }
+#view-catalog .catalog-batch-fallback { margin:14px 0; }
+#admin-categories .pos-category-products-fieldset { min-width:0; }
+#admin-categories .pos-category-product-choices {
+  display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important; max-height:310px!important;overflow-y:auto;
+  padding:2px;
+}
+#admin-categories .form-card label.pos-category-product-option,
+#admin-categories .pos-category-product-option {
+  display:flex!important;flex-direction:row!important;align-items:flex-start!important;
+  justify-content:flex-start!important;gap:10px!important;
+  width:100%;min-width:0;min-height:53px;
+  padding:10px!important;background:#fff;
+  border:1px solid #e1eae1;border-radius:10px;
+  overflow:hidden;
+}
+#admin-categories .pos-category-product-option span {
+  display:block;flex:1;min-width:0;white-space:normal!important;
+  font-size:11px;line-height:1.4;overflow-wrap:anywhere;
+}
+#admin-categories .pos-category-product-option small { display:block;white-space:normal!important;font-size:10px; }
+#admin-categories .pos-category-admin-actions button:not(.danger-link) { background:#1b6543;color:#fff;border-color:#1b6543; }
+#admin-backups .catalog-backup-options { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0; }
+#admin-backups .catalog-backup-options>div { border:1px solid #dce7dd;background:#fbfdfa;border-radius:14px;padding:18px; }
+#admin-backups .catalog-backup-options h4 {font-size:16px;margin:7px 0;}
+#admin-backups .catalog-backup-options p {font-size:12px;line-height:1.6;}
+#admin-backups .catalog-backup-frequency {display:grid;gap:7px;max-width:280px;margin:14px 0;font-size:11px;font-weight:750;}
+#admin-backups .catalog-backup-frequency select {padding:11px;border-radius:9px;border:1px solid #d4e0d7;background:#fff;}
+#admin-backups .catalog-backup-frequency select:disabled { opacity:.55;background:#f1f2ef;cursor:not-allowed; }
+#admin-backups #retentionBackupStatus {padding:12px;background:#f5faf6;border-radius:10px;font-size:11px;line-height:1.5;}
+@media(max-width:800px) {
+  #view-catalog .catalog-batch-grid,#admin-backups .catalog-backup-options {grid-template-columns:1fr;}
+  #admin-categories .pos-category-product-choices {grid-template-columns:1fr!important;}
+}
