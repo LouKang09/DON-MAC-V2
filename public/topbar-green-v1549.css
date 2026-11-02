@@ -1,12 +1,12 @@
-/* Don Macchiatos v1.5.49 — cohesive green, high-contrast header.
+/* Don Macchiatos v1.5.50 — cohesive green, high-contrast header.
    Override cream header styles from earlier POS/dashboard layers without
    changing the logo dimensions, page layout or interactive behavior. */
 .app .topbar {
-  background: #075739 !important;
+  background: #171d1b !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-bottom: 1px solid #05452e !important;
-  box-shadow: 0 3px 14px rgba(3, 46, 30, .18);
+  border-bottom: 1px solid #2b332e !important;
+  box-shadow: 0 3px 14px rgba(9, 19, 14, .2);
 }
 .app .topbar .topbar-heading,
 .app .topbar .topbar-heading-copy,
@@ -65,14 +65,14 @@
 /* Native select keeps a visible indicator and readable options. */
 .app .topbar .account-plan-top-control select,
 .app .topbar #planSwitcher {
-  background-color: #105d40 !important;
+  background-color: #27362d !important;
   color: #ffffff !important;
   border-color: rgba(255, 255, 255, .48) !important;
   color-scheme: dark;
 }
 .app .topbar #planSwitcher option {
   color: #ffffff;
-  background-color: #105d40;
+  background-color: #27362d;
 }
 .app .topbar .account-plan-top-control select:focus-visible,
 .app .topbar .dashboard-print-report:focus-visible,
@@ -114,8 +114,8 @@
 }
 @media (max-width: 699px) {
   .app .topbar {
-    background: #075739 !important;
-    border-bottom-color: #05452e !important;
+    background: #171d1b !important;
+    border-bottom-color: #2b332e !important;
   }
   .app .topbar .topbar-heading,
   .app .topbar .topbar-right {
