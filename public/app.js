@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.48-cashier-photos-tabbed-users';
+  const VERSION = '1.5.49-green-header-white-text';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -71,6 +71,7 @@
       loadCss('posCatalogV1544Css', '/pos-catalog-v1544.css');
       loadCss('catalogIconsPackagesV1545Css', '/catalog-icons-packages-v1545.css');
       loadCss('posCatalogTilesV1546Css', '/pos-catalog-tiles-v1546.css');
+      loadCss('topbarGreenV1549Css', '/topbar-green-v1549.css');
 
 
       // Critical navigation is initialized first; optional POS enhancements must not block More.
@@ -94,7 +95,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.46 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.49 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
