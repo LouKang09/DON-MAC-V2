@@ -1,0 +1,58 @@
+/* Don Mac POS 1.5.47: single, clearly divided Branches & Cashiers workspace. */
+#view-users .users-heading{margin:4px 0 18px}
+#view-users .users-heading h2{margin:3px 0 5px;font-size:clamp(20px,2vw,26px)}
+#view-users .users-heading p{margin-top:5px}
+#view-users .users-management-shell{display:block;padding:clamp(14px,2vw,28px);background:#fff;border:1px solid #dce6dd;border-radius:18px;box-shadow:0 8px 26px #1d4b3011}
+#view-users .users-management-group{min-width:0}
+#view-users .users-group-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 18px}
+#view-users .users-group-heading>div{display:grid;grid-template-columns:40px auto;column-gap:12px;align-items:center}
+#view-users .users-group-symbol{grid-row:span 2;background:#e7f4eb;color:#13633f;border-radius:12px;width:40px;height:40px;display:grid;place-items:center;font-size:25px}
+#view-users .users-group-heading h3{margin:0;font-size:19px}
+#view-users .users-group-heading p{margin:3px 0 0;grid-column:2}
+#view-users .users-help{display:inline-grid;place-items:center;cursor:help;color:#408064;flex:0 0 auto}
+#view-users .users-group-heading>.users-help{width:34px;height:34px;background:#eff7f1;border:1px solid #d5e9da;border-radius:10px}
+#view-users .users-manage-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(315px,.9fr);gap:20px;align-items:start}
+#view-users .users-list-panel,#view-users .users-detail-form{min-width:0;border:1px solid #e2eae3;border-radius:14px;background:#fff;padding:16px}
+#view-users .users-list-heading{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:13px}
+#view-users .users-list-heading strong{font-size:13px}
+#view-users .table-wrap{overflow-x:auto}
+#view-users table{min-width:540px;width:100%;font-size:12px}
+#view-users th{white-space:nowrap;color:#5f7568;font-size:11px}
+#view-users td{vertical-align:middle}
+#view-users td:last-child{white-space:nowrap}
+#view-users .users-detail-form{display:flex;flex-direction:column;gap:12px;background:#fcfefc}
+#view-users .users-form-intro{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+#view-users .users-avatar{width:56px;height:56px;flex:0 0 56px;border-radius:50%;display:grid;place-items:center;background:#777fd0;color:#fff}
+#view-users .users-avatar.staff{background:#079b88}
+#view-users .users-avatar svg{width:29px;height:29px;stroke-width:1.8}
+#view-users .users-form-intro h3{margin:2px 0;font-size:17px}
+#view-users .users-detail-form label:not(.users-active-row){display:flex;flex-direction:column;gap:6px;min-width:0;color:#3c5548;font-size:11px;font-weight:700}
+#view-users .users-detail-form input:not([type=checkbox]),#view-users .users-detail-form select,#view-users .users-detail-form textarea{width:100%;max-width:100%;min-width:0;min-height:42px;padding:10px 12px;border:1px solid #d7e4da;border-radius:9px;background:#fff;color:#243e30;font-size:13px;outline:0}
+#view-users .users-detail-form textarea{min-height:68px;resize:vertical}
+#view-users .users-detail-form input:focus,#view-users .users-detail-form select:focus,#view-users .users-detail-form textarea:focus{border-color:#228458!important;box-shadow:0 0 0 3px #28a36c20}
+#view-users .users-detail-form input:read-only{background:#f2f5f3}
+#view-users .users-form-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+#view-users .users-active-row{display:inline-flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:9px!important;width:fit-content;max-width:100%;padding:10px 13px;border:1px solid #d8e8db;border-radius:9px;background:#f2faf4;color:#1e5739;font-size:12px;font-weight:750;cursor:pointer}
+#view-users .users-active-row input[type=checkbox]{appearance:auto!important;display:block!important;position:static!important;opacity:1!important;visibility:visible!important;width:18px!important;height:18px!important;min-width:18px!important;flex:0 0 18px!important;transform:none!important;margin:0!important;padding:0!important;box-shadow:none!important;accent-color:#126a44;cursor:pointer}
+#view-users .users-active-row .users-help{width:20px;height:20px;border-radius:50%}
+#view-users .users-password-wrap{position:relative;display:block;min-width:0}
+#view-users .users-password-wrap input{padding-right:46px!important}
+#view-users .users-password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;min-width:34px;height:34px;border:0;border-radius:8px;background:transparent;color:#456b57;cursor:pointer}
+#view-users .users-password-toggle:hover{background:#e9f5ec}
+#view-users .users-form-actions{display:flex;flex-wrap:wrap;gap:9px;margin:4px 0}
+#view-users .users-action{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:10px 14px;background:#156b45!important;color:#fff!important;border:1px solid #156b45!important;border-radius:10px;cursor:pointer;font-size:12px;font-weight:800}
+#view-users .users-action:hover:not(:disabled){background:#0c5435!important;border-color:#0c5435!important}
+#view-users .users-action:disabled{opacity:.55;cursor:not-allowed}
+#view-users .users-action-clear{background:#2e8b58!important;border-color:#2e8b58!important}
+#view-users .users-action svg{flex:0 0 16px}
+#view-users .users-pagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:48px;padding-top:10px;border-top:1px solid #edf2ee;margin-top:12px}
+#view-users .users-pagination button{min-height:32px;min-width:60px;padding:6px 10px;background:#fff;color:#156a42;border:1px solid #cbded1;border-radius:8px;font-size:11px;font-weight:750;cursor:pointer}
+#view-users .users-pagination button:hover:not(:disabled){background:#eaf4ee}
+#view-users .users-pagination button:disabled{opacity:.38;cursor:default}
+#view-users .users-pagination span{color:#5d7766;font-size:11px;white-space:nowrap}
+#view-users .users-splitter{position:relative;text-align:center;margin:34px 0;border-top:2px solid #e2ede5;height:1px}
+#view-users .users-splitter span{position:relative;top:-9px;background:#fff;color:#477759;padding:0 18px;font-size:10px;letter-spacing:.1em;font-weight:900}
+#view-users .required{color:#a33c37}
+#view-users button:focus-visible,#view-users .users-help:focus-visible{outline:3px solid #6db78a;outline-offset:2px}
+@media(max-width:1150px){#view-users .users-manage-layout{grid-template-columns:minmax(0,1fr)}#view-users .users-detail-form{max-width:100%}}
+@media(max-width:620px){#view-users .users-management-shell{padding:13px}#view-users .users-list-panel,#view-users .users-detail-form{padding:12px}#view-users .users-manage-layout{gap:13px}#view-users .users-form-fields{grid-template-columns:1fr 1fr;gap:9px}#view-users .users-form-actions .users-action{flex:1}#view-users .users-group-heading h3{font-size:16px}}
