@@ -1301,7 +1301,39 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION},safeHeaders());
   if(method==='GET'&&p==='/api/health'){const probe=await db.query('SELECT 1 AS ok');return json(res,200,{ok:Number(probe.rows[0]?.ok||0)===1,app:'coffee-pos-web',version:APP_VERSION,engine:db.engine,time:nowIso(),uptimeSeconds:Math.round(process.uptime())},safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='POST'&&p==='/api/setup'){const status=await appStatus();if(!status.setupRequired)return json(res,409,{error:'Initial setup has already been completed.'},safeHeaders());const body=await readJson(req),username=String(body.username||'').trim(),password=String(body.password||'');if(username.length<2||password.length<8)return json(res,400,{error:'Use a username of at least 2 characters and a password of at least 8 characters.'},safeHeaders());const user=await createOrActivateUser({username,password,role:'Admin',active:true},null);await db.query('UPDATE chat_workspaces SET owner_user_id=$1 WHERE id IN (SELECT workspace_id FROM chat_memberships WHERE user_id=$1)',[user.id]);await logAction(user,'Web POS initial admin activated','Setup',null);return json(res,201,{ok:true,user},safeHeaders());}
-  if(method==='POST'&&p==='/api/auth/login'){const body=await readJson(req),username=String(body.username||'').trim();checkLoginRate(req,username);const r=await db.query('SELECT id,username,password_hash,role,active,branch_id FROM users WHERE LOWER(username)=LOWER($1)',[username]);const u=r.rows[0];if(!u||!bool(u.active)||!verifyPassword(String(body.password||''),u.password_hash))return json(res,401,{error:'Invalid username or password.'},safeHeaders());clearLoginRate(req,username);const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);const owner=await initialOwnerId(u.id);return json(res,200,{user:{id:Number(u.id),username:u.username,role:u.role,branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner}},safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));}
+  if(method==='POST'&&p==='/api/auth/login'){
+    const body=await readJson(req),username=String(body.username||'').trim();
+    const ownerUsername=String(body.ownerUsername||'').trim();
+    const branchName=String(body.branchName||'').trim();
+    checkLoginRate(req,username);
+    // Resolve the public login username without depending on a globally unique
+    // physical DB key. Existing unique usernames remain a one-field sign-in.
+    const r=await db.query(
+      'SELECT u.id,u.username,COALESCE(u.login_username,u.username) AS login_name,'+
+      'u.password_hash,u.role,u.active,u.branch_id,b.name AS branch_name,'+
+      'COALESCE(o.login_username,o.username) AS owner_name '+
+      'FROM users u LEFT JOIN branches b ON b.id=u.branch_id '+
+      'LEFT JOIN chat_memberships m ON m.user_id=u.id '+
+      'LEFT JOIN chat_workspaces w ON w.id=m.workspace_id '+
+      'LEFT JOIN users o ON o.id=w.owner_user_id '+
+      'WHERE LOWER(COALESCE(u.login_username,u.username))=LOWER($1) ORDER BY u.id',[username]);
+    let matches=r.rows;
+    if(ownerUsername)matches=matches.filter(u=>String(u.owner_name||'').toLowerCase()===ownerUsername.toLowerCase());
+    if(branchName)matches=matches.filter(u=>u.role==='User'&&String(u.branch_name||'').toLowerCase()===branchName.toLowerCase());
+    if(matches.length>1){
+      return json(res,409,{error:'Multiple cashier accounts use this username. Expand Account / Branch at sign in and enter the Owner username and Branch name.'},safeHeaders());
+    }
+    const u=matches[0];
+    if(!u||!bool(u.active)||!verifyPassword(String(body.password||''),u.password_hash))
+      return json(res,401,{error:'Invalid username, password or account/branch.'},safeHeaders());
+    clearLoginRate(req,username);
+    const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();
+    await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
+    await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
+    const owner=await initialOwnerId(u.id);
+    return json(res,200,{user:{id:Number(u.id),username:u.login_name,role:u.role,
+      branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner}},safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
+  }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
