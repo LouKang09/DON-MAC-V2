@@ -1,0 +1,28 @@
+name: Don Mac v1.5.46 POS Catalog tiles and backup controls
+on:
+  push:
+    branches: [main, fix/pos-catalog-tiles-icons-backup-v1546]
+  pull_request:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax checks
+        run: |
+          node --check server.js
+          node --check public/app.js
+          node --check public/app-core.js
+      - name: POS Catalog tile/icons/backup regression
+        run: node report-ui-v1546-test.js
+      - name: Existing regression suites
+        run: |
+          node report-ui-v1541-test.js
+          node report-ui-v1542-test.js
+          node report-ui-v1543-test.js
+          node report-ui-v1544-test.js
+          node report-ui-v1545-test.js
