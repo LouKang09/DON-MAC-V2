@@ -31,7 +31,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.47-branch-cashier-management';
+const APP_VERSION = '1.5.48-cashier-photos-tabbed-users';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -112,7 +112,7 @@ async function getUser(req, conn = db) {
   if (!token) return null;
   const tokenHash = hashToken(token);
   const result = await conn.query(
-    `SELECT u.id, u.username, u.role, u.active, u.branch_id, COALESCE(u.login_username,u.username) AS login_name, s.expires_at, w.owner_user_id
+    `SELECT u.id, u.username, u.role, u.active, u.branch_id, u.profile_photo, COALESCE(u.login_username,u.username) AS login_name, s.expires_at, w.owner_user_id
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN chat_memberships cm ON cm.user_id=u.id
@@ -124,7 +124,7 @@ async function getUser(req, conn = db) {
     await conn.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     return null;
   }
-  return { id: Number(row.id), username: row.login_name||row.username, role: row.role, branchId: row.branch_id==null?null:Number(row.branch_id), isOwner:Number(row.owner_user_id)===Number(row.id) };
+  return { id: Number(row.id), username: row.login_name||row.username, photoData:row.profile_photo||null, role: row.role, branchId: row.branch_id==null?null:Number(row.branch_id), isOwner:Number(row.owner_user_id)===Number(row.id) };
 }
 
 async function requireUser(req, res, role) {
@@ -808,7 +808,7 @@ async function protectOwnerUpdate(actor,id,role,active){
 async function migrateCashierProfiles(){
   // Add without rebuilding the legacy users table, which already has a unique
   // username column and may be referenced by historical sales/sessions.
-  const fields={login_username:'VARCHAR(80)',owner_scope_id:'BIGINT',full_name:'VARCHAR(120)',email:'VARCHAR(180)',phone:'VARCHAR(32)'};
+  const fields={login_username:'VARCHAR(80)',owner_scope_id:'BIGINT',full_name:'VARCHAR(120)',email:'VARCHAR(180)',phone:'VARCHAR(32)',profile_photo:'TEXT'};
   if(db.engine==='postgres'){
     for(const [name,type] of Object.entries(fields))await db.exec('ALTER TABLE users ADD COLUMN IF NOT EXISTS '+name+' '+type);
   }else{
@@ -852,6 +852,17 @@ async function usernameAtScope(username,workspaceId,branchId,exceptId=0){
     [workspaceId,username,Number(branchId||0),exceptId]);
   return r.rows[0]||null;
 }
+function validateCashierPhoto(raw){
+  if(raw==null||raw==='')return null;
+  if(typeof raw!=='string'||raw.length>170000)throw Object.assign(new Error('Photo is too large. Select an image of 1 MB or less.'),{status:413});
+  const match=/^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/.exec(raw);
+  if(!match)throw Object.assign(new Error('Photo could not be decoded. Upload a valid JPG, PNG, or WebP image under 1 MB.'),{status:400});
+  const bytes=Buffer.from(match[1],'base64');
+  if(bytes.length<64||bytes.length>120*1024||bytes[0]!==255||bytes[1]!==216||bytes[2]!==255||
+    bytes[bytes.length-2]!==255||bytes[bytes.length-1]!==217)
+    throw Object.assign(new Error('Photo could not be decoded, or the compressed image is too large.'),{status:400});
+  return raw;
+}
 function staffProfile(body){
   const p={fullName:String(body.fullName||'').trim(),email:String(body.email||'').trim(),
     phone:String(body.phone||'').trim()};
@@ -866,11 +877,11 @@ async function listUsers(actor){
   if(!workspaceId)throw Object.assign(new Error('Owner workspace unavailable.'),{status:403});
   const r=await db.query(
     'SELECT u.id,u.username,COALESCE(u.login_username,u.username) AS login_name,u.full_name,u.email,u.phone,'+
-    'u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name,w.owner_user_id '+
+    'u.role,u.active,u.created_at,u.password_hash,u.branch_id,u.profile_photo,b.name AS branch_name,w.owner_user_id '+
     'FROM users u JOIN chat_memberships m ON m.user_id=u.id '+
     'JOIN chat_workspaces w ON w.id=m.workspace_id LEFT JOIN branches b ON b.id=u.branch_id '+
     'WHERE m.workspace_id=$1 ORDER BY u.id',[workspaceId]);
-  return r.rows.map(u=>({id:Number(u.id),username:u.login_name,fullName:u.full_name||'',email:u.email||'',phone:u.phone||'',
+  return r.rows.map(u=>({id:Number(u.id),username:u.login_name,fullName:u.full_name||'',email:u.email||'',phone:u.phone||'',photoData:u.profile_photo||null,
     role:u.role,roleLabel:Number(u.id)===Number(u.owner_user_id)?'Owner/Admin':u.role==='Admin'?'Co-Owner/Admin':'Cashier',
     isOwner:Number(u.id)===Number(u.owner_user_id),active:bool(u.active),
     branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,
@@ -883,6 +894,7 @@ async function createOrActivateUser(body,actor=null){
   if(username.length<2||username.length>80)throw Object.assign(new Error('Username must be 2–80 characters.'),{status:400});
   if(password.length<8||password.length>256)throw Object.assign(new Error('Password must be 8–256 characters.'),{status:400});
   const profile=staffProfile(body);
+  const photoData=validateCashierPhoto(body.photoData);
   const branchId=await branchSupport.resolveAssignment(db,role,body.branchId);
   if(actor)await ensureBranchInOwnerWorkspace(actor,branchId);
   const ws=actor?await workspaceIdForUser(actor.id):0;
@@ -895,8 +907,8 @@ async function createOrActivateUser(body,actor=null){
     if(actor&&old.password_hash)throw Object.assign(new Error('This username already exists in the selected branch of your owner account. Use Edit instead.'),{status:409});
     if(actor&&Number(old.id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own account.'),{status:400});
     if(actor)await protectOwnerUpdate(actor,old.id,role,active);
-    await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3,branch_id=$4,login_username=$5,full_name=$6,email=$7,phone=$8 WHERE id=$9',
-      [hashPassword(password),role,active,branchId,username,profile.fullName,profile.email,profile.phone,Number(old.id)]);
+    await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3,branch_id=$4,login_username=$5,full_name=$6,email=$7,phone=$8,profile_photo=$9 WHERE id=$10',
+      [hashPassword(password),role,active,branchId,username,profile.fullName,profile.email,profile.phone,photoData,Number(old.id)]);
     await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(old.id)]);
     await internalChat.assignNewUser(db,actor?.id||null,Number(old.id));
     const actualWs=await workspaceIdForUser(Number(old.id));
@@ -909,9 +921,9 @@ async function createOrActivateUser(body,actor=null){
   const globalMatch=await db.query('SELECT id FROM users WHERE LOWER(username)=LOWER($1)',[username]);
   if(globalMatch.rows.length)internalUsername='dm_'+crypto.randomBytes(13).toString('hex');
   const row=await db.query(
-    'INSERT INTO users (username,login_username,password_hash,role,active,created_at,branch_id,full_name,email,phone) '+
-    'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id',
-    [internalUsername,username,hashPassword(password),role,active,nowIso(),branchId,profile.fullName,profile.email,profile.phone]);
+    'INSERT INTO users (username,login_username,password_hash,role,active,created_at,branch_id,full_name,email,phone,profile_photo) '+
+    'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id',
+    [internalUsername,username,hashPassword(password),role,active,nowIso(),branchId,profile.fullName,profile.email,profile.phone,photoData]);
   await internalChat.assignNewUser(db,actor?.id||null,Number(row.rows[0].id));
   const actualWs=await workspaceIdForUser(Number(row.rows[0].id));
   await db.query('UPDATE users SET owner_scope_id=$1 WHERE id=$2',[actualWs,Number(row.rows[0].id)]);
@@ -942,7 +954,7 @@ async function deleteUserAccount(actor,id){
 }
 async function updateUserAccount(actor,id,body){
   const ws=await requireSameOwnerWorkspace(actor,id);
-  const targetR=await db.query('SELECT id,username,COALESCE(login_username,username) AS login_name,role,active,branch_id,full_name,email,phone FROM users WHERE id=$1',[Number(id)]);
+  const targetR=await db.query('SELECT id,username,COALESCE(login_username,username) AS login_name,role,active,branch_id,full_name,email,phone,profile_photo FROM users WHERE id=$1',[Number(id)]);
   const target=targetR.rows[0];if(!target)throw Object.assign(new Error('User not found.'),{status:404});
   const role=body.role===undefined?target.role:String(body.role);
   const active=typeof body.active==='boolean'?body.active:bool(target.active),password=String(body.password||'');
@@ -960,10 +972,11 @@ async function updateUserAccount(actor,id,body){
     throw Object.assign(new Error('Another user in the selected branch already has this username.'),{status:409});
   const profile=staffProfile({...body,fullName:body.fullName===undefined?target.full_name:body.fullName,
     email:body.email===undefined?target.email:body.email,phone:body.phone===undefined?target.phone:body.phone});
-  if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3,branch_id=$4,full_name=$5,email=$6,phone=$7 WHERE id=$8',
-    [role,active,hashPassword(password),branchId,profile.fullName,profile.email,profile.phone,Number(id)]);
-  else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3,full_name=$4,email=$5,phone=$6 WHERE id=$7',
-    [role,active,branchId,profile.fullName,profile.email,profile.phone,Number(id)]);
+  const photoData=body.photoData===undefined?target.profile_photo:validateCashierPhoto(body.photoData);
+  if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3,branch_id=$4,full_name=$5,email=$6,phone=$7,profile_photo=$8 WHERE id=$9',
+    [role,active,hashPassword(password),branchId,profile.fullName,profile.email,profile.phone,photoData,Number(id)]);
+  else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3,full_name=$4,email=$5,phone=$6,profile_photo=$7 WHERE id=$8',
+    [role,active,branchId,profile.fullName,profile.email,profile.phone,photoData,Number(id)]);
   if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);
   await logAction(actor,'Web user updated: '+target.login_name,'User Updated',role+' / '+(active?'Active':'Inactive'));
   return{ok:true};
@@ -1332,7 +1345,7 @@ async function handleApi(req,res,url){
     // physical DB key. Existing unique usernames remain a one-field sign-in.
     const r=await db.query(
       'SELECT u.id,u.username,COALESCE(u.login_username,u.username) AS login_name,'+
-      'u.password_hash,u.role,u.active,u.branch_id,b.name AS branch_name,'+
+      'u.password_hash,u.role,u.active,u.branch_id,u.profile_photo,b.name AS branch_name,'+
       'COALESCE(o.login_username,o.username) AS owner_name '+
       'FROM users u LEFT JOIN branches b ON b.id=u.branch_id '+
       'LEFT JOIN chat_memberships m ON m.user_id=u.id '+
@@ -1353,7 +1366,7 @@ async function handleApi(req,res,url){
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
     const owner=await initialOwnerId(u.id);
-    return json(res,200,{user:{id:Number(u.id),username:u.login_name,role:u.role,
+    return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner}},safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
