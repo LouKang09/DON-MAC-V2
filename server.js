@@ -808,15 +808,18 @@ async function protectOwnerUpdate(actor,id,role,active){
 async function migrateCashierProfiles(){
   // Add without rebuilding the legacy users table, which already has a unique
   // username column and may be referenced by historical sales/sessions.
-  const fields={login_username:'VARCHAR(80)',full_name:'VARCHAR(120)',email:'VARCHAR(180)',phone:'VARCHAR(32)'};
+  const fields={login_username:'VARCHAR(80)',owner_scope_id:'BIGINT',full_name:'VARCHAR(120)',email:'VARCHAR(180)',phone:'VARCHAR(32)'};
   if(db.engine==='postgres'){
     for(const [name,type] of Object.entries(fields))await db.exec('ALTER TABLE users ADD COLUMN IF NOT EXISTS '+name+' '+type);
   }else{
     const cols=new Set((await db.query('PRAGMA table_info(users)')).rows.map(x=>x.name));
-    for(const [name,type] of Object.entries(fields))if(!cols.has(name))await db.exec('ALTER TABLE users ADD COLUMN '+name+' '+type);
+    for(const [name,type] of Object.entries(fields))if(!cols.has(name))await db.exec('ALTER TABLE users ADD COLUMN '+name+' '+(name==='owner_scope_id'?'INTEGER':type));
   }
   await db.query('UPDATE users SET login_username=username WHERE login_username IS NULL');
   await db.exec('CREATE INDEX IF NOT EXISTS idx_cashier_login_name ON users(login_username)');
+  // Database-enforced uniqueness, including concurrent account creation.
+  await db.query('UPDATE users SET owner_scope_id=(SELECT workspace_id FROM chat_memberships WHERE user_id=users.id) WHERE owner_scope_id IS NULL');
+  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS ux_cashier_name_owner_branch ON users(owner_scope_id,COALESCE(branch_id,0),LOWER(login_username)) WHERE owner_scope_id IS NOT NULL');
 }
 async function workspaceIdForUser(id){
   const r=await db.query('SELECT workspace_id FROM chat_memberships WHERE user_id=$1',[Number(id)]);
@@ -854,7 +857,7 @@ function staffProfile(body){
     phone:String(body.phone||'').trim()};
   if(p.fullName.length>120||p.email.length>180||p.phone.length>32)
     throw Object.assign(new Error('Name, email or phone is too long.'),{status:400});
-  if(p.email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(p.email))
+  if(p.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email))
     throw Object.assign(new Error('Enter a valid cashier email address.'),{status:400});
   return p;
 }
@@ -896,6 +899,8 @@ async function createOrActivateUser(body,actor=null){
       [hashPassword(password),role,active,branchId,username,profile.fullName,profile.email,profile.phone,Number(old.id)]);
     await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(old.id)]);
     await internalChat.assignNewUser(db,actor?.id||null,Number(old.id));
+    const actualWs=await workspaceIdForUser(Number(old.id));
+    await db.query('UPDATE users SET owner_scope_id=$1 WHERE id=$2',[actualWs,Number(old.id)]);
     return{id:Number(old.id),username,role,active};
   }
   // Keep the pre-existing globally unique physical username key for foreign
@@ -908,6 +913,8 @@ async function createOrActivateUser(body,actor=null){
     'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id',
     [internalUsername,username,hashPassword(password),role,active,nowIso(),branchId,profile.fullName,profile.email,profile.phone]);
   await internalChat.assignNewUser(db,actor?.id||null,Number(row.rows[0].id));
+  const actualWs=await workspaceIdForUser(Number(row.rows[0].id));
+  await db.query('UPDATE users SET owner_scope_id=$1 WHERE id=$2',[actualWs,Number(row.rows[0].id)]);
   return{id:Number(row.rows[0].id),username,role,active};
 }
 
