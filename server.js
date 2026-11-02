@@ -31,7 +31,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.46-pos-style-catalog-cards';
+const APP_VERSION = '1.5.47-branch-cashier-management';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -112,7 +112,7 @@ async function getUser(req, conn = db) {
   if (!token) return null;
   const tokenHash = hashToken(token);
   const result = await conn.query(
-    `SELECT u.id, u.username, u.role, u.active, u.branch_id, s.expires_at, w.owner_user_id
+    `SELECT u.id, u.username, u.role, u.active, u.branch_id, COALESCE(u.login_username,u.username) AS login_name, s.expires_at, w.owner_user_id
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN chat_memberships cm ON cm.user_id=u.id
@@ -124,7 +124,7 @@ async function getUser(req, conn = db) {
     await conn.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     return null;
   }
-  return { id: Number(row.id), username: row.username, role: row.role, branchId: row.branch_id==null?null:Number(row.branch_id), isOwner:Number(row.owner_user_id)===Number(row.id) };
+  return { id: Number(row.id), username: row.login_name||row.username, role: row.role, branchId: row.branch_id==null?null:Number(row.branch_id), isOwner:Number(row.owner_user_id)===Number(row.id) };
 }
 
 async function requireUser(req, res, role) {
@@ -804,37 +804,148 @@ async function protectOwnerUpdate(actor,id,role,active){
    if(role!=='Admin'||!active)throw Object.assign(new Error('The original Owner must remain active and cannot be changed to another role.'),{status:403});
  }
 }
-async function listUsers(){const r=await db.query('SELECT u.id,u.username,u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name,w.owner_user_id FROM users u LEFT JOIN branches b ON b.id=u.branch_id LEFT JOIN chat_memberships m ON m.user_id=u.id LEFT JOIN chat_workspaces w ON w.id=m.workspace_id ORDER BY u.id');return r.rows.map(u=>({id:Number(u.id),username:u.username,role:u.role,roleLabel:Number(u.id)===Number(u.owner_user_id)?'Owner/Admin':u.role==='Admin'?'Co-Owner/Admin':'Cashier',isOwner:Number(u.id)===Number(u.owner_user_id),active:bool(u.active),branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,hasWebPassword:!!u.password_hash,createdAt:u.created_at}));}
+
+async function migrateCashierProfiles(){
+  // Add without rebuilding the legacy users table, which already has a unique
+  // username column and may be referenced by historical sales/sessions.
+  const fields={login_username:'VARCHAR(80)',full_name:'VARCHAR(120)',email:'VARCHAR(180)',phone:'VARCHAR(32)'};
+  if(db.engine==='postgres'){
+    for(const [name,type] of Object.entries(fields))await db.exec('ALTER TABLE users ADD COLUMN IF NOT EXISTS '+name+' '+type);
+  }else{
+    const cols=new Set((await db.query('PRAGMA table_info(users)')).rows.map(x=>x.name));
+    for(const [name,type] of Object.entries(fields))if(!cols.has(name))await db.exec('ALTER TABLE users ADD COLUMN '+name+' '+type);
+  }
+  await db.query('UPDATE users SET login_username=username WHERE login_username IS NULL');
+  await db.exec('CREATE INDEX IF NOT EXISTS idx_cashier_login_name ON users(login_username)');
+}
+async function workspaceIdForUser(id){
+  const r=await db.query('SELECT workspace_id FROM chat_memberships WHERE user_id=$1',[Number(id)]);
+  return Number(r.rows[0]?.workspace_id||0);
+}
+async function requireSameOwnerWorkspace(actor,targetId){
+  const [own,target]=await Promise.all([workspaceIdForUser(actor.id),workspaceIdForUser(targetId)]);
+  if(!own||!target||own!==target)throw Object.assign(new Error('This account is outside your owner workspace.'),{status:403});
+  return own;
+}
+async function usernameAtScope(username,workspaceId,branchId,exceptId=0){
+  const r=await db.query(
+    'SELECT u.id,u.username,u.password_hash,u.role,u.active,u.branch_id FROM users u '+
+    'JOIN chat_memberships m ON m.user_id=u.id '+
+    'WHERE m.workspace_id=$1 AND LOWER(COALESCE(u.login_username,u.username))=LOWER($2) '+
+    'AND COALESCE(u.branch_id,0)=$3 AND u.id<>$4',
+    [workspaceId,username,Number(branchId||0),exceptId]);
+  return r.rows[0]||null;
+}
+function staffProfile(body){
+  const p={fullName:String(body.fullName||'').trim(),email:String(body.email||'').trim(),
+    phone:String(body.phone||'').trim()};
+  if(p.fullName.length>120||p.email.length>180||p.phone.length>32)
+    throw Object.assign(new Error('Name, email or phone is too long.'),{status:400});
+  if(p.email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(p.email))
+    throw Object.assign(new Error('Enter a valid cashier email address.'),{status:400});
+  return p;
+}
+async function listUsers(actor){
+  const workspaceId=await workspaceIdForUser(actor.id);
+  if(!workspaceId)throw Object.assign(new Error('Owner workspace unavailable.'),{status:403});
+  const r=await db.query(
+    'SELECT u.id,u.username,COALESCE(u.login_username,u.username) AS login_name,u.full_name,u.email,u.phone,'+
+    'u.role,u.active,u.created_at,u.password_hash,u.branch_id,b.name AS branch_name,w.owner_user_id '+
+    'FROM users u JOIN chat_memberships m ON m.user_id=u.id '+
+    'JOIN chat_workspaces w ON w.id=m.workspace_id LEFT JOIN branches b ON b.id=u.branch_id '+
+    'WHERE m.workspace_id=$1 ORDER BY u.id',[workspaceId]);
+  return r.rows.map(u=>({id:Number(u.id),username:u.login_name,fullName:u.full_name||'',email:u.email||'',phone:u.phone||'',
+    role:u.role,roleLabel:Number(u.id)===Number(u.owner_user_id)?'Owner/Admin':u.role==='Admin'?'Co-Owner/Admin':'Cashier',
+    isOwner:Number(u.id)===Number(u.owner_user_id),active:bool(u.active),
+    branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,
+    hasWebPassword:!!u.password_hash,createdAt:u.created_at}));
+}
 async function createOrActivateUser(body,actor=null){
-  const username=String(body.username||'').trim(),password=String(body.password||''),role=String(body.role||'User'),active=body.active===undefined?true:!!body.active;
+  const username=String(body.username||'').trim(),password=String(body.password||'');
+  const role=String(body.role||'User'),active=body.active===undefined?true:!!body.active;
   if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});
-  if(username.length<2||username.length>80)throw Object.assign(new Error('Username must be 2-80 characters.'),{status:400});
-  if(password.length<8||password.length>256)throw Object.assign(new Error('Password must be 8-256 characters.'),{status:400});
+  if(username.length<2||username.length>80)throw Object.assign(new Error('Username must be 2–80 characters.'),{status:400});
+  if(password.length<8||password.length>256)throw Object.assign(new Error('Password must be 8–256 characters.'),{status:400});
+  const profile=staffProfile(body);
   const branchId=await branchSupport.resolveAssignment(db,role,body.branchId);
-  const existing=await db.query('SELECT id,username,password_hash,role,active,branch_id FROM users WHERE LOWER(username)=LOWER($1)',[username]);
-  if(existing.rows[0]){
-    const old=existing.rows[0];
-    // Existing web accounts must be changed through the Edit flow. POST is kept
-    // only for first-run/legacy Excel accounts that do not yet have a web password.
-    if(actor&&old.password_hash)throw Object.assign(new Error('This username already has a web account. Use Edit to change it.'),{status:409});
-    if(actor&&Number(old.id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own signed-in account.'),{status:400});
-    if(actor&&old.role==='Admin'&&bool(old.active)&&(role!=='Admin'||!active)){
-      const c=await db.query(`SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL`,[true]);
-      if(Number(c.rows[0]?.c||0)<=1)throw Object.assign(new Error('At least one active Web Admin must remain.'),{status:400});
-    }
+  const ws=actor?await workspaceIdForUser(actor.id):0;
+  if(actor&&!ws)throw Object.assign(new Error('Owner workspace unavailable.'),{status:403});
+  const existing=actor
+    ?await usernameAtScope(username,ws,branchId)
+    :(await db.query('SELECT id,username,password_hash,role,active,branch_id FROM users WHERE LOWER(username)=LOWER($1)',[username])).rows[0];
+  if(existing){
+    const old=existing;
+    if(actor&&old.password_hash)throw Object.assign(new Error('This username already exists in the selected branch of your owner account. Use Edit instead.'),{status:409});
+    if(actor&&Number(old.id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own account.'),{status:400});
     if(actor)await protectOwnerUpdate(actor,old.id,role,active);
-    await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3,branch_id=$4 WHERE id=$5',[hashPassword(password),role,active,branchId,Number(old.id)]);
+    await db.query('UPDATE users SET password_hash=$1,role=$2,active=$3,branch_id=$4,login_username=$5,full_name=$6,email=$7,phone=$8 WHERE id=$9',
+      [hashPassword(password),role,active,branchId,username,profile.fullName,profile.email,profile.phone,Number(old.id)]);
     await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(old.id)]);
     await internalChat.assignNewUser(db,actor?.id||null,Number(old.id));
-    return{id:Number(old.id),username:old.username,role,active};
+    return{id:Number(old.id),username,role,active};
   }
-  const r=await db.query('INSERT INTO users (username,password_hash,role,active,created_at,branch_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',[username,hashPassword(password),role,active,nowIso(),branchId]);
-  await internalChat.assignNewUser(db,actor?.id||null,Number(r.rows[0].id));
-  return{id:Number(r.rows[0].id),username,role,active};
+  // Keep the pre-existing globally unique physical username key for foreign
+  // keys and legacy imports; expose the branch-scoped username separately.
+  let internalUsername=username;
+  const globalMatch=await db.query('SELECT id FROM users WHERE LOWER(username)=LOWER($1)',[username]);
+  if(globalMatch.rows.length)internalUsername='dm_'+crypto.randomBytes(13).toString('hex');
+  const row=await db.query(
+    'INSERT INTO users (username,login_username,password_hash,role,active,created_at,branch_id,full_name,email,phone) '+
+    'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id',
+    [internalUsername,username,hashPassword(password),role,active,nowIso(),branchId,profile.fullName,profile.email,profile.phone]);
+  await internalChat.assignNewUser(db,actor?.id||null,Number(row.rows[0].id));
+  return{id:Number(row.rows[0].id),username,role,active};
 }
-async function deleteUserAccount(actor,id){if(Number(id)===(await initialOwnerId(id)))throw Object.assign(new Error('The original Owner account cannot be deleted.'),{status:403});if(Number(id)===actor.id)throw Object.assign(new Error('You cannot delete your own account.'),{status:400});const r=await db.query('SELECT id,username,role,active FROM users WHERE id=$1',[id]);const u=r.rows[0];if(!u)throw Object.assign(new Error('User not found.'),{status:404});const refs=await db.query('SELECT (SELECT COUNT(*) FROM sales WHERE cashier_user_id=$1 OR deleted_by=$1) AS sales_count,(SELECT COUNT(*) FROM system_logs WHERE actor_user_id=$1) AS logs_count,(SELECT COUNT(*) FROM inventory_movements WHERE created_by=$1) AS movements_count,(SELECT COUNT(*) FROM chat_messages WHERE sender_id=$1 OR recipient_id=$1) AS chat_count,(SELECT COUNT(*) FROM chat_group_messages WHERE sender_id=$1) AS group_chat_count',[id]);if(Number(refs.rows[0].sales_count)||Number(refs.rows[0].logs_count)||Number(refs.rows[0].movements_count)||Number(refs.rows[0].chat_count)||Number(refs.rows[0].group_chat_count))throw Object.assign(new Error('This account has transaction, audit, or chat history. Deactivate it instead of deleting it.'),{status:409});const count=await db.query("SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL",[true]);if(u.role==='Admin'&&bool(u.active)&&Number(count.rows[0].c)<=1)throw Object.assign(new Error('At least one active Admin must remain.'),{status:400});await db.query('DELETE FROM sessions WHERE user_id=$1',[id]);await db.query('DELETE FROM users WHERE id=$1',[id]);await logAction(actor,'Web user deleted: '+u.username,'User Deleted',null);return {ok:true};}
 
-async function updateUserAccount(actor,id,body){const targetR=await db.query('SELECT id,username,role,active,branch_id FROM users WHERE id=$1',[Number(id)]);const target=targetR.rows[0];if(!target)throw Object.assign(new Error('User not found.'),{status:404});const role=body.role===undefined?target.role:String(body.role),active=typeof body.active==='boolean'?body.active:bool(target.active),password=String(body.password||'');if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});await protectOwnerUpdate(actor,id,role,active);if(Number(id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own signed-in account.'),{status:400});if((target.role==='Admin'&&bool(target.active))&&(role!=='Admin'||!active)){const c=await db.query(`SELECT COUNT(*) AS c FROM users WHERE role='Admin' AND active=$1 AND password_hash IS NOT NULL`,[true]);if(Number(c.rows[0].c)<=1)throw Object.assign(new Error('At least one active Web Admin must remain.'),{status:400});}if(password&&(password.length<8||password.length>256))throw Object.assign(new Error('Password must be 8-256 characters.'),{status:400});const branchId=await branchSupport.resolveAssignment(db,role,body.branchId===undefined?target.branch_id:body.branchId);if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3,branch_id=$4 WHERE id=$5',[role,active,hashPassword(password),branchId,Number(id)]);else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3 WHERE id=$4',[role,active,branchId,Number(id)]);if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);await logAction(actor,`Web user updated: ${target.username}`,'User Updated',`${role} / ${active?'Active':'Inactive'}`);return{ok:true};}
+async function deleteUserAccount(actor,id){
+  await requireSameOwnerWorkspace(actor,id);
+  if(Number(id)===(await initialOwnerId(id)))throw Object.assign(new Error('The original Owner cannot be deleted.'),{status:403});
+  if(Number(id)===actor.id)throw Object.assign(new Error('You cannot delete your own account.'),{status:400});
+  const r=await db.query('SELECT id,username,role,active FROM users WHERE id=$1',[id]);const u=r.rows[0];
+  if(!u)throw Object.assign(new Error('User not found.'),{status:404});
+  const refs=await db.query('SELECT (SELECT COUNT(*) FROM sales WHERE cashier_user_id=$1 OR deleted_by=$1) AS sales_count,'+
+    '(SELECT COUNT(*) FROM system_logs WHERE actor_user_id=$1) AS logs_count,'+
+    '(SELECT COUNT(*) FROM inventory_movements WHERE created_by=$1) AS movements_count,'+
+    '(SELECT COUNT(*) FROM chat_messages WHERE sender_id=$1 OR recipient_id=$1) AS chat_count,'+
+    '(SELECT COUNT(*) FROM chat_group_messages WHERE sender_id=$1) AS group_chat_count',[id]);
+  if(Object.values(refs.rows[0]).some(Number))throw Object.assign(new Error('This account has transaction or audit history. Deactivate it instead.'),{status:409});
+  if(u.role==='Admin'&&bool(u.active)){
+    const ws=await workspaceIdForUser(actor.id);
+    const count=await db.query('SELECT COUNT(*) AS c FROM users u JOIN chat_memberships m ON m.user_id=u.id WHERE m.workspace_id=$1 AND u.role=$2 AND u.active=$3 AND u.password_hash IS NOT NULL',[ws,'Admin',true]);
+    if(Number(count.rows[0].c)<=1)throw Object.assign(new Error('At least one active Admin must remain.'),{status:400});
+  }
+  await db.query('DELETE FROM sessions WHERE user_id=$1',[id]);
+  await db.query('DELETE FROM users WHERE id=$1',[id]);
+  await logAction(actor,'Web user deleted: '+u.username,'User Deleted',null);
+  return{ok:true};
+}
+async function updateUserAccount(actor,id,body){
+  const ws=await requireSameOwnerWorkspace(actor,id);
+  const targetR=await db.query('SELECT id,username,COALESCE(login_username,username) AS login_name,role,active,branch_id,full_name,email,phone FROM users WHERE id=$1',[Number(id)]);
+  const target=targetR.rows[0];if(!target)throw Object.assign(new Error('User not found.'),{status:404});
+  const role=body.role===undefined?target.role:String(body.role);
+  const active=typeof body.active==='boolean'?body.active:bool(target.active),password=String(body.password||'');
+  if(!['Admin','User'].includes(role))throw Object.assign(new Error('Role must be Admin or User.'),{status:400});
+  await protectOwnerUpdate(actor,id,role,active);
+  if(Number(id)===actor.id&&!active)throw Object.assign(new Error('You cannot deactivate your own account.'),{status:400});
+  if(password&&(password.length<8||password.length>256))throw Object.assign(new Error('Password must be 8–256 characters.'),{status:400});
+  if(target.role==='Admin'&&bool(target.active)&&(role!=='Admin'||!active)){
+    const c=await db.query('SELECT COUNT(*) AS c FROM users u JOIN chat_memberships m ON m.user_id=u.id WHERE m.workspace_id=$1 AND u.role=$2 AND u.active=$3 AND u.password_hash IS NOT NULL',[ws,'Admin',true]);
+    if(Number(c.rows[0].c)<=1)throw Object.assign(new Error('At least one active Admin must remain.'),{status:400});
+  }
+  const branchId=await branchSupport.resolveAssignment(db,role,body.branchId===undefined?target.branch_id:body.branchId);
+  if(await usernameAtScope(target.login_name,ws,branchId,id))
+    throw Object.assign(new Error('Another user in the selected branch already has this username.'),{status:409});
+  const profile=staffProfile({...body,fullName:body.fullName===undefined?target.full_name:body.fullName,
+    email:body.email===undefined?target.email:body.email,phone:body.phone===undefined?target.phone:body.phone});
+  if(password)await db.query('UPDATE users SET role=$1,active=$2,password_hash=$3,branch_id=$4,full_name=$5,email=$6,phone=$7 WHERE id=$8',
+    [role,active,hashPassword(password),branchId,profile.fullName,profile.email,profile.phone,Number(id)]);
+  else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3,full_name=$4,email=$5,phone=$6 WHERE id=$7',
+    [role,active,branchId,profile.fullName,profile.email,profile.phone,Number(id)]);
+  if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);
+  await logAction(actor,'Web user updated: '+target.login_name,'User Updated',role+' / '+(active?'Active':'Inactive'));
+  return{ok:true};
+}
 
 async function listAdminProducts(){const r=await db.query(`SELECT p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at,MAX(p.image_data) AS image_data,COUNT(pi.ingredient_id) AS recipe_count,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.sku,p.name,p.category,p.price,p.active,p.created_at,p.updated_at ORDER BY p.category,p.name`);return r.rows.map(x=>({id:Number(x.id),sku:x.sku,name:x.name,category:x.category,price:Number(x.price),active:bool(x.active),imageData:x.image_data||null,recipeCount:Number(x.recipe_count||0),unitCost:Number(x.unit_cost||0)}));}
 function validatedProductImage(value) {
@@ -1053,7 +1164,7 @@ async function restoreBackup(user,name){
     for(const suffix of ['-wal','-shm'])try{fs.unlinkSync(dbPath+suffix);}catch(_){}
     try{fs.unlinkSync(dbPath);}catch(_){}
     fs.renameSync(incoming,dbPath);
-    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await db.query('DELETE FROM sessions');
+    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
     await logAction({id:null,username:user.username},`Database restored from: ${name}`,'Restored','Automatic pre-restore backup created; all web sessions cleared');
     return{ok:true,name,requiresRelogin:true};
   }catch(err){
@@ -1230,7 +1341,7 @@ async function handleApi(req,res,url){
   const delSale=p.match(/^\/api\/sales\/(.+)\/delete$/);if(method==='POST'&&delSale){requireAdminRole(user);return json(res,200,await deleteSale(user,decodeURIComponent(delSale[1]),await readJson(req)),safeHeaders());}
 
   requireAdminRole(user);
-  if(method==='GET'&&p==='/api/users')return json(res,200,{users:await listUsers()},safeHeaders());
+  if(method==='GET'&&p==='/api/users')return json(res,200,{users:await listUsers(user)},safeHeaders());
   if(method==='POST'&&p==='/api/users'){const created=await createOrActivateUser(await readJson(req),user);await logAction(user,`Web user saved: ${created.username}`,'User Updated',`${created.role} / ${created.active?'Active':'Inactive'}`);return json(res,201,{user:created},safeHeaders());}
   const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&userMatch)return json(res,200,await deleteUserAccount(user,Number(userMatch[1])),safeHeaders());
   if(method==='POST'&&p==='/api/branches'){const branch=await branchSupport.saveBranch(db,user,await readJson(req),null,logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,201,{branch},safeHeaders());}
@@ -1311,7 +1422,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
