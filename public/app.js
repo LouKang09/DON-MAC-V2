@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.54-supply-chain-head-office';
+  const VERSION = '1.5.55-one-line-responsive-header';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
