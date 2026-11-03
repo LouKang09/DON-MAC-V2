@@ -9,6 +9,7 @@ const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
 const supplyChain = require('./lib/supply-chain');
+const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
 
 const ROOT = __dirname;
@@ -34,7 +35,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.60-supply-office-inventory-promos';
+const APP_VERSION = '1.5.61-franchisee-monthly-royalties';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1432,6 +1433,20 @@ async function handleOfficeApi(req,res,p,method){
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
     return json(res,200,await supplyChain.saveProduct(db,Number(productMatch[1]),await readJson(req)),safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/franchisees')
+    return json(res,200,{franchisees:await supplyRoyalties.franchisees(db)},safeHeaders());
+  const franchiseProfile=p.match(/^\/api\/supply\/office\/franchisees\/(\d+)$/);
+  if(method==='GET'&&franchiseProfile)return json(res,200,await supplyRoyalties.profile(db,Number(franchiseProfile[1])),safeHeaders());
+  const franchiseFee=p.match(/^\/api\/supply\/office\/franchisees\/(\d+)\/royalty-fee$/);
+  if(method==='PUT'&&franchiseFee){
+    const body=await readJson(req);
+    return json(res,200,await supplyRoyalties.setFee(db,Number(franchiseFee[1]),body.monthlyFee,process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  }
+  const royaltyStatus=p.match(/^\/api\/supply\/office\/franchisees\/(\d+)\/royalties\/([0-9a-f-]{36})\/status$/i);
+  if(method==='POST'&&royaltyStatus){
+    const body=await readJson(req);
+    return json(res,200,await supplyRoyalties.setMonthStatus(db,Number(royaltyStatus[1]),royaltyStatus[2],String(body.status||''),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  }
   if(method==='GET'&&p==='/api/supply/office/orders')return json(res,200,{orders:await supplyChain.list(db)},safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.priceSettings(db),safeHeaders());
   if(method==='PUT'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.setUrgentFee(db,(await readJson(req)).urgentFee),safeHeaders());
@@ -1452,7 +1467,7 @@ async function handleFranchiseSupplyApi(req,res,p,method,user){
   if(user.role!=='Admin')throw Object.assign(new Error('Supply Chain is available to franchise Owners and Co-Owners.'),{status:403});
   const workspaceId=await supplyChain.scope(db,user);
   if(method==='GET'&&p==='/api/supply/catalog')
-    return json(res,200,{...(await supplyChain.catalog(db)),branches:await supplyChain.ownerBranches(db,workspaceId)},safeHeaders());
+    return json(res,200,{...(await supplyChain.catalog(db)),branches:await supplyChain.ownerBranches(db,workspaceId),royalty:await supplyRoyalties.quote(db,workspaceId)},safeHeaders());
   if(method==='GET'&&p==='/api/supply/orders')return json(res,200,{orders:await supplyChain.list(db,workspaceId)},safeHeaders());
   if(method==='POST'&&p==='/api/supply/orders')return json(res,201,
     {order:await supplyChain.submit(db,user,await readJson(req,2500000))},safeHeaders());
