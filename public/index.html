@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/branch-v157.css" />
   <link rel="stylesheet" href="/topbar-green-v1549.css?v=1.5.52" />
   <link rel="stylesheet" href="/audit-logs-compact-v1552.css?v=1.5.52" />
+  <link rel="stylesheet" href="/archive-compare-v1553.css?v=1.5.53" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
 </head>
 <body>
@@ -521,7 +522,31 @@
           <div class="catalog-backup-options">
             <div><p class="eyebrow">PORTABLE DATA EXPORT</p><h4>Keep your own copy</h4><p class="muted">Download a secure data snapshot for archiving. Export is not an automatic restore and does not include passwords or active sessions.</p><button id="downloadDataArchive" type="button" class="primary catalog-download-button"><svg class="catalog-download-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg> Download Data Archive</button></div>
             <div><p class="eyebrow">OPTIONAL RETENTION ADD-ON</p><h4>Historical database retention</h4><p class="muted">Proposed pricing: ₱299/month or ₱2,990/year. Billing and retention enforcement are not active during development.</p><label class="catalog-active-row"><input id="retentionDemoEnabled" type="checkbox"/><span>Preview subscribed retention</span><span class="catalog-help" tabindex="0" data-tooltip="Development only. This switch previews frequency controls. It does not start billing or guarantee off-site backups."><img class="catalog-question-icon" src="/assets/catalog/question.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /></span></label><label class="catalog-backup-frequency">Backup frequency<select id="retentionFrequency" disabled><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label><button type="button" id="saveRetentionPreference" class="primary"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Preference</button></div>
-          </div><p id="retentionBackupStatus" class="muted">Historical records remain available. No annual deletion, hiding, or automatic off-site backup is active.</p><div class="table-wrap"><table><thead><tr><th>Backup</th><th>Date</th><th class="num">Size</th><th>Actions</th></tr></thead><tbody id="backupBody"></tbody></table></div></div>
+          </div><section class="catalog-archive-compare" aria-labelledby="catalogArchiveCompareTitle">
+            <div class="catalog-archive-compare-head">
+              <div><p class="eyebrow">READ-ONLY DATABASE REVIEW</p><h4 id="catalogArchiveCompareTitle">Upload &amp; Compare Data Archive</h4>
+                <p class="muted">Upload the .json file from Download Data Archive. Compare table counts and changed records without restoring or modifying live data.</p>
+              </div><span class="catalog-archive-view-label">No restore · no overwrite</span>
+            </div>
+            <div class="catalog-archive-upload-row">
+              <label for="archiveCompareFile">Don Mac JSON archive <small>(up to 60 MB)</small>
+                <input id="archiveCompareFile" type="file" accept=".json,application/json" aria-describedby="archiveCompareError" />
+              </label>
+              <button id="archiveCompareUpload" class="primary" type="button">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></svg>
+                Upload for Comparison
+              </button>
+            </div>
+            <p id="archiveCompareError" class="catalog-archive-error hidden" role="alert" aria-live="polite"></p>
+            <div class="catalog-archive-status" id="archiveCompareStatus" aria-live="polite">No archive uploaded for comparison yet.</div>
+            <div class="catalog-archive-actions"><button id="archiveCompareView" type="button" class="primary" disabled>View Read-Only Comparison</button><span id="archiveCompareExpiry" class="muted tiny">Comparison access expires 24 hours after upload. The upload record remains listed afterward.</span></div>
+            <div id="archiveCompareResult" class="catalog-archive-result hidden">
+              <div class="catalog-archive-result-heading"><h4>Archive vs. Current Database</h4><button id="archiveCompareClose" type="button" class="ghost">Close comparison</button></div>
+              <p class="muted tiny">Counts describe differences between the uploaded archive and current live records. Nothing is restored, imported, or changed.</p>
+              <div class="table-wrap"><table aria-label="Read-only archive table comparison"><thead><tr><th>Table</th><th class="num">Archive</th><th class="num">Live</th><th class="num">Only archive</th><th class="num">Only live</th><th class="num">Changed</th><th class="num">Identical</th></tr></thead><tbody id="archiveCompareRows"></tbody></table></div>
+            </div>
+          </section>
+          <p id="retentionBackupStatus" class="muted">Historical records remain available. No annual deletion, hiding, or automatic off-site backup is active.</p><div class="table-wrap"><table><thead><tr><th>Backup</th><th>Date</th><th class="num">Size</th><th>Actions</th></tr></thead><tbody id="backupBody"></tbody></table></div></div>
         </div>
       </section>
 
@@ -728,6 +753,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.52"></script>
+  <script src="/app.js?v=1.5.53"></script>
 </body>
 </html>
