@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.5.54"/></head><body>
+<div class="signin-wrap" id="officeLogin">
+  <form class="signin-card" id="officeLoginForm"><div class="brand-icon"><img src="/donmac-logo-hires.svg" alt="Don Macchiatos" /></div>
+    <p class="eyebrow">MAIN OFFICE · SECURE ACCESS</p><h1>Supply Chain</h1><p class="muted">Manage franchise purchase requests, payment verification, deliveries, and conversations.</p>
+    <label>Office username<input id="officeUsername" autocomplete="username" required/></label>
+    <label>Password<input id="officePassword" type="password" autocomplete="current-password" required/></label>
+    <button class="btn solid" type="submit">Sign in to Main Office</button><p id="officeLoginError" class="error" role="alert"></p>
+    <p class="fine">Authorized Main Office personnel only. Franchise owners order through Don Mac POS.</p>
+  </form>
+</div>
+<div class="office-app hidden" id="officeApp">
+  <aside class="office-side"><div class="office-brand"><img src="/donmac-logo-hires.svg" alt="" /><div><strong>Don Macchiatos</strong><small>Supply Chain · Main Office</small></div></div>
+    <nav aria-label="Office navigation">
+      <button type="button" class="side-link active" data-office-page="requests"><span>▦</span> Purchase Requests <b id="pendingBadge">0</b></button>
+      <button type="button" class="side-link" data-office-page="catalog"><span>▤</span> Supply Catalog</button>
+      <button type="button" class="side-link" data-office-page="settings"><span>⚙</span> Urgent Fee Settings</button>
+    </nav><div class="office-side-bottom"><span class="live-dot"></span> Office access <strong id="officeSignedInAs">Main Office</strong><button id="officeLogout" class="text-link">Sign out</button></div>
+  </aside>
+  <main class="office-main">
+    <header class="office-top"><div><p class="eyebrow">FRANCHISE DISTRIBUTION</p><h1 id="officePageHeading">Purchase requests</h1></div><div class="top-controls"><span id="officeClock"></span><button class="btn outline" id="officeRefresh" type="button">↻ Refresh</button></div></header>
+    <div id="officeNotice" class="notice hidden" role="status"></div>
+    <section class="office-page" id="page-requests">
+      <div class="stats"><div class="stat"><small>All requests</small><strong id="statTotal">0</strong></div><div class="stat"><small>Needs review</small><strong id="statPending">0</strong></div><div class="stat"><small>On hold</small><strong id="statHold">0</strong></div><div class="stat"><small>In fulfillment</small><strong id="statActive">0</strong></div></div>
+      <div class="panel"><div class="panel-head"><div><h2>Franchise purchase orders</h2><p class="muted">Review payment proofs, update each stage, and reply to the franchise.</p></div><div class="filters"><input type="search" id="officeSearch" placeholder="Search reference, franchise, branch…"/><select id="officeStatusFilter"><option value="">All statuses</option><option>PENDING_REVIEW</option><option>APPROVED</option><option>ON_HOLD</option><option>DENIED</option><option>PREPARING</option><option>DISPATCHED</option><option>DELIVERED</option><option>COMPLETED</option></select></div></div>
+        <div class="table-scroll"><table><thead><tr><th>Request</th><th>Franchise / Branch</th><th>Type</th><th>Total</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody id="officeOrdersBody"></tbody></table></div><div class="pagination" id="officeOrderPages"></div>
+      </div>
+    </section>
+    <section class="office-page hidden" id="page-catalog"><div class="panel"><div class="panel-head"><div><h2>Head Office supply catalog</h2><p class="muted">Franchisee prices and units from the supplied Main Office list.</p></div></div><div class="table-scroll"><table><thead><tr><th>Particulars</th><th>Unit of Measure</th><th>Franchisee price</th></tr></thead><tbody id="officeCatalogBody"></tbody></table></div></div></section>
+    <section class="office-page hidden" id="page-settings"><div class="panel narrow"><p class="eyebrow">PROCESSING SURCHARGE</p><h2>Urgent request fee</h2><p class="muted">The extra fee is charged in addition to the item total and displayed to franchise owners before they submit an urgent request. Standard requests have no surcharge.</p><form id="urgentFeeForm"><label>Additional urgent fee (₱)<input type="number" step="0.01" min="0" max="100000" required id="officeUrgentFee"/></label><button class="btn solid">Save urgent fee</button></form><p class="fine">Setting applies to future orders. Existing order totals are preserved.</p></div></section>
+  </main>
+</div>
+<div class="overlay hidden" id="officeDetailOverlay" aria-hidden="true"><div class="drawer" role="dialog" aria-modal="true" aria-label="Supply request details"><header class="drawer-head"><div><p class="eyebrow">ORDER REVIEW</p><h2 id="detailTitle">Request</h2></div><button id="officeDetailClose" class="icon-btn" type="button" aria-label="Close">×</button></header>
+ <div class="drawer-body">
+  <div id="officeDetailSummary"></div>
+  <h3>Supply items</h3><div class="table-scroll"><table><thead><tr><th>Item</th><th>UOM</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody id="officeDetailItems"></tbody></table></div>
+  <h3>Payment verification</h3><p class="muted" id="officePaymentReference"></p><div id="officePaymentImage"></div>
+  <h3>Process request</h3><form id="officeStatusForm"><label>Update stage<select id="officeNextStatus"><option value="PENDING_REVIEW">Pending review</option><option value="APPROVED">Approved</option><option value="ON_HOLD">On hold</option><option value="DENIED">Denied</option><option value="PREPARING">Preparing</option><option value="DISPATCHED">Dispatched</option><option value="DELIVERED">Delivered</option><option value="COMPLETED">Completed</option></select></label><label>Office notes / reason<textarea id="officeStatusNote" rows="3" maxlength="1000" placeholder="Required when on hold or denied"></textarea></label><button class="btn solid">Save status &amp; notify franchise</button></form>
+  <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
+  <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" required placeholder="Type a message…"/><button class="btn solid">Send</button></form>
+ </div></div></div>
+<script src="/supply-office.js?v=1.5.54" defer></script></body></html>
