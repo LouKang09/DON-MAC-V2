@@ -158,5 +158,10 @@ async function open(){
  }else await Promise.all([loadOrders(),loadNotices()]);
  if(!timer)timer=setInterval(()=>{if($('view-supply')?.classList.contains('active')){loadOrders().catch(()=>{});loadNotices();}},30000);
 }
+// Update the sidebar notification indicator even when the owner is working in POS.
+setInterval(()=>{
+ if(!$('app')?.classList.contains('hidden')&&!$('view-supply')?.classList.contains('active'))
+   loadNotices();
+},45000);
 window.donmacSupply={open,refreshNotices:loadNotices};
 })();
