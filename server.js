@@ -1352,7 +1352,7 @@ const OFFICE_CREDENTIAL_KEY='supply_office_credential_v2';
 async function officeCredential(){
  const r=await db.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[OFFICE_CREDENTIAL_KEY]);
  if(!r.rows.length)return null;
- try{return JSON.parse(r.rows[0].setting_value);}catch(_){return null;}
+ try{return JSON.parse(r.rows[0].setting_value);}catch(_){throw Object.assign(new Error('Main Office credentials require administrative review.'),{status:409});}
 }
 const officePasswordHash=password=>{
  const salt=crypto.randomBytes(16).toString('hex');
