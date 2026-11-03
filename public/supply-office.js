@@ -36,7 +36,7 @@ function photoHtml(data){
 }
 
 const PAGE_SIZE=10;
-let all=[],current=null,page=1,activePage='requests',timer=null,catalogPage=1,catalogProducts=[],chatPhoto=null;
+let all=[],current=null,page=1,activePage='requests',timer=null,catalogPage=1,catalogProducts=[],chatPhoto=null,franchiseOwners=[],franchiseProfile=null,franchisePage=1,franchiseOrderPage=1,franchiseRoyaltyPage=1,franchiseTab='orders';
 function notice(msg,error=false){const n=$('officeNotice');n.classList.remove('hidden');n.textContent=msg;n.style.background=error?'#ffebec':'#e7f4e9';n.style.color=error?'#a3262b':'#145537';}
 async function api(path,options={}){
  const result=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
@@ -62,13 +62,14 @@ $('officeLogout').onclick=async()=>{try{await api('/api/supply/office/logout',{m
 function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
- for(const section of ['requests','catalog','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({requests:'Purchase requests',catalog:'Supply catalog',settings:'Office settings',security:'Change password'})[name];
+ for(const section of ['requests','franchisees','catalog','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
+ $('officePageHeading').textContent=({requests:'Purchase requests',franchisees:'Franchisee Profile',catalog:'Supply catalog',settings:'Office settings',security:'Change password'})[name];
+ if(name==='franchisees')loadFranchisees();
  if(name==='catalog')loadCatalog();
  if(name==='settings')loadSettings();
 }
 document.querySelectorAll('[data-office-page]').forEach(b=>b.onclick=()=>selectPage(b.dataset.officePage));
-$('officeRefresh').onclick=refresh;
+$('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else refresh();};
 $('officeClock').textContent=new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(new Date());
 async function refresh(){
  if($('officeApp').classList.contains('hidden'))return;
@@ -103,6 +104,108 @@ function render(){
 }
 $('officeSearch').oninput=()=>{page=1;render();};
 $('officeStatusFilter').onchange=()=>{page=1;render();};
+async function loadFranchisees(){
+ try{
+  const d=await api('/api/supply/office/franchisees');
+  franchiseOwners=d.franchisees||[];
+  renderFranchisees();
+  if(franchiseProfile)await openFranchise(franchiseProfile.owner.workspaceId,true);
+ }catch(e){notice(e.message,true);}
+}
+const royaltyBadge=(status)=>status==='PAID'?'<span class="royalty-badge paid">Paid</span>':status==='PENDING'?'<span class="royalty-badge pending">Pending</span>':'<span class="royalty-badge unset">Not configured</span>';
+function pages(container,total,limit,current,action){
+ const pageCount=Math.max(1,Math.ceil(total/limit));
+ $(container).innerHTML='<span>Page '+current+' of '+pageCount+' · '+total+' records</span>'+
+ '<button type="button" data-profile-page="-1" '+(current===1?'disabled':'')+'>Previous</button>'+
+ '<button type="button" data-profile-page="1" '+(current===pageCount?'disabled':'')+'>Next</button>';
+ $(container).querySelectorAll('button').forEach(button=>button.onclick=()=>action(Number(button.dataset.profilePage)));
+}
+function renderFranchisees(){
+ const term=$('franchiseSearch').value.toLowerCase().trim();
+ const data=franchiseOwners.filter(x=>String(x.ownerName||'').toLowerCase().includes(term)||String(x.workspaceId).includes(term));
+ franchisePage=Math.min(Math.max(1,franchisePage),Math.max(1,Math.ceil(data.length/10)));
+ $('franchiseProfilesBody').innerHTML=data.slice((franchisePage-1)*10,franchisePage*10).map(x=>
+ '<tr><td><strong>'+esc(x.ownerName)+'</strong><small class="franchise-subline">Owner · Account '+x.workspaceId+'</small></td>'+
+ '<td>'+x.branchCount+'</td><td><strong>'+peso(x.monthlyFee)+'</strong></td>'+
+ '<td>'+royaltyBadge(x.royaltyStatus)+'</td><td><strong>'+peso(x.pendingTotal)+'</strong><small class="franchise-subline">'+x.pendingMonths+' pending month(s)</small></td>'+
+ '<td>'+stamp(x.joinedAt)+'</td><td><button class="table-action" type="button" data-franchise-owner="'+x.workspaceId+'">View</button></td></tr>'
+ ).join('')||'<tr><td colspan="7">No franchise owners found.</td></tr>';
+ $('franchiseProfilesBody').querySelectorAll('[data-franchise-owner]').forEach(b=>b.onclick=()=>openFranchise(Number(b.dataset.franchiseOwner)));
+ pages('franchiseProfilesPages',data.length,10,franchisePage,by=>{franchisePage+=by;renderFranchisees();});
+}
+async function openFranchise(workspaceId,quiet=false){
+ try{
+  const d=await api('/api/supply/office/franchisees/'+workspaceId);
+  franchiseProfile=d;
+  $('franchiseDetailPanel').classList.remove('hidden');
+  $('franchiseDetailName').textContent=d.owner.ownerName;
+  $('franchiseDetailMeta').textContent='Original account owner · Joined '+stamp(d.owner.joinedAt);
+  $('franchiseMonthlyFee').value=Number(d.owner.monthlyFee).toFixed(2);
+  $('franchiseDetailSummary').innerHTML=[
+   ['Branches',d.owner.branchCount+' · '+(d.branches.map(x=>x.name).join(', ')||'No branches')],
+   ['Royalty status',d.owner.royaltyStatus==='NOT_SET'?'Not configured':title(d.owner.royaltyStatus)],
+   ['Monthly fee',peso(d.owner.monthlyFee)],
+   ['Unpaid royalties',peso(d.owner.pendingTotal)]
+  ].map(([k,v])=>'<div class="franchise-summary-card"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('');
+  renderFranchiseDetail();
+  if(!quiet)$('franchiseDetailPanel').scrollIntoView({behavior:'smooth',block:'start'});
+ }catch(e){notice(e.message,true);}
+}
+function renderFranchiseDetail(){
+ if(!franchiseProfile)return;
+ const data=franchiseProfile;
+ document.querySelectorAll('[data-franchise-tab]').forEach(b=>{
+  const active=b.dataset.franchiseTab===franchiseTab;
+  b.classList.toggle('active',active);b.setAttribute('aria-selected',active?'true':'false');
+ });
+ $('franchiseOrdersPanel').classList.toggle('hidden',franchiseTab!=='orders');
+ $('franchiseRoyaltiesPanel').classList.toggle('hidden',franchiseTab!=='royalties');
+ const orders=data.orders||[],royalties=data.months||[];
+ franchiseOrderPage=Math.min(Math.max(1,franchiseOrderPage),Math.max(1,Math.ceil(orders.length/10)));
+ franchiseRoyaltyPage=Math.min(Math.max(1,franchiseRoyaltyPage),Math.max(1,Math.ceil(royalties.length/10)));
+ $('franchiseOrderRows').innerHTML=orders.slice((franchiseOrderPage-1)*10,franchiseOrderPage*10).map(o=>
+ '<tr><td><strong>'+esc(o.id.slice(0,8).toUpperCase())+'</strong></td><td>'+stamp(o.created_at)+'</td>'+
+ '<td>'+peso(o.subtotal)+'</td><td>'+peso(o.royaltyTotal)+'</td><td><strong>'+peso(o.total)+'</strong></td>'+
+ '<td><span class="badge '+esc(o.status.toLowerCase())+'">'+esc(title(o.status))+'</span></td></tr>'
+ ).join('')||'<tr><td colspan="6">No supply orders yet.</td></tr>';
+ pages('franchiseOrderPages',orders.length,10,franchiseOrderPage,n=>{franchiseOrderPage+=n;renderFranchiseDetail();});
+ $('franchiseRoyaltyRows').innerHTML=royalties.slice((franchiseRoyaltyPage-1)*10,franchiseRoyaltyPage*10).map(m=>{
+  const reserved=!!m.reserved_order_id,manualPaid=m.status==='PAID'&&m.paid_via==='MANUAL';
+  const action=reserved?'<span class="muted">Linked to order</span>':
+   m.status==='PENDING'?'<button type="button" class="table-action" data-royalty-id="'+esc(m.id)+'" data-next-status="PAID">Mark Paid</button>':
+   manualPaid?'<button type="button" class="table-action" data-royalty-id="'+esc(m.id)+'" data-next-status="PENDING">Reopen</button>':
+   '<span class="muted">Paid via order</span>';
+  return '<tr><td>'+esc(m.period)+'</td><td><strong>'+peso(m.amount)+'</strong></td>'+
+   '<td>'+royaltyBadge(m.status)+'</td><td>'+(reserved?'Request '+esc(m.reserved_order_id.slice(0,8).toUpperCase()):
+   m.paid_via==='MANUAL'?'Manual payment':m.paid_via==='SUPPLY_ORDER'?'Supply order':m.paid_at?'Paid':'Awaiting payment')+'</td>'+
+   '<td>'+action+'</td></tr>';
+ }).join('')||'<tr><td colspan="5">No royalty months have been issued. Set the monthly fee to begin billing.</td></tr>';
+ $('franchiseRoyaltyRows').querySelectorAll('[data-royalty-id]').forEach(b=>b.onclick=async()=>{
+  const status=b.dataset.nextStatus,id=b.dataset.royaltyId;
+  if(!window.confirm(status==='PAID'?'Confirm receipt of this monthly royalty payment?':'Reopen this manually paid royalty as Pending?'))return;
+  b.disabled=true;
+  try{
+   await api('/api/supply/office/franchisees/'+data.owner.workspaceId+'/royalties/'+id+'/status',
+    {method:'POST',body:JSON.stringify({status})});
+   notice('Royalty status updated to '+title(status)+'.');
+   await loadFranchisees();
+  }catch(e){notice(e.message,true);}finally{b.disabled=false;}
+ });
+ pages('franchiseRoyaltyPages',royalties.length,10,franchiseRoyaltyPage,n=>{franchiseRoyaltyPage+=n;renderFranchiseDetail();});
+}
+$('franchiseSearch').oninput=()=>{franchisePage=1;renderFranchisees();};
+$('franchiseDetailClose').onclick=()=>{$('franchiseDetailPanel').classList.add('hidden');franchiseProfile=null;};
+document.querySelectorAll('[data-franchise-tab]').forEach(b=>b.onclick=()=>{franchiseTab=b.dataset.franchiseTab;renderFranchiseDetail();});
+$('franchiseFeeForm').onsubmit=async event=>{
+ event.preventDefault();if(!franchiseProfile)return;
+ const id=franchiseProfile.owner.workspaceId;
+ try{
+  const result=await api('/api/supply/office/franchisees/'+id+'/royalty-fee',{
+   method:'PUT',body:JSON.stringify({monthlyFee:$('franchiseMonthlyFee').value})});
+  notice('Monthly royalty fee saved. Existing issued periods and prior orders are unchanged.');
+  await loadFranchisees();
+ }catch(e){notice(e.message,true);}
+};
 async function loadCatalog(){
  try{const d=await api('/api/supply/office/catalog');catalogProducts=d.products||[];renderCatalog();}catch(err){notice(err.message,true);}
 }
