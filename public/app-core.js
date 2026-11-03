@@ -1338,6 +1338,87 @@
   async function loadSettings(){try{const s=await api('/api/admin/settings');$('shopName').value=s.shopName||'';$('defaultReportEmail').value=s.defaultReportEmail||'';$('smtpStatus').innerHTML=`<b class="${s.smtp.configured?'stock-ok':'stock-low'}">${s.smtp.configured?'CONFIGURED':'NOT CONFIGURED'}</b><br>Host: ${esc(s.smtp.host)}:${s.smtp.port}<br>User: ${esc(s.smtp.user||'—')}<br><span class="tiny muted">Set SMTP_USER and SMTP_PASS on the server. Gmail App Passwords are supported over TLS port 465.</span>`;}catch(err){toast(err.message);}}
   $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{try{await api('/api/admin/settings',{method:'PUT',body:{shopName:$('shopName').value.trim(),defaultReportEmail:$('defaultReportEmail').value.trim()}});toast('Settings saved.');await loadSettings();}catch(err){toast(err.message);}});});
 
+
+  function archiveComparisonStatus(meta){
+    const status=$('archiveCompareStatus'),view=$('archiveCompareView'),expiration=$('archiveCompareExpiry');
+    if(!meta?.uploaded){
+      status.textContent='No archive has been uploaded for comparison.';
+      view.disabled=true;
+      expiration.textContent='Upload a new JSON data archive to enable 24-hour read-only comparison.';
+      $('archiveCompareResult').classList.add('hidden');
+      return;
+    }
+    const uploaded=formatDateTime(meta.uploadedAt),until=formatDateTime(meta.expiresAt);
+    status.textContent=(meta.active?'Available':'Expired')+' · '+meta.filename+
+      ' · Uploaded '+uploaded+(meta.uploadedBy?' by '+meta.uploadedBy:'');
+    expiration.textContent=meta.active?
+      'View-only comparison available until '+until+'. It will expire automatically after 24 hours.':
+      'Comparison expired after 24 hours. Upload a new archive to compare again; this upload record remains visible.';
+    view.disabled=!meta.active;
+    if(!meta.active)$('archiveCompareResult').classList.add('hidden');
+  }
+  async function refreshArchiveComparison(){
+    try{
+      const meta=await api('/api/backups/comparison');
+      archiveComparisonStatus(meta);
+    }catch(err){archiveComparisonStatus(null);$('archiveCompareError').textContent='Could not check comparison status: '+err.message;$('archiveCompareError').classList.remove('hidden');}
+  }
+  function archiveComparisonError(message){
+    $('archiveCompareError').textContent=message||'';
+    $('archiveCompareError').classList.toggle('hidden',!message);
+  }
+  $('archiveCompareUpload').addEventListener('click',async()=>{
+    const file=$('archiveCompareFile').files?.[0];
+    archiveComparisonError('');
+    if(!file){archiveComparisonError('Select the JSON file downloaded from Data Archive.');return;}
+    if(!/\.json$/i.test(file.name)){archiveComparisonError('Only Don Mac JSON data archives can be compared.');return;}
+    if(file.size>60*1024*1024){archiveComparisonError('Archive is larger than the 60 MB upload limit.');return;}
+    if(!file.size){archiveComparisonError('The selected archive is empty.');return;}
+    const button=$('archiveCompareUpload');
+    button.disabled=true;button.setAttribute('aria-busy','true');
+    const controller=new AbortController(),abortAfter=setTimeout(()=>controller.abort(),120000);
+    try{
+      const response=await fetch('/api/backups/comparison',{
+        method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-Archive-Filename':file.name},
+        body:file,signal:controller.signal
+      });
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(result.error||'Archive upload failed ('+response.status+').');
+      toast('Read-only comparison ready for 24 hours. No live database records were changed.');
+      $('archiveCompareFile').value='';
+      $('archiveCompareResult').classList.add('hidden');
+      archiveComparisonStatus(result);
+    }catch(err){archiveComparisonError(err.name==='AbortError'?
+      'Upload timed out. Try a smaller archive.':(err.message||'Unable to process archive.'));}
+    finally{clearTimeout(abortAfter);button.disabled=false;button.removeAttribute('aria-busy');}
+  });
+  $('archiveCompareView').addEventListener('click',async()=>{
+    archiveComparisonError('');
+    const button=$('archiveCompareView');button.disabled=true;
+    try{
+      const result=await api('/api/backups/comparison?details=1');
+      archiveComparisonStatus(result);
+      $('archiveCompareRows').innerHTML=(result.tables||[]).map(row=>
+        '<tr><td><strong>'+esc(row.table)+'</strong></td>'+
+        '<td class="num">'+Number(row.archiveRows||0)+'</td>'+
+        '<td class="num">'+Number(row.liveRows||0)+'</td>'+
+        '<td class="num">'+Number(row.onlyArchive||0)+'</td>'+
+        '<td class="num">'+Number(row.onlyLive||0)+'</td>'+
+        '<td class="num">'+Number(row.changed||0)+'</td>'+
+        '<td class="num">'+Number(row.identical||0)+'</td></tr>'
+      ).join('')||'<tr><td colspan="7">No comparable tables in this archive.</td></tr>';
+      $('archiveCompareResult').classList.remove('hidden');
+    }catch(err){archiveComparisonError(err.message||'Comparison is unavailable.');await refreshArchiveComparison();}
+    finally{button.disabled=false;await refreshArchiveComparison();}
+  });
+  $('archiveCompareClose').addEventListener('click',()=>$('archiveCompareResult').classList.add('hidden'));
+  // A user who leaves this tab open must not retain access after expiration.
+  setInterval(()=>{
+    if($('admin-backups')?.classList.contains('active')&&$('view-catalog')?.classList.contains('active'))
+      refreshArchiveComparison();
+  },60000);
+
   async function loadBackups(){
     try{
       const [d,preview]=await Promise.all([
@@ -1357,6 +1438,7 @@
       $('retentionFrequency').value=preview.frequency;
       $('retentionFrequency').disabled=!preview.demoEnabled;
       $('retentionBackupStatus').textContent=preview.note;
+      await refreshArchiveComparison();
     }catch(err){toast(err.message);}
   }
   $('downloadDataArchive').addEventListener('click',()=>{
