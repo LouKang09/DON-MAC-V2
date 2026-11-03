@@ -134,14 +134,16 @@ $('supplyRequestForm').onsubmit=async e=>{
   const data=await api('/api/supply/orders',{method:'POST',body:JSON.stringify({
    branchId:Number($('supplyBranch').value),priority:$('supplyPriority').value,
    items:[...quantities].map(([productId,quantity])=>({productId,quantity})),
-   paymentReference:$('supplyPaymentReference').value.trim(),paymentImage:encodedPhoto
+   paymentReference:$('supplyPaymentReference').value.trim(),paymentImage:encodedPhoto,
+   expectedRoyaltyTotal:Number(royaltyQuote.dueTotal||0),
+   expectedTotal:Math.round((subtotal()+($('supplyPriority').value==='URGENT'?urgentFee:0)+Number(royaltyQuote.dueTotal||0))*100)/100
   })});
   alert('Supply request '+data.order.id.slice(0,8).toUpperCase()+' submitted!'+
     (Number(data.order.royaltyTotal||0)>0?' Included royalty: '+money(data.order.royaltyTotal)+'.':'')+
     ' Waiting for Main Office payment verification.');
   quantities.clear();encodedPhoto='';$('supplyPaymentPhoto').value='';$('supplyPaymentReference').value='';
   $('supplyPhotoPreview').classList.add('hidden');await loadCatalog();await loadOrders();await openOrder(data.order.id);
- }catch(err){alert(err.message,true);}
+ }catch(err){alert(err.message,true);if(/royalt|prices.*changed/i.test(err.message))await loadCatalog().catch(()=>{});}
  finally{btn.disabled=false;}
 };
 async function loadCatalog(){
