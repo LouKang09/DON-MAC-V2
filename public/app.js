@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.52-unified-audit-ten-row-logs';
+  const VERSION = '1.5.53-archive-compare-catalog-icons';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -73,6 +73,7 @@
       loadCss('posCatalogTilesV1546Css', '/pos-catalog-tiles-v1546.css');
       loadCss('topbarGreenV1549Css', '/topbar-green-v1549.css');
       loadCss('auditLogsCompactV1552Css', '/audit-logs-compact-v1552.css');
+      loadCss('archiveCompareV1553Css', '/archive-compare-v1553.css');
 
 
       // Critical navigation is initialized first; optional POS enhancements must not block More.
