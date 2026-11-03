@@ -4,26 +4,71 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,
 const money=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const title=s=>String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
 const date=s=>new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(new Date(s));
-let products=[],branches=[],urgentFee=0,orders=[],notices=[],currentId=null,encodedPhoto='',page=1,loaded=false,timer=null,processing=false;
+let products=[],branches=[],urgentFee=0,orders=[],notices=[],currentId=null,encodedPhoto='',page=1,productPage=1,chatPhoto=null,loaded=false,timer=null,processing=false;
 const quantities=new Map();
-const alert=(msg,bad=false)=>{const x=$('supplyAlert');x.classList.remove('hidden');x.textContent=msg;x.style.color=bad?'#9d3138':'#165939';x.style.background=bad?'#ffe8e8':'#e6f5e9';};
+async function compactPhoto(file){
+ if(!file)return null;
+ if(file.size>8*1024*1024||file.size<50||!['image/png','image/jpeg','image/webp'].includes(file.type))
+   throw Error('Select a valid JPG, PNG or WebP photo up to 8 MB.');
+ const blob=URL.createObjectURL(file);
+ try{
+  const image=new Image();image.src=blob;
+  try{await image.decode();}catch(_){throw Error('Photo cannot be decoded. Choose another image.');}
+  if(!image.naturalWidth||!image.naturalHeight)throw Error('Photo cannot be decoded.');
+  for(const max of [960,720,540,400]){
+   const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
+   canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+   const ctx=canvas.getContext('2d');if(!ctx)throw Error('Photo compression is unavailable.');
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   for(const quality of [.72,.53,.37]){
+    const url=canvas.toDataURL('image/jpeg',quality);
+    if(url.length<235000)return url;
+   }
+  }
+  throw Error('Photo could not be compressed below 180 KB.');
+ }finally{URL.revokeObjectURL(blob);}
+}
+function photoHtml(data){
+ return /^data:image\/jpeg;base64,[a-zA-Z0-9+/]+={0,2}$/.test(data||'')?
+ '<img class="office-chat-image" src="'+data+'" alt="Attached chat photo" loading="lazy" decoding="async">':'';
+}
+
+let noticeTimeout=null;
+const alert=(msg,bad=false)=>{
+ const x=$('supplyAlert');clearTimeout(noticeTimeout);
+ x.classList.remove('hidden');x.textContent=msg;
+ x.style.color=bad?'#9d3138':'#165939';
+ x.style.background=bad?'#ffe8e8':'#e6f5e9';
+ if(msg==='Supply Chain is up to date.')noticeTimeout=setTimeout(()=>x.classList.add('hidden'),3200);
+};
 async function api(path,options={}){
  const r=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||'Request failed ('+r.status+').');
  return data;
 }
-function subtotal(){return products.reduce((a,p)=>a+(quantities.get(p.id)||0)*p.price,0);}
+function subtotal(){return products.reduce((a,p)=>a+(quantities.get(p.id)||0)*(p.promoActive&&p.promoPrice!=null&&p.promoPrice<p.price?p.promoPrice:p.price),0);}
 function totals(){
  const sub=subtotal(),extra=$('supplyPriority').value==='URGENT'?urgentFee:0;
  $('supplySubtotal').textContent=money(sub);$('supplyUrgentFee').textContent=money(extra);$('supplyTotal').textContent=money(sub+extra);
 }
 function renderProducts(){
  const term=$('supplyProductSearch').value.toLowerCase().trim();
- $('supplyProductsList').innerHTML=products.filter(x=>x.active&&x.name.toLowerCase().includes(term)).map(p=>{
+ const matched=products.filter(x=>x.active&&x.name.toLowerCase().includes(term));
+ const pages=Math.max(1,Math.ceil(matched.length/10));
+ productPage=Math.min(pages,Math.max(1,productPage));
+ $('supplyProductsList').innerHTML=matched.slice((productPage-1)*10,productPage*10).map(p=>{
   const value=quantities.get(p.id)||0;
   return '<div class="supply-product-row '+(value?'selected':'')+'"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.uom)+'</small></div>'+
-  '<span class="supply-price">'+money(p.price)+'</span><input type="number" inputmode="numeric" min="0" max="10000" step="1" aria-label="Quantity for '+esc(p.name)+'" data-supply-qty="'+p.id+'" value="'+(value||'')+'" placeholder="0" /></div>';
+  '<span class="supply-price">'+(p.promoActive&&p.promoPrice!=null&&p.promoPrice<p.price?
+ '<del class="supply-old-price">'+money(p.price)+'</del><strong class="supply-new-price">'+money(p.promoPrice)+'</strong>':money(p.price))+'</span><input type="number" inputmode="numeric" min="0" max="10000" step="1" aria-label="Quantity for '+esc(p.name)+'" data-supply-qty="'+p.id+'" value="'+(value||'')+'" placeholder="0" /></div>';
  }).join('')||'<p class="muted" style="padding:18px">No supplies match this search.</p>';
+ $('supplyProductPages').innerHTML='<span>Page '+productPage+' of '+pages+' · '+matched.length+' supplies</span>'+
+ '<button type="button" data-product-page="-1" '+(productPage===1?'disabled':'')+'>Previous</button>'+
+ '<button type="button" data-product-page="1" '+(productPage===pages?'disabled':'')+'>Next</button>';
+ $('supplyProductPages').querySelectorAll('button').forEach(b=>b.onclick=()=>{productPage+=Number(b.dataset.productPage);renderProducts();});
  $('supplyProductsList').querySelectorAll('[data-supply-qty]').forEach(el=>el.onchange=()=>{
   const id=Number(el.dataset.supplyQty),quantity=Number(el.value||0);
   if(!Number.isInteger(quantity)||quantity<0||quantity>10000){alert('Quantity must be a whole number between 0 and 10,000.',true);el.value=String(quantities.get(id)||0);return;}
@@ -65,7 +110,7 @@ $('supplyPaymentPhoto').onchange=async e=>{
  }catch(err){$('supplyPhotoError').textContent=err.message;$('supplyPhotoError').classList.remove('hidden');}
  finally{processing=false;}
 };
-$('supplyProductSearch').oninput=renderProducts;
+$('supplyProductSearch').oninput=()=>{productPage=1;renderProducts();};
 $('supplyPriority').onchange=totals;
 $('supplyRequestForm').onsubmit=async e=>{
  e.preventDefault();if(processing)return alert('Payment photo is still processing.',true);
@@ -126,16 +171,28 @@ async function openOrder(id){
   ].map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
   $('supplyTimeline').innerHTML=o.history.map(x=>'<div><b>'+esc(title(x.status))+'</b><small>'+date(x.created_at)+' · '+esc(x.actor)+(x.note?' · '+esc(x.note):'')+'</small></div>').join('');
   $('supplyDetailItems').innerHTML=o.items.map(i=>'<tr><td>'+esc(i.product_name)+'</td><td>'+esc(i.uom)+'</td><td>'+i.quantity+'</td><td>'+money(i.amount)+'</td></tr>').join('');
-  $('supplyMessages').innerHTML=o.messages.map(m=>'<div class="supply-message '+esc(m.sender_role)+'"><small>'+esc(m.sender_name)+' · '+date(m.created_at)+'</small>'+esc(m.body)+'</div>').join('')||'<p class="muted">No messages yet.</p>';
+  $('supplyMessages').innerHTML=o.messages.map(m=>'<div class="supply-message '+esc(m.sender_role)+'"><small>'+esc(m.sender_name)+' · '+date(m.created_at)+'</small>'+esc(m.body)+photoHtml(m.image)+'</div>').join('')||'<p class="muted">No messages yet.</p>';
   $('supplyMessages').scrollTop=$('supplyMessages').scrollHeight;
   $('supplyOrderDetail').scrollIntoView({behavior:'smooth',block:'start'});
  }catch(err){alert(err.message,true);}
 }
 $('supplyDetailClose').onclick=()=>{$('supplyOrderDetail').classList.add('hidden');currentId=null;};
+$('supplyChatPhoto').onchange=async e=>{
+ try{
+  chatPhoto=await compactPhoto(e.target.files?.[0]);
+  $('supplyChatPreview').classList.toggle('hidden',!chatPhoto);
+  $('supplyChatPreview').innerHTML=chatPhoto?'<img src="'+chatPhoto+'" alt="Chat attachment preview"><button type="button" id="supplyChatRemove">Remove photo</button>':'';
+  if(chatPhoto)$('supplyChatRemove').onclick=()=>{chatPhoto=null;$('supplyChatPhoto').value='';$('supplyChatPreview').classList.add('hidden');};
+ }catch(err){chatPhoto=null;$('supplyChatPhoto').value='';alert(err.message,true);}
+};
 $('supplyMessageForm').onsubmit=async e=>{
  e.preventDefault();if(!currentId)return;
- const body=$('supplyMessageText').value.trim();if(!body)return;
- try{await api('/api/supply/orders/'+currentId+'/messages',{method:'POST',body:JSON.stringify({body})});$('supplyMessageText').value='';await openOrder(currentId);}catch(err){alert(err.message,true);}
+ const body=$('supplyMessageText').value.trim();if(!body&&!chatPhoto)return;
+ try{
+  await api('/api/supply/orders/'+currentId+'/messages',{method:'POST',body:JSON.stringify({body,image:chatPhoto})});
+  $('supplyMessageText').value='';$('supplyChatPhoto').value='';chatPhoto=null;$('supplyChatPreview').classList.add('hidden');
+  await openOrder(currentId);
+ }catch(err){alert(err.message,true);}
 };
 async function loadNotices(){
  try{
