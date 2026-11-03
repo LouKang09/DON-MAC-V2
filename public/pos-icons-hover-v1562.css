@@ -1,0 +1,54 @@
+/* Don Mac POS v1.5.62: crisp scalable replacements modeled on the
+   supplied icon artwork. Keep legacy category selection and layout rules. */
+
+/* Explicit replacements for POS category artwork and matching admin previews. */
+#view-pos #categoryTabs .category-tile .category-icon-addons,
+#admin-categories .pos-admin-icon.category-icon-addons {
+  background-image:url("/assets/catalog/v1562-add-on.svg")!important;
+  background-position:center center!important;
+  background-size:contain!important;
+  background-repeat:no-repeat!important;
+  filter:none!important;
+}
+#view-pos #categoryTabs .category-tile .category-icon-promos,
+#admin-categories .pos-admin-icon.category-icon-promos {
+  background-image:url("/assets/catalog/v1562-promotion.svg")!important;
+  background-position:center center!important;
+  background-size:contain!important;
+  background-repeat:no-repeat!important;
+  filter:none!important;
+}
+/* Keep artwork and text legible even inside selected, adjacent and hover states. */
+#view-pos #categoryTabs .category-tile.category-addons .category-symbol,
+#view-pos #categoryTabs .category-tile.category-promos .category-symbol {
+  opacity:1!important;filter:none!important;
+}
+/* Mirror Non Coffee hover behavior across every POS category. */
+#view-pos #categoryTabs .tab.category-tile {
+  --tile-hover:#cfe5df!important;
+  --tile-hover-active:#3f736c!important;
+}
+#view-pos #categoryTabs .tab.category-tile:not(.active):hover,
+#view-pos #categoryTabs .tab.category-tile:not(.active):focus-visible,
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active):hover,
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active):focus-visible {
+  background:#cfe5df!important;
+  border-color:#afd0c6!important;
+  color:#253a2c!important;
+}
+#view-pos #categoryTabs .tab.category-tile.active:hover,
+#view-pos #categoryTabs .tab.category-tile.active:focus-visible {
+  background:#3f736c!important;
+  border-color:#3f736c!important;
+  color:#fff!important;
+}
+#view-pos #categoryTabs .tab.category-tile:not(.active):hover strong,
+#view-pos #categoryTabs .tab.category-tile:not(.active):hover small,
+#view-pos #categoryTabs .tab.category-tile:not(.active):focus-visible strong,
+#view-pos #categoryTabs .tab.category-tile:not(.active):focus-visible small{
+  color:#253a2c!important;
+}
+#view-catalog #adminTabs.catalog-tiles img.catalog-tab-icon {
+  object-fit:contain!important;
+  image-rendering:auto!important;
+}
