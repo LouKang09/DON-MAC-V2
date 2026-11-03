@@ -43,7 +43,7 @@ assert(core.includes("history.slice(start,start+SUBSCRIPTION_ROWS_PER_PAGE)"));
 assert(core.includes("subscriptionHistoryPage+=button.dataset.planPage"));
 assert(server.includes("Never manufacture a new history row"));
 
-assert(server.includes("const APP_VERSION = '1.5.60-supply-office-inventory-promos';"));
+assert(server.includes("const APP_VERSION = '1.5.61-franchisee-monthly-royalties';"));
 assert(server.includes("if(method==='GET'&&p==='/api/account/subscription')"));
 assert(server.includes("if(method==='POST'&&p==='/api/account/subscription/demo')"));
 assert(server.includes("await requireBusinessPlan();"));
