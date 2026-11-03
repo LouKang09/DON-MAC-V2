@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,
 const money=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const title=s=>String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
 const date=s=>new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(new Date(s));
-let products=[],branches=[],urgentFee=0,orders=[],notices=[],currentId=null,encodedPhoto='',page=1,productPage=1,chatPhoto=null,loaded=false,timer=null,processing=false;
+let products=[],branches=[],urgentFee=0,royaltyQuote={dueTotal:0,dueMonths:[],reservedTotal:0},orders=[],notices=[],currentId=null,encodedPhoto='',page=1,productPage=1,chatPhoto=null,loaded=false,timer=null,processing=false;
 const quantities=new Map();
 async function compactPhoto(file){
  if(!file)return null;
@@ -52,7 +52,17 @@ async function api(path,options={}){
 function subtotal(){return products.reduce((a,p)=>a+(quantities.get(p.id)||0)*(p.promoActive&&p.promoPrice!=null&&p.promoPrice<p.price?p.promoPrice:p.price),0);}
 function totals(){
  const sub=subtotal(),extra=$('supplyPriority').value==='URGENT'?urgentFee:0;
- $('supplySubtotal').textContent=money(sub);$('supplyUrgentFee').textContent=money(extra);$('supplyTotal').textContent=money(sub+extra);
+ const royalty=Number(royaltyQuote.dueTotal||0);
+ $('supplySubtotal').textContent=money(sub);
+ $('supplyUrgentFee').textContent=money(extra);
+ $('supplyRoyaltyDue').textContent=money(royalty);
+ $('supplyTotal').textContent=money(sub+extra+royalty);
+ const months=(royaltyQuote.dueMonths||[]).map(m=>m.period).join(', ');
+ const pending=Number(royaltyQuote.reservedTotal||0);
+ $('supplyRoyaltyNotice').textContent=royalty>0?
+  'Outstanding royalty for '+months+' is included in this order. It will be marked Paid only after Main Office approves your payment.':
+  pending>0?'A royalty balance of '+money(pending)+' is already included in a pending supply request and will not be charged again.':
+  'No outstanding royalty is due for this new purchase.';
 }
 function renderProducts(){
  const term=$('supplyProductSearch').value.toLowerCase().trim();
@@ -126,15 +136,17 @@ $('supplyRequestForm').onsubmit=async e=>{
    items:[...quantities].map(([productId,quantity])=>({productId,quantity})),
    paymentReference:$('supplyPaymentReference').value.trim(),paymentImage:encodedPhoto
   })});
-  alert('Supply request '+data.order.id.slice(0,8).toUpperCase()+' submitted! Waiting for Main Office payment verification.');
+  alert('Supply request '+data.order.id.slice(0,8).toUpperCase()+' submitted!'+
+    (Number(data.order.royaltyTotal||0)>0?' Included royalty: '+money(data.order.royaltyTotal)+'.':'')+
+    ' Waiting for Main Office payment verification.');
   quantities.clear();encodedPhoto='';$('supplyPaymentPhoto').value='';$('supplyPaymentReference').value='';
-  $('supplyPhotoPreview').classList.add('hidden');renderProducts();totals();await loadOrders();await openOrder(data.order.id);
+  $('supplyPhotoPreview').classList.add('hidden');await loadCatalog();await loadOrders();await openOrder(data.order.id);
  }catch(err){alert(err.message,true);}
  finally{btn.disabled=false;}
 };
 async function loadCatalog(){
  const d=await api('/api/supply/catalog');
- products=d.products||[];branches=(d.branches||[]).filter(b=>b.active);urgentFee=Number(d.urgentFee||0);
+ products=d.products||[];branches=(d.branches||[]).filter(b=>b.active);urgentFee=Number(d.urgentFee||0);royaltyQuote=d.royalty||{dueTotal:0,dueMonths:[],reservedTotal:0};
  const urgentOption=$('supplyPriority').querySelector('option[value="URGENT"]');
  urgentOption.disabled=!(urgentFee>0);
  urgentOption.textContent=urgentFee>0?'Urgent — additional '+money(urgentFee):'Urgent — awaiting Main Office fee setup';
@@ -170,7 +182,7 @@ async function openOrder(id){
   $('supplyDetailHeading').textContent='Request '+o.id.slice(0,8).toUpperCase()+' · '+title(o.status);
   $('supplyDetailSummary').innerHTML=[
    ['Branch',o.branch_name],['Priority',title(o.priority)],['Total',money(o.total)],['Submitted',date(o.created_at)],
-   ['Payment reference',o.payment_reference||'Attached photo'],['Main Office note',o.office_note||'Awaiting update']
+   ['Royalty included',money(o.royalty_total||0)],['Payment reference',o.payment_reference||'Attached photo'],['Main Office note',o.office_note||'Awaiting update']
   ].map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
   $('supplyTimeline').innerHTML=o.history.map(x=>'<div><b>'+esc(title(x.status))+'</b><small>'+date(x.created_at)+' · '+esc(x.actor)+(x.note?' · '+esc(x.note):'')+'</small></div>').join('');
   $('supplyDetailItems').innerHTML=o.items.map(i=>'<tr><td>'+esc(i.product_name)+'</td><td>'+esc(i.uom)+'</td><td>'+i.quantity+'</td><td>'+money(i.amount)+'</td></tr>').join('');
