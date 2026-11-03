@@ -1,4 +1,4 @@
-/* v1.5.54: responsive header layout. Keep profile next to plan at 1920x1200/100%. */
+/* v1.5.55: responsive header layout. Keep profile next to plan at 1920x1200/100%. */
 .app{min-width:0}
 .app .main{min-width:0;width:100%;overflow-x:clip}
 .app .topbar{height:auto!important;min-height:108px!important;display:grid!important;
@@ -31,10 +31,17 @@
  .app .topbar .topbar-right .account-plan-top-control{padding-inline:8px!important}
 }
 @media(max-width:1120px){
- .app .topbar{grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:13px 17px!important}
- .app .topbar .topbar-heading{width:100%}
- .app .topbar .topbar-right{width:100%!important;justify-content:flex-end!important;
-   flex-flow:row nowrap!important;overflow-x:auto;scrollbar-width:thin;padding:2px 0}
+ /* Keep the heading and account actions on the SAME row. The heading owns
+    the flexible space; fixed controls never wrap to a new grid row. */
+ .app .topbar{grid-template-columns:minmax(0,1fr) max-content!important;
+   gap:clamp(6px,1vw,12px)!important;padding:13px 15px!important}
+ .app .topbar .topbar-heading{width:auto!important;max-width:none!important;min-width:0!important}
+ .app .topbar .topbar-heading-copy{flex:1 1 0!important;min-width:0!important;max-width:none!important}
+ .app .topbar .topbar-heading #viewTitle{overflow:hidden!important;text-overflow:ellipsis!important;
+   white-space:nowrap!important;overflow-wrap:normal!important;font-size:clamp(12px,1.3vw,19px)!important}
+ .app .topbar .topbar-heading #posDate{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+ .app .topbar .topbar-right{width:max-content!important;max-width:100%!important;
+   flex-flow:row nowrap!important;justify-content:flex-end!important;overflow:visible!important;padding:0!important}
  .app .topbar #topbarProfileButton{order:10!important}
 }
 @media(max-width:720px){
@@ -50,6 +57,49 @@
  .app .topbar .topbar-right #topbarProfileButton{flex:0 0 auto!important;min-height:37px;max-width:130px!important}
  .app .topbar #topbarProfileButton .topbar-profile-text{max-width:70px}
  .app .topbar .topbar-right #appVersion,.app .topbar .topbar-right #clock{display:none!important}
+}
+/* Consistent pill-shaped plan control, matching the account profile.
+   Preserve 1.5px border and high-contrast green/white styling. */
+.app .topbar .account-plan-top-control{
+ border-radius:999px!important;border-width:1.5px!important;
+ flex:0 0 auto!important;white-space:nowrap!important;
+}
+.app .topbar .account-plan-top-control select,
+.app .topbar #planSwitcher{
+ border-radius:999px!important;min-width:0!important;
+}
+@media(max-width:960px){
+ .app .topbar .topbar-heading .topbar-logo{max-width:clamp(42px,6vw,70px)!important}
+ .app .topbar .topbar-heading .topbar-logo img{max-width:100%!important;height:auto!important}
+ .app .topbar .topbar-heading{gap:9px!important}
+ .app .topbar .topbar-right{gap:6px!important}
+ .app .topbar .account-plan-top-control{padding:5px 8px!important;gap:6px!important;font-size:10px!important}
+ .app .topbar #planSwitcher{max-width:102px!important;padding:5px 6px!important;font-size:10px!important}
+ .app .topbar #topbarProfileButton{max-width:145px!important;gap:6px!important}
+ .app .topbar #topbarProfileButton .topbar-profile-text{max-width:83px!important}
+}
+@media(max-width:720px){
+ /* Override old mobile width:100% that pushed the controls into row two. */
+ .app .topbar{grid-template-columns:minmax(0,1fr) max-content!important;
+   min-height:64px!important;gap:7px!important;align-items:center!important}
+ .app .topbar .topbar-heading{min-width:0!important;max-width:none!important}
+ .app .topbar .topbar-heading-copy{min-width:0!important;flex:1 1 0!important}
+ .app .topbar .topbar-heading #viewTitle{font-size:clamp(11px,2.5vw,16px)!important;
+   text-overflow:ellipsis!important;white-space:nowrap!important}
+ .app .topbar .topbar-right{width:max-content!important;max-width:none!important;
+   flex:0 0 auto!important;justify-content:flex-end!important;overflow:visible!important}
+ .app .topbar .account-plan-top-control{max-width:none!important;min-width:0!important;flex:0 0 auto!important}
+ .app .topbar #topbarProfileButton{max-width:112px!important;flex:0 0 auto!important}
+ .app .topbar #topbarProfileButton .topbar-profile-text{max-width:55px!important}
+}
+@media(max-width:560px){
+ /* Select retains its accessible Account Type label at phone widths. */
+ .app .topbar .account-plan-top-control{font-size:0!important;padding:4px!important;gap:0!important}
+ .app .topbar #planSwitcher{font-size:11px!important;min-width:0!important;max-width:94px!important}
+ .app .topbar #topbarProfileButton{max-width:40px!important;width:40px!important;padding:3px!important}
+ .app .topbar #topbarProfileButton .topbar-profile-text,
+ .app .topbar #topbarProfileButton .topbar-profile-chevron{display:none!important}
+ .app .topbar .topbar-right{gap:5px!important}
 }
 @media(max-width:370px){
  .app .topbar .topbar-right #topbarProfileButton .topbar-profile-text{display:none!important}
