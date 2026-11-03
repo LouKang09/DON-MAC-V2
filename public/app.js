@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.55-one-line-responsive-header';
+  const VERSION = '1.5.56-compact-pos-checkout';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -76,10 +76,12 @@
       loadCss('archiveCompareV1553Css', '/archive-compare-v1553.css');
       loadCss('supplyFranchiseV1554Css','/supply-franchise.css');
       loadCss('topbarResponsiveV1554Css','/topbar-responsive-v1554.css');
+      loadCss('posCompactCheckoutV1556Css','/pos-compact-checkout-v1556.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
       await loadScript('/supply-franchise.js');
+      await loadScript('/pos-quickpay-v1556.js');
       window.donmacSupply?.refreshNotices?.();
 
       // Critical navigation is initialized first; optional POS enhancements must not block More.
@@ -103,7 +105,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.54 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.56 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
