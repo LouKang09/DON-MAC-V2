@@ -78,6 +78,10 @@
       loadCss('topbarResponsiveV1554Css','/topbar-responsive-v1554.css');
 
 
+      // Supply Chain initializes independently of optional dashboard/chat layers.
+      await loadScript('/supply-franchise.js');
+      window.donmacSupply?.refreshNotices?.();
+
       // Critical navigation is initialized first; optional POS enhancements must not block More.
       await loadScript('/mobile-nav-v1529.js');
       await loadScript('/live-refresh.js');
@@ -95,8 +99,6 @@
       await loadScript('/pos-categories-admin.js');
       await loadScript('/catalog-batch-v1544.js');
       await loadScript('/internal-chat.js');
-      await loadScript('/supply-franchise.js');
-      window.donmacSupply?.refreshNotices?.();
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
 
 
