@@ -87,6 +87,10 @@ $('supplyRequestForm').onsubmit=async e=>{
 async function loadCatalog(){
  const d=await api('/api/supply/catalog');
  products=d.products||[];branches=(d.branches||[]).filter(b=>b.active);urgentFee=Number(d.urgentFee||0);
+ const urgentOption=$('supplyPriority').querySelector('option[value="URGENT"]');
+ urgentOption.disabled=!(urgentFee>0);
+ urgentOption.textContent=urgentFee>0?'Urgent — additional '+money(urgentFee):'Urgent — awaiting Main Office fee setup';
+ if(!urgentFee&&$('supplyPriority').value==='URGENT')$('supplyPriority').value='STANDARD';
  $('supplyBranch').innerHTML=branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+(b.address?' · '+esc(b.address):'')+'</option>').join('');
  if(!branches.length)alert('There are no active branches assigned to your franchise. Create or activate a branch before requesting supplies.',true);
  renderProducts();totals();
