@@ -1,0 +1,108 @@
+/* Don Mac POS 1.5.59 — fixed viewport checkout for laptop and tablet.
+   Catalog size never determines the height or position of the payment action. */
+@media (min-width:700px){
+  #view-pos .pos-layout{
+    align-items:start!important;
+    min-width:0!important;
+  }
+  #view-pos .order-panel{
+    position:sticky!important;
+    top:var(--pos-payment-top,92px)!important;
+    height:var(--pos-payment-height,calc(100dvh - 106px))!important;
+    max-height:var(--pos-payment-height,calc(100dvh - 106px))!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:contain;
+    display:flex!important;
+    flex-direction:column!important;
+    box-sizing:border-box!important;
+    padding:clamp(9px,1.1vw,14px)!important;
+  }
+  /* Reserve the flexible part of the panel for the actual order list;
+     fixed payment, totals, customer and discount controls never get pushed
+     below the browser's taskbar by catalog/grid height. */
+  #view-pos .order-panel .order-head,
+  #view-pos .order-panel .order-type-switch,
+  #view-pos .order-panel .pos-customer-fields,
+  #view-pos .order-panel .pos-section-label,
+  #view-pos .order-panel .discount-box,
+  #view-pos .order-panel .totals,
+  #view-pos .order-panel .quote-message,
+  #view-pos .order-panel #payButton{
+    flex:0 0 auto!important;
+  }
+  #view-pos .order-panel .order-list{
+    flex:1 1 0!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch;
+    margin:6px 0!important;
+  }
+  #view-pos .order-panel #payButton{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    min-height:44px!important;
+    margin-top:7px!important;
+    margin-bottom:0!important;
+    padding:10px 13px!important;
+    border-radius:999px!important;
+    z-index:1;
+  }
+  #view-pos .order-panel .totals{margin-top:5px!important;padding-top:5px!important}
+  #view-pos .order-panel .totals>div{padding:3px 0!important}
+  #view-pos .order-panel .discount-box{margin-top:4px!important;padding:8px!important}
+  #view-pos .order-panel .quote-message{margin-top:2px!important;min-height:12px!important}
+  #view-pos .order-panel .pos-customer-fields{margin-top:7px!important}
+  #view-pos .order-panel .pos-section-label{margin:8px 0 1px!important}
+  #view-pos .order-panel .order-head{padding-bottom:7px!important}
+  #view-pos .order-panel .order-list .empty-state{min-height:82px!important;padding:12px 8px!important}
+}
+/* At very short laptop viewport heights we shrink nonessential spacing
+   before resorting to the always-available floating Pay fallback. */
+@media (min-width:700px) and (max-height:650px){
+  #view-pos .order-panel .order-head{padding-bottom:3px!important}
+  #view-pos .order-panel .order-head h3{font-size:15px!important}
+  #view-pos .order-panel .order-type-switch button{padding:6px 2px!important}
+  #view-pos .order-panel .pos-customer-fields{margin-top:4px!important;gap:5px!important}
+  #view-pos .order-panel .pos-customer-fields input{min-height:32px!important;padding:7px 8px!important}
+  #view-pos .order-panel .pos-section-label{margin:4px 0 1px!important}
+  #view-pos .order-panel .discount-box{padding:5px 7px!important}
+  #view-pos .order-panel .totals>div{padding:2px 0!important}
+  #view-pos .order-panel #payButton{min-height:42px!important}
+}
+/* The original action stays in the checkout; a fixed mirror appears only
+   if its position is outside the visible viewport, and clicks the same
+   native Pay button rather than creating a different payment path. */
+body.pos-quickpay-visible #posQuickPayDock{display:inline-flex!important;}
+@media (min-width:700px){
+  #posQuickPayDock{
+    left:var(--pos-pay-dock-left,auto)!important;
+    right:auto!important;
+    bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;
+    width:var(--pos-pay-dock-width,285px)!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:46px!important;
+    z-index:90;
+  }
+}
+@media (max-width:699px){
+  #view-pos .order-panel{
+    height:auto!important;min-height:0!important;max-height:none!important;
+  }
+  #posQuickPayDock{
+    left:12px!important;right:auto!important;
+    width:auto!important;max-width:calc(100vw - 90px)!important;
+    bottom:calc(81px + env(safe-area-inset-bottom,0px))!important;
+  }
+}
+body:has(dialog[open]) #posQuickPayDock{display:none!important;}
+@media print{
+  #posQuickPayDock{display:none!important}
+  #view-pos .order-panel{position:static!important;overflow:visible!important;height:auto!important;max-height:none!important}
+}
