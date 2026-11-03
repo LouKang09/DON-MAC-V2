@@ -1,0 +1,58 @@
+/* v1.5.54: responsive header layout. Keep profile next to plan at 1920x1200/100%. */
+.app{min-width:0}
+.app .main{min-width:0;width:100%;overflow-x:clip}
+.app .topbar{height:auto!important;min-height:108px!important;display:grid!important;
+ grid-template-columns:minmax(0,1fr) max-content!important;gap:clamp(12px,1.2vw,26px)!important;
+ align-items:center!important;padding:clamp(12px,1.25vw,20px) clamp(16px,1.4vw,30px)!important}
+.app .topbar .topbar-heading{display:flex!important;align-items:center!important;gap:clamp(12px,1.1vw,20px)!important;min-width:0;max-width:100%}
+.app .topbar .topbar-heading .topbar-logo{flex:0 0 auto}
+.app .topbar .topbar-heading-copy{min-width:0;max-width:100%;overflow:hidden}
+.app .topbar .topbar-heading #viewTitle{font-size:clamp(16px,1.42vw,25px)!important;line-height:1.2;overflow-wrap:anywhere}
+.app .topbar .topbar-heading #posDate{font-size:clamp(10px,.85vw,13px)!important;white-space:normal}
+.app .topbar .topbar-right{min-width:0!important;max-width:100%!important;width:max-content!important;
+ display:flex!important;flex-flow:row nowrap!important;align-items:center!important;justify-content:flex-end!important;
+ gap:clamp(6px,.8vw,13px)!important;white-space:nowrap!important}
+.app .topbar .topbar-right>*{flex:0 0 auto!important;margin-top:0!important;margin-bottom:0!important;align-self:center!important}
+.app .topbar .topbar-right .account-plan-top-control{max-width:290px}
+.app .topbar .topbar-right .account-plan-top-control select{min-width:90px;max-width:140px}
+.app .topbar #topbarProfileButton{flex:0 0 auto!important;width:auto!important;min-width:0!important;max-width:240px!important;white-space:nowrap!important}
+.app .topbar #topbarProfileButton .topbar-profile-text{min-width:0;max-width:160px;overflow:hidden}
+.app .topbar #topbarProfileButton .topbar-profile-text b,
+.app .topbar #topbarProfileButton .topbar-profile-text small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+@media(min-width:1500px){
+ .app .topbar{grid-template-columns:minmax(320px,1fr) max-content!important}
+ .app .topbar .topbar-right{flex-wrap:nowrap!important}
+ .app .topbar #topbarProfileButton{order:10!important}
+}
+@media(max-width:1499px){
+ .app .topbar .topbar-heading .topbar-logo{max-width:88px}
+ .app .topbar .topbar-heading .topbar-logo img{max-width:100%;height:auto}
+ .app .topbar .topbar-right #clock{display:none!important}
+ .app .topbar .topbar-right .account-plan-top-control{padding-inline:8px!important}
+}
+@media(max-width:1120px){
+ .app .topbar{grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:13px 17px!important}
+ .app .topbar .topbar-heading{width:100%}
+ .app .topbar .topbar-right{width:100%!important;justify-content:flex-end!important;
+   flex-flow:row nowrap!important;overflow-x:auto;scrollbar-width:thin;padding:2px 0}
+ .app .topbar #topbarProfileButton{order:10!important}
+}
+@media(max-width:720px){
+ .app .topbar{min-height:unset!important;position:sticky;top:0;padding:10px 12px!important;gap:8px!important}
+ .app .topbar .topbar-heading .topbar-logo{max-width:52px}
+ .app .topbar .topbar-heading .topbar-logo img{height:48px!important;width:auto!important;max-width:100%}
+ .app .topbar .topbar-heading #viewTitle{font-size:16px!important;line-height:1.2}
+ .app .topbar .topbar-heading .eyebrow{font-size:9px}
+ .app .topbar .topbar-heading #posDate{font-size:10px!important}
+ .app .topbar .topbar-right{display:flex!important;justify-content:space-between!important;gap:6px!important}
+ .app .topbar .topbar-right .account-plan-top-control{flex:1 1 auto!important;max-width:230px;min-width:0}
+ .app .topbar .topbar-right .account-plan-top-control select{max-width:100px}
+ .app .topbar .topbar-right #topbarProfileButton{flex:0 0 auto!important;min-height:37px;max-width:130px!important}
+ .app .topbar #topbarProfileButton .topbar-profile-text{max-width:70px}
+ .app .topbar .topbar-right #appVersion,.app .topbar .topbar-right #clock{display:none!important}
+}
+@media(max-width:370px){
+ .app .topbar .topbar-right #topbarProfileButton .topbar-profile-text{display:none!important}
+ .app .topbar #topbarProfileButton{min-width:36px!important;width:36px!important;padding:4px!important}
+ .app .topbar .topbar-right .account-plan-top-control{font-size:10px}
+}
