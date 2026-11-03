@@ -44,17 +44,17 @@ async function api(path,options={}){
  if(!result.ok){if(result.status===401){$('officeApp').classList.add('hidden');$('officeLogin').classList.remove('hidden');}throw Error(data.error||'Request failed ('+result.status+')');}
  return data;
 }
-function loggedIn(ok){
+function loggedIn(ok,requiresPasswordChange=false){
  $('officeLogin').classList.toggle('hidden',ok);
  $('officeApp').classList.toggle('hidden',!ok);
- if(ok){refresh();if(!timer)timer=setInterval(refresh,30000);}
+ if(ok&&!requiresPasswordChange){refresh();if(!timer)timer=setInterval(refresh,30000);}else if(requiresPasswordChange&&timer){clearInterval(timer);timer=null;}
 }
 $('officeLoginForm').addEventListener('submit',async e=>{
  e.preventDefault();$('officeLoginError').textContent='';
  try{
   const data=await api('/api/supply/office/login',{method:'POST',body:JSON.stringify({username:$('officeUsername').value,password:$('officePassword').value})});
   $('officeSignedInAs').textContent=$('officeUsername').value;$('officePassword').value='';
-  loggedIn(!!data.ok);
+  loggedIn(!!data.ok,!!data.mustChangePassword);
   if(data.mustChangePassword){selectPage('security');notice('Change the temporary password before managing supply requests.');}
  }catch(err){$('officeLoginError').textContent=err.message;}
 });
@@ -142,7 +142,7 @@ $('officePasswordForm').onsubmit=async e=>{
  try{
   await api('/api/supply/office/change-password',{method:'POST',body:JSON.stringify({currentPassword,newPassword})});
   $('officePasswordForm').reset();
-  selectPage('requests');notice('Main Office password changed successfully. Previous sessions have been revoked.');refresh();
+  selectPage('requests');notice('Main Office password changed successfully. Previous sessions have been revoked.');loggedIn(true);
  }catch(err){notice(err.message,true);}
 };
 async function loadSettings(){try{const d=await api('/api/supply/office/settings');$('officeUrgentFee').value=Number(d.urgentFee).toFixed(2);}catch(err){notice(err.message,true);}}
@@ -203,5 +203,5 @@ $('officeMessageForm').onsubmit=async e=>{
   $('officeChatPreview').classList.add('hidden');await openOrder(current.id,true);
  }catch(err){notice(err.message,true);}
 };
-api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
+api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true,!!u.mustChangePassword);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
 })();
