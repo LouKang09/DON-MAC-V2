@@ -211,12 +211,12 @@ $('supplyNotificationsButton').onclick=()=>$('supplyNotificationsPanel').classLi
 $('supplyMarkRead').onclick=async()=>{
  try{await api('/api/supply/notifications/read',{method:'POST',body:JSON.stringify({ids:notices.filter(n=>!n.read).map(n=>n.id)})});await loadNotices();}catch(err){alert(err.message,true);}
 };
-$('supplyRefresh').onclick=async()=>{try{await Promise.all([loadOrders(),loadNotices()]);alert('Supply Chain is up to date.');}catch(err){alert(err.message,true);}};
+$('supplyRefresh').onclick=async()=>{try{await Promise.all([loadCatalog(),loadOrders(),loadNotices()]);alert('Supply Chain is up to date.');}catch(err){alert(err.message,true);}};
 async function open(){
  if(!loaded){
   try{await Promise.all([loadCatalog(),loadOrders(),loadNotices()]);loaded=true;}catch(err){alert(err.message,true);}
- }else await Promise.all([loadOrders(),loadNotices()]);
- if(!timer)timer=setInterval(()=>{if($('view-supply')?.classList.contains('active')){loadOrders().catch(()=>{});loadNotices();}},30000);
+ }else await Promise.all([loadCatalog(),loadOrders(),loadNotices()]);
+ if(!timer)timer=setInterval(()=>{if($('view-supply')?.classList.contains('active')){loadCatalog().catch(()=>{});loadOrders().catch(()=>{});loadNotices();}},30000);
 }
 // Update the sidebar notification indicator even when the owner is working in POS.
 setInterval(()=>{
