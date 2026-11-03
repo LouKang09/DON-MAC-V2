@@ -1,0 +1,30 @@
+/* Subscription ledger pagination, Don Mac POS v1.5.57.
+   Presentation only; it never creates or renews billing records. */
+#view-account .plan-history-pagination{
+  display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;
+  gap:9px;margin-top:14px;padding:13px 1px 0;border-top:1px solid #e4ece6;
+  font-size:12px;font-weight:700;color:#567361;
+}
+#view-account .plan-history-pagination>span{margin-right:auto;line-height:1.5}
+#view-account .plan-history-pagination button{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:36px;min-width:84px;padding:8px 12px;
+  background:#f6faf7;color:#17633f;border:1px solid #bcd6c5;
+  border-radius:9px;font:inherit;cursor:pointer;
+}
+#view-account .plan-history-pagination button:hover:not(:disabled){
+  background:#e2f1e7;border-color:#8abc9d;
+}
+#view-account .plan-history-pagination button:disabled{
+  opacity:.4;cursor:not-allowed;
+}
+#view-account .plan-history-pagination button:focus-visible{
+  outline:2px solid #21774f;outline-offset:3px;
+}
+@media(max-width:520px){
+  #view-account .plan-history-pagination{justify-content:space-between}
+  #view-account .plan-history-pagination>span{flex:1 1 100%}
+}
+@media print{
+  #view-account .plan-history-pagination{display:none!important}
+}
