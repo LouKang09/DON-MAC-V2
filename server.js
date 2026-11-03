@@ -34,7 +34,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.56-compact-pos-checkout';
+const APP_VERSION = '1.5.57-sidebar-subscription-history';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -347,8 +347,20 @@ function requireAdminRole(user) {
 }
 
 async function subscriptionState(conn=db){
-  const result=await conn.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[devSubscription.KEY]);
-  return devSubscription.parse(result.rows[0]?.setting_value)||devSubscription.initial();
+  // Return the same persisted baseline every day, including across deploys.
+  // Never manufacture a new history row merely because someone viewed the page.
+  let result=await conn.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[devSubscription.KEY]);
+  if(!result.rows.length){
+    const created=devSubscription.initial();
+    await conn.query(
+      'INSERT INTO app_settings(setting_key,setting_value,updated_at) VALUES($1,$2,$3) ON CONFLICT(setting_key) DO NOTHING',
+      [devSubscription.KEY,JSON.stringify(created),created.startedAt]
+    );
+    result=await conn.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[devSubscription.KEY]);
+  }
+  const current=devSubscription.parse(result.rows[0]?.setting_value);
+  if(!current)throw Object.assign(new Error('Subscription settings require administrator review; history was not reset.'),{status:409});
+  return current;
 }
 async function getSubscriptionForUi(user){
   const current=await subscriptionState();
@@ -371,7 +383,10 @@ async function saveDemoSubscription(user,input){
   return db.transaction(async tx=>{
     const lock=tx.engine==='postgres'?' FOR UPDATE':'';
     const record=await tx.query('SELECT setting_value FROM app_settings WHERE setting_key=$1'+lock,[devSubscription.KEY]);
-    const previous=devSubscription.parse(record.rows[0]?.setting_value)||devSubscription.initial();
+    const previous=record.rows.length
+      ?devSubscription.parse(record.rows[0].setting_value)
+      :await subscriptionState(tx);
+    if(!previous)throw Object.assign(new Error('Subscription settings are invalid; refusing to rewrite subscription history.'),{status:409});
     const next=devSubscription.transition(previous,plan,status,user.id);
     if(next!==previous){
       await tx.query(
