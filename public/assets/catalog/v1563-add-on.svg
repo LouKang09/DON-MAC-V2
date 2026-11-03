@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-hidden="true">
+<g transform="translate(31 31) scale(0.87890625)" stroke-linejoin="round" stroke-linecap="round">
+<path stroke="#090909" stroke-width="13" paint-order="stroke fill" fill="#ab74cb" d="m132 84 20 36 40 7-30 28 7 42-37-19-37 19 7-42-30-28 40-7Z"/>
+<path stroke="#090909" stroke-width="15" paint-order="stroke fill" fill="#ff5a82" d="m144 500 0-107-26 0q-8 0-3-8l78-104q6-8 12 0l78 104q6 8-3 8h-25v107Z"/>
+<path stroke="#090909" stroke-width="15" paint-order="stroke fill" fill="#ffc34e" d="M241 500V255h-22q-9 0-3-8l81-109q6-8 12 0l80 109q6 8-3 8h-27v245Z"/>
+<path stroke="#090909" stroke-width="15" paint-order="stroke fill" fill="#82d989" d="M346 500V114h-25q-9 0-3-9L396 12q6-9 12 0l78 93q7 9-3 9h-25v386Z"/>
+<path fill="#020504" d="M241 390q0-10-11-10h-18q-9 0-9 10t9 10h18q11 0 11-10Zm105-140q0-12-10-12h-25q-11 0-11 12t11 12h25q10 0 10-12Z"/>
+</g>
+</svg>
