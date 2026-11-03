@@ -69,8 +69,8 @@
 /* A portrait touch device is often reported as a 980px desktop viewport by
    Android's Desktop Site mode. Keep the two panes but scale the controls up. */
 @media (pointer:coarse) and (min-width:700px) and (max-width:1180px) and (orientation:portrait){
-  .app,.app.sidebar-collapsed{grid-template-columns:82px minmax(0,1fr)!important}
-  .sidebar #mainNav .nav .nav-label{font-size:11px!important;line-height:1.2!important;white-space:normal!important}
+  /* Sidebar width and label orientation belong to sidebar-responsive-v1557.css.
+     Never force the expanded sidebar to the collapsed 82px rail. */
   #view-pos{padding:12px 12px 38px!important}
   #view-pos .catalog-search-wrap{min-height:45px!important}
   #view-pos .catalog-search-wrap .search{font-size:14px!important}
