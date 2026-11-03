@@ -5,8 +5,38 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const stamp=d=>d?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Manila'}).format(new Date(d)):'—';
 const title=s=>String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
+async function compactPhoto(file){
+ if(!file)return null;
+ if(file.size>8*1024*1024||file.size<50||!['image/png','image/jpeg','image/webp'].includes(file.type))
+   throw Error('Select a valid JPG, PNG or WebP photo up to 8 MB.');
+ const blob=URL.createObjectURL(file);
+ try{
+  const image=new Image();image.src=blob;
+  try{await image.decode();}catch(_){throw Error('Photo cannot be decoded. Choose another image.');}
+  if(!image.naturalWidth||!image.naturalHeight)throw Error('Photo cannot be decoded.');
+  for(const max of [960,720,540,400]){
+   const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
+   canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+   const ctx=canvas.getContext('2d');if(!ctx)throw Error('Photo compression is unavailable.');
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   for(const quality of [.72,.53,.37]){
+    const url=canvas.toDataURL('image/jpeg',quality);
+    if(url.length<235000)return url;
+   }
+  }
+  throw Error('Photo could not be compressed below 180 KB.');
+ }finally{URL.revokeObjectURL(blob);}
+}
+function photoHtml(data){
+ return /^data:image\/jpeg;base64,[a-zA-Z0-9+/]+={0,2}$/.test(data||'')?
+ '<img class="office-chat-image" src="'+data+'" alt="Attached chat photo" loading="lazy" decoding="async">':'';
+}
+
 const PAGE_SIZE=10;
-let all=[],current=null,page=1,activePage='requests',timer=null;
+let all=[],current=null,page=1,activePage='requests',timer=null,catalogPage=1,catalogProducts=[],chatPhoto=null;
 function notice(msg,error=false){const n=$('officeNotice');n.classList.remove('hidden');n.textContent=msg;n.style.background=error?'#ffebec':'#e7f4e9';n.style.color=error?'#a3262b':'#145537';}
 async function api(path,options={}){
  const result=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
@@ -25,14 +55,15 @@ $('officeLoginForm').addEventListener('submit',async e=>{
   const data=await api('/api/supply/office/login',{method:'POST',body:JSON.stringify({username:$('officeUsername').value,password:$('officePassword').value})});
   $('officeSignedInAs').textContent=$('officeUsername').value;$('officePassword').value='';
   loggedIn(!!data.ok);
+  if(data.mustChangePassword){selectPage('security');notice('Change the temporary password before managing supply requests.');}
  }catch(err){$('officeLoginError').textContent=err.message;}
 });
 $('officeLogout').onclick=async()=>{try{await api('/api/supply/office/logout',{method:'POST'});}catch(_){}loggedIn(false);};
 function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
- for(const section of ['requests','catalog','settings'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({requests:'Purchase requests',catalog:'Supply catalog',settings:'Urgent fee settings'})[name];
+ for(const section of ['requests','catalog','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
+ $('officePageHeading').textContent=({requests:'Purchase requests',catalog:'Supply catalog',settings:'Office settings',security:'Change password'})[name];
  if(name==='catalog')loadCatalog();
  if(name==='settings')loadSettings();
 }
@@ -73,8 +104,47 @@ function render(){
 $('officeSearch').oninput=()=>{page=1;render();};
 $('officeStatusFilter').onchange=()=>{page=1;render();};
 async function loadCatalog(){
- try{const d=await api('/api/supply/office/catalog');$('officeCatalogBody').innerHTML=d.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.uom)}</td><td><b>${peso(p.price)}</b></td></tr>`).join('');}catch(err){notice(err.message,true);}
+ try{const d=await api('/api/supply/office/catalog');catalogProducts=d.products||[];renderCatalog();}catch(err){notice(err.message,true);}
 }
+function renderCatalog(){
+ const pages=Math.max(1,Math.ceil(catalogProducts.length/10));
+ catalogPage=Math.min(pages,Math.max(1,catalogPage));
+ $('officeCatalogBody').innerHTML=catalogProducts.slice((catalogPage-1)*10,catalogPage*10).map(p=>
+ '<tr data-catalog-product="'+p.id+'"><td><b>'+esc(p.name)+'</b></td>'+
+ '<td><input aria-label="Unit of measure for '+esc(p.name)+'" class="office-uom" maxlength="80" value="'+esc(p.uom)+'"></td>'+
+ '<td><input class="office-price" aria-label="Franchise price for '+esc(p.name)+'" type="number" min="0.01" max="1000000" step="0.01" value="'+Number(p.price).toFixed(2)+'"></td>'+
+ '<td><input class="office-stock" aria-label="Available stock for '+esc(p.name)+'" type="number" min="0" max="10000000" step="1" value="'+p.stockQty+'"></td>'+
+ '<td><input class="office-promo-price" aria-label="Promo price for '+esc(p.name)+'" type="number" min="0.01" step="0.01" placeholder="No promo" value="'+(p.promoPrice==null?'':Number(p.promoPrice).toFixed(2))+'"></td>'+
+ '<td><input class="office-promo-enabled" type="checkbox" aria-label="Enable promo for '+esc(p.name)+'" '+(p.promoActive?'checked':'')+'></td>'+
+ '<td><button type="button" class="btn solid office-product-save" data-office-save="'+p.id+'">Save</button></td></tr>'
+ ).join('');
+ $('officeCatalogPages').innerHTML='<span>Page '+catalogPage+' of '+pages+' · '+catalogProducts.length+' supplies</span>'+
+ '<button type="button" data-catalog-offset="-1" '+(catalogPage===1?'disabled':'')+'>Previous</button>'+
+ '<button type="button" data-catalog-offset="1" '+(catalogPage===pages?'disabled':'')+'>Next</button>';
+ $('officeCatalogPages').querySelectorAll('button').forEach(b=>b.onclick=()=>{catalogPage+=Number(b.dataset.catalogOffset);renderCatalog();});
+ $('officeCatalogBody').querySelectorAll('[data-office-save]').forEach(button=>button.onclick=async()=>{
+  const row=button.closest('tr');const id=Number(button.dataset.officeSave);
+  const details={uom:row.querySelector('.office-uom').value,price:row.querySelector('.office-price').value,
+   stockQty:row.querySelector('.office-stock').value,promoPrice:row.querySelector('.office-promo-price').value,
+   promoActive:row.querySelector('.office-promo-enabled').checked};
+  button.disabled=true;
+  try{
+   await api('/api/supply/office/products/'+id,{method:'PUT',body:JSON.stringify(details)});
+   notice('Supply pricing, promo and Main Office inventory saved.');await loadCatalog();
+  }catch(err){notice(err.message,true);}finally{button.disabled=false;}
+ });
+}
+
+$('officePasswordForm').onsubmit=async e=>{
+ e.preventDefault();
+ const currentPassword=$('officeOldPassword').value,newPassword=$('officeNewPassword').value;
+ if(newPassword!==$('officeConfirmPassword').value){notice('New passwords do not match.',true);return;}
+ try{
+  await api('/api/supply/office/change-password',{method:'POST',body:JSON.stringify({currentPassword,newPassword})});
+  $('officePasswordForm').reset();
+  selectPage('requests');notice('Main Office password changed successfully. Previous sessions have been revoked.');refresh();
+ }catch(err){notice(err.message,true);}
+};
 async function loadSettings(){try{const d=await api('/api/supply/office/settings');$('officeUrgentFee').value=Number(d.urgentFee).toFixed(2);}catch(err){notice(err.message,true);}}
 $('urgentFeeForm').onsubmit=async e=>{
  e.preventDefault();
@@ -98,7 +168,7 @@ async function openOrder(id,quiet=false){
   if(img)img.addEventListener('error',()=>{$('officePaymentImage').textContent='Payment photo could not be decoded.';});
   $('officeNextStatus').value=o.status;$('officeStatusNote').value=o.office_note||'';
   $('officeTimeline').innerHTML=o.history.map(h=>'<p><b>'+esc(title(h.status))+'</b> · '+stamp(h.created_at)+'<br/>'+esc(h.note||'')+'</p>').join('');
-  $('officeMessages').innerHTML=o.messages.map(m=>'<div class="bubble '+(m.sender_role==='office'?'office':'')+'"><small>'+esc(m.sender_name)+' · '+stamp(m.created_at)+'</small>'+esc(m.body)+'</div>').join('')||'<p class="muted">No messages yet. Start a conversation with the franchise.</p>';
+  $('officeMessages').innerHTML=o.messages.map(m=>'<div class="bubble '+(m.sender_role==='office'?'office':'')+'"><small>'+esc(m.sender_name)+' · '+stamp(m.created_at)+'</small>'+esc(m.body)+photoHtml(m.image)+'</div>').join('')||'<p class="muted">No messages yet. Start a conversation with the franchise.</p>';
   $('officeMessages').scrollTop=$('officeMessages').scrollHeight;
   $('officeDetailOverlay').classList.remove('hidden');$('officeDetailOverlay').setAttribute('aria-hidden','false');
   if(!quiet)$('officeDetailClose').focus();
@@ -115,10 +185,23 @@ $('officeStatusForm').onsubmit=async e=>{
   notice('Request status updated to '+title(d.status)+'. Franchise notified.');await refresh();await openOrder(current.id,true);
  }catch(err){notice(err.message,true);}
 };
+$('officeChatPhoto').onchange=async e=>{
+ try{
+  chatPhoto=await compactPhoto(e.target.files?.[0]);
+  $('officeChatPreview').classList.toggle('hidden',!chatPhoto);
+  $('officeChatPreview').innerHTML=chatPhoto?'<img src="'+chatPhoto+'" alt="Attached photo preview"><button type="button" id="officeChatRemove">Remove</button>':'';
+  if(chatPhoto)$('officeChatRemove').onclick=()=>{chatPhoto=null;$('officeChatPhoto').value='';$('officeChatPreview').classList.add('hidden');};
+ }catch(err){chatPhoto=null;$('officeChatPhoto').value='';notice(err.message,true);}
+};
 $('officeMessageForm').onsubmit=async e=>{
  e.preventDefault();if(!current)return;
- const message=$('officeMessageText').value.trim();if(!message)return;
- try{await api('/api/supply/office/orders/'+current.id+'/messages',{method:'POST',body:JSON.stringify({body:message})});$('officeMessageText').value='';await openOrder(current.id,true);}catch(err){notice(err.message,true);}
+ const message=$('officeMessageText').value.trim();if(!message&&!chatPhoto)return;
+ const image=chatPhoto;
+ try{
+  await api('/api/supply/office/orders/'+current.id+'/messages',{method:'POST',body:JSON.stringify({body:message,image})});
+  $('officeMessageText').value='';$('officeChatPhoto').value='';chatPhoto=null;
+  $('officeChatPreview').classList.add('hidden');await openOrder(current.id,true);
+ }catch(err){notice(err.message,true);}
 };
-api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true);}).catch(()=>loggedIn(false));
+api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
 })();
