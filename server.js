@@ -34,7 +34,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.59-row-aware-category-payment';
+const APP_VERSION = '1.5.60-supply-office-inventory-promos';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1348,26 +1348,52 @@ function loginRateKey(req,username){return `${req.socket.remoteAddress||'local'}
 function checkLoginRate(req,username){const key=loginRateKey(req,username),now=Date.now(),windowMs=10*60*1000,max=20;const arr=(loginAttempts.get(key)||[]).filter(t=>now-t<windowMs);if(arr.length>=max)throw Object.assign(new Error('Too many login attempts for this account. Please try again later.'),{status:429});arr.push(now);loginAttempts.set(key,arr);}
 function clearLoginRate(req,username){loginAttempts.delete(loginRateKey(req,username));}
 
-function supplyOfficeAuth(req){
-  const secret=process.env.SUPPLY_OFFICE_SESSION_KEY||'';
-  const cookie=parseCookies(req).supply_office_session;
-  if(!secret||!cookie)return false;
-  const [payload,signature]=cookie.split('.');
-  if(!payload||!signature||payload.length>400)return false;
-  const expected=crypto.createHmac('sha256',secret).update(payload).digest('hex');
-  if(signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return false;
-  try{
-    const data=JSON.parse(Buffer.from(payload,'base64url').toString('utf8'));
-    return data.role==='main-office'&&data.exp>Date.now()&&data.exp<Date.now()+13*3600*1000;
-  }catch(_){return false;}
+const OFFICE_CREDENTIAL_KEY='supply_office_credential_v2';
+async function officeCredential(){
+ const r=await db.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[OFFICE_CREDENTIAL_KEY]);
+ if(!r.rows.length)return null;
+ try{return JSON.parse(r.rows[0].setting_value);}catch(_){return null;}
 }
-function issueSupplyOfficeSession(res){
-  const secret=process.env.SUPPLY_OFFICE_SESSION_KEY;
-  const payload=Buffer.from(JSON.stringify({role:'main-office',exp:Date.now()+12*3600*1000,
-    id:crypto.randomBytes(16).toString('hex')})).toString('base64url');
-  const signature=crypto.createHmac('sha256',secret).update(payload).digest('hex');
-  const secure=process.env.NODE_ENV==='production'||process.env.COOKIE_SECURE==='true'?'; Secure':'';
-  return 'supply_office_session='+payload+'.'+signature+'; HttpOnly; SameSite=Lax; Path=/api/supply/office; Max-Age=43200'+secure;
+const officePasswordHash=password=>{
+ const salt=crypto.randomBytes(16).toString('hex');
+ return{salt,hash:crypto.scryptSync(password,salt,64).toString('hex'),
+  version:crypto.randomBytes(20).toString('hex')};
+};
+const officePasswordMatches=(password,record)=>{
+ if(record){
+  const supplied=crypto.scryptSync(password,record.salt,64);
+  const stored=Buffer.from(record.hash,'hex');
+  return stored.length===supplied.length&&crypto.timingSafeEqual(stored,supplied);
+ }
+ const stored=String(process.env.SUPPLY_OFFICE_PASSWORD_SHA256||'');
+ const supplied=crypto.createHash('sha256').update(password).digest('hex');
+ return stored.length===supplied.length&&crypto.timingSafeEqual(Buffer.from(stored),Buffer.from(supplied));
+};
+function officeSessionToken(req){
+ const secret=process.env.SUPPLY_OFFICE_SESSION_KEY||'';
+ const cookie=parseCookies(req).supply_office_session;
+ if(!secret||!cookie)return null;
+ const [payload,signature]=cookie.split('.');
+ if(!payload||!signature||payload.length>400)return null;
+ const expected=crypto.createHmac('sha256',secret).update(payload).digest('hex');
+ if(signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return null;
+ try{
+  const data=JSON.parse(Buffer.from(payload,'base64url').toString('utf8'));
+  return data.role==='main-office'&&data.exp>Date.now()&&data.exp<Date.now()+13*3600*1000?data:null;
+ }catch(_){return null;}
+}
+async function supplyOfficeAuth(req){
+ const data=officeSessionToken(req);if(!data)return false;
+ const record=await officeCredential();
+ return data.credentialVersion===(record?.version||'bootstrap');
+}
+function issueSupplyOfficeSession(credentialVersion='bootstrap'){
+ const secret=process.env.SUPPLY_OFFICE_SESSION_KEY;
+ const payload=Buffer.from(JSON.stringify({role:'main-office',exp:Date.now()+12*3600*1000,
+    credentialVersion,id:crypto.randomBytes(16).toString('hex')})).toString('base64url');
+ const signature=crypto.createHmac('sha256',secret).update(payload).digest('hex');
+ const secure=process.env.NODE_ENV==='production'||process.env.COOKIE_SECURE==='true'?'; Secure':'';
+ return 'supply_office_session='+payload+'.'+signature+'; HttpOnly; SameSite=Lax; Path=/api/supply/office; Max-Age=43200'+secure;
 }
 async function handleOfficeApi(req,res,p,method){
   if(!SUPPLY_OFFICE_PORTAL)return json(res,404,{error:'Office portal unavailable on this service.'},safeHeaders());
@@ -1375,20 +1401,37 @@ async function handleOfficeApi(req,res,p,method){
     const credentials=await readJson(req);
     const user=String(credentials.username||'').trim(),pass=String(credentials.password||'');
     checkLoginRate(req,'supply-office-'+user);
-    const expected=String(process.env.SUPPLY_OFFICE_PASSWORD_SHA256||'');
-    const actual=crypto.createHash('sha256').update(pass).digest('hex');
+    const record=await officeCredential();
     const validUser=String(process.env.SUPPLY_OFFICE_USERNAME||'').toLowerCase()===user.toLowerCase();
-    if(!validUser||!expected||!process.env.SUPPLY_OFFICE_SESSION_KEY||
-       expected.length!==actual.length||!crypto.timingSafeEqual(Buffer.from(expected),Buffer.from(actual)))
-      return json(res,401,{error:'Invalid Main Office credentials or office access is not configured.'},safeHeaders());
+    if(!validUser||!process.env.SUPPLY_OFFICE_SESSION_KEY||
+       !officePasswordMatches(pass,record))
+      return json(res,401,{error:'Invalid Main Office credentials.'},safeHeaders());
     clearLoginRate(req,'supply-office-'+user);
-    return json(res,200,{ok:true,role:'main-office'},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(res)}));
+    return json(res,200,{ok:true,role:'main-office',mustChangePassword:!record},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(record?.version||'bootstrap')}));
   }
-  if(!supplyOfficeAuth(req))return json(res,401,{error:'Main Office sign-in required.'},safeHeaders());
+  if(!await supplyOfficeAuth(req))return json(res,401,{error:'Main Office sign-in required.'},safeHeaders());
+  if(method==='POST'&&p==='/api/supply/office/change-password'){
+    const body=await readJson(req);
+    const oldPassword=String(body.currentPassword||''),newPassword=String(body.newPassword||'');
+    const record=await officeCredential();
+    if(!officePasswordMatches(oldPassword,record))return json(res,403,{error:'Current password is incorrect.'},safeHeaders());
+    if(newPassword.length<10||newPassword.length>128||newPassword===oldPassword)
+      return json(res,400,{error:'Use a different password with 10–128 characters.'},safeHeaders());
+    const updated=officePasswordHash(newPassword);
+    await db.query('INSERT INTO app_settings(setting_key,setting_value,updated_at) VALUES($1,$2,$3) ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=excluded.updated_at',
+      [OFFICE_CREDENTIAL_KEY,JSON.stringify(updated),new Date().toISOString()]);
+    return json(res,200,{ok:true,mustChangePassword:false},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(updated.version)}));
+  }
+  const activeCredential=await officeCredential();
+  if(!activeCredential&&p!=='/api/supply/office/me'&&p!=='/api/supply/office/logout')
+    return json(res,403,{error:'Change the temporary Main Office password before managing requests.'},safeHeaders());
   if(method==='POST'&&p==='/api/supply/office/logout')
     return json(res,200,{ok:true},safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
-  if(method==='GET'&&p==='/api/supply/office/me')return json(res,200,{role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/me')return json(res,200,{role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME,mustChangePassword:!activeCredential},safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db),safeHeaders());
+  const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
+  if(method==='PUT'&&productMatch)
+    return json(res,200,await supplyChain.saveProduct(db,Number(productMatch[1]),await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/orders')return json(res,200,{orders:await supplyChain.list(db)},safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.priceSettings(db),safeHeaders());
   if(method==='PUT'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.setUrgentFee(db,(await readJson(req)).urgentFee),safeHeaders());
@@ -1400,7 +1443,7 @@ async function handleOfficeApi(req,res,p,method){
       const body=await readJson(req);
       return json(res,200,await supplyChain.status(db,id,String(body.status||''),body.note||'',process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
     }
-    if(method==='POST'&&action==='messages')return json(res,201,await supplyChain.send(db,id,null,'office','Main Office',(await readJson(req)).body),safeHeaders());
+    if(method==='POST'&&action==='messages')return json(res,201,await (async()=>{const b=await readJson(req);return supplyChain.send(db,id,null,'office','Main Office',b.body,b.image)})(),safeHeaders());
   }
   return json(res,404,{error:'Unknown office endpoint.'},safeHeaders());
 }
@@ -1420,7 +1463,7 @@ async function handleFranchiseSupplyApi(req,res,p,method,user){
   if(match){
     if(method==='GET'&&p.endsWith(match[1]))return json(res,200,{order:await supplyChain.detail(db,match[1],workspaceId,false)},safeHeaders());
     if(method==='POST'&&p.endsWith('/messages'))return json(res,201,
-      await supplyChain.send(db,match[1],workspaceId,'franchise',user.username,(await readJson(req)).body),safeHeaders());
+      await (async()=>{const b=await readJson(req);return supplyChain.send(db,match[1],workspaceId,'franchise',user.username,b.body,b.image)})(),safeHeaders());
   }
   return json(res,404,{error:'Unknown supply endpoint.'},safeHeaders());
 }
