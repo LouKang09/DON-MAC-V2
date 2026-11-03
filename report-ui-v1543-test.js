@@ -12,7 +12,7 @@ function count(id){return [...html.matchAll(new RegExp('id="'+id+'"','g'))].leng
 for(const id of ['planSwitcher','view-advanced','view-account','transferPlanGate',
   'transferUpgradeButton','advancedUpgradeButton','subscriptionHistoryBody',
   'accountPlanSelect','accountStatusSelect','saveAccountPlan','accountStartedAt',
-  'accountRenewAt','accountRemaining','topbarProfileButton']){
+  'accountRenewAt','accountRemaining','topbarProfileButton','subscriptionHistoryPagination']){
   assert.equal(count(id),1,'Missing/duplicate subscription element: '+id);
 }
 assert(/<option value="User">Cashier<\/option>/.test(html));
@@ -38,7 +38,12 @@ assert(core.includes("changeDevSubscription(e.target.value"));
 assert(core.includes("if(state.subscription?.plan!=='BUSINESS')"));
 assert(core.includes("if(!business){"));
 assert(core.includes('subscriptionBadge(row.status)'));
-assert(server.includes("const APP_VERSION = '1.5.46-pos-style-catalog-cards';"));
+assert(core.includes('SUBSCRIPTION_ROWS_PER_PAGE=10'));
+assert(core.includes("history.slice(start,start+SUBSCRIPTION_ROWS_PER_PAGE)"));
+assert(core.includes("subscriptionHistoryPage+=button.dataset.planPage"));
+assert(server.includes("Never manufacture a new history row"));
+
+assert(server.includes("const APP_VERSION = '1.5.57-sidebar-subscription-history';"));
 assert(server.includes("if(method==='GET'&&p==='/api/account/subscription')"));
 assert(server.includes("if(method==='POST'&&p==='/api/account/subscription/demo')"));
 assert(server.includes("await requireBusinessPlan();"));
@@ -58,6 +63,14 @@ assert.equal(plans.entitlements('PRO').replenish,true);
 assert.equal(plans.entitlements('BUSINESS').transfer,true);
 assert.equal(plans.parse('not JSON'),null);
 assert.equal(plans.parse(JSON.stringify(original)).plan,'PRO');
+const repeatedBaseline={...original.history[0],
+  date:'2026-11-01T12:00:00.000Z',startDate:'2026-11-01T12:00:00.000Z',
+  renewDate:plans.nextRenewAt('2026-11-01T12:00:00.000Z'),actorId:null};
+assert.equal(plans.normalizeHistory([original.history[0],repeatedBaseline]).length,1,
+  'Recurring synthetic snapshots are not separate subscriptions');
+assert.equal(plans.transition(original,'PRO','PAID',1,'2026-11-02T00:00:00Z'),original,
+  'Reading or selecting the existing plan must not generate a new history row');
+
 
 let store=JSON.stringify(original),audit=[],transactions=0;
 const db={
