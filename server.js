@@ -34,7 +34,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.55-one-line-responsive-header';
+const APP_VERSION = '1.5.56-compact-pos-checkout';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
