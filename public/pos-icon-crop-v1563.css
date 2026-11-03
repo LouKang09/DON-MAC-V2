@@ -1,0 +1,31 @@
+/* Don Mac POS v1.5.63: padded, black-outlined icon assets.
+   Keep the existing category hover, selected and adjacent color logic. */
+#view-pos #categoryTabs .category-tile .category-icon-addons,
+#admin-categories .pos-admin-icon.category-icon-addons {
+  background-image:url("/assets/catalog/v1563-add-on.svg")!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:88% 88%!important;
+  filter:none!important;
+}
+#view-pos #categoryTabs .category-tile .category-icon-promos,
+#admin-categories .pos-admin-icon.category-icon-promos {
+  background-image:url("/assets/catalog/v1563-promotion.svg")!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:88% 88%!important;
+  filter:none!important;
+}
+/* Give all four updated catalog icons room inside the cropped-corner tile. */
+#view-catalog #adminTabs.catalog-tiles
+  .catalog-tile:is([data-admin-tab="categories"],[data-admin-tab="promos"],[data-admin-tab="backups"])
+  img.catalog-tab-icon {
+  width:54px!important;
+  height:54px!important;
+  right:13px!important;
+  bottom:13px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  filter:none!important;
+  image-rendering:auto!important;
+}
