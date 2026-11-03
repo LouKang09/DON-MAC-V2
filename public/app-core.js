@@ -124,6 +124,8 @@
     const [key,label,path]=options[status]||options.UNPAID;
     return '<span class="sub-status sub-status-'+key+'"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">'+path+'</svg>'+label+'</span>';
   }
+  let subscriptionHistoryPage=1;
+  const SUBSCRIPTION_ROWS_PER_PAGE=10;
   function renderDevSubscription(){
     const sub=state.subscription;
     if(!sub)return;
@@ -160,14 +162,23 @@
     $('advancedUpgradeButton').classList.toggle('hidden',business);
     $('advancedBusinessActions').classList.toggle('hidden',!business);
     const history=Array.isArray(sub.history)?sub.history.slice().reverse():[];
-    $('subscriptionHistoryBody').innerHTML=history.map(row=>{
+    const totalPages=Math.max(1,Math.ceil(history.length/SUBSCRIPTION_ROWS_PER_PAGE));
+    subscriptionHistoryPage=Math.max(1,Math.min(totalPages,subscriptionHistoryPage));
+    const start=(subscriptionHistoryPage-1)*SUBSCRIPTION_ROWS_PER_PAGE;
+    $('subscriptionHistoryBody').innerHTML=history.slice(start,start+SUBSCRIPTION_ROWS_PER_PAGE).map(row=>{
       const remaining=Math.max(0,Math.ceil((new Date(row.renewDate)-Date.now())/86400000));
       return '<tr><td>'+esc(planDisplayDate(row.date))+'</td><td><strong>'+
         esc(row.plan==='BUSINESS'?'Business':'Pro')+'</strong></td><td>'+
         esc(planDisplayDate(row.startDate))+'</td><td>'+esc(planDisplayDate(row.renewDate))+
         '</td><td class="num">'+num(remaining,0)+'</td><td>'+
         subscriptionBadge(row.status)+'</td></tr>';
-    }).join('')||'<tr><td colspan="6">No demo changes recorded.</td></tr>';
+    }).join('')||'<tr><td colspan="6">No subscription changes recorded.</td></tr>';
+    const pagination=$('subscriptionHistoryPagination');
+    pagination.innerHTML='<span>Showing '+(history.length?start+1:0)+'–'+
+      Math.min(start+SUBSCRIPTION_ROWS_PER_PAGE,history.length)+' of '+history.length+
+      ' records · Page '+subscriptionHistoryPage+' of '+totalPages+'</span>'+
+      '<button type="button" data-plan-page="previous" '+(subscriptionHistoryPage===1?'disabled':'')+'>Previous</button>'+
+      '<button type="button" data-plan-page="next" '+(subscriptionHistoryPage===totalPages?'disabled':'')+'>Next</button>';
   }
   async function loadDevSubscription(){
     if(!state.user)return;
@@ -190,6 +201,7 @@
         state.subscription=await api('/api/account/subscription/demo',{
           method:'POST',body:{plan,status}
         });
+        subscriptionHistoryPage=1;
         renderDevSubscription();
         toast('Preview plan: '+(plan==='BUSINESS'?'Business':'Pro')+' (no charge).');
       }catch(error){
@@ -206,6 +218,12 @@
     $('accountPlanSelect').value='BUSINESS';
     $('accountPlanSelect').focus();
   }
+  $('subscriptionHistoryPagination').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-plan-page]');
+    if(!button||button.disabled)return;
+    subscriptionHistoryPage+=button.dataset.planPage==='next'?1:-1;
+    renderDevSubscription();
+  });
   $('planSwitcher').addEventListener('change',e=>
     changeDevSubscription(e.target.value,state.subscription?.status||'PAID'));
   $('saveAccountPlan').addEventListener('click',()=>
