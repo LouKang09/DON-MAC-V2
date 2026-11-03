@@ -271,7 +271,7 @@
     updatePosDateTime();
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
-    if(view==='pos')refreshPosDailyCount();
+    if(view==='pos'){refreshPosDailyCount();requestAnimationFrame(syncCategoryRowNeighbors);}
     if(view==='dashboard')loadDashboard();if(view==='inventory'){loadInventory();loadDevSubscription();}if(view==='advanced'||view==='account')renderDevSubscription();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();if(view==='supply')window.donmacSupply?.open();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
@@ -313,25 +313,47 @@
       return '<span class="category-icon category-icon-custom"><img src="'+esc(c.iconData)+'" alt="" loading="lazy" /></span>';
     return '<span class="category-icon category-icon-'+(slug||'packages')+'"></span>';
   }
+  // Only highlight the actual visual-row neighbors. Adjacent array indices
+  // can cross a grid-row boundary (e.g. column 3 followed by column 1).
+  // Checking rendered offsetTop also adapts to 2-column tablet layouts and zoom.
+  let categoryRowObserver=null;
+  let categoryRowResizeBound=false;
+  function syncCategoryRowNeighbors(){
+    const root=$('categoryTabs');
+    if(!root)return;
+    const tiles=Array.from(root.querySelectorAll('.category-tile'));
+    const selectedIndex=tiles.findIndex(el=>el.classList.contains('active'));
+    const selected=tiles[selectedIndex];
+    tiles.forEach((tile,index)=>{
+      const sameRow=!!selected && Math.abs(tile.offsetTop-selected.offsetTop)<=2;
+      tile.classList.toggle('adjacent',sameRow&&Math.abs(index-selectedIndex)===1);
+    });
+  }
   function renderTabs(){
     const all=activePosCategories();
     if(!all.some(c=>c.name===state.category))state.category=all[0]?.name||'Coffee';
-    const categories=all.map(c=>c.name);
-    const selectedCategoryIndex=categories.indexOf(state.category);
     const counts={Coffee:0,'Non Coffee':0,Food:0,'Add-ons':state.catalog?.addOns?.length||0,
       Promos:state.catalog?.promos?.length||0,Packages:state.catalog?.packages?.length||0};
     for(const p of state.catalog?.products||[])if(Object.hasOwn(counts,p.category))counts[p.category]++;
     for(const c of all)if(!c.builtin)counts[c.name]=(state.catalog?.products||[]).filter(p=>(c.productIds||[]).includes(p.id)).length;
-    $('categoryTabs').innerHTML=all.map((c,index)=>{
+    $('categoryTabs').innerHTML=all.map(c=>{
       const slug=categorySlugs[c.name]||'custom';
-      return '<button type="button" class="tab category-tile category-'+slug+(state.category===c.name?' active':'')+
-        (Math.abs(index-selectedCategoryIndex)===1?' adjacent':'')+'"'+
+      return '<button type="button" class="tab category-tile category-'+slug+(state.category===c.name?' active':'')+'"'+
         ' data-cat="'+esc(c.name)+'" aria-pressed="'+String(state.category===c.name)+'" title="Browse '+esc(c.name)+'">'+
         '<span class="category-status">'+(state.category===c.name?'Selected':'Browse')+'</span>'+
         '<span class="category-symbol" aria-hidden="true">'+categoryArt(c)+'</span>'+
         '<strong>'+esc(c.name)+'</strong><small>'+Number(counts[c.name]||0)+' items</small></button>';
     }).join('');
     $('categoryTabs').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderTabs();renderCatalog();});
+    syncCategoryRowNeighbors();
+    if(!categoryRowResizeBound){
+      categoryRowResizeBound=true;
+      window.addEventListener('resize',syncCategoryRowNeighbors,{passive:true});
+      if(typeof ResizeObserver==='function'){
+        categoryRowObserver=new ResizeObserver(syncCategoryRowNeighbors);
+        categoryRowObserver.observe($('categoryTabs'));
+      }
+    }
   }
   function promoById(){return state.catalog?.promos.find(p=>p.id===state.promoId)||null;}
   function cartItem(kind,id){return state.cart.find(x=>x.kind===kind&&x.id===id);}
