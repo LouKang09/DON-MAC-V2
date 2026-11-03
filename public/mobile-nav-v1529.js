@@ -8,7 +8,7 @@
   const more=$('mobileMoreButton'),closeButton=$('mobileMoreClose'),signout=$('mobileSignOutButton');
   if(!bar||!panel||!more||!closeButton||!signout)return;
 
-  const management=new Set(['reports','catalog','users','logs']);
+  const management=new Set(['reports','catalog','users','logs','supply','advanced','account']);
   const mobile=window.matchMedia('(max-width:699px)');
   let lastFocus=null;
 
