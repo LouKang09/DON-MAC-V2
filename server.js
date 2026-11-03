@@ -8,6 +8,7 @@ const { sendMail } = require('./lib/smtp');
 const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
+const archiveComparison = require('./lib/archive-comparison');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -31,7 +32,7 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.48-cashier-photos-tabbed-users';
+const APP_VERSION = '1.5.53-readonly-archive-compare';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1444,6 +1445,25 @@ async function handleApi(req,res,url){
 
   if(method==='GET'&&p==='/api/admin/settings')return json(res,200,await getSettings(),safeHeaders());
   if(method==='PUT'&&p==='/api/admin/settings')return json(res,200,await saveSettings(user,await readJson(req)),safeHeaders());
+  if(p==='/api/backups/comparison'&&(method==='GET'||method==='POST')){
+    requireAdminRole(user);
+    const workspaceId=await workspaceIdForUser(user.id);
+    if(!workspaceId)throw Object.assign(new Error('Owner workspace unavailable.'),{status:403});
+    if(method==='GET'){
+      const detail=url.searchParams.get('details')==='1';
+      return json(res,200,await archiveComparison.getComparison(db,workspaceId,detail),safeHeaders());
+    }
+    if(!String(req.headers['content-type']||'').toLowerCase().startsWith('application/json'))
+      throw Object.assign(new Error('Select a Don Mac JSON data archive.'),{status:415});
+    const info=await archiveComparison.readArchiveUpload(req);
+    const filename=String(req.headers['x-archive-filename']||'DonMac_Data_Archive.json').slice(0,180);
+    if(!/\.json$/i.test(filename)||/[\\/\r\n]/.test(filename))
+      throw Object.assign(new Error('Upload a JSON archive with a safe filename.'),{status:400});
+    const record=await archiveComparison.saveComparison(db,workspaceId,user,info,filename);
+    await logAction(user,'Read-only archive comparison uploaded','Database Compare',
+      'Comparison metadata only; 24h access; no live data changed');
+    return json(res,201,{...record,message:'Read-only comparison created. It expires in 24 hours; your upload record will remain visible.'},safeHeaders());
+  }
   if(method==='GET'&&p==='/api/backups/data-export'){
     const archive=await makePortableDataExport();
     return binary(res,200,archive.buffer,'application/json; charset=utf-8',
