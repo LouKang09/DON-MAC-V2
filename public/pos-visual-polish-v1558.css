@@ -1,0 +1,157 @@
+/* Don Mac POS v1.5.58 — header, catalog and positional category palette.
+   Loaded AFTER older responsive styles to avoid sidebar/layout regressions. */
+:root{
+  --donmac-header-green:#198754;
+  --donmac-adjacent-green:#8EC9A8;
+}
+.app .topbar{
+  background:#198754!important;
+  background-image:none!important;
+  border-bottom:1px solid #137149!important;
+  box-shadow:0 2px 12px rgba(8,81,51,.14)!important;
+  min-height:88px!important;
+  height:auto!important;
+  padding:9px clamp(12px,1.25vw,22px)!important;
+  gap:clamp(7px,1vw,16px)!important;
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  align-items:center!important;
+  color:#fff!important;
+}
+.app .topbar .topbar-heading{
+  min-width:0!important;gap:12px!important;
+}
+.app .topbar .topbar-heading-copy{
+  min-width:0!important;flex:1 1 auto!important;overflow:hidden!important;
+}
+.app .topbar .topbar-heading #viewTitle{
+  color:#fff!important;white-space:nowrap!important;
+  text-overflow:ellipsis!important;overflow:hidden!important;
+  font-size:clamp(15px,1.36vw,23px)!important;
+}
+.app .topbar .topbar-heading #viewEyebrow,
+.app .topbar .topbar-heading #posDate{
+  color:rgba(255,255,255,.95)!important;
+}
+.app .topbar .topbar-heading .topbar-logo{
+  box-sizing:border-box!important;
+  width:70px!important;height:70px!important;
+  min-width:70px!important;max-width:70px!important;
+  min-height:70px!important;max-height:70px!important;
+  flex:0 0 70px!important;
+  aspect-ratio:1/1!important;
+  display:grid!important;place-items:center!important;
+  background:#fff!important;border:1px solid #e6ede8!important;
+  border-radius:14px!important;overflow:hidden!important;
+  padding:3px!important;
+}
+.app .topbar .topbar-heading .topbar-logo img{
+  display:block!important;width:100%!important;height:100%!important;
+  min-width:0!important;max-width:100%!important;
+  min-height:0!important;max-height:100%!important;
+  object-fit:contain!important;object-position:center!important;
+  aspect-ratio:1/1!important;
+  transform:scaleX(1.07);transform-origin:center;
+}
+.app .topbar .topbar-right{
+  display:flex!important;flex-flow:row nowrap!important;
+  justify-content:flex-end!important;align-items:center!important;
+  gap:clamp(5px,.65vw,11px)!important;width:max-content!important;
+  max-width:100%!important;min-width:0!important;
+  color:#fff!important;
+}
+.app .topbar .topbar-right>*{flex:0 0 auto!important;}
+.app .topbar .topbar-right .account-plan-top-control,
+.app .topbar .topbar-right #topbarProfileButton,
+.app .topbar .topbar-right .whats-new-button{
+  border:1.5px solid rgba(236,255,243,.66)!important;
+  border-radius:999px!important;
+  color:#fff!important;
+  background:rgba(8,74,43,.27)!important;
+}
+.app .topbar #planSwitcher{
+  border-radius:999px!important;
+  background:#11673f!important;color:#fff!important;
+}
+.app .topbar .topbar-right .account-plan-top-control:hover,
+.app .topbar .topbar-right #topbarProfileButton:hover,
+.app .topbar .topbar-right .whats-new-button:hover{
+  background:rgba(8,74,43,.39)!important;
+}
+@media(max-width:1180px){
+ .app .topbar{min-height:72px!important;padding:7px 11px!important;}
+ .app .topbar .topbar-heading .topbar-logo{
+   width:59px!important;height:59px!important;
+   min-width:59px!important;max-width:59px!important;
+   min-height:59px!important;max-height:59px!important;
+   flex-basis:59px!important;border-radius:12px!important;
+ }
+ .app .topbar .topbar-heading{gap:8px!important;}
+ .app .topbar .topbar-heading #viewTitle{
+   font-size:clamp(11px,1.35vw,17px)!important;
+ }
+}
+@media(max-width:720px){
+ .app .topbar{min-height:62px!important;grid-template-columns:minmax(0,1fr) max-content!important;}
+ .app .topbar .topbar-heading .topbar-logo{
+   width:49px!important;height:49px!important;
+   min-width:49px!important;max-width:49px!important;
+   min-height:49px!important;max-height:49px!important;
+   flex-basis:49px!important;
+ }
+ .app .topbar .topbar-heading #viewTitle{font-size:clamp(10px,2.6vw,15px)!important;}
+ .app .topbar .topbar-right{gap:4px!important;}
+}
+@media(max-width:390px){
+ .app .topbar .topbar-heading .topbar-logo{
+   width:43px!important;height:43px!important;
+   min-width:43px!important;max-width:43px!important;
+   min-height:43px!important;max-height:43px!important;
+   flex-basis:43px!important;
+ }
+}
+/* POS category state is driven by the selected position in renderTabs(),
+   including user-added categories. Both immediate neighbors are highlighted. */
+#view-pos #categoryTabs .tab.category-tile{
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease!important;
+}
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active){
+  background:#8EC9A8!important;
+  border:1px solid #70b78e!important;
+  color:#173a29!important;
+}
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active) strong,
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active) small{
+  color:#173a29!important;
+}
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active) .category-status{
+  color:#17472d!important;border-color:#5a9c76!important;
+  background:rgba(255,255,255,.38)!important;
+}
+#view-pos #categoryTabs .tab.category-tile.adjacent:not(.active) .category-symbol{
+  opacity:1!important;filter:none!important;
+}
+#view-pos #categoryTabs .tab.category-tile.active{
+  background:var(--pos-green,#0b5b3c)!important;
+  border-color:var(--pos-green,#0b5b3c)!important;
+  color:#fff!important;
+}
+#view-pos #categoryTabs .tab.category-tile.active strong,
+#view-pos #categoryTabs .tab.category-tile.active small{
+  color:#fff!important;
+}
+#view-pos #categoryTabs .tab.category-tile.active .category-symbol{
+  opacity:1!important;filter:none!important;
+}
+#view-catalog #adminTabs.catalog-tiles img.catalog-tab-icon{
+  image-rendering:auto!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  filter:none!important;
+}
+/* Never increase the bitmap beyond its intended tile size. */
+#view-catalog #adminTabs.catalog-tiles button.catalog-tile .catalog-tab-icon{
+  width:58px!important;height:58px!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #view-pos #categoryTabs .tab.category-tile{transition:none!important;}
+}
