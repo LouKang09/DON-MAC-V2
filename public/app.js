@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.57-sidebar-subscription-history';
+  const VERSION = '1.5.58-catalog-icons-header-adjacent';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -79,6 +79,7 @@
       loadCss('posCompactCheckoutV1556Css','/pos-compact-checkout-v1556.css');
       loadCss('sidebarResponsiveV1557Css','/sidebar-responsive-v1557.css');
       loadCss('subscriptionPaginationV1557Css','/subscription-pagination-v1557.css');
+      loadCss('posVisualPolishV1558Css','/pos-visual-polish-v1558.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
@@ -107,7 +108,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.57 enhancement layers started.');
+      console.info('Don Macchiatos POS v1.5.58 enhancement layers started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
