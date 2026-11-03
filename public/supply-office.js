@@ -260,7 +260,7 @@ async function openOrder(id,quiet=false){
   $('officeDetailSummary').innerHTML='<div class="info-grid">'+[
    ['Branch',o.branch_name],['Franchise Owner',o.franchise_owner||'—'],['Requested by',o.requester],['Priority',o.priority],
    ['Status',title(o.status)],['Item subtotal',peso(o.subtotal)],
-   ['Urgent fee',peso(o.urgent_fee)],['Total',peso(o.total)],['Submitted',stamp(o.created_at)]].map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('')+'</div>';
+   ['Urgent fee',peso(o.urgent_fee)],['Monthly royalties',peso(o.royalty_total||0)],['Total',peso(o.total)],['Submitted',stamp(o.created_at)]].map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('')+'</div>';
   $('officeDetailItems').innerHTML=o.items.map(i=>'<tr><td>'+esc(i.product_name)+'</td><td>'+esc(i.uom)+'</td><td>'+i.quantity+'</td><td>'+peso(i.amount)+'</td></tr>').join('');
   $('officePaymentReference').textContent='Payment reference: '+(o.payment_reference||'Not provided. Verify the attached proof.');
   const src=String(o.paymentImage||'');
