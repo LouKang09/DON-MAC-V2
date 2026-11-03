@@ -1,14 +1,14 @@
-/* Don Mac POS v1.5.58 — header, catalog and positional category palette.
+/* Don Mac POS v1.5.59 — header, catalog and positional category palette.
    Loaded AFTER older responsive styles to avoid sidebar/layout regressions. */
 :root{
-  --donmac-header-green:#198754;
+  --donmac-header-green:#075D38;
   --donmac-adjacent-green:#8EC9A8;
 }
 .app .topbar{
-  background:#198754!important;
+  background:#075D38!important;
   background-image:none!important;
-  border-bottom:1px solid #137149!important;
-  box-shadow:0 2px 12px rgba(8,81,51,.14)!important;
+  border-bottom:1px solid #06482B!important;
+  box-shadow:0 2px 12px rgba(5,60,36,.16)!important;
   min-height:88px!important;
   height:auto!important;
   padding:9px clamp(12px,1.25vw,22px)!important;
