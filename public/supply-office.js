@@ -85,7 +85,7 @@ async function openOrder(id,quiet=false){
   const d=await api('/api/supply/office/orders/'+encodeURIComponent(id));current=d.order;const o=current;
   $('detailTitle').textContent='Request '+o.id.slice(0,8).toUpperCase();
   $('officeDetailSummary').innerHTML='<div class="info-grid">'+[
-   ['Branch',o.branch_name],['Requested by',o.requester],['Priority',o.priority],
+   ['Branch',o.branch_name],['Franchise Owner',o.franchise_owner||'—'],['Requested by',o.requester],['Priority',o.priority],
    ['Status',title(o.status)],['Item subtotal',peso(o.subtotal)],
    ['Urgent fee',peso(o.urgent_fee)],['Total',peso(o.total)],['Submitted',stamp(o.created_at)]].map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('')+'</div>';
   $('officeDetailItems').innerHTML=o.items.map(i=>'<tr><td>'+esc(i.product_name)+'</td><td>'+esc(i.uom)+'</td><td>'+i.quantity+'</td><td>'+peso(i.amount)+'</td></tr>').join('');
