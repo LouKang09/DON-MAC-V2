@@ -1,0 +1,148 @@
+/* Don Mac POS v1.5.56 — compact, reachable checkout at tablet and phone widths.
+   The old viewport-height cart expanded an empty order list to fill the screen.
+   That placed Pay below the visible viewport on tall phones in desktop mode. */
+#view-pos{min-width:0}
+#view-pos .pos-layout{min-width:0}
+#view-pos .catalog-panel,#view-pos .order-panel{min-width:0}
+#view-pos .order-panel #payButton{width:100%;min-height:46px}
+/* From compact laptops through portrait tablets, use content height instead of
+   100dvh. Scroll only the item list so discount, totals and Pay stay together. */
+@media (min-width:700px) and (max-width:1180px){
+  #view-pos .pos-layout{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) clamp(280px,34vw,340px)!important;
+    align-items:start!important;gap:12px!important;
+  }
+  #view-pos .order-panel{
+    box-sizing:border-box!important;
+    height:auto!important;min-height:0!important;
+    max-height:calc(100dvh - 100px)!important;
+    position:sticky!important;top:88px!important;
+    overflow-y:auto!important;overscroll-behavior:contain;
+    padding:clamp(11px,1.4vw,16px)!important;
+    display:flex!important;flex-direction:column!important;
+  }
+  #view-pos .order-list{
+    flex:0 1 auto!important;
+    min-height:104px!important;
+    max-height:clamp(115px,24dvh,235px)!important;
+    overflow-y:auto!important;
+    margin:7px 0 9px!important;
+  }
+  #view-pos .order-list .empty-state{min-height:94px!important;padding:15px 9px!important}
+  #view-pos .discount-box{margin-top:6px!important;flex-shrink:0!important}
+  #view-pos .totals{margin-top:7px!important;flex-shrink:0!important}
+  #view-pos .quote-message{flex-shrink:0!important}
+  #view-pos .pay{margin-top:7px!important;flex-shrink:0!important}
+  #view-pos .catalog-panel{min-height:0!important}
+  #view-pos .tabs{gap:8px!important}
+  #view-pos .tab{min-height:95px!important;padding:11px!important}
+  #view-pos .tab strong{font-size:clamp(12px,1.3vw,15px)!important}
+  #view-pos .tab small{font-size:10px!important}
+  #view-pos .catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+  #view-pos .product-card,
+  #view-pos .availability-hover,
+  #view-pos .availability-hover>.product-card{min-height:145px!important}
+  #view-pos .product-card h4{font-size:12px!important}
+  #view-pos .order-head h3{font-size:17px!important}
+  #view-pos .order-type-switch button{font-size:11px!important}
+  #view-pos .pos-section-label{margin:10px 0 3px!important}
+  #view-pos .pos-customer-fields{margin-top:9px!important}
+  #view-pos .pos-customer-fields input{min-height:38px}
+}
+@media (min-width:700px) and (max-width:850px){
+  #view-pos .pos-layout{
+    grid-template-columns:minmax(0,1fr) minmax(255px,40%)!important;
+    gap:9px!important;
+  }
+  #view-pos .tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #view-pos .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #view-pos .pos-customer-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #view-pos .order-panel{top:78px!important;max-height:calc(100dvh - 89px)!important}
+}
+@media (min-width:700px) and (max-width:1180px) and (max-height:660px){
+  #view-pos .order-panel{top:68px!important;max-height:calc(100dvh - 78px)!important}
+  #view-pos .order-list{min-height:85px!important;max-height:140px!important}
+  #view-pos .order-head{padding-bottom:5px!important}
+  #view-pos .pos-customer-fields{margin-top:6px!important}
+}
+/* A portrait touch device is often reported as a 980px desktop viewport by
+   Android's Desktop Site mode. Keep the two panes but scale the controls up. */
+@media (pointer:coarse) and (min-width:700px) and (max-width:1180px) and (orientation:portrait){
+  .app,.app.sidebar-collapsed{grid-template-columns:82px minmax(0,1fr)!important}
+  .sidebar #mainNav .nav .nav-label{font-size:11px!important;line-height:1.2!important;white-space:normal!important}
+  #view-pos{padding:12px 12px 38px!important}
+  #view-pos .catalog-search-wrap{min-height:45px!important}
+  #view-pos .catalog-search-wrap .search{font-size:14px!important}
+  #view-pos .tab strong{font-size:14px!important}
+  #view-pos .tab small{font-size:11px!important}
+  #view-pos .product-card h4{font-size:13px!important}
+  #view-pos .product-card .price{font-size:12px!important}
+  #view-pos .order-head h3{font-size:18px!important}
+  #view-pos .pos-customer-fields label{font-size:11px!important}
+  #view-pos .pos-section-label{font-size:11px!important}
+  #view-pos .totals .actual{font-size:16px!important}
+}
+/* True phone view: keep a single column and stop any percentage/viewport fill.
+   Users can scroll the catalog; the existing Order shortcut remains available
+   until the improved payment dock becomes active. */
+@media (max-width:699px){
+  #view-pos .pos-layout{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  #view-pos .catalog-panel{min-height:0!important;height:auto!important;padding:0!important}
+  #view-pos .order-panel{
+    position:relative!important;top:auto!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;padding:13px!important;
+  }
+  #view-pos .order-list{
+    flex:0 1 auto!important;
+    min-height:105px!important;
+    max-height:min(31dvh,250px)!important;
+    overflow-y:auto!important;
+    margin:8px 0!important;
+  }
+  #view-pos .order-list .empty-state{min-height:100px!important}
+  #view-pos .discount-box{margin-top:6px!important}
+  #view-pos .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #view-pos .tab{min-height:88px!important}
+  #view-pos .tab strong{font-size:12px!important}
+  #view-pos .product-card,
+  #view-pos .availability-hover,
+  #view-pos .availability-hover>.product-card{min-height:149px!important}
+  #view-pos .product-card h4{font-size:12px!important}
+  #view-pos .order-head h3{font-size:18px!important}
+  #view-pos .pay{min-height:48px!important}
+  #view-pos .catalog-search-wrap .search{font-size:16px!important}
+}
+@media (max-width:390px){
+  #view-pos .tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #view-pos .order-type-switch button{font-size:10px!important}
+}
+/* Persistent shortcut. Uses the *existing* Pay button and never bypasses
+   pricing/stock checks. Only shown on compact touch screens when the original
+   Pay button isn't visible. */
+#posQuickPayDock{
+  display:none;position:fixed;bottom:18px;left:105px;right:auto;
+  z-index:76;min-width:148px;max-width:min(280px,calc(100vw - 120px));
+  align-items:center;justify-content:center;gap:8px;
+  min-height:46px;padding:10px 16px;
+  color:#fff;background:#09633e;border:1.5px solid #78c694;
+  border-radius:999px;box-shadow:0 8px 28px #10271b45;
+  font-weight:850;font-size:13px;white-space:nowrap;cursor:pointer;
+}
+#posQuickPayDock svg{width:17px;height:17px;flex:0 0 17px}
+#posQuickPayDock:focus-visible{outline:3px solid #a4dfb5;outline-offset:2px}
+#posQuickPayDock:hover{background:#075434}
+@media (pointer:coarse) and (max-width:1180px){
+  body.pos-quickpay-visible #posQuickPayDock{display:inline-flex}
+  body.pos-quickpay-visible #mobileOrderJump{display:none!important}
+  body:has(dialog[open]) #posQuickPayDock{display:none!important}
+}
+@media (max-width:699px){
+  #posQuickPayDock{
+    left:12px;bottom:calc(81px + env(safe-area-inset-bottom,0px));
+    max-width:calc(100vw - 90px);min-height:46px;
+  }
+}
+@media (max-width:370px){#posQuickPayDock{min-width:125px;font-size:11px;padding:9px 11px}}
+@media print{#posQuickPayDock{display:none!important}}
