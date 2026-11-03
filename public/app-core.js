@@ -317,13 +317,15 @@
     const all=activePosCategories();
     if(!all.some(c=>c.name===state.category))state.category=all[0]?.name||'Coffee';
     const categories=all.map(c=>c.name);
+    const selectedCategoryIndex=categories.indexOf(state.category);
     const counts={Coffee:0,'Non Coffee':0,Food:0,'Add-ons':state.catalog?.addOns?.length||0,
       Promos:state.catalog?.promos?.length||0,Packages:state.catalog?.packages?.length||0};
     for(const p of state.catalog?.products||[])if(Object.hasOwn(counts,p.category))counts[p.category]++;
     for(const c of all)if(!c.builtin)counts[c.name]=(state.catalog?.products||[]).filter(p=>(c.productIds||[]).includes(p.id)).length;
-    $('categoryTabs').innerHTML=all.map(c=>{
+    $('categoryTabs').innerHTML=all.map((c,index)=>{
       const slug=categorySlugs[c.name]||'custom';
-      return '<button type="button" class="tab category-tile category-'+slug+(state.category===c.name?' active':'')+'"'+
+      return '<button type="button" class="tab category-tile category-'+slug+(state.category===c.name?' active':'')+
+        (Math.abs(index-selectedCategoryIndex)===1?' adjacent':'')+'"'+
         ' data-cat="'+esc(c.name)+'" aria-pressed="'+String(state.category===c.name)+'" title="Browse '+esc(c.name)+'">'+
         '<span class="category-status">'+(state.category===c.name?'Selected':'Browse')+'</span>'+
         '<span class="category-symbol" aria-hidden="true">'+categoryArt(c)+'</span>'+
