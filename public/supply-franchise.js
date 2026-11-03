@@ -78,8 +78,8 @@ function renderProducts(){
 }
 async function decodePhoto(file){
  if(!file)throw Error('Attach a payment confirmation image.');
- if(file.size>1024*1024)throw Error('Payment photo exceeds 1 MB. Select or compress the image before submitting.');
- if(file.size<50||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use a valid JPG, PNG, or WebP file smaller than 1 MB.');
+ if(file.size>8*1024*1024)throw Error('Payment photo exceeds 8 MB. Choose a smaller photo.');
+ if(file.size<50||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use a valid JPG, PNG, or WebP photo.');
  const head=new Uint8Array(await file.slice(0,16).arrayBuffer());
  const valid=(file.type==='image/jpeg'&&head[0]===255&&head[1]===216&&head[2]===255)||
  (file.type==='image/png'&&[137,80,78,71,13,10,26,10].every((n,i)=>head[i]===n))||
@@ -90,14 +90,17 @@ async function decodePhoto(file){
   const image=new Image();image.src=url;
   try{await image.decode();}catch(_){throw Error('Photo could not be decoded. Please take or select another photo.');}
   if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth>10000||image.naturalHeight>10000)throw Error('Invalid image dimensions.');
-  const max=1400,ratio=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight)),canvas=document.createElement('canvas');
-  canvas.width=Math.max(1,Math.round(image.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(image.naturalHeight*ratio));
-  const ctx=canvas.getContext('2d');if(!ctx)throw Error('This browser cannot decode the selected photo.');
-  ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
-  let output=canvas.toDataURL('image/jpeg',.78);
-  if(output.length>1300000)output=canvas.toDataURL('image/jpeg',.48);
-  if(output.length>1300000)throw Error('Compressed payment photo still exceeds 1 MB. Select a smaller image.');
-  return output;
+  for(const max of [1600,1400,1200,1000]){
+   const ratio=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight)),canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(image.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(image.naturalHeight*ratio));
+   const ctx=canvas.getContext('2d');if(!ctx)throw Error('This browser cannot decode the selected photo.');
+   ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   for(const quality of [.88,.77,.66,.52]){
+    const output=canvas.toDataURL('image/jpeg',quality);
+    if(output.length<=760000)return output;
+   }
+  }
+  throw Error('Payment photo could not be compressed below 600 KB. Select a smaller image.');
  }finally{URL.revokeObjectURL(url);}
 }
 $('supplyPaymentPhoto').onchange=async e=>{
