@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/topbar-green-v1549.css?v=1.5.52" />
   <link rel="stylesheet" href="/audit-logs-compact-v1552.css?v=1.5.52" />
   <link rel="stylesheet" href="/archive-compare-v1553.css?v=1.5.53" />
-  <link rel="stylesheet" href="/supply-franchise.css?v=1.5.54" />
+  <link rel="stylesheet" href="/supply-franchise.css?v=1.5.60" />
   <link rel="stylesheet" href="/topbar-responsive-v1554.css?v=1.5.55" />
   <link rel="stylesheet" href="/pos-compact-checkout-v1556.css?v=1.5.56" />
   <link rel="stylesheet" href="/sidebar-responsive-v1557.css?v=1.5.57" />
@@ -436,10 +436,10 @@
 <button class="catalog-tile active" type="button" data-admin-tab="products" aria-label="Products"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Products</span><img class="catalog-tab-icon" src="/assets/catalog/coffee-pack.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="categories" aria-label="POS Categories"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">POS Categories</span><img class="catalog-tab-icon" src="/assets/catalog/catalog-hierarchy-v1558.svg?v=1.5.58" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="ingredients" aria-label="Ingredients"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Ingredients</span><img class="catalog-tab-icon" src="/assets/catalog/coffee-removebg-preview.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
-<button class="catalog-tile" type="button" data-admin-tab="recipes" aria-label="Recipes & Costing"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Recipes &amp; Costing</span><img class="catalog-tab-icon" src="/assets/catalog/catalog-recipe-v1558.svg?v=1.5.58" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
+<button class="catalog-tile" type="button" data-admin-tab="recipes" aria-label="Recipes & Costing"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Recipes &amp; Costing</span><img class="catalog-tab-icon" src="/assets/catalog/catalog-recipe-v1558.svg?v=1.5.60" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="promos" aria-label="Promos"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Promos</span><img class="catalog-tab-icon" src="/assets/catalog/catalog-promo-v1558.svg?v=1.5.58" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 <button class="catalog-tile" type="button" data-admin-tab="packages" aria-label="Packages"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Packages</span><img class="catalog-tab-icon" src="/assets/catalog/goods.png" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
-<button class="catalog-tile" type="button" data-admin-tab="backups" aria-label="Backups"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Backups</span><img class="catalog-tab-icon" src="/assets/catalog/catalog-backup-v1558.svg?v=1.5.58" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
+<button class="catalog-tile" type="button" data-admin-tab="backups" aria-label="Backups"><span class="catalog-tile-status" aria-hidden="true"></span><span class="catalog-tile-label">Backups</span><img class="catalog-tab-icon" src="/assets/catalog/catalog-backup-v1558.svg?v=1.5.60" alt="" width="66" height="66" aria-hidden="true" decoding="async" loading="lazy" /></button>
 </div>
 
         <div id="admin-products" class="admin-panel active section-grid admin-layout">
@@ -574,7 +574,7 @@
       <label>Processing priority<select id="supplyPriority" required><option value="STANDARD">Standard</option><option value="URGENT">Urgent — additional processing fee</option></select></label>
       <div class="supply-totals"><div><span>Items subtotal</span><strong id="supplySubtotal">₱0.00</strong></div><div><span>Urgent processing fee</span><strong id="supplyUrgentFee">₱0.00</strong></div><div class="supply-total"><span>Order total</span><strong id="supplyTotal">₱0.00</strong></div></div>
       <label>Payment reference (optional)<input id="supplyPaymentReference" type="text" maxlength="100" placeholder="GCash, Maya, bank or other payment reference" autocomplete="off"/></label>
-      <label>Payment confirmation photo <span class="muted tiny">(JPG, PNG, WebP · max 1 MB)</span><input id="supplyPaymentPhoto" type="file" accept="image/jpeg,image/png,image/webp" required aria-describedby="supplyPhotoError"/></label>
+      <label>Payment confirmation photo <span class="muted tiny">(JPG, PNG, WebP · up to 8 MB, automatically compressed)</span><input id="supplyPaymentPhoto" type="file" accept="image/jpeg,image/png,image/webp" required aria-describedby="supplyPhotoError"/></label>
       <img id="supplyPhotoPreview" class="supply-photo-preview hidden" alt="Payment proof preview"/>
       <p id="supplyPhotoError" class="supply-error hidden" role="alert" aria-live="polite"></p>
       <p class="muted tiny">Payment is verified by Main Office before approval. This request does not automatically settle payment.</p>
@@ -794,6 +794,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.59"></script>
+  <script src="/app.js?v=1.5.60"></script>
 </body>
 </html>
