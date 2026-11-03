@@ -45,3 +45,37 @@
 #officeDetailOverlay .chat-photo-preview img{max-width:140px;max-height:90px;object-fit:contain;border-radius:8px}
 #officeDetailOverlay .chat-photo-preview button{background:none;border:0;color:#ac333e;cursor:pointer}
 @media(max-width:720px){#officeDetailOverlay .drawer-body{padding:14px}#officeDetailOverlay .chat-history .bubble{max-width:92%}}
+
+/* v1.5.61 — owner-only franchisee profiles and royalty ledger */
+#page-franchisees .panel{min-width:0}
+#page-franchisees .panel-head{flex-wrap:wrap;gap:12px}
+#franchiseSearch{width:min(100%,285px);border-radius:999px;padding-inline:16px}
+.franchise-profile-table{min-width:890px}
+.franchise-profile-table th{white-space:nowrap}
+.franchise-profile-table td{vertical-align:middle}
+.franchise-subline{display:block;font-size:10px;color:#698273;margin-top:5px;line-height:1.4}
+.royalty-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;white-space:nowrap}
+.royalty-badge.pending{background:#fff0ca;color:#9c681f}
+.royalty-badge.paid{background:#def5e7;color:#116a3a}
+.royalty-badge.unset{background:#f0f3f0;color:#64756b}
+.franchise-detail{margin-top:18px}
+.franchise-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0 18px}
+.franchise-summary-card{border:1px solid #dce9dd;background:#f8fbf8;border-radius:12px;padding:14px;min-width:0;overflow-wrap:anywhere}
+.franchise-summary-card small{display:block;font-size:10px;font-weight:750;color:#6b7e70}
+.franchise-summary-card strong{display:block;margin-top:7px;font-size:14px;color:#194b31;line-height:1.4}
+.franchise-fee-form{display:flex;flex-direction:row;align-items:flex-end;gap:12px;border:1px solid #dceadc;border-radius:12px;padding:16px;background:#f7fbf7;flex-wrap:wrap}
+.franchise-fee-form>div{flex:1 1 220px}
+.franchise-fee-form>div strong{font-size:14px}
+.franchise-fee-form>div p{margin:5px 0 0}
+.franchise-fee-form label{min-width:170px;flex:0 1 205px}
+.franchise-fee-form .btn{min-height:40px}
+.franchise-view-tabs{display:flex;align-items:stretch;gap:0;border-bottom:1px solid #dbe8de;margin:23px 0 15px}
+.franchise-view-tab{padding:12px 18px;border:0;border-bottom:3px solid transparent;background:transparent;color:#5c7864;font-size:13px;font-weight:850;cursor:pointer}
+.franchise-view-tab.active{color:#075D38;border-bottom-color:#075D38}
+.franchise-tab-splitter{width:1px;background:#c4d4c7;height:26px;align-self:center}
+#franchiseOrdersPanel table,#franchiseRoyaltiesPanel table{min-width:700px}
+#franchiseDetailClose{display:inline-flex;align-items:center;gap:8px;background:#075D38}
+#franchiseDetailClose span{font-size:19px;line-height:12px}
+#franchiseRoyaltyRows .table-action{white-space:nowrap}
+@media(max-width:900px){.franchise-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.franchise-summary{grid-template-columns:minmax(0,1fr)}.franchise-fee-form label{flex:1 1 100%}.franchise-fee-form button{width:100%}.franchise-view-tab{padding:12px 10px;font-size:12px}#franchiseSearch{width:100%}}
