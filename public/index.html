@@ -560,12 +560,12 @@
       </section>
 
 <section id="view-supply" class="view admin-only">
-  <div class="supply-head"><div><p class="eyebrow">FRANCHISE SUPPLY REQUESTS</p><h2>Supply Chain</h2><p class="muted">Order supplies from Main Office for one of your registered branches. Upload your payment proof and track fulfillment.</p></div><div class="supply-toolbar"><button type="button" id="supplyRefresh" class="primary">↻ Refresh</button><button type="button" id="supplyNotificationsButton" class="ghost">Notifications <span id="supplyUnreadCount" class="supply-badge">0</span></button></div></div>
+  <div class="supply-head"><div><p class="muted">Order supplies for your registered branches, upload payment proof and track delivery.</p></div><div class="supply-toolbar"><button type="button" id="supplyRefresh" class="primary"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M5 10a8 8 0 0 1 13-4l2 6M4 12l2 6a8 8 0 0 0 13-4"/></svg> Refresh</button><button type="button" id="supplyNotificationsButton" class="primary"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg> Notifications <span id="supplyUnreadCount" class="supply-badge">0</span></button></div></div>
   <div id="supplyAlert" class="supply-alert hidden" role="status"></div>
   <section id="supplyNotificationsPanel" class="card supply-notification-card hidden"><h3>Supply request notifications</h3><div id="supplyNotificationsList"></div><button type="button" class="ghost" id="supplyMarkRead">Mark all read</button></section>
   <div class="supply-layout">
     <section class="card supply-products"><div class="card-head"><div><p class="eyebrow">MAIN OFFICE PRICE LIST</p><h3>Select requested supplies</h3></div><input type="search" id="supplyProductSearch" placeholder="Search supplies..." aria-label="Search supply products"/></div>
-      <div class="supply-product-list" id="supplyProductsList" aria-live="polite"></div>
+      <div class="supply-product-list" id="supplyProductsList" aria-live="polite"></div><nav id="supplyProductPages" class="supply-pagination" aria-label="Supply product pages"></nav>
       <p class="muted tiny">Quantity is by unit of measure (UOM). Review the packing unit before ordering.</p>
     </section>
     <form id="supplyRequestForm" class="card supply-checkout">
@@ -578,16 +578,16 @@
       <img id="supplyPhotoPreview" class="supply-photo-preview hidden" alt="Payment proof preview"/>
       <p id="supplyPhotoError" class="supply-error hidden" role="alert" aria-live="polite"></p>
       <p class="muted tiny">Payment is verified by Main Office before approval. This request does not automatically settle payment.</p>
-      <button type="submit" id="supplyPlaceOrder" class="primary supply-submit">Submit supply request</button>
+      <button type="submit" id="supplyPlaceOrder" class="primary supply-submit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7M12 11v10"/></svg> Submit supply request</button>
     </form>
   </div>
   <div class="card supply-history"><div class="card-head"><div><p class="eyebrow">ORDER TRACKING</p><h3>My supply requests</h3></div><div class="supply-history-filters"><select id="supplyHistoryStatus"><option value="">All statuses</option><option value="PENDING_REVIEW">Pending review</option><option value="APPROVED">Approved</option><option value="ON_HOLD">On hold</option><option value="DENIED">Denied</option><option value="PREPARING">Preparing</option><option value="DISPATCHED">Dispatched</option><option value="DELIVERED">Delivered</option><option value="COMPLETED">Completed</option></select></div></div>
     <div class="table-wrap"><table><thead><tr><th>Request</th><th>Branch</th><th>Priority</th><th>Total</th><th>Progress</th><th>Submitted</th><th></th></tr></thead><tbody id="supplyOrdersBody"></tbody></table></div><nav id="supplyOrdersPagination" class="supply-pagination" aria-label="Supply order pages"></nav>
   </div>
-  <section id="supplyOrderDetail" class="card supply-detail hidden"><div class="card-head"><div><p class="eyebrow">CURRENT REQUEST</p><h3 id="supplyDetailHeading">Order details</h3></div><button type="button" class="ghost" id="supplyDetailClose">Close</button></div>
+  <section id="supplyOrderDetail" class="card supply-detail hidden"><div class="card-head"><div><p class="eyebrow">CURRENT REQUEST</p><h3 id="supplyDetailHeading">Order details</h3></div><button type="button" class="primary supply-close" id="supplyDetailClose"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg> Close</button></div>
     <div id="supplyDetailSummary" class="supply-detail-grid"></div><h4>Fulfillment timeline</h4><div id="supplyTimeline" class="supply-timeline"></div>
     <h4>Items</h4><div class="table-wrap"><table><thead><tr><th>Item</th><th>UOM</th><th>Quantity</th><th>Price</th></tr></thead><tbody id="supplyDetailItems"></tbody></table></div>
-    <h4>Messages with Main Office</h4><div id="supplyMessages" class="supply-messages"></div><form id="supplyMessageForm" class="supply-message-form"><input id="supplyMessageText" maxlength="1500" placeholder="Ask Main Office about this request..." required/><button type="submit" class="primary">Send</button></form>
+    <h4>Messages with Main Office</h4><div id="supplyMessages" class="supply-messages"></div><form id="supplyMessageForm" class="supply-message-form"><input id="supplyMessageText" maxlength="1500" placeholder="Ask Main Office about this request..." aria-label="Message Main Office"/><label class="supply-chat-file" title="Attach image"><svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM8 13l3-3 6 7M16 8h.01"/></svg><input id="supplyChatPhoto" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Attach photo to chat"/></label><button type="submit" class="primary">Send</button></form><div id="supplyChatPreview" class="supply-chat-preview hidden"></div>
   </section>
 </section>
       <section id="view-users" class="view admin-only">
