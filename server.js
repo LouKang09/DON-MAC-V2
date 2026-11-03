@@ -8,6 +8,7 @@ const { sendMail } = require('./lib/smtp');
 const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
+const supplyChain = require('./lib/supply-chain');
 const archiveComparison = require('./lib/archive-comparison');
 
 const ROOT = __dirname;
@@ -32,7 +33,8 @@ const PORT_EXPLICIT = String(process.env.STRICT_PORT || '').toLowerCase() === 't
 const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
-const APP_VERSION = '1.5.53-readonly-archive-compare';
+const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
+const APP_VERSION = '1.5.54-supply-chain-office';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -58,12 +60,12 @@ function text(res, status, body, contentType = 'text/plain; charset=utf-8', head
   res.end(payload);
 }
 
-async function readJson(req) {
+async function readJson(req,maxBytes=1024*1024) {
   return new Promise((resolve, reject) => {
     let raw = '';
     req.on('data', chunk => {
       raw += chunk;
-      if (raw.length > 1024 * 1024) reject(Object.assign(new Error('Request too large.'), { status: 413 }));
+      if (Buffer.byteLength(raw) > maxBytes) { reject(Object.assign(new Error('Request too large.'), { status: 413 })); req.resume(); }
     });
     req.on('end', () => {
       if (!raw) return resolve({});
@@ -1331,8 +1333,86 @@ function loginRateKey(req,username){return `${req.socket.remoteAddress||'local'}
 function checkLoginRate(req,username){const key=loginRateKey(req,username),now=Date.now(),windowMs=10*60*1000,max=20;const arr=(loginAttempts.get(key)||[]).filter(t=>now-t<windowMs);if(arr.length>=max)throw Object.assign(new Error('Too many login attempts for this account. Please try again later.'),{status:429});arr.push(now);loginAttempts.set(key,arr);}
 function clearLoginRate(req,username){loginAttempts.delete(loginRateKey(req,username));}
 
+function supplyOfficeAuth(req){
+  const secret=process.env.SUPPLY_OFFICE_SESSION_KEY||'';
+  const cookie=parseCookies(req).supply_office_session;
+  if(!secret||!cookie)return false;
+  const [payload,signature]=cookie.split('.');
+  if(!payload||!signature||payload.length>400)return false;
+  const expected=crypto.createHmac('sha256',secret).update(payload).digest('hex');
+  if(signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return false;
+  try{
+    const data=JSON.parse(Buffer.from(payload,'base64url').toString('utf8'));
+    return data.role==='main-office'&&data.exp>Date.now()&&data.exp<Date.now()+13*3600*1000;
+  }catch(_){return false;}
+}
+function issueSupplyOfficeSession(res){
+  const secret=process.env.SUPPLY_OFFICE_SESSION_KEY;
+  const payload=Buffer.from(JSON.stringify({role:'main-office',exp:Date.now()+12*3600*1000,
+    id:crypto.randomBytes(16).toString('hex')})).toString('base64url');
+  const signature=crypto.createHmac('sha256',secret).update(payload).digest('hex');
+  const secure=process.env.NODE_ENV==='production'||process.env.COOKIE_SECURE==='true'?'; Secure':'';
+  return 'supply_office_session='+payload+'.'+signature+'; HttpOnly; SameSite=Lax; Path=/api/supply/office; Max-Age=43200'+secure;
+}
+async function handleOfficeApi(req,res,p,method){
+  if(!SUPPLY_OFFICE_PORTAL)return json(res,404,{error:'Office portal unavailable on this service.'},safeHeaders());
+  if(method==='POST'&&p==='/api/supply/office/login'){
+    const credentials=await readJson(req);
+    const user=String(credentials.username||'').trim(),pass=String(credentials.password||'');
+    checkLoginRate(req,'supply-office-'+user);
+    const expected=String(process.env.SUPPLY_OFFICE_PASSWORD_SHA256||'');
+    const actual=crypto.createHash('sha256').update(pass).digest('hex');
+    const validUser=String(process.env.SUPPLY_OFFICE_USERNAME||'').toLowerCase()===user.toLowerCase();
+    if(!validUser||!expected||!process.env.SUPPLY_OFFICE_SESSION_KEY||
+       expected.length!==actual.length||!crypto.timingSafeEqual(Buffer.from(expected),Buffer.from(actual)))
+      return json(res,401,{error:'Invalid Main Office credentials or office access is not configured.'},safeHeaders());
+    clearLoginRate(req,'supply-office-'+user);
+    return json(res,200,{ok:true,role:'main-office'},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(res)}));
+  }
+  if(!supplyOfficeAuth(req))return json(res,401,{error:'Main Office sign-in required.'},safeHeaders());
+  if(method==='POST'&&p==='/api/supply/office/logout')
+    return json(res,200,{ok:true},safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
+  if(method==='GET'&&p==='/api/supply/office/me')return json(res,200,{role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db),safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/orders')return json(res,200,{orders:await supplyChain.list(db)},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.priceSettings(db),safeHeaders());
+  if(method==='PUT'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.setUrgentFee(db,(await readJson(req)).urgentFee),safeHeaders());
+  const match=p.match(/^\/api\/supply\/office\/orders\/([0-9a-f-]{36})(?:\/(status|messages))?$/i);
+  if(match){
+    const [,id,action]=match;
+    if(method==='GET'&&!action)return json(res,200,{order:await supplyChain.detail(db,id,null,true)},safeHeaders());
+    if(method==='POST'&&action==='status'){
+      const body=await readJson(req);
+      return json(res,200,await supplyChain.status(db,id,String(body.status||''),body.note||'',process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+    }
+    if(method==='POST'&&action==='messages')return json(res,201,await supplyChain.send(db,id,null,'office','Main Office',(await readJson(req)).body),safeHeaders());
+  }
+  return json(res,404,{error:'Unknown office endpoint.'},safeHeaders());
+}
+async function handleFranchiseSupplyApi(req,res,p,method,user){
+  if(SUPPLY_OFFICE_PORTAL)throw Object.assign(new Error('Use the separate Main Office portal.'),{status:403});
+  if(user.role!=='Admin')throw Object.assign(new Error('Supply Chain is available to franchise Owners and Co-Owners.'),{status:403});
+  const workspaceId=await supplyChain.scope(db,user);
+  if(method==='GET'&&p==='/api/supply/catalog')
+    return json(res,200,{...(await supplyChain.catalog(db)),branches:await supplyChain.ownerBranches(db,workspaceId)},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/orders')return json(res,200,{orders:await supplyChain.list(db,workspaceId)},safeHeaders());
+  if(method==='POST'&&p==='/api/supply/orders')return json(res,201,
+    {order:await supplyChain.submit(db,user,await readJson(req,2500000))},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/notifications')return json(res,200,await supplyChain.notices(db,user),safeHeaders());
+  if(method==='POST'&&p==='/api/supply/notifications/read')
+    return json(res,200,await supplyChain.markRead(db,user,(await readJson(req)).ids),safeHeaders());
+  const match=p.match(/^\/api\/supply\/orders\/([0-9a-f-]{36})(?:\/messages)?$/i);
+  if(match){
+    if(method==='GET'&&p.endsWith(match[1]))return json(res,200,{order:await supplyChain.detail(db,match[1],workspaceId,false)},safeHeaders());
+    if(method==='POST'&&p.endsWith('/messages'))return json(res,201,
+      await supplyChain.send(db,match[1],workspaceId,'franchise',user.username,(await readJson(req)).body),safeHeaders());
+  }
+  return json(res,404,{error:'Unknown supply endpoint.'},safeHeaders());
+}
 async function handleApi(req,res,url){
   const p=url.pathname,method=req.method;
+  if(SUPPLY_OFFICE_PORTAL && p!=='/api/health' && !p.startsWith('/api/supply/office/'))return json(res,404,{error:'Office portal only.'},safeHeaders());
+  if(p.startsWith('/api/supply/office/'))return handleOfficeApi(req,res,p,method);
   if(maintenanceMode)return json(res,503,{error:'Database maintenance is in progress. Please retry in a moment.'},safeHeaders({'Retry-After':'2'}));
   if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION},safeHeaders());
   if(method==='GET'&&p==='/api/health'){const probe=await db.query('SELECT 1 AS ok');return json(res,200,{ok:Number(probe.rows[0]?.ok||0)===1,app:'coffee-pos-web',version:APP_VERSION,engine:db.engine,time:nowIso(),uptimeSeconds:Math.round(process.uptime())},safeHeaders({'Cache-Control':'no-store'}));}
@@ -1373,6 +1453,7 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
+  if(p.startsWith('/api/supply/'))return handleFranchiseSupplyApi(req,res,p,method,user);
   if(method==='GET'&&p==='/api/account/subscription')
     return json(res,200,await getSubscriptionForUi(user),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/account/subscription/demo')
@@ -1509,11 +1590,17 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await supplyChain.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleApi(req,res,url);
+      if(SUPPLY_OFFICE_PORTAL){
+        const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/donmac-logo-hires.svg']);
+        const target=url.pathname==='/'?'/supply-office.html':url.pathname;
+        if(allowed.has(target)&&serveStatic(req,res,target))return;
+        return text(res,404,'Not found','text/plain; charset=utf-8',safeHeaders());
+      }
       if(serveStatic(req,res,url.pathname))return;
       if(req.method==='GET')return serveStatic(req,res,'/')||text(res,404,'Not found','text/plain; charset=utf-8',safeHeaders());
       text(res,404,'Not found','text/plain; charset=utf-8',safeHeaders());
