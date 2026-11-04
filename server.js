@@ -36,7 +36,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.72-csv-import';
+const APP_VERSION = '1.5.73-dashboard-accounts';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1121,40 +1121,86 @@ async function costingPdf(params){const report=await costingReport(params);const
 async function emailSalesReport(user,body){const params={period:body.period,date:body.date,cashier:body.cashier,branchId:body.branchId};const {report,filename,buffer}=await salesPdf(params);const settings=await getSettings();let to=settings.defaultReportEmail;if(user.role==='Admin'&&String(body.to||'').trim())to=String(body.to).trim();if(!to)throw Object.assign(new Error('Configure a default report recipient first.'),{status:400});if(to.length>320||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Object.assign(new Error('Report recipient email is invalid.'),{status:400});if(!process.env.SMTP_USER||!process.env.SMTP_PASS)throw Object.assign(new Error('Email is not configured on the server. Set SMTP_USER and SMTP_PASS in the server environment.'),{status:503});const daily=report.period==='daily';const subject=daily?'Daily Report Notification':`${titleCase(report.period)} Report Notification`;const bodyText=daily?'Hello, attached are the daily reports.':`Hello, attached are the ${report.period} reports.`;try{await sendMail({host:process.env.SMTP_HOST||'smtp.gmail.com',port:Number(process.env.SMTP_PORT||465),user:process.env.SMTP_USER,pass:process.env.SMTP_PASS,from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text:bodyText,attachments:[{filename,contentType:'application/pdf',data:buffer}]});await logAction(user,`Report emailed: ${filename}`,'Email Sent',to);return{ok:true,to,filename};}catch(err){await logAction(user,`Report email failed: ${filename}`,'Email Failed',err.message);const e=new Error('Unable to send the report email. Please check the server internet/SMTP settings and try again.');e.status=502;e.details={reason:err.message};throw e;}}
 
 /* Dashboard sales activity, branch scoped. Deleted covers void/cancel in legacy schema. */
+/* Dashboard activity is paged and branch-scoped; 5 sales per view. */
 async function dashboardActivity(user,params={}){
  const status=String(params.status||'all').toLowerCase(),period=String(params.period||'all').toLowerCase();
  if(!['all','sold','voided'].includes(status)||!['all','today','7days','30days'].includes(period))
-   throw Object.assign(new Error('Invalid dashboard activity filter.'),{status:400});
+  throw Object.assign(new Error('Invalid dashboard activity filter.'),{status:400});
+ const page=Math.min(10000,Math.max(1,Number(params.page)||1));
+ if(!Number.isSafeInteger(page))throw Object.assign(new Error('Invalid activity page.'),{status:400});
  const branchId=await branchSupport.salesScope(db,user,params.branchId);
+ if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
  const args=[],parts=[];
  if(branchId!=null){args.push(branchId);parts.push('branch_id=$'+args.length);}
  if(status!=='all'){args.push(status==='sold'?'Sold':'Deleted');parts.push('status=$'+args.length);}
  if(period!=='all'){
-   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-   const back=period==='today'?0:period==='7days'?-6:-29;
-   args.push(new Date(addDays(today,back)+'T00:00:00+08:00').toISOString());
-   parts.push('sold_at >= $'+args.length);
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const back=period==='today'?0:period==='7days'?-6:-29;
+  args.push(new Date(addDays(today,back)+'T00:00:00+08:00').toISOString());parts.push('sold_at >= $'+args.length);
  }
+ const where=parts.length?'WHERE '+parts.join(' AND '):'';
+ const total=Number((await db.query('SELECT COUNT(*) AS c FROM sales '+where,args)).rows[0]?.c||0);
+ const pages=Math.max(1,Math.ceil(total/5)),safePage=Math.min(page,pages);
  const query='SELECT id,reference,sold_at,cashier_name_snapshot,payment_mode,actual,order_type,customer_name,table_label,status FROM sales '+
-  (parts.length?'WHERE '+parts.join(' AND '):'')+' ORDER BY sold_at DESC,id DESC LIMIT 10';
+  where+' ORDER BY sold_at DESC,id DESC LIMIT 5 OFFSET '+(5*(safePage-1));
  const list=(await db.query(query,args)).rows;
  const ids=list.map(x=>Number(x.id)),byId=new Map();
  if(ids.length){
-  const rows=(await db.query('SELECT sale_id,product_name_snapshot,quantity FROM sale_items WHERE sale_id IN ('+
-    placeholders(1,ids.length)+') ORDER BY sale_id,id',ids)).rows;
-  for(const item of rows){
-   const id=Number(item.sale_id);
-   if(!byId.has(id))byId.set(id,[]);
-   byId.get(id).push({name:item.product_name_snapshot,qty:Number(item.quantity)});
+  const records=(await db.query('SELECT sale_id,product_name_snapshot,quantity,unit_price,line_total FROM sale_items WHERE sale_id IN ('+
+   placeholders(1,ids.length)+') ORDER BY sale_id,id',ids)).rows;
+  for(const item of records){
+   const id=Number(item.sale_id);if(!byId.has(id))byId.set(id,[]);
+   byId.get(id).push({name:item.product_name_snapshot,qty:Number(item.quantity),
+     unitPrice:Number(item.unit_price),lineTotal:Number(item.line_total)});
   }
  }
- return{status,period,rows:list.map(x=>({
+ return{status,period,page:safePage,pages,total,rows:list.map(x=>({
   reference:x.reference,soldAt:x.sold_at,cashier:x.cashier_name_snapshot||null,
   paymentMode:x.payment_mode,amount:Number(x.actual||0),orderType:x.order_type||'Take Away',
   customerName:x.customer_name||null,tableLabel:x.table_label||null,status:x.status,
   items:byId.get(Number(x.id))||[]
  }))};
 }
+
+/* User-facing widget settings are stored per owner workspace and plan.
+   Admin and Co-Owner share their franchise account's layout across devices. */
+const PLAN_WIDGETS={
+ PRO:['pro-bought-together','pro-addon-conversion','pro-sales-growth',
+  'pro-opportunity-hours','pro-product-pairings','pro-daily-insights','standout-insights'],
+ BUSINESS:['pro-bought-together','pro-addon-conversion','pro-sales-growth','pro-opportunity-hours',
+  'pro-product-pairings','pro-daily-insights','biz-branch-health','biz-same-store',
+  'biz-product-comparison','biz-cash-variance','biz-transaction-monitor',
+  'biz-stock-transfers','standout-insights']
+};
+async function widgetSettings(user,plan,body){
+ requireAdminRole(user);
+ if(!Object.hasOwn(PLAN_WIDGETS,plan))throw Object.assign(new Error('Invalid subscription plan.'),{status:400});
+ const ws=await workspaceIdForUser(user.id);
+ if(!ws)throw Object.assign(new Error('Franchise account workspace is unavailable.'),{status:403});
+ const key='dashboard_widgets_v1573_'+ws+'_'+plan;
+ if(body!=null){
+  const allowed=new Set(PLAN_WIDGETS[plan]);
+  if(!Array.isArray(body.order)||body.order.length>allowed.size||body.order.some(x=>!allowed.has(x))||
+    new Set(body.order).size!==body.order.length||
+    !Array.isArray(body.hidden)||body.hidden.length>allowed.size||body.hidden.some(x=>!allowed.has(x))||
+    new Set(body.hidden).size!==body.hidden.length)
+   throw Object.assign(new Error('Widget preferences contain invalid or duplicate cards.'),{status:400});
+  const setting={order:body.order,hidden:body.hidden};
+  await db.query('INSERT INTO app_settings(setting_key,setting_value,updated_at) VALUES($1,$2,$3) '+
+    'ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=excluded.updated_at',
+    [key,JSON.stringify(setting),nowIso()]);
+  return setting;
+ }
+ const found=(await db.query('SELECT setting_value FROM app_settings WHERE setting_key=$1',[key])).rows;
+ if(!found.length)return{order:[],hidden:[]};
+ try{
+  const value=JSON.parse(found[0].setting_value);
+  const allowed=new Set(PLAN_WIDGETS[plan]);
+  return{order:Array.isArray(value.order)?value.order.filter(x=>allowed.has(x)):[],
+    hidden:Array.isArray(value.hidden)?value.hidden.filter(x=>allowed.has(x)):[]};
+ }catch(_){throw Object.assign(new Error('Widget settings require review.'),{status:409});}
+}
+
 async function dashboardData(params={},branchId=null){
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const todayR=await salesReport({period:'daily',date:today,branchId});const monthR=await salesReport({period:'monthly',date:today,branchId});
@@ -1242,6 +1288,7 @@ async function planDashboardInsights(user,requestedBranch){
   requireAdminRole(user);
   const plan=(await subscriptionState()).plan;
   const branchId=await branchSupport.salesScope(db,user,requestedBranch);
+  if(branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
   const today=new Intl.DateTimeFormat('en-CA',{
     timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'
   }).format(new Date());
@@ -1709,9 +1756,14 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/branches')return json(res,200,{branches:await accessibleBranches(user)},safeHeaders());
+  if((method==='GET'||method==='PUT')&&p==='/api/dashboard/widgets'){
+    const plan=String(url.searchParams.get('plan')||'').toUpperCase();
+    return json(res,200,await widgetSettings(user,plan,method==='PUT'?await readJson(req,4096):null),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/dashboard/activity')return json(res,200,await dashboardActivity(user,Object.fromEntries(url.searchParams)),safeHeaders());
   if(method==='GET'&&p==='/api/dashboard/plan-insights')return json(res,200,await planDashboardInsights(user,url.searchParams.get('branchId')),safeHeaders());
-  if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
+  if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/cashiers'){
     const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
     return json(res,200,await reportCashierChoices(branchId),safeHeaders());
