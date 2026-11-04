@@ -70,6 +70,12 @@ function selectPage(name){
 }
 document.querySelectorAll('[data-office-page]').forEach(b=>b.onclick=()=>selectPage(b.dataset.officePage));
 $('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else refresh();};
+const refreshIcon='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg>';
+$('officeRefresh').innerHTML=refreshIcon;
+$('officeRefresh').classList.add('office-round-refresh');
+$('officeRefresh').setAttribute('aria-label','Refresh Main Office data');
+$('officeRefresh').setAttribute('title','Refresh Main Office data');
+
 $('officeClock').textContent=new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(new Date());
 async function refresh(){
  if($('officeApp').classList.contains('hidden'))return;
@@ -84,23 +90,66 @@ async function refresh(){
   if(current&&$('officeDetailOverlay').getAttribute('aria-hidden')==='false')await openOrder(current.id,true);
  }catch(err){notice(err.message,true);}
 }
+const expandedOwnerGroups=new Set();
 function render(){
  const q=$('officeSearch').value.toLowerCase().trim(),status=$('officeStatusFilter').value;
- const matched=all.filter(x=>(!status||x.status===status)&&(!q||
-  [x.id,x.branch_name,x.requester,x.status,x.priority].some(y=>String(y||'').toLowerCase().includes(q))));
- const pages=Math.max(1,Math.ceil(matched.length/PAGE_SIZE));page=Math.max(1,Math.min(page,pages));
- const subset=matched.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
- $('officeOrdersBody').innerHTML=subset.map(o=>`<tr><td><b>${esc(o.id.slice(0,8).toUpperCase())}</b></td>
- <td><strong>${esc(o.branch_name||'—')}</strong><div class="muted">${esc(o.requester||'Franchise')}</div></td>
- <td>${o.priority==='URGENT'?'⚡ Urgent':'Standard'}</td><td><b>${peso(o.total)}</b></td>
- <td><span class="badge ${esc(o.status.toLowerCase())}">${esc(title(o.status))}</span></td>
- <td>${stamp(o.created_at)}</td><td><button class="table-action" data-office-open="${esc(o.id)}">Review</button></td></tr>`).join('')
- ||'<tr><td colspan="7">No matching requests.</td></tr>';
- $('officeOrderPages').innerHTML='<span>Page '+page+' of '+pages+' · '+matched.length+' requests</span>'+
- '<button type="button" data-office-page-nav="-1" '+(page===1?'disabled':'')+'>Previous</button>'+
- '<button type="button" data-office-page-nav="1" '+(page===pages?'disabled':'')+'>Next</button>';
- $('officeOrdersBody').querySelectorAll('[data-office-open]').forEach(b=>b.onclick=()=>openOrder(b.dataset.officeOpen));
- $('officeOrderPages').querySelectorAll('button').forEach(b=>b.onclick=()=>{page+=Number(b.dataset.officePageNav);render();});
+ const matched=all.filter(o=>(!status||o.status===status)&&(!q||
+  [o.id,o.franchise_owner,o.branch_name,o.requester,o.status,o.priority].some(y=>String(y||'').toLowerCase().includes(q))));
+ const byAccount=new Map();
+ for(const order of matched){
+  const account=String(order.workspace_id||'unknown-'+order.requested_by);
+  if(!byAccount.has(account))byAccount.set(account,{
+    id:account,owner:order.franchise_owner||order.requester||'Franchise owner',orders:[],total:0,branches:new Set()
+  });
+  const group=byAccount.get(account);
+  group.orders.push(order);group.total+=Number(order.total||0);
+  if(order.branch_name)group.branches.add(order.branch_name);
+ }
+ const groups=[...byAccount.values()].sort((x,y)=>
+  new Date(y.orders[0]?.created_at||0)-new Date(x.orders[0]?.created_at||0));
+ const pages=Math.max(1,Math.ceil(groups.length/PAGE_SIZE));
+ page=Math.max(1,Math.min(page,pages));
+ const chosen=groups.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
+ const lines=[];
+ for(const g of chosen){
+  const open=expandedOwnerGroups.has(g.id);
+  const pending=g.orders.filter(o=>o.status==='PENDING_REVIEW').length;
+  const branches=[...g.branches];
+  lines.push('<tr class="office-account-summary"><td>'+
+   '<button class="office-account-expand" type="button" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+
+   '" aria-label="'+(open?'Collapse':'Expand')+' purchase orders for '+esc(g.owner)+'">'+
+   '<span class="office-account-chevron" aria-hidden="true">'+(open?'⌃':'⌄')+'</span>'+
+   '<strong>'+g.orders.length+' order'+(g.orders.length===1?'':'s')+'</strong></button></td>'+
+   '<td><strong>'+esc(g.owner)+'</strong><div class="muted">Owner account · '+branches.length+' branch'+(branches.length===1?'':'es')+
+   '</div><small>'+esc(branches.slice(0,3).join(', '))+(branches.length>3?'…':'')+'</small></td>'+
+   '<td>Franchise account</td><td><b>'+peso(g.total)+'</b></td>'+
+   '<td><span class="office-account-status">'+pending+' awaiting review</span></td>'+
+   '<td>'+stamp(g.orders[0]?.created_at)+'</td><td><button type="button" class="office-account-expand office-account-expand-tail" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+'">'+(open?'Collapse':'Expand')+'</button></td></tr>');
+  if(open){
+   for(const o of g.orders){
+    lines.push('<tr class="office-account-order"><td><b>'+esc(o.id.slice(0,8).toUpperCase())+'</b></td>'+
+     '<td><strong>'+esc(o.branch_name||'—')+'</strong><div class="muted">'+esc(o.requester||'Franchise')+'</div></td>'+
+     '<td>'+(o.priority==='URGENT'?'⚡ Urgent':'Standard')+'</td><td><b>'+peso(o.total)+'</b></td>'+
+     '<td><span class="badge '+esc(o.status.toLowerCase())+'">'+esc(title(o.status))+'</span></td>'+
+     '<td>'+stamp(o.created_at)+'</td>'+
+     '<td><button class="table-action" data-office-open="'+esc(o.id)+'">Review</button></td></tr>');
+   }
+  }
+ }
+ $('officeOrdersBody').innerHTML=lines.join('')||'<tr><td colspan="7">No matching franchise accounts.</td></tr>';
+ $('officeOrderPages').innerHTML='<span>Page '+page+' of '+pages+' · '+groups.length+' franchise owners · '+matched.length+' orders</span>'+
+  '<button type="button" data-office-page-nav="-1" '+(page===1?'disabled':'')+'>Previous</button>'+
+  '<button type="button" data-office-page-nav="1" '+(page===pages?'disabled':'')+'>Next</button>';
+ $('officeOrdersBody').querySelectorAll('[data-office-open]').forEach(button=>
+  button.onclick=()=>openOrder(button.dataset.officeOpen));
+ $('officeOrdersBody').querySelectorAll('[data-office-owner]').forEach(button=>button.onclick=()=>{
+  const id=button.dataset.officeOwner;
+  if(expandedOwnerGroups.has(id))expandedOwnerGroups.delete(id);else expandedOwnerGroups.add(id);
+  render();
+ });
+ $('officeOrderPages').querySelectorAll('button').forEach(button=>button.onclick=()=>{
+  page+=Number(button.dataset.officePageNav);render();
+ });
 }
 $('officeSearch').oninput=()=>{page=1;render();};
 $('officeStatusFilter').onchange=()=>{page=1;render();};
