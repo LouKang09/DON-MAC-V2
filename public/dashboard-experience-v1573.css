@@ -39,3 +39,25 @@ button.unified-refresh-circle svg{width:19px!important;height:19px!important;fle
 button.unified-refresh-circle:hover{background:#d5eddd!important;border-color:#89c6a0!important}
 @media(max-width:650px){#view-dashboard .dashboard-account-filter{justify-content:space-between}
  #view-dashboard #dashboardBranchWrap{min-width:0;flex:1;max-width:230px}}
+
+/* Keep the larger Customize Widgets action below the divider without overlap. */
+#view-dashboard .plan-widget-heading{padding-bottom:52px!important;margin-bottom:15px!important}
+#view-dashboard .plan-widget-heading #planWidgetCustomize{
+ top:43px!important;right:0!important;min-width:174px!important;min-height:43px!important;
+ background:#075d38!important;color:#fff!important;border:1px solid #075d38!important;
+}
+#view-dashboard .pw-save-state{margin:4px 0 14px;font-size:11px;color:#447959}
+#view-dashboard .pw-transfer-scroll{overflow-x:auto}
+#view-dashboard .pw-transfer-table{width:100%;border-collapse:collapse;min-width:430px;font-size:11px}
+#view-dashboard .pw-transfer-table th{padding:10px 8px;text-align:left;background:#eef6f0;
+ color:#436852;border-bottom:1px solid #d9e6dc;font-size:10px;white-space:nowrap}
+#view-dashboard .pw-transfer-table td{padding:9px 8px;border-bottom:1px solid #ebf2ec;vertical-align:top}
+#view-dashboard .pw-transfer-table button{padding:6px 10px;border:1px solid #bfdcc8;
+ background:#edf7ef;color:#12633d;border-radius:8px;font-size:11px;font-weight:750;cursor:pointer}
+#view-dashboard .pw-transfer-table tr[data-transfer-detail][hidden],
+#view-dashboard .activity-items-detail[hidden]{display:none!important}
+#view-dashboard .pw-transfer-detail{padding:11px;background:#f5faf6;border-left:3px solid #358d5a}
+#view-dashboard .pw-transfer-detail p{margin:7px 0;color:#657d69}
+#view-dashboard .pw-transfer-detail table{width:100%;border-collapse:collapse}
+#view-dashboard .pw-transfer-detail th{padding:6px 9px;background:#eaf5ed}
+#view-dashboard .pw-transfer-detail td{padding:6px 9px;background:#fff}
