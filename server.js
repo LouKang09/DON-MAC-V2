@@ -1396,18 +1396,42 @@ async function planDashboardInsights(user,requestedBranch){
     const reviews=within(sales,dayMinus(29),today);
     const voided=reviews.filter(x=>x.status==='Deleted').length;
     const discounted=last30.filter(x=>Number(x.discount_amount||0)>0).length;
-    const transfersR=await db.query(
-      "SELECT reference,branch,created_at,COUNT(*) AS ingredient_lines "+
-      "FROM inventory_movements WHERE movement_type='TRANSFER' "+
-      "GROUP BY reference,branch,created_at ORDER BY created_at DESC LIMIT 8"
-    );
+    // Transfer records are scoped to the current owner account's users.
+    // Branch filters match the recorded destination, not a nonexistent origin field.
+    const workspaceId=await workspaceIdForUser(user.id);
+    const transferParams=[workspaceId];
+    let destinationFilter='';
+    if(branchId!=null){
+      const selected=(await db.query('SELECT name FROM branches WHERE id=$1',[branchId])).rows[0];
+      if(selected){transferParams.push(selected.name);destinationFilter=' AND LOWER(m.branch)=LOWER($2)';}
+    }
+    const transferRows=(await db.query(
+      'SELECT m.reference,m.branch,m.created_at,m.remarks,m.received_by,m.quantity_change,'+
+      'i.display_name AS ingredient,i.uom FROM inventory_movements m '+
+      'JOIN ingredients i ON i.id=m.ingredient_id '+
+      "WHERE m.movement_type='TRANSFER' "+
+      'AND EXISTS (SELECT 1 FROM chat_memberships cm WHERE cm.user_id=m.created_by AND cm.workspace_id=$1)'+
+      destinationFilter+' ORDER BY m.created_at DESC,m.id DESC LIMIT 1000',transferParams
+    )).rows;
+    const transferGroups=new Map();
+    for(const line of transferRows){
+      const key=String(line.reference||'')+'|'+String(line.branch||'');
+      if(!transferGroups.has(key))transferGroups.set(key,{
+        reference:line.reference,location:line.branch||'Unknown location',
+        description:'Stock transfer '+String(line.reference||'').slice(0,14),
+        dateTime:line.created_at,remarks:line.remarks||'',receivedBy:line.received_by||'',
+        lines:[]
+      });
+      transferGroups.get(key).lines.push({
+        description:line.ingredient,uom:line.uom,quantity:Math.abs(Number(line.quantity_change||0))
+      });
+    }
     result.business={
       branches:storeResults,products,
       cashVariance:{available:false,reason:'A physical cash-count recording workflow is needed before variance can be calculated.'},
       health:{available:false,reason:'Define a validated branch health formula and branch-level stock data first.'},
       reviewSignals:{voided,discounted,scope:'rolling 30 days',note:'Review signals only; not evidence of suspicious activity.'},
-      transfers:transfersR.rows.map(x=>({reference:x.reference,branch:x.branch,
-        createdAt:x.created_at,items:Number(x.ingredient_lines),status:'Recorded transfer'})),
+      transfers:[...transferGroups.values()].slice(0,15),
       sameStoreEligible:storeResults.filter(x=>x.comparable).length
     };
   }
