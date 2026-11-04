@@ -1,0 +1,34 @@
+/* Sales CSV guided importer, intentionally isolated from read-only archive compare. */
+#admin-backups .csv-sales-import{margin:20px 0;border:1px solid #d9e9dd;background:#fbfefb;border-radius:15px;padding:18px}
+#admin-backups .csv-sales-heading{display:flex;gap:18px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px}
+#admin-backups .csv-sales-heading h4{margin:5px 0 8px;color:#214e33;font-size:20px}
+#admin-backups .csv-sales-heading p{max-width:710px;font-size:12px;line-height:1.5;margin:0}
+#admin-backups .csv-sales-label{display:inline-block;border:1px solid #cfe8d6;color:#28714b;background:#eaf7ee;border-radius:7px;padding:8px 10px;font-size:11px;font-weight:800}
+#admin-backups .csv-sales-info{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#admin-backups .csv-sales-info>div{border:1px solid #e1ece5;background:#fff;border-radius:11px;padding:15px;min-width:0}
+#admin-backups .csv-sales-info strong{display:block;font-size:13px;color:#2b6042;margin-bottom:7px}
+#admin-backups .csv-sales-info p{font-size:11px;color:#66796c;line-height:1.55;margin:6px 0 11px}
+#admin-backups .csv-sales-info button{padding:8px 13px;border:1px solid #c8e1d0;border-radius:9px;background:#eff7f1;color:#196b42;font-size:12px;font-weight:750}
+#admin-backups .csv-sales-guide{border:1px solid #e0ece3;background:#fff;border-radius:10px;padding:12px 15px;margin:12px 0}
+#admin-backups .csv-sales-guide summary{cursor:pointer;color:#27623f;font-weight:800;font-size:12px}
+#admin-backups .csv-sales-guide .table-wrap{overflow:auto;margin-top:12px}
+#admin-backups .csv-sales-guide table th,#admin-backups .csv-sales-guide table td{padding:9px 10px;font-size:11px;line-height:1.4}
+#admin-backups .csv-sales-guide code{font-size:11px;color:#245d3b}
+#admin-backups .csv-sales-actions{display:flex;gap:15px;align-items:flex-end;flex-wrap:wrap;margin:14px 0 8px}
+#admin-backups .csv-sales-actions>label{flex:1;min-width:220px;font-size:12px;color:#3d5e4a;font-weight:750}
+#admin-backups .csv-sales-actions input[type=file]{display:block;margin-top:8px;width:100%;font-size:12px;border:1px solid #d8e6dc;background:#fff;padding:11px;border-radius:9px}
+#admin-backups .csv-sales-actions .primary{min-height:42px;font-size:12px}
+#admin-backups .csv-sales-message{font-size:12px;color:#4a795a;background:#f0f9f1;border-radius:8px;padding:11px 13px;line-height:1.5}
+#admin-backups .csv-sales-message.is-error{background:#fff3ee;color:#9c4a36}
+#admin-backups .csv-sales-errors{background:#fff5f1;color:#994b38;border:1px solid #efcfc1;padding:12px;border-radius:10px;margin:10px 0;font-size:12px}
+#admin-backups .csv-sales-errors.hidden,#admin-backups .csv-sales-preview.hidden{display:none!important}
+#admin-backups .csv-sales-errors ul{padding-left:19px;margin:8px 0;line-height:1.6}
+#admin-backups .csv-sales-preview{border:1px solid #d8e6d8;border-radius:12px;background:white;margin-top:15px;padding:14px}
+#admin-backups .csv-sales-preview h5{font-size:14px;margin:0 0 5px;color:#26543a}
+#admin-backups .csv-sales-preview p{font-size:12px;margin:0 0 10px}
+#admin-backups .csv-sales-preview .table-wrap{max-height:280px;overflow:auto}
+#admin-backups .csv-sales-preview table th,#admin-backups .csv-sales-preview table td{font-size:11px;padding:9px 8px}
+#admin-backups .csv-sales-confirm{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:#365d44;font-weight:650;line-height:1.5;margin:16px 0 10px}
+#admin-backups .csv-sales-confirm input{margin:3px 0 0;flex-shrink:0}
+#admin-backups #csvSalesCommit:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:720px){#admin-backups .csv-sales-info{grid-template-columns:1fr}#admin-backups .csv-sales-import{padding:12px}}
