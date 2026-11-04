@@ -118,10 +118,9 @@
  }
  const badge=(id)=>id==='biz-cash-variance'||id==='biz-branch-health'?'NEEDS CONFIGURATION':'LIVE DATA';
  function cardHTML(item,p,b){
-   const [id,title]=item;
-   return '<article class="pw-card" data-pw-card="'+esc(id)+'"><div class="pw-card-title"><h4>'+esc(title)+
-    '</h4><span class="pw-badge'+(badge(id)==='NEEDS CONFIGURATION'?' planned':'')+'">'+badge(id)+'</span></div>'+
-    '<div class="pw-card-body">'+renderCardBody(id,p,b)+'</div></article>';
+  const [id,title]=item;
+  return '<article class="pw-card" data-pw-card="'+esc(id)+'"><div class="pw-card-title"><h4>'+esc(title)+
+   '</h4></div><div class="pw-card-body">'+renderCardBody(id,p,b)+'</div></article>';
  }
  function renderCustom(){
    const el=$('planWidgetCustomizer');el.classList.toggle('hidden',!customizing);
@@ -136,20 +135,17 @@
       '<button type="button" data-pw-move="'+esc(entry[0])+'" data-direction="1" '+(i===entries.length-1?'disabled':'')+' aria-label="Move '+esc(entry[1])+' down">↓</button></div></div>').join('')+'</div>';
  }
  function redraw(){
-   const data=analytics,plan=subscription?.plan;
-   root.hidden=!roleAllowed||!subscription||!data;
-   if(root.hidden)return;
-   $('planWidgetHeading').textContent=(plan==='BUSINESS'?'Business':'Pro')+' Dashboard Insights';
-   $('planWidgetDescription').textContent=plan==='BUSINESS'
-     ?'Pro analytics plus the selected Business concepts, calculated from recorded POS data where supported.'
-     :'Your selected Pro analytics, calculated from recorded POS data where supported.';
-   const selected=ordered().filter(([id])=>!hiddenState[id]);
-   const p=data.pro||{},b=plan==='BUSINESS'?data.business:null;
-   $('planWidgetCards').innerHTML=selected.map(item=>cardHTML(item,p,b)).join('');
-   const warn=$('planWidgetError');
-   warn.classList.toggle('hidden',!data.partial);
-   if(data.partial)warn.textContent='High transaction volume: this analysis was capped to recent records. Verify detailed reports for a complete period.';
-   renderCustom();
+  const data=analytics,plan=subscription?.plan;
+  root.hidden=false;
+  const holder=$('planWidgetFeatureCards');
+  if(!roleAllowed||!subscription||!data){holder.replaceChildren();return;}
+  $('planWidgetHeading').textContent=(plan==='BUSINESS'?'Business':'Pro')+' Dashboard Insights';
+  const selected=ordered().filter(([id])=>!hiddenState[id]);
+  holder.innerHTML=selected.map(item=>cardHTML(item,data.pro||{},plan==='BUSINESS'?data.business:null)).join('');
+  const warning=$('planWidgetError');
+  warning.classList.toggle('hidden',!data.partial);
+  if(data.partial)warning.textContent='High volume analysis cap reached; detailed reports contain the full history.';
+  renderCustom();
  }
  function updateReference(){
    const container=$('advancedReferenceContent'),frame=$('advancedReferenceFrame');
@@ -181,8 +177,8 @@
      if(d.plan!==subscription.plan){subscription={...subscription,plan:d.plan};getSettings();}
      redraw();
    }catch(e){
-     if(token!==seq)return;loading=false;root.hidden=!roleAllowed;
-     $('planWidgetCards').innerHTML='';
+     if(token!==seq)return;loading=false;root.hidden=false;
+     $('planWidgetFeatureCards').replaceChildren();
      $('planWidgetError').classList.remove('hidden');
      $('planWidgetError').textContent=e.message||'Unable to load analytics.';
    }
@@ -198,7 +194,7 @@
  }
  function render(d){
    if(!d||!subscription)return;
-   if(!loading)fetchAnalytics();
+   if(!loading&&roleAllowed)fetchAnalytics();
  }
  function onViewChange(view){
    if(view==='advanced')updateReference();
