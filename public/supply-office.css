@@ -79,3 +79,31 @@
 #franchiseRoyaltyRows .table-action{white-space:nowrap}
 @media(max-width:900px){.franchise-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.franchise-summary{grid-template-columns:minmax(0,1fr)}.franchise-fee-form label{flex:1 1 100%}.franchise-fee-form button{width:100%}.franchise-view-tab{padding:12px 10px;font-size:12px}#franchiseSearch{width:100%}}
+
+/* v1.5.73 — owner-grouped purchase orders and compact refresh */
+#officeRefresh.office-round-refresh{
+ display:inline-grid;place-items:center;flex:0 0 40px;
+ width:40px;height:40px;min-width:40px;padding:0;
+ border:1px solid #b8ddc5;border-radius:50%;
+ background:#e5f5ea;color:#075d38;box-shadow:none;
+}
+#officeRefresh.office-round-refresh:hover{background:#d6ecdf;border-color:#87c49e}
+#officeRefresh.office-round-refresh svg{width:20px;height:20px}
+#officeOrdersBody tr.office-account-summary{background:#f4faf5}
+#officeOrdersBody tr.office-account-summary td{border-bottom:1px solid #d5e6da;vertical-align:middle}
+#officeOrdersBody tr.office-account-summary td:first-child{font-weight:800}
+#officeOrdersBody tr.office-account-summary td strong{color:#235337}
+#officeOrdersBody tr.office-account-summary small{display:block;color:#7b9281;font-size:10px;margin-top:5px}
+#officeOrdersBody .office-account-expand{
+ display:inline-flex;align-items:center;gap:9px;background:transparent;border:0;
+ border-radius:8px;color:#19613d;font-size:12px;font-weight:800;
+ padding:8px 9px;cursor:pointer
+}
+#officeOrdersBody .office-account-expand:hover{background:#e1f0e6}
+#officeOrdersBody .office-account-chevron{display:grid;place-items:center;
+ background:#e2f1e6;border:1px solid #c6e1d0;border-radius:50%;
+ width:27px;height:27px;font-size:19px;line-height:1}
+#officeOrdersBody .office-account-status{font-size:11px;color:#526b58}
+#officeOrdersBody tr.office-account-order{background:#fff}
+#officeOrdersBody tr.office-account-order td:first-child{padding-left:27px}
+#officeOrdersBody tr.office-account-order td{font-size:12px;border-bottom:1px solid #edf3ec}
