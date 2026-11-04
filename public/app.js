@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.71.1-dashboard';
+  const VERSION = '1.5.72-sales-csv';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -86,6 +86,7 @@
       loadCss('usersManagementRefinementV1569','/users-management-refinement-v1569.css');
       loadCss('planDashboardV1570','/plan-dashboard-v1570.css');
       loadCss('dashboardCompactV1571','/dashboard-compact-v1571.css');
+      loadCss('csvSalesImportV1572','/sales-csv-import-v1572.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
@@ -104,6 +105,7 @@
       await loadScript('/pos-refresh.js');
       await loadScript('/dashboard-v1512.js');
       await loadScript('/dashboard-compact-v1571.js');
+      await loadScript('/sales-csv-import-v1572.js');
       // Admin-only read-only preview; keep all current dashboard renderers unchanged.
       await loadScript('/premium-dashboard-feature-gallery-v1533.js');
       await loadScript('/reference-dashboard-preview-v1535.js');

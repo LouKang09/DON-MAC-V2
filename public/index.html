@@ -536,7 +536,49 @@
           <div class="catalog-backup-options">
             <div><p class="eyebrow">PORTABLE DATA EXPORT</p><h4>Keep your own copy</h4><p class="muted">Download a secure data snapshot for archiving. Export is not an automatic restore and does not include passwords or active sessions.</p><button id="downloadDataArchive" type="button" class="primary catalog-download-button"><svg class="catalog-download-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg> Download Data Archive</button></div>
             <div><p class="eyebrow">OPTIONAL RETENTION ADD-ON</p><h4>Historical database retention</h4><p class="muted">Proposed pricing: ₱299/month or ₱2,990/year. Billing and retention enforcement are not active during development.</p><label class="catalog-active-row"><input id="retentionDemoEnabled" type="checkbox"/><span>Preview subscribed retention</span><span class="catalog-help" tabindex="0" data-tooltip="Development only. This switch previews frequency controls. It does not start billing or guarantee off-site backups."><img class="catalog-question-icon" src="/assets/catalog/question.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /></span></label><label class="catalog-backup-frequency">Backup frequency<select id="retentionFrequency" disabled><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label><button type="button" id="saveRetentionPreference" class="primary"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Preference</button></div>
-          </div><section class="catalog-archive-compare" aria-labelledby="catalogArchiveCompareTitle">
+          </div>
+          <section class="csv-sales-import" aria-labelledby="csvSalesTitle">
+            <div class="csv-sales-heading"><div><p class="eyebrow">HISTORICAL SALES · DATA MIGRATION</p><h4 id="csvSalesTitle">Import Sales from Excel / CSV</h4>
+              <p class="muted">Already have sales in Excel? Save the sheet as CSV UTF-8, then preview and validate it here. Only approved rows will be imported, without changing today's inventory.</p>
+            </div><span class="csv-sales-label">Preview before import</span></div>
+            <div class="csv-sales-info">
+              <div><strong>1. Download the exact CSV template</strong><p>One row per item; repeat sale-level columns for items sharing the same reference.</p>
+                <button id="csvSalesTemplate" type="button" class="ghost">Download CSV Template</button></div>
+              <div><strong>2. Convert and validate your Excel file</strong><p>In Excel: Save As → CSV UTF-8 (Comma delimited). References must be unique; dates use Philippine local time.</p>
+                <p id="csvSalesBranches" class="muted tiny">Loading branch names…</p></div>
+            </div>
+            <details class="csv-sales-guide">
+              <summary>View required fields and database-compatible format</summary>
+              <div class="table-wrap"><table aria-label="Sales CSV column requirements"><thead><tr><th>Column</th><th>Format / rule</th></tr></thead><tbody>
+                <tr><td><code>reference</code></td><td>Unique sale ID, maximum 80 characters. Repeat for every item belonging to one sale.</td></tr>
+                <tr><td><code>sold_at</code></td><td>YYYY-MM-DD HH:mm, Philippine local time (e.g. 2026-10-30 14:30).</td></tr>
+                <tr><td><code>branch_name</code></td><td>Must match an existing branch name.</td></tr>
+                <tr><td><code>status</code></td><td>Sold, Voided, or Cancelled. Unpaid/pending cannot be imported into this sales table.</td></tr>
+                <tr><td><code>payment_mode</code></td><td>Cash or GCash (supported by the current database constraint).</td></tr>
+                <tr><td><code>item_name</code></td><td>Product name, 1–150 characters, one row per item.</td></tr>
+                <tr><td><code>quantity</code></td><td>Positive number, at most 3 decimal places.</td></tr>
+                <tr><td><code>unit_price</code></td><td>Non-negative number, at most 2 decimal places, without currency symbol or commas.</td></tr>
+                <tr><td><code>sale_total</code></td><td>Repeated total for this sale: sum of item quantities × unit prices minus discount.</td></tr>
+                <tr><td colspan="2"><b>Optional columns:</b> <code>customer_name</code>, <code>cashier_name</code>, <code>order_type</code> (Dine In / Take Away / Order Online), <code>discount_amount</code>, <code>payment_reference</code>, <code>remark</code>.</td></tr>
+              </tbody></table></div>
+              <p class="muted tiny">Imports do not affect current stock. Historical recipe costs cannot be reconstructed from sales totals, so legacy profit/costing figures require separate verification. Existing sales are never overwritten.</p>
+            </details>
+            <div class="csv-sales-actions">
+              <label for="csvSalesFile">Choose sales CSV file (up to 1 MB, 500 item rows)
+                <input id="csvSalesFile" type="file" accept=".csv,text/csv" aria-describedby="csvSalesMessage" />
+              </label>
+              <button id="csvSalesPreview" class="primary" type="button">Preview &amp; Validate</button>
+            </div>
+            <p id="csvSalesMessage" class="csv-sales-message" role="status" aria-live="polite">No CSV selected yet.</p>
+            <div id="csvSalesErrors" class="csv-sales-errors hidden" role="alert"></div>
+            <div id="csvSalesPreviewResult" class="csv-sales-preview hidden">
+              <h5>Import Preview</h5><p id="csvSalesSummary" class="muted"></p>
+              <div class="table-wrap"><table aria-label="Sales import preview"><thead><tr><th>Reference</th><th>Date</th><th>Branch</th><th>Status</th><th>Items</th><th class="num">Total</th></tr></thead><tbody id="csvSalesPreviewRows"></tbody></table></div>
+              <label class="csv-sales-confirm"><input id="csvSalesConfirm" type="checkbox" /> I have reviewed the preview. I understand the import is permanent and does not update inventory or historical costs.</label>
+              <button type="button" id="csvSalesCommit" class="primary" disabled>Import Validated Sales</button>
+            </div>
+          </section>
+          <section class="catalog-archive-compare" aria-labelledby="catalogArchiveCompareTitle">
             <div class="catalog-archive-compare-head">
               <div><p class="eyebrow">READ-ONLY DATABASE REVIEW</p><h4 id="catalogArchiveCompareTitle">Upload &amp; Compare Data Archive</h4>
                 <p class="muted">Upload the .json file from Download Data Archive. Compare table counts and changed records without restoring or modifying live data.</p>
@@ -810,6 +852,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.71.1"></script>
+  <script src="/app.js?v=1.5.72"></script>
 </body>
 </html>
