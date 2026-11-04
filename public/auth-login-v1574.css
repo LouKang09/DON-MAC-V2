@@ -277,3 +277,74 @@
 /* Hide Edge's native password-eye icon wherever the custom white icon is used. */
 #authScreen input[type="password"]::-ms-reveal,
 #authScreen input[type="password"]::-ms-clear{display:none!important}
+
+/* v1.5.76: visual dimensions at 100% browser zoom match former 75% card.
+   Keep viewport units as limits rather than asking users to lower zoom. */
+@media (min-width:641px) {
+ #authScreen.auth-screen {
+   min-height:100dvh;
+   height:100dvh;
+   padding:clamp(14px,2.5vh,28px) clamp(14px,2.5vw,32px);
+   overflow:auto;
+   align-items:center;
+   justify-content:center;
+ }
+ #authScreen .auth-shell {
+   width:min(970px,calc(100vw - 42px));
+   height:min(500px,calc(100dvh - 38px));
+   min-height:0;
+   max-height:calc(100dvh - 38px);
+   border-radius:22px;
+   grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+   margin:auto;
+ }
+ #authScreen .auth-brand-panel {padding:15px 24px;min-height:0}
+ #authScreen .auth-brand-logo {
+   width:auto;
+   max-width:100%;
+   height:auto;
+   max-height:calc(min(500px,100dvh - 38px) - 38px);
+   filter:contrast(1.72);
+   object-fit:contain;
+ }
+ #authScreen .auth-panel>.auth-card {
+   padding:16px 27px 19px;
+   min-height:0;
+   gap:0;
+   overflow-y:auto;
+   justify-content:center;
+ }
+ #authScreen .auth-panel>.auth-card .auth-beans-icon{
+   width:56px;height:56px;min-height:56px;margin-bottom:8px
+ }
+ #authScreen .auth-panel>.auth-card #authTitle{
+   font-size:clamp(18px,1.9vw,23px);
+   letter-spacing:-.02em;line-height:1.24;margin:0 0 12px;
+ }
+ #authScreen .auth-panel>.auth-card>label{font-size:12px;margin:0 0 5px}
+ #authScreen .auth-panel>.auth-card .auth-input-box{
+   height:41px;min-height:41px;margin-bottom:10px;border-radius:9px;
+ }
+ #authScreen .auth-panel>.auth-card .auth-input-box input{
+   font-size:13px;padding:0 11px;
+ }
+ #authScreen .auth-panel>.auth-card .auth-options{
+   margin:1px 0 13px;
+ }
+ #authScreen .auth-panel>.auth-card .auth-submit{
+   min-height:42px;width:min(100%,310px);
+   margin-bottom:10px;border-radius:11px;font-size:16px;
+ }
+ #authScreen .auth-panel>.auth-card .auth-signup{font-size:12px}
+ #authScreen .auth-panel>.auth-card .auth-signup .auth-text-action{font-size:12px}
+ #authScreen .auth-panel>.auth-card .auth-remember{font-size:11px!important}
+ #authScreen .auth-panel>.auth-card .auth-text-action{font-size:11px}
+ #authScreen .auth-panel>.auth-secondary-panel{padding:17px 25px}
+ #authScreen .auth-panel>.auth-secondary-panel .auth-secondary-form{gap:7px}
+ #authScreen .auth-panel>.auth-secondary-panel .auth-secondary-form input{min-height:36px}
+}
+@media (min-width:641px) and (max-height:565px){
+ #authScreen .auth-shell{height:calc(100dvh - 28px);max-height:calc(100dvh - 28px)}
+ #authScreen .auth-panel>.auth-card{justify-content:flex-start}
+ #authScreen .auth-panel>.auth-card .auth-beans-icon{width:46px;height:46px;min-height:46px}
+}
