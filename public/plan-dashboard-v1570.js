@@ -206,8 +206,9 @@
    const token=++seq;
    loading=true;
    root.hidden=false;
-   $('planWidgetError').textContent='Loading saved sales insights…';
-   $('planWidgetError').classList.remove('hidden');
+   // Do not flash a temporary loading callout before Business/Pro insights.
+   // Preserve the last complete cards until new data is ready.
+   $('planWidgetError').classList.add('hidden');
    try{
      const q=new URLSearchParams();
      if($('dashboardBranch')?.value&&$('dashboardBranch').value!=='all')q.set('branchId',$('dashboardBranch').value);
