@@ -22,10 +22,7 @@
   ['biz-transaction-monitor','Suspicious Transaction Monitor'],
   ['biz-stock-transfers','Inter-Branch Stock Transfers']
  ];
- const UNIVERSAL=[
-  ['standout-insights','Business Insights Assistant'],
-  ['standout-custom','Customizable Dashboard']
- ];
+ const UNIVERSAL=[['standout-insights','Business Insights Assistant']];
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const php=v=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP',maximumFractionDigits:0}).format(Number(v)||0);
  const number=v=>new Intl.NumberFormat('en-PH',{maximumFractionDigits:0}).format(Number(v)||0);
@@ -37,21 +34,67 @@
  const metric=(label,value,sub='')=>'<div class="pw-metric"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong>'+(sub?'<span>'+esc(sub)+'</span>':'')+'</div>';
  const rows=(list,cb)=>list.length?'<div class="pw-lines">'+list.map(cb).join('')+'</div>':empty('No recorded transactions available for this calculation.');
  let subscription=null,analytics=null,loading=false,seq=0,customizing=false,roleAllowed=true;
- let orderState={},hiddenState={};
- const configKey=()=>('donmac_v1570_widgets_'+(subscription?.plan==='BUSINESS'?'business':'pro'));
+ let orderState={},hiddenState={},prefsLoaded=false,prefsSeq=0,saveQueue=Promise.resolve();
  const features=()=>subscription?.plan==='BUSINESS'?[...PRO,...BUSINESS,...UNIVERSAL]:[...PRO,...UNIVERSAL];
- function getSettings(){
-   try{const raw=JSON.parse(localStorage.getItem(configKey())||'{}');orderState=raw.order||{};hiddenState=raw.hidden||{};}
-   catch(_){orderState={};hiddenState={};}
+ const ordered=()=>{
+  const entries=features(),ids=entries.map(x=>x[0]);
+  const order=Array.isArray(orderState.ids)?orderState.ids.filter(id=>ids.includes(id)):[];
+  return [...order,...ids.filter(id=>!order.includes(id))].map(id=>entries.find(x=>x[0]===id));
+ };
+ async function loadSettings(plan){
+  const token=++prefsSeq;prefsLoaded=false;orderState={ids:[]};hiddenState={};
+  try{
+   const resp=await fetch('/api/dashboard/widgets?plan='+encodeURIComponent(plan),
+    {credentials:'same-origin',cache:'no-store'});
+   if(!resp.ok)throw Error('Unable to load account widget settings (HTTP '+resp.status+').');
+   const saved=await resp.json();
+   if(token!==prefsSeq||subscription?.plan!==plan)return;
+   orderState.ids=Array.isArray(saved.order)?saved.order:[];
+   hiddenState=Object.fromEntries((saved.hidden||[]).map(id=>[id,true]));
+  }catch(e){
+   if(token===prefsSeq){
+    const warn=$('planWidgetError');warn.textContent=e.message;warn.classList.remove('hidden');
+   }
+  }finally{
+   if(token===prefsSeq){
+    prefsLoaded=true;
+    if($('view-dashboard')?.classList.contains('active'))fetchAnalytics();
+   }
+  }
  }
  function saveSettings(){
-   try{localStorage.setItem(configKey(),JSON.stringify({order:orderState,hidden:hiddenState}));}catch(_){}
+  if(!prefsLoaded||!subscription)return;
+  const plan=subscription.plan;
+  const values={order:ordered().map(x=>x[0]),hidden:Object.keys(hiddenState).filter(x=>hiddenState[x])};
+  const status=$('planWidgetSaveState');
+  if(status)status.textContent='Saving changes to your account…';
+  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
+    const resp=await fetch('/api/dashboard/widgets?plan='+encodeURIComponent(plan),{
+      method:'PUT',credentials:'same-origin',cache:'no-store',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(values)
+    });
+    if(!resp.ok){const failure=await resp.json().catch(()=>({}));throw Error(failure.error||'Could not save widgets.');}
+    if(status)status.textContent='Saved to your franchise account.';
+  }).catch(e=>{
+    if(status)status.textContent='Not saved: '+e.message;
+    const warn=$('planWidgetError');warn.textContent='Widget preferences not saved: '+e.message;warn.classList.remove('hidden');
+  });
  }
- const ordered=()=>{
-   const entries=features();const ids=entries.map(x=>x[0]);
-   const order=Array.isArray(orderState.ids)?orderState.ids.filter(id=>ids.includes(id)):[];
-   return [...order,...ids.filter(id=>!order.includes(id))].map(id=>entries.find(x=>x[0]===id));
- };
+ function transferTable(list){
+  if(!list.length)return empty('No inter-branch transfers recorded for this location.');
+  return '<div class="pw-transfer-scroll"><table class="pw-transfer-table"><thead>'+
+   '<tr><th>Description</th><th>Location</th><th>Date &amp; Time</th><th>Details</th></tr></thead><tbody>'+
+   list.map((x,i)=>{
+    const when=x.dateTime?new Date(x.dateTime).toLocaleString('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}):'—';
+    const lines=(x.lines||[]).map(y=>'<tr><td>'+esc(y.description||'Ingredient')+'</td><td>'+
+     esc(number(y.quantity))+' '+esc(y.uom||'')+'</td></tr>').join('');
+    return '<tr><td>'+esc(x.description||x.reference||'Stock transfer')+'</td><td>'+esc(x.location||'Unknown')+'</td>'+
+     '<td>'+esc(when)+'</td><td><button type="button" data-transfer-view="'+i+'" aria-expanded="false">View</button></td></tr>'+
+     '<tr data-transfer-detail="'+i+'" hidden><td colspan="4"><div class="pw-transfer-detail"><strong>'+esc(x.reference||'Transfer')+'</strong>'+
+     '<p>Received by: '+esc(x.receivedBy||'Not provided')+'</p><table><thead><tr><th>Ingredient</th><th>Quantity</th></tr></thead>'+
+     '<tbody>'+lines+'</tbody></table>'+(x.remarks?'<p>Remarks: '+esc(x.remarks)+'</p>':'')+'</div></td></tr>';
+   }).join('')+'</tbody></table></div>';
+ }
  function renderCardBody(id,p,b){
    if(id==='pro-bought-together')return rows(p.pairs||[],x=>line(x.items.join(' + '),number(x.orders)+' orders'))+
      note('Products counted together in completed orders during the last 30 days.');
@@ -90,7 +133,7 @@
    }
    if(id==='biz-product-comparison'){
      const items=b?.products||[];
-     return rows(items.slice(0,8),x=>line(x.name,x.branch,number(x.qty)+' units'))+
+     return rows(items.slice(0,5),x=>line(x.name,x.branch,number(x.qty)+' units'))+
        note('Top recorded menu-item quantities by branch in the last 30 days.');
    }
    if(id==='biz-cash-variance')return empty(b?.cashVariance?.reason||'No counted-cash data has been recorded.')+
@@ -99,9 +142,8 @@
       metric('Voided orders',number(b?.reviewSignals?.voided),'Last 30 days'),
       metric('Discounted orders',number(b?.reviewSignals?.discounted),'Last 30 days'))+
       note('Review signals only. They are not proof of fraud or wrongdoing, and no automatic accusation is made.');
-   if(id==='biz-stock-transfers')return rows((b?.transfers||[]).slice(0,6),x=>line(x.reference||'Transfer',x.branch||'Destination not recorded',
-      number(x.items)+' ingredient lines'))+
-      note('Saved transfer movements only. Delivery and receipt status are not yet tracked.');
+   if(id==='biz-stock-transfers')return transferTable((b?.transfers||[]).slice(0,5))+
+      note('View opens the ingredient breakdown recorded for the selected transfer.');
    if(id==='standout-insights'){
       const delta=p.salesWindow?.growthPercent;
       const change=delta==null?'A prior-week baseline is not yet available.':
@@ -113,7 +155,6 @@
       return '<p class="pw-insight">'+esc(change)+'</p><p class="pw-insight">'+esc(add)+'</p>'+
         note('Automated rules-based summary of saved POS figures, not a generative AI analysis.');
    }
-   if(id==='standout-custom')return '<div class="pw-custom-hint"><strong>Choose the dashboard you need.</strong><span>Use Customize Widgets above to hide or reorder cards. Preferences are local to this browser.</span></div>';
    return empty('No data available.');
  }
  const badge=(id)=>id==='biz-cash-variance'||id==='biz-branch-health'?'NEEDS CONFIGURATION':'LIVE DATA';
@@ -127,9 +168,9 @@
    if(!customizing)return;
    const entries=ordered();
    el.innerHTML='<div class="pw-custom-head"><strong>Customize Dashboard</strong><span>Show, hide, or change display order</span></div>'+
-    '<div class="pw-custom-grid">'+entries.map((entry,i)=>
+    '<p id="planWidgetSaveState" class="pw-save-state" role="status">Changes are saved to the franchise account.</p><div class="pw-custom-grid">'+entries.map((entry,i)=>
       '<div class="pw-custom-row"><label><input type="checkbox" data-pw-visibility="'+esc(entry[0])+'" '+
-      (hiddenState[entry[0]]?'':'checked')+(entry[0]==='standout-custom'?' disabled':'')+'/>'+
+      (hiddenState[entry[0]]?'':'checked')+'/>'+
       '<span>'+esc(entry[1])+'</span></label>'+
       '<div><button type="button" data-pw-move="'+esc(entry[0])+'" data-direction="-1" '+(i===0?'disabled':'')+' aria-label="Move '+esc(entry[1])+' up">↑</button>'+
       '<button type="button" data-pw-move="'+esc(entry[0])+'" data-direction="1" '+(i===entries.length-1?'disabled':'')+' aria-label="Move '+esc(entry[1])+' down">↓</button></div></div>').join('')+'</div>';
@@ -145,6 +186,7 @@
   const warning=$('planWidgetError');
   warning.classList.toggle('hidden',!data.partial);
   if(data.partial)warning.textContent='High volume analysis cap reached; detailed reports contain the full history.';
+  $('planWidgetHeading')?.closest('.plan-widget-heading')?.classList.remove('pending-account-analytics');
   renderCustom();
  }
  function updateReference(){
@@ -160,7 +202,7 @@
    if(business)container.removeAttribute('inert');else container.setAttribute('inert','');
  }
  async function fetchAnalytics(){
-   if(!subscription||!roleAllowed)return;
+   if(!subscription||!roleAllowed||!prefsLoaded)return;
    const token=++seq;
    loading=true;
    root.hidden=false;
@@ -174,7 +216,7 @@
      const d=await r.json();
      if(token!==seq)return;
      analytics=d;loading=false;
-     if(d.plan!==subscription.plan){subscription={...subscription,plan:d.plan};getSettings();}
+     if(d.plan!==subscription.plan){setSubscription({...subscription,plan:d.plan});return;}
      redraw();
    }catch(e){
      if(token!==seq)return;loading=false;root.hidden=false;
@@ -186,19 +228,21 @@
  function setSubscription(next){
    if(!next)return;
    const changed=!subscription||subscription.plan!==next.plan;
-   subscription=next;
-   if(changed)getSettings();
-   updateReference();
-   if(changed&&$('view-dashboard')?.classList.contains('active'))fetchAnalytics();
-   else if(analytics)redraw();
+   subscription=next;updateReference();
+   if(changed){
+     analytics=null;
+     $('planWidgetHeading')?.closest('.plan-widget-heading')?.classList.add('pending-account-analytics');
+     $('planWidgetFeatureCards')?.replaceChildren();
+     loadSettings(next.plan);
+   }else if(analytics)redraw();
  }
- function render(d){
-   if(!d||!subscription)return;
+ function render(data){
+   if(!data||!subscription||!prefsLoaded)return;
    if(!loading&&roleAllowed)fetchAnalytics();
  }
  function onViewChange(view){
    if(view==='advanced')updateReference();
-   if(view==='dashboard'&&subscription&&!loading&&!analytics)fetchAnalytics();
+   if(view==='dashboard'&&subscription&&prefsLoaded&&!loading&&!analytics)fetchAnalytics();
  }
  $('planWidgetCustomize').addEventListener('click',()=>{
    customizing=!customizing;renderCustom();
@@ -215,6 +259,16 @@
    if(current<0||next<0||next>=entries.length)return;
    [entries[current],entries[next]]=[entries[next],entries[current]];
    orderState.ids=entries;saveSettings();redraw();
+ });
+ $('planWidgetFeatureCards').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-transfer-view]');
+    if(!button)return;
+    const card=button.closest('[data-pw-card="biz-stock-transfers"]');
+    const details=card?.querySelector('tr[data-transfer-detail="'+button.dataset.transferView+'"]');
+    if(!details)return;
+    const open=button.getAttribute('aria-expanded')==='true';
+    details.hidden=open;button.setAttribute('aria-expanded',String(!open));
+    button.textContent=open?'View':'Hide';
  });
  $('advancedReferenceUpgrade')?.addEventListener('click',()=>{
    const nav=document.querySelector('.nav[data-view="account"]');
