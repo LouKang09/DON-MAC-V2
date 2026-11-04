@@ -261,3 +261,15 @@
 #authScreen .auth-secondary-message.error,#authScreen .auth-field-status.error{color:#ffe0cc}
 #authScreen .auth-back{background:transparent;border:0;color:#fff;text-decoration:underline;cursor:pointer;padding:6px;font-size:12px;align-self:center}
 @media(max-width:640px){#authScreen.auth-screen{height:auto;min-height:100dvh;overflow:auto}#authScreen .auth-shell{height:auto;max-height:none}#authScreen .auth-brand-panel{min-height:145px;max-height:180px}#authScreen .auth-brand-logo{max-height:150px}#authScreen .auth-card{height:auto;max-height:none;overflow:visible}#authScreen .auth-secondary-panel{height:auto;overflow:visible}}
+
+/* v1.5.75.1: share the green right-hand pane between login/signup/recovery. */
+#authScreen .auth-panel{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;overflow:hidden;background:#075d38}
+#authScreen .auth-panel>.auth-card{flex:1;overflow-y:auto}
+#authScreen .auth-panel>.auth-secondary-panel{flex:1;min-height:0;max-height:100%;overflow-y:auto}
+#authScreen .auth-panel>.auth-secondary-panel.hidden{display:none!important}
+#authScreen .auth-panel:has(.auth-secondary-panel:not(.hidden))>.auth-card{display:none!important}
+#authScreen .auth-panel:has(.auth-secondary-panel:not(.hidden))>.auth-secondary-panel:not(.hidden){display:flex!important}
+@media(max-width:640px){
+ #authScreen .auth-panel{height:auto;overflow:visible}
+ #authScreen .auth-panel>.auth-secondary-panel{height:auto;max-height:none;overflow:visible}
+}
