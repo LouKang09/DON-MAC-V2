@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/pos-icons-hover-v1562.css?v=1.5.62" />
   <link rel="stylesheet" href="/pos-icon-crop-v1563.css?v=1.5.64" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
-  <link rel="stylesheet" href="/branches-locations-v1565.css?v=1.5.67" />
+  <link rel="stylesheet" href="/branches-locations-v1565.css?v=1.5.68" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -615,18 +615,18 @@
                 <label>Street address<input id="branchAddress" maxlength="250" placeholder="Search Google Maps below to auto-fill, or type manually" autocomplete="street-address"/></label>
                 <div class="users-form-fields"><label>City / Municipality<input id="branchCity" maxlength="100" placeholder="Filled from Google Maps or enter manually" autocomplete="address-level2"/></label><label>Province<input id="branchProvince" maxlength="100" placeholder="Filled from Google Maps or enter manually" autocomplete="address-level1"/></label></div>
                 <div class="users-form-fields"><label>Postal code<input id="branchPostalCode" maxlength="12" placeholder="ZIP code" /></label><label>Country<select id="branchCountry"><option value="Philippines">Philippines</option><option value="Other">Other</option></select></label></div>
-                <div class="branch-map-panel" aria-label="Google Maps branch destination">
-  <div class="branch-map-heading"><strong>Saved map location</strong><span class="muted tiny">Google Maps · Delivery destination</span></div>
-  <p class="muted tiny">Search for the branch address or a landmark. Choosing a result fills the address, city, and province above. You can also click the map or drag its pin to refine the delivery location.</p>
-  <label for="branchGoogleSearch" class="branch-google-search-label">Search Google Maps</label>
-  <div id="branchGoogleSearch" class="branch-google-search" aria-label="Google Maps place search"></div>
+                <div class="branch-map-panel" aria-label="Branch destination map">
+  <div class="branch-map-heading"><strong>Saved map location</strong><span class="muted tiny">Map pin · Delivery destination</span></div>
+  <p class="muted tiny">Search a branch address or landmark, or click the map to select its location. Where address data is available, the fields above will be filled automatically.</p>
+  <label for="branchGoogleSearch" class="branch-google-search-label">Search map location</label>
+  <div id="branchGoogleSearch" class="branch-google-search" aria-label="Branch place search"></div>
   <p id="branchMapStatus" role="status" aria-live="polite" class="muted tiny">Google Maps will load when you open Branches.</p>
   <div id="branchMapPreview" class="branch-map-preview">
-    <div id="branchGoogleMap" role="application" aria-label="Interactive Google Map for choosing branch destination"></div>
+    <div id="branchGoogleMap" role="application" aria-label="Branch map for choosing the delivery destination"></div>
     <div id="branchMapPlaceholder" class="branch-map-placeholder">Loading Google Maps…</div>
   </div>
   <a id="branchDirectionsLink" class="branch-map-directions hidden" href="#" target="_blank" rel="noopener noreferrer">Open destination in Google Maps</a>
-  <p class="muted tiny branch-map-credit">Google Maps &amp; Places · Verify the delivery entrance before saving.</p>
+  <p class="muted tiny branch-map-credit">Verify the delivery entrance before saving. Google Maps is available with a configured key; otherwise OpenStreetMap is used.</p>
 </div>
                 <label>Phone number<input id="branchPhone" type="tel" maxlength="32" placeholder="+63..." /></label>
                 <label>Description<textarea id="branchDescription" maxlength="500" rows="2" placeholder="Landmark or branch details"></textarea></label>
@@ -635,6 +635,19 @@
                 <p class="muted tiny">Branches linked to sales cannot be deleted; deactivate them to preserve audit history.</p>
               </form>
             </div>
+            <section id="branchNetworkSection" class="branch-network-card" aria-labelledby="branchNetworkTitle">
+  <div class="branch-network-head">
+    <div><p class="eyebrow">FRANCHISE LOCATIONS</p><h3 id="branchNetworkTitle">Franchise Network Map</h3>
+      <p class="muted tiny">A Cebu Transport-style overview of saved branch locations and connections. Lines are schematic—not driving routes.</p>
+    </div>
+    <div class="branch-network-controls"><label for="branchNetworkOrigin">Connection origin</label><select id="branchNetworkOrigin" aria-label="Choose originating branch"><option value="">Choose a saved branch</option></select></div>
+  </div>
+  <div class="branch-network-stats" aria-live="polite"><span id="branchNetworkMapped">0 mapped branches</span><span id="branchNetworkLinks">0 connections</span><span id="branchNetworkUnmapped">0 without a map pin</span></div>
+  <div id="branchNetworkMap" class="branch-network-map" role="application" aria-label="Franchise map with location pins and schematic connections"></div>
+  <p id="branchNetworkNotice" class="branch-network-notice" role="status" aria-live="polite">Loading saved branch locations…</p>
+  <div class="branch-network-legend"><span><i class="branch-network-key hub"></i>Origin</span><span><i class="branch-network-key destination"></i>Franchise branch</span><span><i class="branch-network-key connection"></i>Straight-line connection</span></div>
+  <p class="muted tiny branch-network-source">Map data © OpenStreetMap contributors. Map lines indicate relationships between locations, not road paths or travel distances. Use the Directions link on a pin for road navigation.</p>
+</section>
           </section>
           <section id="usersCashiersPage" class="users-management-group" role="tabpanel" aria-labelledby="usersTabCashiers" hidden>
             <div class="users-group-heading"><div><span class="users-group-symbol" aria-hidden="true"><img src="/assets/catalog/donmac-clerk-ui-v1565.png" alt="" width="38" height="38" decoding="async"/></span><h3 id="cashierManagerHeading">Cashiers</h3><p class="muted tiny">Staff credentials and branch assignments</p></div><span class="users-help" title="Cashier usernames must be unique inside the assigned branch and owner account." aria-label="Cashier account information"><svg class="users-cog-icon" viewBox="0 0 24 24" width="25" height="25" aria-hidden="true" focusable="false"><polygon points="9.34,5.15 9.47,1.66 14.53,1.66 14.66,5.15 14.97,5.28 17.52,2.90 21.10,6.48 18.72,9.03 18.85,9.34 22.34,9.47 22.34,14.53 18.85,14.66 18.72,14.97 21.10,17.52 17.52,21.10 14.97,18.72 14.66,18.85 14.53,22.34 9.47,22.34 9.34,18.85 9.03,18.72 6.48,21.10 2.90,17.52 5.28,14.97 5.15,14.66 1.66,14.53 1.66,9.47 5.15,9.34 5.28,9.03 2.90,6.48 6.48,2.90 9.03,5.28" fill="currentColor"/><circle cx="12" cy="12" r="4.1" fill="#eaf6ee"/></svg></span></div>
@@ -811,6 +824,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.67"></script>
+  <script src="/app.js?v=1.5.68"></script>
 </body>
 </html>

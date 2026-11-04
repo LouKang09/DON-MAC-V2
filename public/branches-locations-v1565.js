@@ -12,7 +12,8 @@
   const DEFAULT_CENTER = {lat:12.8797,lng:121.7740};
   let selected = null;
   let map = null, marker = null, geocoder = null, autocomplete = null;
-  let ready = false;
+  let ready = false, osmMap = null, osmMarker = null;
+  let searchDelay = null, searchAbort = null;
   let initPromise = null, reverseToken = 0;
   const coordsValid = (lat,lng) =>
     Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
@@ -29,6 +30,16 @@
     directions.href=url.toString();
   }
   function putPin(){
+    if(osmMap){
+      if(!selected){if(osmMarker)osmMap.removeLayer(osmMarker);osmMarker=null;return;}
+      const pos=[selected.lat,selected.lng];
+      if(!osmMarker){
+        osmMarker=L.marker(pos,{draggable:true,title:'Branch delivery destination'}).addTo(osmMap);
+        osmMarker.on('dragend',e=>reverseFromOsm(e.target.getLatLng()));
+      }else{osmMarker.addTo(osmMap);osmMarker.setLatLng(pos);}
+      osmMap.setView(pos,16);
+      return;
+    }
     if(!ready||!map)return;
     if(!selected){if(marker)marker.setMap(null);return;}
     const where = {lat:selected.lat,lng:selected.lng};
@@ -52,6 +63,9 @@
     reverseToken++;
     setCoordinates(null,null);
     if(map){map.setCenter(DEFAULT_CENTER);map.setZoom(6);}
+    if(osmMap){osmMap.setView([DEFAULT_CENTER.lat,DEFAULT_CENTER.lng],6);}
+    const osmSearch=$('branchOpenMapSearch');if(osmSearch)osmSearch.value='';
+    const suggestions=$('branchOpenMapResults');if(suggestions)suggestions.replaceChildren();
     if(autocomplete)autocomplete.value='';
   }
   function typeOf(parts,type){
@@ -128,6 +142,93 @@
       document.head.appendChild(script);
     });
   }
+  // Key-free alternative: use the exact mapping stack from Cebu Transport Guide,
+  // with an OSM basemap and manually confirmable destination pins.
+  async function initOsmPicker(){
+    await window.donmacLeafletReady();
+    const Lf=window.L;
+    osmMap=Lf.map(mapEl,{zoomControl:true,scrollWheelZoom:false,attributionControl:true})
+      .setView([DEFAULT_CENTER.lat,DEFAULT_CENTER.lng],6);
+    Lf.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+    }).addTo(osmMap);
+    mapEl.setAttribute('aria-label','OpenStreetMap branch location picker');
+    placeholder.classList.add('hidden');
+    const host=$('branchGoogleSearch');
+    const searchInput=document.createElement('input');
+    searchInput.id='branchOpenMapSearch';searchInput.type='search';
+    searchInput.placeholder='Search Philippine branches, streets or landmarks';
+    searchInput.autocomplete='off';
+    searchInput.setAttribute('aria-label','Search branch location');
+    const choices=document.createElement('div');choices.id='branchOpenMapResults';
+    choices.className='branch-open-map-results';
+    host.replaceChildren(searchInput,choices);
+    searchInput.addEventListener('input',()=>{
+      clearTimeout(searchDelay);if(searchAbort)searchAbort.abort();
+      choices.replaceChildren();
+      const query=searchInput.value.trim();
+      if(query.length<3)return;
+      searchDelay=setTimeout(async()=>{
+        const controller=new AbortController();searchAbort=controller;
+        try{
+          const url=new URL('https://photon.komoot.io/api/');
+          url.searchParams.set('q',query+', Philippines');url.searchParams.set('limit','5');
+          url.searchParams.set('bbox','116,4,128,22');url.searchParams.set('lang','en');
+          const reply=await fetch(url,{signal:controller.signal});
+          if(!reply.ok)throw Error('Search temporarily unavailable.');
+          const data=await reply.json();
+          if(searchInput.value.trim()!==query||controller.signal.aborted)return;
+          choices.replaceChildren();
+          for(const f of (data.features||[]).slice(0,5)){
+            const p=f.properties||{},c=f.geometry?.coordinates||[];
+            if(String(p.countrycode||'PH').toUpperCase()!=='PH'||!coordsValid(Number(c[1]),Number(c[0])))continue;
+            const button=document.createElement('button');
+            button.type='button';button.className='branch-open-map-result';
+            button.textContent=[p.name||p.street,p.city||p.county,p.state].filter(Boolean).join(', ');
+            button.addEventListener('click',()=>{
+              searchInput.value=button.textContent;
+              choices.replaceChildren();applyOsmAddress(p);
+              setCoordinates(c[1],c[0]);
+              showStatus('Destination pin selected. Review the address and Save Branch.');
+            });
+            choices.appendChild(button);
+          }
+        }catch(e){if(e.name!=='AbortError')showStatus('Search unavailable. Click the map to select your delivery destination.');}
+      },850);
+    });
+    osmMap.on('click',e=>reverseFromOsm(e.latlng));
+    if(selected)putPin();
+    showStatus('OpenStreetMap ready (no API key). Search for the branch or click the map to place its pin.');
+    setTimeout(()=>osmMap.invalidateSize(),180);
+  }
+  function applyOsmAddress(p){
+    if(!p)return;
+    const street=[p.name,p.housenumber,p.street,p.district].filter(Boolean).join(', ');
+    if(street)$('branchAddress').value=street.slice(0,250);
+    if(p.city||p.town||p.county)$('branchCity').value=String(p.city||p.town||p.county).slice(0,100);
+    if(p.state)$('branchProvince').value=String(p.state).slice(0,100);
+    if(p.postcode)$('branchPostalCode').value=String(p.postcode).slice(0,12);
+    if(p.country)$('branchCountry').value=p.country==='Philippines'?'Philippines':'Other';
+  }
+  async function reverseFromOsm(point){
+    const lat=Number(point.lat),lng=Number(point.lng);
+    if(!coordsValid(lat,lng))return;
+    const token=++reverseToken;
+    setCoordinates(lat,lng);
+    showStatus('Pin selected. Finding nearby address information…');
+    try{
+      const u=new URL('https://photon.komoot.io/reverse');
+      u.searchParams.set('lat',String(lat));u.searchParams.set('lon',String(lng));u.searchParams.set('limit','1');
+      const r=await fetch(u);
+      if(!r.ok)throw Error('Geocoding unavailable');
+      const data=await r.json();
+      if(token!==reverseToken)return;
+      applyOsmAddress(data.features?.[0]?.properties);
+      showStatus('Pin saved on map. Confirm the street, city and province, then Save Branch.');
+    }catch(e){
+      if(token===reverseToken)showStatus('Pin selected. Enter or verify the address manually, then Save Branch.');
+    }
+  }
   async function init(){
     if(initPromise)return initPromise;
     initPromise=(async()=>{
@@ -136,8 +237,8 @@
       if(!response.ok)throw Error('Cannot load the Google Maps configuration.');
       const config=await response.json();
       if(!config.enabled||!config.key){
-        placeholder.textContent='Google Maps is not configured. Add GOOGLE_MAPS_BROWSER_API_KEY in Railway to enable interactive search and pin selection.';
-        showStatus('Google Maps needs a browser API key. Branch addresses can still be entered and saved manually.');
+        placeholder.textContent='Opening the key-free map…';
+        await initOsmPicker();
         return;
       }
       placeholder.textContent='Loading Google Maps…';
@@ -178,7 +279,7 @@
   }
   for(const id of ['branchAddress','branchCity','branchProvince']){
     $(id).addEventListener('input',()=>{
-      if(selected){setCoordinates(null,null);showStatus('Address was changed manually. Search Google Maps again to confirm the destination pin.');}
+      if(selected){setCoordinates(null,null);showStatus('Address was changed manually. Search the map again to confirm the destination pin.');}
     });
   }
   $('branchCountry').addEventListener('change',()=>{

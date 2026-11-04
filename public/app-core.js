@@ -272,6 +272,7 @@
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
     if(view==='pos'){refreshPosDailyCount();requestAnimationFrame(syncCategoryRowNeighbors);}
+    if(view==='users')window.donmacBranchNetwork?.show();
     if(view==='dashboard')loadDashboard();if(view==='inventory'){loadInventory();loadDevSubscription();}if(view==='advanced'||view==='account')renderDevSubscription();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();if(view==='supply')window.donmacSupply?.open();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
@@ -1539,7 +1540,7 @@
    }
    const previous=$('newUserBranch').value;
    $('newUserBranch').innerHTML=branchOptions(active,previous);
-   if(state.user.role==='Admin')renderBranches();
+   if(state.user.role==='Admin'){renderBranches();window.donmacBranchNetwork?.update(state.branches);}
   }
 
 
