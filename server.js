@@ -35,7 +35,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.70-plan-dashboard-verified';
+const APP_VERSION = '1.5.71-dashboard-activity';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1119,6 +1119,41 @@ async function salesPdf(params){const report=await salesReport(params);const sho
 async function costingPdf(params){const report=await costingReport(params);const shop=await getSetting('shop_name','Don Macchiatos');const title=`${shop} - ${titleCase(report.period)} Costing Report`;return{report,filename:reportFilename(report,'costing'),buffer:makePdf(costingReportLines(report,title),{title})};}
 async function emailSalesReport(user,body){const params={period:body.period,date:body.date,cashier:body.cashier,branchId:body.branchId};const {report,filename,buffer}=await salesPdf(params);const settings=await getSettings();let to=settings.defaultReportEmail;if(user.role==='Admin'&&String(body.to||'').trim())to=String(body.to).trim();if(!to)throw Object.assign(new Error('Configure a default report recipient first.'),{status:400});if(to.length>320||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Object.assign(new Error('Report recipient email is invalid.'),{status:400});if(!process.env.SMTP_USER||!process.env.SMTP_PASS)throw Object.assign(new Error('Email is not configured on the server. Set SMTP_USER and SMTP_PASS in the server environment.'),{status:503});const daily=report.period==='daily';const subject=daily?'Daily Report Notification':`${titleCase(report.period)} Report Notification`;const bodyText=daily?'Hello, attached are the daily reports.':`Hello, attached are the ${report.period} reports.`;try{await sendMail({host:process.env.SMTP_HOST||'smtp.gmail.com',port:Number(process.env.SMTP_PORT||465),user:process.env.SMTP_USER,pass:process.env.SMTP_PASS,from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text:bodyText,attachments:[{filename,contentType:'application/pdf',data:buffer}]});await logAction(user,`Report emailed: ${filename}`,'Email Sent',to);return{ok:true,to,filename};}catch(err){await logAction(user,`Report email failed: ${filename}`,'Email Failed',err.message);const e=new Error('Unable to send the report email. Please check the server internet/SMTP settings and try again.');e.status=502;e.details={reason:err.message};throw e;}}
 
+/* Dashboard sales activity, branch scoped. Deleted covers void/cancel in legacy schema. */
+async function dashboardActivity(user,params={}){
+ const status=String(params.status||'all').toLowerCase(),period=String(params.period||'all').toLowerCase();
+ if(!['all','sold','voided'].includes(status)||!['all','today','7days','30days'].includes(period))
+   throw Object.assign(new Error('Invalid dashboard activity filter.'),{status:400});
+ const branchId=await branchSupport.salesScope(db,user,params.branchId);
+ const args=[],parts=[];
+ if(branchId!=null){args.push(branchId);parts.push('branch_id=$'+args.length);}
+ if(status!=='all'){args.push(status==='sold'?'Sold':'Deleted');parts.push('status=$'+args.length);}
+ if(period!=='all'){
+   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+   const back=period==='today'?0:period==='7days'?-6:-29;
+   args.push(new Date(addDays(today,back)+'T00:00:00+08:00').toISOString());
+   parts.push('sold_at >= $'+args.length);
+ }
+ const query='SELECT id,reference,sold_at,cashier_name_snapshot,payment_mode,actual,order_type,customer_name,table_label,status FROM sales '+
+  (parts.length?'WHERE '+parts.join(' AND '):'')+' ORDER BY sold_at DESC,id DESC LIMIT 10';
+ const list=(await db.query(query,args)).rows;
+ const ids=list.map(x=>Number(x.id)),byId=new Map();
+ if(ids.length){
+  const rows=(await db.query('SELECT sale_id,product_name_snapshot,quantity FROM sale_items WHERE sale_id IN ('+
+    placeholders(1,ids.length)+') ORDER BY sale_id,id',ids)).rows;
+  for(const item of rows){
+   const id=Number(item.sale_id);
+   if(!byId.has(id))byId.set(id,[]);
+   byId.get(id).push({name:item.product_name_snapshot,qty:Number(item.quantity)});
+  }
+ }
+ return{status,period,rows:list.map(x=>({
+  reference:x.reference,soldAt:x.sold_at,cashier:x.cashier_name_snapshot||null,
+  paymentMode:x.payment_mode,amount:Number(x.actual||0),orderType:x.order_type||'Take Away',
+  customerName:x.customer_name||null,tableLabel:x.table_label||null,status:x.status,
+  items:byId.get(Number(x.id))||[]
+ }))};
+}
 async function dashboardData(params={},branchId=null){
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const todayR=await salesReport({period:'daily',date:today,branchId});const monthR=await salesReport({period:'monthly',date:today,branchId});
@@ -1673,6 +1708,7 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/branches')return json(res,200,{branches:await accessibleBranches(user)},safeHeaders());
+  if(method==='GET'&&p==='/api/dashboard/activity')return json(res,200,await dashboardActivity(user,Object.fromEntries(url.searchParams)),safeHeaders());
   if(method==='GET'&&p==='/api/dashboard/plan-insights')return json(res,200,await planDashboardInsights(user,url.searchParams.get('branchId')),safeHeaders());
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/cashiers'){
