@@ -211,32 +211,74 @@ $('supplyMessageForm').onsubmit=async e=>{
   await openOrder(currentId);
  }catch(err){alert(err.message,true);}
 };
+const noticePageSize=5;
+let noticePage=1;
+function renderNotices(){
+ const maxPage=Math.max(1,Math.ceil(notices.length/noticePageSize));
+ noticePage=Math.max(1,Math.min(noticePage,maxPage));
+ const list=$('supplyNotificationsList');
+ list.innerHTML=notices.slice((noticePage-1)*noticePageSize,noticePage*noticePageSize).map(n=>
+   '<button type="button" class="supply-notice-row '+(!n.read?'new':'')+'" data-supply-notice="'+esc(n.id)+'" aria-label="Open supply request notification">'+
+   '<span>'+esc(n.message)+'</span><small>'+date(n.createdAt)+'</small></button>'
+ ).join('')||'<p class="muted">No updates yet.</p>';
+ list.querySelectorAll('[data-supply-notice]').forEach(button=>button.onclick=async()=>{
+  if(button.disabled)return;button.disabled=true;
+  const notice=notices.find(n=>String(n.id)===button.dataset.supplyNotice);
+  if(!notice){button.disabled=false;return;}
+  try{
+   if(!notice.read)await api('/api/supply/notifications/read',{method:'POST',body:JSON.stringify({ids:[notice.id]})});
+   notice.read=true;
+   await loadNotices();
+   $('supplyNotificationsPanel').classList.add('hidden');
+   $('supplyNotificationsButton').setAttribute('aria-expanded','false');
+   if(notice.orderId)await openOrder(notice.orderId);
+  }catch(err){alert(err.message,true);button.disabled=false;}
+ });
+ const nav=$('supplyNotificationsPagination');
+ nav.innerHTML=notices.length>noticePageSize
+  ?'<span>Page '+noticePage+' of '+maxPage+' · '+notices.length+' updates</span>'+
+   '<button type="button" data-notice-page="-1" '+(noticePage===1?'disabled':'')+'>Previous</button>'+
+   '<button type="button" data-notice-page="1" '+(noticePage===maxPage?'disabled':'')+'>Next</button>'
+  :'';
+ nav.querySelectorAll('[data-notice-page]').forEach(button=>button.onclick=()=>{
+  noticePage+=Number(button.dataset.noticePage);renderNotices();
+ });
+}
 async function loadNotices(){
  try{
   const d=await api('/api/supply/notifications');notices=d.notices||[];
   const unread=Number(d.unread||0);
   $('supplyUnreadCount').textContent=unread;
   $('supplyNavUnread')?.classList.toggle('hidden',!unread);
-  const list=$('supplyNotificationsList');
-  list.innerHTML=notices.slice(0,5).map(n=>
-   '<button type="button" class="supply-notice-row '+(!n.read?'new':'')+'" data-supply-notice="'+esc(n.id)+'" aria-label="Open supply request notification">'+
-   '<span>'+esc(n.message)+'</span><small>'+date(n.createdAt)+'</small></button>'
-  ).join('')||'<p class="muted">No updates yet.</p>';
-  list.querySelectorAll('[data-supply-notice]').forEach(button=>button.onclick=async()=>{
-   if(button.disabled)return;button.disabled=true;
-   const notice=notices.find(n=>String(n.id)===button.dataset.supplyNotice);
-   if(!notice){button.disabled=false;return;}
-   try{
-    if(!notice.read)await api('/api/supply/notifications/read',{method:'POST',body:JSON.stringify({ids:[notice.id]})});
-    notice.read=true;
-    await loadNotices();
-    $('supplyNotificationsPanel').classList.add('hidden');
-    if(notice.orderId)await openOrder(notice.orderId);
-   }catch(err){alert(err.message,true);button.disabled=false;}
-  });
- }catch(err){console.warn('Unable to load supply notifications:',err.message);}
+  renderNotices();
+  return true;
+ }catch(err){console.warn('Unable to load supply notifications:',err.message);return false;}
 }
-$('supplyNotificationsButton').onclick=()=>$('supplyNotificationsPanel').classList.toggle('hidden');
+$('supplyNotificationsButton').onclick=async()=>{
+ const button=$('supplyNotificationsButton'),panel=$('supplyNotificationsPanel');
+ const opening=panel.classList.contains('hidden');
+ panel.classList.toggle('hidden',!opening);
+ button.setAttribute('aria-expanded',String(opening));
+ if(!opening)return;
+ noticePage=1;
+ button.disabled=true;
+ try{
+  const d=await api('/api/supply/notifications');notices=d.notices||[];
+  renderNotices();
+  const unreadIds=notices.filter(n=>!n.read).map(n=>n.id);
+  if(unreadIds.length)await api('/api/supply/notifications/read',{
+   method:'POST',body:JSON.stringify({ids:unreadIds})
+  });
+  notices.forEach(n=>{n.read=true;});
+  $('supplyUnreadCount').textContent='0';
+  $('supplyNavUnread')?.classList.add('hidden');
+  renderNotices();
+  await loadNotices();
+ }catch(err){
+  alert('Could not mark supply notifications as read: '+err.message,true);
+  await loadNotices();
+ }finally{button.disabled=false;}
+};
 $('supplyRefresh').onclick=async()=>{try{await Promise.all([loadCatalog(),loadOrders(),loadNotices()]);alert('Supply Chain is up to date.');}catch(err){alert(err.message,true);}};
 async function open(){
  if(!loaded){

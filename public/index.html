@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/pos-icons-hover-v1562.css?v=1.5.62" />
   <link rel="stylesheet" href="/pos-icon-crop-v1563.css?v=1.5.64" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
-  <link rel="stylesheet" href="/branches-locations-v1565.css?v=1.5.65" />
+  <link rel="stylesheet" href="/branches-locations-v1565.css?v=1.5.66" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -563,9 +563,9 @@
       </section>
 
 <section id="view-supply" class="view admin-only">
-  <div class="supply-head"><div><p class="muted">Order supplies for your registered branches, upload payment proof and track delivery.</p></div><div class="supply-toolbar"><button type="button" id="supplyRefresh" class="primary"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M5 10a8 8 0 0 1 13-4l2 6M4 12l2 6a8 8 0 0 0 13-4"/></svg> Refresh</button><button type="button" id="supplyNotificationsButton" class="primary"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg> Notifications <span id="supplyUnreadCount" class="supply-badge">0</span></button></div></div>
+  <div class="supply-head"><div><p class="muted">Order supplies for your registered branches, upload payment proof and track delivery.</p></div><div class="supply-toolbar"><button type="button" id="supplyRefresh" class="primary"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M5 10a8 8 0 0 1 13-4l2 6M4 12l2 6a8 8 0 0 0 13-4"/></svg> Refresh</button><button type="button" id="supplyNotificationsButton" class="primary" aria-expanded="false" aria-controls="supplyNotificationsPanel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg> Notifications <span id="supplyUnreadCount" class="supply-badge">0</span></button></div></div>
   <div id="supplyAlert" class="supply-alert hidden" role="status"></div>
-  <section id="supplyNotificationsPanel" class="card supply-notification-card hidden"><div class="supply-notification-title"><h3>Supply request notifications</h3><small>Latest 5 updates</small></div><div id="supplyNotificationsList" aria-live="polite"></div><p class="supply-notification-hint">Choose a notification to mark it read and open its request.</p></section>
+  <section id="supplyNotificationsPanel" class="card supply-notification-card hidden"><div class="supply-notification-title"><h3>Supply request notifications</h3><small>5 per page</small></div><div id="supplyNotificationsList" aria-live="polite"></div><nav id="supplyNotificationsPagination" class="supply-pagination supply-notification-pagination" aria-label="Notification pages"></nav><p class="supply-notification-hint">Opening Notifications marks all current alerts as read. Select an update to open its request.</p></section>
   <div class="supply-layout">
     <section class="card supply-products"><div class="card-head"><div><p class="eyebrow">MAIN OFFICE PRICE LIST</p><h3>Select requested supplies</h3></div><input type="search" id="supplyProductSearch" placeholder="Search supplies..." aria-label="Search supply products"/></div>
       <div class="supply-product-list" id="supplyProductsList" aria-live="polite"></div><nav id="supplyProductPages" class="supply-pagination" aria-label="Supply product pages"></nav>
@@ -609,7 +609,7 @@
                 <div class="table-wrap"><table aria-label="Branch directory"><thead><tr><th>Branch</th><th>Accounts / Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchesBody"></tbody></table></div><nav id="branchesPagination" class="users-pagination" aria-label="Branch pages"></nav>
               </div>
               <form id="branchForm" class="users-detail-form">
-                <div class="users-form-intro"><div class="users-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.4 2h3.2l.6 2.3c.5.2 1 .4 1.5.7l2.1-1.2 2.3 2.3-1.2 2.1c.3.5.5 1 .7 1.5l2.4.6v3.2l-2.4.6c-.2.5-.4 1-.7 1.5l1.2 2.1-2.3 2.3-2.1-1.2c-.5.3-1 .5-1.5.7l-.6 2.4h-3.2l-.6-2.4c-.5-.2-1-.4-1.5-.7l-2.1 1.2-2.3-2.3 1.2-2.1c-.3-.5-.5-1-.7-1.5L2 13.6v-3.2l2.4-.6c.2-.5.4-1 .7-1.5L3.9 6.2l2.3-2.3 2.1 1.2c.5-.3 1-.5 1.5-.7z"/><circle cx="12" cy="12" r="3.2"/></svg></div><div><p class="eyebrow">BRANCH PROFILE</p><h3 id="branchFormTitle">New Branch</h3></div></div>
+                <div class="users-form-intro"><div class="users-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18v11H3zM2 10l3-7h14l3 7M9 21v-7h6v7M7 10v4m10-4v4"/></svg></div><div><p class="eyebrow">BRANCH PROFILE</p><h3 id="branchFormTitle">New Branch</h3></div></div>
                 <input id="branchEditId" type="hidden" />
                 <label>Branch name <span class="required">*</span><input id="branchName" maxlength="120" minlength="2" placeholder="e.g. Ayala Branch" required /></label>
                 <div class="branch-autocomplete"><label for="branchAddress">Street address</label><input id="branchAddress" maxlength="250" placeholder="Start typing building, street or barangay" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="branchAddressSuggestions"/><div id="branchAddressSuggestions" class="branch-suggestions" role="listbox"></div></div>
@@ -642,7 +642,7 @@
                 <div class="table-wrap"><table aria-label="Cashier accounts"><thead><tr><th>Cashier</th><th>Role</th><th>Branch</th><th>Status</th><th>Password</th><th>Actions</th></tr></thead><tbody id="usersBody"></tbody></table></div><nav id="usersPagination" class="users-pagination" aria-label="Cashier pages"></nav>
               </div>
               <form id="userForm" class="users-detail-form">
-                <div class="users-form-intro"><div class="users-avatar staff" id="cashierPhotoAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.4 2h3.2l.6 2.3c.5.2 1 .4 1.5.7l2.1-1.2 2.3 2.3-1.2 2.1c.3.5.5 1 .7 1.5l2.4.6v3.2l-2.4.6c-.2.5-.4 1-.7 1.5l1.2 2.1-2.3 2.3-2.1-1.2c-.5.3-1 .5-1.5.7l-.6 2.4h-3.2l-.6-2.4c-.5-.2-1-.4-1.5-.7l-2.1 1.2-2.3-2.3 1.2-2.1c-.3-.5-.5-1-.7-1.5L2 13.6v-3.2l2.4-.6c.2-.5.4-1 .7-1.5L3.9 6.2l2.3-2.3 2.1 1.2c.5-.3 1-.5 1.5-.7z"/><circle cx="12" cy="12" r="3.2"/></svg></div><div><p class="eyebrow">STAFF PROFILE</p><h3>Cashier Account</h3></div></div>
+                <div class="users-form-intro"><div class="users-avatar staff" id="cashierPhotoAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div><p class="eyebrow">STAFF PROFILE</p><h3>Cashier Account</h3></div></div>
                 <input id="userEditId" type="hidden" />
                 <div class="cashier-photo-upload">
                   <label for="cashierPhotoFile">Cashier photo <span class="muted tiny">(JPG, PNG or WebP · max 1 MB)</span></label>
@@ -810,6 +810,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.63"></script>
+  <script src="/app.js?v=1.5.66"></script>
 </body>
 </html>

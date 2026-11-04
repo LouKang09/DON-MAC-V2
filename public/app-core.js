@@ -1666,7 +1666,7 @@
       avatar.innerHTML='<img src="'+esc(data)+'" alt="Cashier profile preview" decoding="async"/>';
       $('cashierPhotoRemove').disabled=false;
     }else{
-      avatar.innerHTML='<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.4 2h3.2l.6 2.3c.5.2 1 .4 1.5.7l2.1-1.2 2.3 2.3-1.2 2.1c.3.5.5 1 .7 1.5l2.4.6v3.2l-2.4.6c-.2.5-.4 1-.7 1.5l1.2 2.1-2.3 2.3-2.1-1.2c-.5.3-1 .5-1.5.7l-.6 2.4h-3.2l-.6-2.4c-.5-.2-1-.4-1.5-.7l-2.1 1.2-2.3-2.3 1.2-2.1c-.3-.5-.5-1-.7-1.5L2 13.6v-3.2l2.4-.6c.2-.5.4-1 .7-1.5L3.9 6.2l2.3-2.3 2.1 1.2c.5-.3 1-.5 1.5-.7z"/><circle cx="12" cy="12" r="3.2"/></svg>';
+      avatar.innerHTML='<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
       $('cashierPhotoRemove').disabled=true;
     }
   }

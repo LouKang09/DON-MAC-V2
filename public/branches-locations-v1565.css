@@ -42,3 +42,22 @@
 #view-supply .supply-notice-row small{display:block;margin-top:5px;color:#6c8474;font-size:10px}
 #view-supply .supply-notification-hint{margin:10px 0 0;color:#63806c;font-size:11px}
 @media(max-width:650px){#view-users .users-page-tab{flex:1;max-width:none}#view-users .users-management-shell{padding:12px!important}#view-users .users-form-fields.branch-coordinates{grid-template-columns:1fr 1fr}#view-users .branch-map-heading{align-items:flex-start;flex-direction:column}}
+/* v1.5.66 — original Branch/Cashier profile icons; gear only in heading help icons. */
+#view-users .users-group-heading > .users-help {
+  width:36px!important;height:36px!important;border-radius:10px;
+  color:#12643e;background:#eaf6ee;border:1px solid #cbe7d3;
+}
+#view-users .users-group-heading > .users-help svg {
+  width:21px!important;height:21px!important;stroke-width:2.15!important;
+}
+#view-supply .supply-notification-pagination{
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;
+  flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #edf2ed;
+}
+#view-supply .supply-notification-pagination span{
+  margin-right:auto;font-size:11px;color:#617c69;
+}
+#view-supply .supply-notification-pagination button{
+  margin-top:0;min-width:66px;cursor:pointer;
+}
+#view-supply .supply-notification-pagination button:disabled{cursor:default}
