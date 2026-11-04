@@ -214,17 +214,29 @@ $('supplyMessageForm').onsubmit=async e=>{
 async function loadNotices(){
  try{
   const d=await api('/api/supply/notifications');notices=d.notices||[];
-  $('supplyUnreadCount').textContent=d.unread||0;
-  $('supplyNavUnread')?.classList.toggle('hidden',!d.unread);
-  $('supplyNotificationsList').innerHTML=notices.map(n=>
-   '<div class="supply-notice-row '+(!n.read?'new':'')+'">'+esc(n.message)+'<small>'+date(n.createdAt)+'</small></div>'
+  const unread=Number(d.unread||0);
+  $('supplyUnreadCount').textContent=unread;
+  $('supplyNavUnread')?.classList.toggle('hidden',!unread);
+  const list=$('supplyNotificationsList');
+  list.innerHTML=notices.slice(0,5).map(n=>
+   '<button type="button" class="supply-notice-row '+(!n.read?'new':'')+'" data-supply-notice="'+esc(n.id)+'" aria-label="Open supply request notification">'+
+   '<span>'+esc(n.message)+'</span><small>'+date(n.createdAt)+'</small></button>'
   ).join('')||'<p class="muted">No updates yet.</p>';
- }catch(_){}
+  list.querySelectorAll('[data-supply-notice]').forEach(button=>button.onclick=async()=>{
+   if(button.disabled)return;button.disabled=true;
+   const notice=notices.find(n=>String(n.id)===button.dataset.supplyNotice);
+   if(!notice){button.disabled=false;return;}
+   try{
+    if(!notice.read)await api('/api/supply/notifications/read',{method:'POST',body:JSON.stringify({ids:[notice.id]})});
+    notice.read=true;
+    await loadNotices();
+    $('supplyNotificationsPanel').classList.add('hidden');
+    if(notice.orderId)await openOrder(notice.orderId);
+   }catch(err){alert(err.message,true);button.disabled=false;}
+  });
+ }catch(err){console.warn('Unable to load supply notifications:',err.message);}
 }
 $('supplyNotificationsButton').onclick=()=>$('supplyNotificationsPanel').classList.toggle('hidden');
-$('supplyMarkRead').onclick=async()=>{
- try{await api('/api/supply/notifications/read',{method:'POST',body:JSON.stringify({ids:notices.filter(n=>!n.read).map(n=>n.id)})});await loadNotices();}catch(err){alert(err.message,true);}
-};
 $('supplyRefresh').onclick=async()=>{try{await Promise.all([loadCatalog(),loadOrders(),loadNotices()]);alert('Supply Chain is up to date.');}catch(err){alert(err.message,true);}};
 async function open(){
  if(!loaded){

@@ -1588,12 +1588,12 @@
   }
 
   function clearBranchForm(){
-   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';
+   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';window.donmacBranchGeo?.reset();
   }
 
   function editBranch(id){
    const b=state.branches.find(x=>x.id===id);if(!b)return;
-   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';$('branchName').focus();
+   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';window.donmacBranchGeo?.setCoordinates(b.latitude,b.longitude);$('branchName').focus();
   }
 
   async function deleteBranch(id){
@@ -1619,7 +1619,7 @@
    $('newRole').onchange=toggleUserBranch;$('branchFormClear').onclick=clearBranchForm;
    $('branchForm').addEventListener('submit',async e=>{
      e.preventDefault();await withFormLock(e.currentTarget,async()=>{
-       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),city:$('branchCity').value.trim(),province:$('branchProvince').value.trim(),postalCode:$('branchPostalCode').value.trim(),country:$('branchCountry').value,phone:$('branchPhone').value.trim(),description:$('branchDescription').value.trim(),active:$('branchActive').checked};
+       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),city:$('branchCity').value.trim(),province:$('branchProvince').value.trim(),postalCode:$('branchPostalCode').value.trim(),country:$('branchCountry').value,phone:$('branchPhone').value.trim(),description:$('branchDescription').value.trim(),active:$('branchActive').checked,...(window.donmacBranchGeo?.getCoordinates()||{latitude:null,longitude:null})};
        try{await api('/api/branches'+(id?'/'+id:''),{method:id?'PUT':'POST',body});toast(id?'Branch updated.':'Branch created.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
      });
    });
@@ -1665,7 +1665,7 @@
       avatar.innerHTML='<img src="'+esc(data)+'" alt="Cashier profile preview" decoding="async"/>';
       $('cashierPhotoRemove').disabled=false;
     }else{
-      avatar.innerHTML='<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+      avatar.innerHTML='<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.4 2h3.2l.6 2.3c.5.2 1 .4 1.5.7l2.1-1.2 2.3 2.3-1.2 2.1c.3.5.5 1 .7 1.5l2.4.6v3.2l-2.4.6c-.2.5-.4 1-.7 1.5l1.2 2.1-2.3 2.3-2.1-1.2c-.5.3-1 .5-1.5.7l-.6 2.4h-3.2l-.6-2.4c-.5-.2-1-.4-1.5-.7l-2.1 1.2-2.3-2.3 1.2-2.1c-.3-.5-.5-1-.7-1.5L2 13.6v-3.2l2.4-.6c.2-.5.4-1 .7-1.5L3.9 6.2l2.3-2.3 2.1 1.2c.5-.3 1-.5 1.5-.7z"/><circle cx="12" cy="12" r="3.2"/></svg>';
       $('cashierPhotoRemove').disabled=true;
     }
   }

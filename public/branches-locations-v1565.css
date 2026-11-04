@@ -1,0 +1,44 @@
+/* v1.5.65: compact Branches & Cashiers workspace + location pin editor */
+#view-users .users-management-shell{padding:clamp(15px,1.75vw,23px)!important}
+#view-users .users-heading{margin:0 0 12px!important}
+#view-users .users-heading h2{font-size:clamp(19px,1.9vw,24px);line-height:1.2;margin:2px 0 3px}
+#view-users .users-heading p{margin:0;color:#6f8476}
+#view-users .users-page-tabs{margin:0 0 12px!important;padding:0 0 12px!important;justify-content:flex-start;gap:8px}
+#view-users .users-page-tab{flex:0 1 185px;max-width:185px;min-height:42px}
+#view-users .users-group-heading{padding:5px 2px 13px;margin:0 0 15px;border-bottom:1px solid #e4ede5}
+#view-users .users-group-heading>div{grid-template-columns:48px auto;column-gap:12px}
+#view-users .users-group-symbol{width:46px;height:46px;background:#eff7f2;border:1px solid #e0eae1}
+#view-users .users-group-symbol img{display:block;width:40px;height:40px;object-fit:contain}
+#view-users .users-group-heading h3{font-size:18px}
+#view-users .users-avatar svg{width:31px;height:31px}
+#view-users .users-avatar.staff{background:#777fd0}
+#view-users .users-help{cursor:help}
+#view-users .branch-autocomplete{display:flex;flex-direction:column;gap:6px;position:relative;min-width:0}
+#view-users .branch-autocomplete>label{font-size:11px;font-weight:700;color:#3c5548}
+#view-users .branch-autocomplete>input{width:100%;min-width:0;min-height:42px;padding:10px 12px;border:1px solid #d7e4da;border-radius:9px;background:#fff;color:#243e30;font-size:13px;outline:none}
+#view-users .branch-autocomplete>input:focus{border-color:#228458;box-shadow:0 0 0 3px #28a36c20}
+#view-users .branch-suggestions{position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1px solid #cbded1;box-shadow:0 12px 25px #183a2a25;border-radius:10px;max-height:220px;overflow-y:auto;display:none}
+#view-users .branch-suggestions.is-open{display:block}
+#view-users .branch-suggestion{display:block;width:100%;border:0;border-bottom:1px solid #edf3ed;background:#fff;text-align:left;cursor:pointer;padding:10px;font-size:12px;color:#1e4e34;line-height:1.4}
+#view-users .branch-suggestion:hover,#view-users .branch-suggestion:focus-visible{background:#eaf6ee}
+#view-users .branch-suggestions-note{font-size:11px;color:#78907c;padding:11px;margin:0}
+#view-users .branch-map-panel{display:grid;gap:9px;border:1px solid #d6e9db;background:#f7fbf8;border-radius:13px;padding:13px}
+#view-users .branch-map-panel p{margin:0;line-height:1.45}
+#view-users .branch-map-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px}
+#view-users .branch-map-heading strong{color:#185a3c;font-size:13px}
+#view-users .branch-coordinates input{background:#fff}
+#view-users .branch-map-preview{height:220px;overflow:hidden;border:1px solid #cdded4;border-radius:11px}
+#view-users .branch-map-preview iframe{border:0;width:100%;height:100%;display:block}
+#view-users .branch-map-directions{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:9px;border:1px solid #12643e;background:#e4f4e9;color:#12643e;font-size:12px;font-weight:800;text-decoration:none}
+#view-users .branch-map-directions:hover{background:#d5ebdb}
+#view-users .branch-map-credit{font-size:10px!important}
+#view-supply .supply-notification-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+#view-supply .supply-notification-title h3{margin:0}
+#view-supply .supply-notification-title small{color:#6b8775;font-size:11px}
+#view-supply .supply-notice-row{display:block;text-align:left;width:100%;border:0;border-bottom:1px solid #e9efe9;border-radius:0;padding:12px 5px;margin:0;background:transparent;color:#334b3d;cursor:pointer;font-size:12px}
+#view-supply .supply-notice-row.new{font-weight:850;color:#125d3c;background:#f5fbf7}
+#view-supply .supply-notice-row:hover,#view-supply .supply-notice-row:focus-visible{background:#e9f5ed}
+#view-supply .supply-notice-row:disabled{cursor:wait;opacity:.65}
+#view-supply .supply-notice-row small{display:block;margin-top:5px;color:#6c8474;font-size:10px}
+#view-supply .supply-notification-hint{margin:10px 0 0;color:#63806c;font-size:11px}
+@media(max-width:650px){#view-users .users-page-tab{flex:1;max-width:none}#view-users .users-management-shell{padding:12px!important}#view-users .users-form-fields.branch-coordinates{grid-template-columns:1fr 1fr}#view-users .branch-map-heading{align-items:flex-start;flex-direction:column}}
