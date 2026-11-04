@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.70-tier-dashboards';
+  const VERSION = '1.5.70.1-tier-dashboards';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -105,7 +105,6 @@
       // Admin-only read-only preview; keep all current dashboard renderers unchanged.
       await loadScript('/premium-dashboard-feature-gallery-v1533.js');
       await loadScript('/reference-dashboard-preview-v1535.js');
-      await loadScript('/premium-dashboard-preview-v1532.js');
       await loadScript('/plan-dashboard-v1570.js');
       await loadScript('/pos-categories-admin.js');
       await loadScript('/catalog-batch-v1544.js');

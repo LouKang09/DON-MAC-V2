@@ -35,7 +35,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.70-plan-dashboard';
+const APP_VERSION = '1.5.70-plan-dashboard-verified';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1222,7 +1222,7 @@ async function planDashboardInsights(user,requestedBranch){
   const partialSales=salesR.rows.length>15000;
   const sales=salesR.rows.slice(0,15000);
   const validSales=sales.filter(x=>x.status==='Sold');
-  const date=x=>manilaDateString(x.sold_at);
+  const date=x=>manilaDateString(new Date(x.sold_at).toISOString());
   const dayMinus=n=>addDays(today,-n);
   const sum=(list)=>money(list.reduce((v,x)=>v+Number(x.actual||0),0));
   const within=(rows,low,high)=>rows.filter(x=>date(x)>=low&&date(x)<=high);
@@ -1301,7 +1301,7 @@ async function planDashboardInsights(user,requestedBranch){
         const id=Number(b.id);
         const current=last30ByBranch.get(id)||{actual:0,orders:0};
         const previous=sum(prior30.filter(x=>Number(x.branch_id)===id));
-        const eligible=manilaDateString(b.created_at)<=dayMinus(59);
+        const eligible=manilaDateString(new Date(b.created_at).toISOString())<=dayMinus(59);
         return{name:b.name,id,orders:current.orders,
           current:money(current.actual),previous,comparable:eligible,
           growthPercent:eligible&&previous>0?Math.round((current.actual-previous)/previous*1000)/10:null};
