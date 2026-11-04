@@ -35,7 +35,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.69-manual-address';
+const APP_VERSION = '1.5.70-plan-dashboard';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1199,6 +1199,138 @@ async function dashboardData(params={},branchId=null){
   return{today,metrics:{todayActual:todayR.actual,todayGross:todayR.gross,todayTransactions:todayR.transactionCount,monthActual:monthR.actual,monthTransactions:monthR.transactionCount,lowStockCount:inv.filter(x=>x.low).length,inventoryCount:inv.length},...trendResult,branchId,categoryTrends,performanceProducts,topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:x.actual})),lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount})),recentTransactions};
 }
 
+/* Plan dashboard insights: read-only aggregates from saved transactions.
+   Current metrics cover rolling 30 days, with week and prior-window comparisons.
+   No subscription billing or POS writes. */
+async function planDashboardInsights(user,requestedBranch){
+  requireAdminRole(user);
+  const plan=(await subscriptionState()).plan;
+  const branchId=await branchSupport.salesScope(db,user,requestedBranch);
+  const today=new Intl.DateTimeFormat('en-CA',{
+    timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'
+  }).format(new Date());
+  const oldest=addDays(today,-60),end=addDays(today,1);
+  const startIso=new Date(oldest+'T00:00:00+08:00').toISOString();
+  const endIso=new Date(end+'T00:00:00+08:00').toISOString();
+  const baseParams=branchId==null?[startIso,endIso]:[startIso,endIso,branchId];
+  const whereBranch=branchId==null?'':' AND s.branch_id=$3';
+  const salesR=await db.query(
+    'SELECT s.id,s.sold_at,s.branch_id,s.status,s.actual,s.discount_amount,s.payment_mode '+
+    'FROM sales s WHERE s.sold_at >= $1 AND s.sold_at < $2'+whereBranch+
+    ' ORDER BY s.sold_at DESC,s.id DESC LIMIT 15001',baseParams
+  );
+  const partialSales=salesR.rows.length>15000;
+  const sales=salesR.rows.slice(0,15000);
+  const validSales=sales.filter(x=>x.status==='Sold');
+  const date=x=>manilaDateString(x.sold_at);
+  const dayMinus=n=>addDays(today,-n);
+  const sum=(list)=>money(list.reduce((v,x)=>v+Number(x.actual||0),0));
+  const within=(rows,low,high)=>rows.filter(x=>date(x)>=low&&date(x)<=high);
+  const last30=within(validSales,dayMinus(29),today);
+  const week=within(validSales,dayMinus(6),today);
+  const prevWeek=within(validSales,dayMinus(13),dayMinus(7));
+  const prior30=within(validSales,dayMinus(59),dayMinus(30));
+  const weekActual=sum(week),prevWeekActual=sum(prevWeek);
+  const growthPercent=prevWeekActual>0?Math.round((weekActual-prevWeekActual)/prevWeekActual*1000)/10:null;
+  const current30Total=sum(last30),prior30Total=sum(prior30);
+  const itemsR=await db.query(
+    'SELECT s.id AS sale_id,s.branch_id,si.product_name_snapshot,si.quantity,si.line_total,si.is_add_on '+
+    'FROM sale_items si JOIN sales s ON s.id=si.sale_id '+
+    'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
+    (branchId==null?'':' AND s.branch_id=$4')+
+    ' ORDER BY s.id DESC,si.id LIMIT 30001',
+    branchId==null?['Sold',new Date(dayMinus(29)+'T00:00:00+08:00').toISOString(),endIso]:
+     ['Sold',new Date(dayMinus(29)+'T00:00:00+08:00').toISOString(),endIso,branchId]
+  );
+  const partialItems=itemsR.rows.length>30000;
+  const items=itemsR.rows.slice(0,30000);
+  const basketMap=new Map(),byBranchProduct=new Map();
+  let addonRevenue=0;
+  for(const item of items){
+    const sid=Number(item.sale_id),name=String(item.product_name_snapshot||'Unnamed item');
+    if(!basketMap.has(sid))basketMap.set(sid,{names:new Set(),hasAddon:false});
+    const basket=basketMap.get(sid);
+    if(bool(item.is_add_on)){basket.hasAddon=true;addonRevenue+=Number(item.line_total||0);}
+    else basket.names.add(name);
+    const key=String(item.branch_id||'')+'\u001f'+name;
+    byBranchProduct.set(key,(byBranchProduct.get(key)||0)+Number(item.quantity||0));
+  }
+  const counts=new Map();
+  for(const basket of basketMap.values()){
+    const names=[...basket.names].slice(0,30).sort();
+    for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++){
+      const k=JSON.stringify([names[i],names[j]]);
+      counts.set(k,(counts.get(k)||0)+1);
+    }
+  }
+  const pairs=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([key,count])=>({
+    items:JSON.parse(key),orders:count
+  }));
+  const addOnOrders=[...basketMap.values()].filter(x=>x.hasAddon).length;
+  const addonRate=basketMap.size?Math.round(addOnOrders/basketMap.size*1000)/10:null;
+  const hourly=new Array(10).fill(0);
+  const fmtHour=new Intl.DateTimeFormat('en-GB',{timeZone:MANILA_TZ,hour:'2-digit',hourCycle:'h23'});
+  for(const sale of last30){const h=Number(fmtHour.format(new Date(sale.sold_at)));if(h>=9&&h<=18)hourly[h-9]++;}
+  const hours=hourly.map((orders,i)=>({hour:i+9,orders}));
+  const todaySales=within(validSales,today,today),yesterdaySales=within(validSales,dayMinus(1),dayMinus(1));
+  const last30ByBranch=new Map();
+  for(const sale of last30){
+    const id=Number(sale.branch_id||0);
+    if(!last30ByBranch.has(id))last30ByBranch.set(id,{orders:0,actual:0});
+    const o=last30ByBranch.get(id);o.orders++;o.actual+=Number(sale.actual||0);
+  }
+  const result={
+    plan,scope:branchId,today,period:'rolling 30 days',
+    partial:partialSales||partialItems,
+    pro:{
+      pairs,addOnOrders,addOnSales:money(addonRevenue),addonRate,
+      salesWindow:{current:weekActual,previous:prevWeekActual,growthPercent},
+      hours,
+      today:{actual:sum(todaySales),orders:todaySales.length,
+        previousActual:sum(yesterdaySales),previousOrders:yesterdaySales.length},
+      ordersAnalyzed:basketMap.size,
+      total30:{actual:current30Total,orders:last30.length}
+    }
+  };
+  if(plan==='BUSINESS'){
+    const bRows=(await db.query('SELECT id,name,created_at FROM branches ORDER BY id')).rows;
+    const names=new Map(bRows.map(b=>[Number(b.id),b.name]));
+    const storeResults=bRows
+      .filter(b=>branchId==null||Number(b.id)===branchId)
+      .map(b=>{
+        const id=Number(b.id);
+        const current=last30ByBranch.get(id)||{actual:0,orders:0};
+        const previous=sum(prior30.filter(x=>Number(x.branch_id)===id));
+        const eligible=manilaDateString(b.created_at)<=dayMinus(59);
+        return{name:b.name,id,orders:current.orders,
+          current:money(current.actual),previous,comparable:eligible,
+          growthPercent:eligible&&previous>0?Math.round((current.actual-previous)/previous*1000)/10:null};
+      });
+    const products=[...byBranchProduct].map(([key,qty])=>{
+      const [rawId,name]=key.split('\u001f');
+      return{branchId:Number(rawId),branch:names.get(Number(rawId))||'Unknown branch',name,qty:Math.round(qty*100)/100};
+    }).sort((a,b)=>b.qty-a.qty).slice(0,60);
+    const reviews=within(sales,dayMinus(29),today);
+    const voided=reviews.filter(x=>x.status==='Deleted').length;
+    const discounted=last30.filter(x=>Number(x.discount_amount||0)>0).length;
+    const transfersR=await db.query(
+      "SELECT reference,branch,created_at,COUNT(*) AS ingredient_lines "+
+      "FROM inventory_movements WHERE movement_type='TRANSFER' "+
+      "GROUP BY reference,branch,created_at ORDER BY created_at DESC LIMIT 8"
+    );
+    result.business={
+      branches:storeResults,products,
+      cashVariance:{available:false,reason:'A physical cash-count recording workflow is needed before variance can be calculated.'},
+      health:{available:false,reason:'Define a validated branch health formula and branch-level stock data first.'},
+      reviewSignals:{voided,discounted,scope:'rolling 30 days',note:'Review signals only; not evidence of suspicious activity.'},
+      transfers:transfersR.rows.map(x=>({reference:x.reference,branch:x.branch,
+        createdAt:x.created_at,items:Number(x.ingredient_lines),status:'Recorded transfer'})),
+      sameStoreEligible:storeResults.filter(x=>x.comparable).length
+    };
+  }
+  return result;
+}
+
 function safeBackupName(name){const base=path.basename(String(name||''));if(!/^[A-Za-z0-9._-]+\.sqlite$/.test(base))throw Object.assign(new Error('Invalid backup file name.'),{status:400});return base;}
 async function listBackups(){fs.mkdirSync(BACKUP_DIR,{recursive:true});if(db.engine!=='sqlite')return{supported:false,engine:db.engine,items:[],note:'Use managed PostgreSQL backups or pg_dump for production PostgreSQL.'};const items=fs.readdirSync(BACKUP_DIR).filter(x=>x.endsWith('.sqlite')).map(name=>{const st=fs.statSync(path.join(BACKUP_DIR,name));return{name,size:st.size,createdAt:st.mtime.toISOString()};}).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));return{supported:true,engine:db.engine,items};}
 async function createBackup(user,prefix='manual'){if(db.engine!=='sqlite'||!db.backupTo)throw Object.assign(new Error('In-app backup is available in SQLite mode. Use PostgreSQL provider backups/pg_dump in production.'),{status:400});fs.mkdirSync(BACKUP_DIR,{recursive:true});const stamp=new Date().toISOString().replace(/[:.]/g,'-');const name=`${prefix}-${stamp}.sqlite`,dest=path.join(BACKUP_DIR,name);await db.backupTo(dest);if(user)await logAction(user,`Database backup created: ${name}`,'Database Saved',null);const autos=fs.readdirSync(BACKUP_DIR).filter(x=>x.startsWith('auto-')&&x.endsWith('.sqlite')).sort().reverse();for(const old of autos.slice(30))try{fs.unlinkSync(path.join(BACKUP_DIR,old));}catch(_){}return{name,size:fs.statSync(dest).size};}
@@ -1541,6 +1673,7 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/branches')return json(res,200,{branches:await accessibleBranches(user)},safeHeaders());
+  if(method==='GET'&&p==='/api/dashboard/plan-insights')return json(res,200,await planDashboardInsights(user,url.searchParams.get('branchId')),safeHeaders());
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/cashiers'){
     const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
