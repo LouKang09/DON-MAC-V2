@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const legacySalesImport = require('./lib/legacy-sales-import');
 const { createDb } = require('./db');
 const { makePdf, salesReportLines, costingReportLines } = require('./lib/pdf');
 const { sendMail } = require('./lib/smtp');
@@ -35,7 +36,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.71-dashboard-activity';
+const APP_VERSION = '1.5.72-csv-import';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1786,6 +1787,18 @@ async function handleApi(req,res,url){
     await logAction(user,'Read-only archive comparison uploaded','Database Compare',
       'Comparison metadata only; 24h access; no live data changed');
     return json(res,201,{...record,message:'Read-only comparison created. It expires in 24 hours; your upload record will remain visible.'},safeHeaders());
+  }
+  if(method==='POST'&&(p==='/api/admin/imports/sales/preview'||p==='/api/admin/imports/sales/commit')){
+    const payload=await readJson(req,2*1024*1024);
+    const commit=p.endsWith('/commit');
+    try{
+      const result=await legacySalesImport.run({db,user,rows:payload.rows,commit,logAction});
+      return json(res,200,result,safeHeaders({'Cache-Control':'no-store'}));
+    }catch(e){
+      if(e.code==='23505'||e.code==='SQLITE_CONSTRAINT_UNIQUE')
+        throw Object.assign(new Error('A reference in this file now exists in the database. Nothing was imported; preview the file again.'),{status:409});
+      throw e;
+    }
   }
   if(method==='GET'&&p==='/api/backups/data-export'){
     const archive=await makePortableDataExport();
