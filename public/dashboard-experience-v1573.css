@@ -1,0 +1,41 @@
+/* v1.5.73 — globally scoped dashboard branch selection and compact analytics */
+#view-dashboard .dashboard-account-filter{
+ display:flex;align-items:center;justify-content:flex-end;gap:10px;
+ margin:0 0 12px;padding:9px 13px;border:1px solid #d9e8dc;
+ background:#f8fcf9;border-radius:12px;
+}
+#view-dashboard .dashboard-account-filter.hidden{display:none!important}
+#view-dashboard .dashboard-account-filter>label{font-size:12px;font-weight:750;color:#26613f}
+#view-dashboard #dashboardBranchWrap{margin:0!important;min-width:180px}
+#view-dashboard #dashboardBranchWrap select{width:100%;min-height:37px;border:1px solid #c7e0ce;border-radius:9px;
+ color:#185735;background:#fff;padding:7px 11px;font-size:12px}
+#view-dashboard .dashboard-radar{display:none!important}
+#view-dashboard .dashboard-items-card{height:auto!important;min-height:0!important}
+#view-dashboard .dashboard-items-card .dashboard-radar-legend{border-top:0!important;padding-top:0!important;
+ grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 15px;margin-top:10px}
+#view-dashboard .plan-widget-heading.pending-account-analytics{visibility:hidden!important}
+#view-dashboard #planWidgetCustomize{min-height:41px!important;padding:10px 18px!important;font-size:12px!important;
+ color:#fff!important;background:#075d38!important;border:1px solid #075d38!important;border-radius:10px!important;font-weight:800!important}
+#view-dashboard #planWidgetCustomize:hover{background:#06482d!important}
+#view-dashboard .dashboard-activity-pages{display:flex;justify-content:flex-end;align-items:center;
+ gap:8px;padding:9px 2px 0;font-size:11px;color:#597362}
+#view-dashboard .dashboard-activity-pages span{margin-right:auto}
+#view-dashboard .dashboard-activity-pages button{border:1px solid #d5e8da;border-radius:8px;background:#f6fbf7;
+ color:#1e6541;font-size:11px;font-weight:750;padding:7px 11px}
+#view-dashboard .dashboard-activity-pages button:disabled{opacity:.38;cursor:default}
+#view-dashboard .recent-items-breakdown{background:#f6fbf7;color:#285138;padding:13px 16px;border-left:3px solid #28794c}
+#view-dashboard .recent-items-breakdown[hidden]{display:none}
+#view-dashboard .recent-items-breakdown table{width:100%;font-size:11px;border-collapse:collapse}
+#view-dashboard .recent-items-breakdown td{padding:6px 12px!important}
+#view-dashboard button[data-activity-items]{white-space:nowrap;border:1px solid #cde4d3;border-radius:8px;
+ color:#12613c;background:#f3faf5;padding:6px 9px;font-size:10px;font-weight:750}
+#view-dashboard .dashboard-inventory-note{font-size:10px;color:#67816f}
+button.unified-refresh-circle{display:inline-grid!important;place-items:center!important;flex:0 0 38px!important;
+ width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;
+ padding:0!important;border:1px solid #badcc7!important;border-radius:50%!important;
+ background:#e6f5ea!important;color:#075d38!important;box-shadow:none!important;
+ line-height:1!important;white-space:nowrap}
+button.unified-refresh-circle svg{width:19px!important;height:19px!important;flex:none!important}
+button.unified-refresh-circle:hover{background:#d5eddd!important;border-color:#89c6a0!important}
+@media(max-width:650px){#view-dashboard .dashboard-account-filter{justify-content:space-between}
+ #view-dashboard #dashboardBranchWrap{min-width:0;flex:1;max-width:230px}}
