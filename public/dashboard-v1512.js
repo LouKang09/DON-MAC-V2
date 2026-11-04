@@ -117,42 +117,18 @@
 
   function renderItemsPerformance(data){
     const art=$('dashboardRadar'),legend=$('dashboardRadarLegend'),countLabel=$('performanceCountLabel');
-    if(!art||!legend)return;
+    if(!legend)return;
+    // Product-quantity list only. The old spider-web SVG has been retired.
+    if(art)art.remove();
     const products=(Array.isArray(data.performanceProducts)?data.performanceProducts:data.topProducts||[])
       .filter(p=>p&&p.name).slice(0,8);
     if(countLabel)countLabel.textContent=products.length+' menu products';
-    if(!products.length){
-      art.innerHTML='<div class="dashboard-empty-performance">No products in the current catalog.</div>';
-      legend.innerHTML='';art.setAttribute('aria-label','No catalog products');return;
-    }
-    // Eight real product positions (including zero-sales products when present);
-    // keep the octagonal grid even with a small catalog, with unused axes unlabeled.
-    const N=8,cx=255,cy=171,r=118;
-    const point=(radius,i)=>[cx+Math.sin(i*Math.PI*2/N)*radius,cy-Math.cos(i*Math.PI*2/N)*radius];
-    const coords=(radius,i)=>point(radius,i).map(v=>v.toFixed(1)).join(',');
-    const largest=Math.max(1,...products.map(p=>Number(p.qty)||0));
-    const mesh=[.25,.5,.75,1].map(f=>'<polygon points="'+Array.from({length:N},(_,i)=>coords(r*f,i)).join(' ')+'" fill="none" stroke="#e0e9df" stroke-width="1.15"/>').join('');
-    const axes=Array.from({length:N},(_,i)=>{
-      const [x,y]=point(r,i);
-      return '<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#e6ede6" stroke-width="1.1"/>';
-    }).join('');
-    // Missing products are not invented: zero-length spokes draw at the center.
-    const points=Array.from({length:N},(_,i)=>coords(r*(Number(products[i]?.qty||0)/largest),i)).join(' ');
-    const dots=products.map((p,i)=>{
-      const [x,y]=point(r*(Number(p.qty||0)/largest),i);
-      return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.8" fill="#24734b" stroke="white" stroke-width="1.9"><title>'+esc(p.name)+': '+number(p.qty)+' sold</title></circle>';
-    }).join('');
-    const labels=products.map((p,i)=>{
-      const [x,y]=point(r+35,i),value=String(p.name);
-      const short=value.length>16?value.slice(0,15)+'…':value;
-      const anchor=x<cx-42?'end':x>cx+42?'start':'middle';
-      return '<text x="'+x.toFixed(1)+'" y="'+(y+3.5).toFixed(1)+'" font-size="11.5" font-weight="600" text-anchor="'+anchor+'" fill="#697d6c"><title>'+esc(value)+'</title>'+esc(short)+'</text>';
-    }).join('');
-    art.innerHTML='<svg viewBox="0 0 510 350" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'+
-      '<defs><linearGradient id="dashRadarFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e4ecb7" stop-opacity=".7"/><stop offset="1" stop-color="#abc881" stop-opacity=".25"/></linearGradient></defs>'+
-      mesh+axes+'<polygon points="'+points+'" fill="url(#dashRadarFill)" stroke="#43855c" stroke-width="2.3" stroke-linejoin="round"/>'+dots+labels+'</svg>';
-    art.setAttribute('aria-label','Items sold this month: '+products.map(p=>p.name+' '+number(p.qty)).join('; '));
-    legend.innerHTML=products.map(p=>'<div class="radar-legend-item"><span class="radar-legend-dot"></span><span class="radar-legend-name" title="'+esc(p.name)+'">'+esc(p.name)+'</span><strong>'+number(p.qty)+'</strong></div>').join('');
+    legend.innerHTML=products.length?products.map(p=>
+      '<div class="radar-legend-item"><span class="radar-legend-dot"></span>'+
+      '<span class="radar-legend-name" title="'+esc(p.name)+'">'+esc(p.name)+'</span>'+
+      '<strong>'+number(p.qty)+'</strong></div>').join(''):
+      '<div class="dashboard-empty-performance">No product sales for this period.</div>';
+    legend.setAttribute('aria-label','Product quantities: '+products.map(p=>p.name+' '+number(p.qty)).join('; '));
   }
 
   function renderRecentTransactions(data){

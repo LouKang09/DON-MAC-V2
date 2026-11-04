@@ -74,9 +74,9 @@
       headers:{'Content-Type':'application/json'},body:JSON.stringify(values)
     });
     if(!resp.ok){const failure=await resp.json().catch(()=>({}));throw Error(failure.error||'Could not save widgets.');}
-    if(status)status.textContent='Saved to your franchise account.';
+    if(subscription?.plan===plan){const current=$('planWidgetSaveState');if(current)current.textContent='Saved to your franchise account.';}
   }).catch(e=>{
-    if(status)status.textContent='Not saved: '+e.message;
+    if(subscription?.plan===plan){const current=$('planWidgetSaveState');if(current)current.textContent='Not saved: '+e.message;}
     const warn=$('planWidgetError');warn.textContent='Widget preferences not saved: '+e.message;warn.classList.remove('hidden');
   });
  }
@@ -168,7 +168,7 @@
    if(!customizing)return;
    const entries=ordered();
    el.innerHTML='<div class="pw-custom-head"><strong>Customize Dashboard</strong><span>Show, hide, or change display order</span></div>'+
-    '<p id="planWidgetSaveState" class="pw-save-state" role="status">Changes are saved to the franchise account.</p><div class="pw-custom-grid">'+entries.map((entry,i)=>
+    '<p id="planWidgetSaveState" class="pw-save-state" role="status">Changes save automatically to your franchise account.</p><div class="pw-custom-grid">'+entries.map((entry,i)=>
       '<div class="pw-custom-row"><label><input type="checkbox" data-pw-visibility="'+esc(entry[0])+'" '+
       (hiddenState[entry[0]]?'':'checked')+'/>'+
       '<span>'+esc(entry[1])+'</span></label>'+
