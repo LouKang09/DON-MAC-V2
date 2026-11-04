@@ -155,7 +155,8 @@
   window.renderDonMacDashboardExtras=data=>{
     if(!data)return;
     currentData=data;
-    renderSalesChart(data);renderItemsPerformance(data);renderRecentTransactions(data);
+    renderSalesChart(data);renderItemsPerformance(data);
+    if(!window.donmacDashboardFilters)renderRecentTransactions(data);
     for(const id of ['dashboardRecentRefresh','dashboardChartRefresh']){
       const button=$(id);
       if(button&&!button.dataset.bound){
