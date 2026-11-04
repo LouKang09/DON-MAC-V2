@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.73-account-dashboard';
+  const VERSION = '1.5.74-login-redesign';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -31,9 +31,9 @@
     const title = document.getElementById('authTitle');
     const hint = document.getElementById('authHint');
     const submit = document.getElementById('authSubmit');
-    if (title) title.textContent = 'Sign in';
-    if (hint) hint.textContent = message || 'Use your web POS account.';
-    if (submit) submit.textContent = 'Sign in';
+    if (title) title.textContent = 'Welcome Back, Please login to your account';
+    if (hint) hint.textContent = message || '';
+    if (submit) submit.textContent = 'Sign In';
   }
 
   async function startEnhancementsWhenAppIsReady() {

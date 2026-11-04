@@ -21,26 +21,50 @@
   <link rel="stylesheet" href="/pos-icon-crop-v1563.css?v=1.5.64" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
   <link rel="stylesheet" href="/users-management-refinement-v1569.css?v=1.5.69" />
+  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.74" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
 
-  <section id="authScreen" class="auth-screen hidden">
-    <form id="authForm" class="auth-card">
-      <div class="brand-mark">DM</div>
-      <p class="eyebrow">COFFEE POS 0.4 MIGRATION</p>
-      <h1 id="authTitle">Sign in</h1>
-      <p id="authHint" class="muted">Use your web POS account.</p>
-      <label>Username<input id="authUsername" autocomplete="username" minlength="2" maxlength="80" required /></label>
-      <label>Password<input id="authPassword" type="password" minlength="8" maxlength="256" required /></label>
-      <details class="auth-scope-details" id="authScopeDetails"><summary>Account / Branch <span class="muted tiny">(if usernames are shared)</span></summary>
-        <label>Owner username<input id="authOwnerUsername" maxlength="80" autocomplete="off" placeholder="Owner account username" /></label>
-        <label>Branch name<input id="authBranchName" maxlength="120" autocomplete="off" placeholder="Cashier's assigned branch" /></label>
-        <p class="tiny muted">Only needed when more than one account shares a cashier username. Owner accounts do not need a branch.</p>
-      </details>
-      <button id="authSubmit" class="primary big" type="submit">Sign in</button>
-      <p class="tiny muted">Excel passwords are intentionally not imported. Web passwords are stored as secure hashes.</p>
-    </form>
+  <section id="authScreen" class="auth-screen hidden" aria-label="Sign in to Don Macchiatos POS">
+    <div class="auth-shell">
+      <div class="auth-brand-panel" aria-label="Don Macchiatos">
+        <img class="auth-brand-logo" src="/donmac-logo-on-white.svg" alt="Don Macchiatos official logo" width="450" height="540" decoding="async" />
+      </div>
+      <form id="authForm" class="auth-card">
+        <img class="auth-beans-icon" src="/assets/catalog/v1562-coffee-beans.svg" alt="" width="116" height="116" decoding="async" />
+        <h1 id="authTitle">Welcome Back, Please login to your account</h1>
+        <p id="authHint" class="auth-hint" role="status"></p>
+        <label for="authUsername">Username</label>
+        <div class="auth-input-box">
+          <svg class="auth-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20v-2.2a7 7 0 0 1 14 0V20Z"/></svg>
+          <input id="authUsername" name="username" autocomplete="username" minlength="2" maxlength="80" placeholder="Enter your username" required />
+        </div>
+        <label for="authPassword">Password</label>
+        <div class="auth-input-box auth-password-box">
+          <svg class="auth-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="256" placeholder="Enter your password" required />
+          <button type="button" id="authPasswordToggle" class="auth-password-toggle" aria-label="Show password" aria-pressed="false" title="Show password">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6.1 6.8 12 6.8 21.5 12 21.5 12 17.9 17.2 12 17.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+          </button>
+        </div>
+        <div class="auth-options">
+          <label class="auth-remember"><input id="authRememberUsername" type="checkbox" /> <span>Remember me</span></label>
+          <button type="button" id="authForgotPassword" class="auth-text-action">Forgot password?</button>
+        </div>
+        <details class="auth-scope-details" id="authScopeDetails">
+          <summary>Account / Branch <span class="auth-scope-caption">(if usernames are shared)</span></summary>
+          <div class="auth-scope-fields">
+            <label for="authOwnerUsername">Owner username<input id="authOwnerUsername" maxlength="80" autocomplete="off" placeholder="Owner account username" /></label>
+            <label for="authBranchName">Branch name<input id="authBranchName" maxlength="120" autocomplete="off" placeholder="Cashier's assigned branch" /></label>
+            <p class="auth-scope-note">Use this only when different accounts share a cashier username. Owners do not need a branch.</p>
+          </div>
+        </details>
+        <button id="authSubmit" class="primary big auth-submit" type="submit">Sign In</button>
+        <p class="auth-signup" id="authSignupPrompt">Don't have an account? <button type="button" id="authSignupButton" class="auth-text-action">Sign up</button></p>
+        <p id="authHelpMessage" class="auth-help-message hidden" role="status"></p>
+      </form>
+    </div>
   </section>
 
   <div id="app" class="app hidden">
@@ -852,6 +876,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.72"></script>
+  <script src="/auth-login-v1574.js?v=1.5.74"></script>
+  <script src="/app.js?v=1.5.74"></script>
 </body>
 </html>

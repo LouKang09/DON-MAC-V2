@@ -81,7 +81,19 @@
     }finally{clearTimeout(timer);}
   }
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
-  function showAuth(setupRequired){window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');$('app').classList.add('hidden');$('authScreen').classList.remove('hidden');$('authTitle').textContent=setupRequired?'Create Owner Account':'Sign in';$('authHint').textContent=setupRequired?'Your first account is the Owner. Additional Admin accounts will be Co-Owners.':'Use your web POS account.';$('authSubmit').textContent=setupRequired?'Create Owner':'Sign in';$('authPassword').autocomplete=setupRequired?'new-password':'current-password';}
+  function showAuth(setupRequired){
+    window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);
+    safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');
+    $('app').classList.add('hidden');$('authScreen').classList.remove('hidden');
+    $('authTitle').textContent=setupRequired?'Create Owner Account':'Welcome Back, Please login to your account';
+    $('authHint').textContent=setupRequired?'Set up the first Owner account to access your POS.':'';
+    $('authSubmit').textContent=setupRequired?'Create Owner':'Sign In';
+    $('authPassword').autocomplete=setupRequired?'new-password':'current-password';
+    $('authSignupPrompt')?.classList.toggle('hidden',!!setupRequired);
+    $('authForgotPassword')?.classList.toggle('hidden',!!setupRequired);
+    $('authHelpMessage')?.classList.add('hidden');
+    window.donmacLoginExperience?.restore();
+  }
   function applyTopbarPhoto(){
     const target=$('topbarAvatar');
     if(!target)return;

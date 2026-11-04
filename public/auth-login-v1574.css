@@ -1,0 +1,228 @@
+/* Don Mac POS v1.5.74 — approved borderless-logo split login. */
+#authScreen.auth-screen {
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:clamp(16px,5vw,52px);
+  background:#ead8c7;
+  background-image:
+    radial-gradient(ellipse at 8% 10%,rgba(129,76,43,.09) 0 9%,transparent 9.5%),
+    radial-gradient(ellipse at 93% 87%,rgba(129,76,43,.1) 0 11%,transparent 11.5%),
+    linear-gradient(135deg,#f1e4d7 0%,#e7d4c2 100%);
+}
+#authScreen .auth-shell{
+  display:grid;
+  grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+  width:min(1260px,100%);
+  min-height:min(710px,calc(100dvh - 60px));
+  border-radius:40px;
+  overflow:hidden;
+  border:0;
+  box-shadow:0 25px 90px rgba(42,35,24,.2);
+  background:#f8f3e9;
+}
+#authScreen .auth-brand-panel{
+  display:flex;align-items:center;justify-content:center;
+  min-width:0;min-height:100%;
+  background:#faf7f1;
+  padding:clamp(28px,4.5vw,72px);
+}
+#authScreen .auth-brand-logo{
+  display:block;
+  width:min(100%,475px);
+  max-height:590px;
+  height:auto;
+  object-fit:contain;
+  background:none!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+#authScreen .auth-card{
+  width:100%;max-width:none;
+  border:0;box-shadow:none;border-radius:0;
+  padding:clamp(28px,4.2vw,64px) clamp(28px,4.2vw,68px);
+  margin:0;
+  min-width:0;
+  background:#075D38;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:stretch;
+  gap:0;
+}
+#authScreen .auth-beans-icon{
+  align-self:center;
+  display:block;
+  width:clamp(78px,9.5vw,120px);
+  height:clamp(78px,9.5vw,120px);
+  object-fit:contain;
+  margin:0 auto clamp(14px,2vw,22px);
+  padding:0!important;
+  border:none!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+#authScreen .auth-card #authTitle{
+  font-size:clamp(25px,2.35vw,36px);
+  font-weight:800;
+  line-height:1.22;
+  letter-spacing:-.025em;
+  color:#fff;
+  margin:0 0 clamp(18px,2.2vw,26px);
+  max-width:25ch;
+}
+#authScreen .auth-hint{
+  color:#e0f2e6;
+  font-size:13px;
+  line-height:1.5;
+  margin:-10px 0 16px;
+}
+#authScreen .auth-hint:empty{display:none}
+#authScreen .auth-card>label:not(.auth-remember){
+  display:block;
+  margin:0 0 8px;
+  color:#fff;font-size:14px;font-weight:750;
+}
+#authScreen .auth-input-box{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  height:56px;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:12px;
+  margin-bottom:18px;
+  background:rgba(255,255,255,.09);
+  color:#e1f3e7;
+  transition:border-color .16s,box-shadow .16s;
+}
+#authScreen .auth-input-box:focus-within{
+  border-color:#d1eac8;
+  box-shadow:0 0 0 3px rgba(210,235,207,.12);
+}
+#authScreen .auth-field-icon{margin-left:18px;flex-shrink:0;opacity:.88}
+#authScreen .auth-input-box input{
+  flex:1;min-width:0;width:100%;height:100%;
+  border:0!important;outline:0!important;box-shadow:none!important;
+  background:transparent!important;color:#fff!important;
+  padding:0 15px;
+  font-size:16px;font-weight:550;
+}
+#authScreen .auth-input-box input::placeholder{color:rgba(255,255,255,.6)}
+#authScreen .auth-input-box input:-webkit-autofill{
+  -webkit-text-fill-color:#fff!important;
+  -webkit-box-shadow:0 0 0 60px #146747 inset!important;
+  caret-color:#fff!important;
+}
+#authScreen .auth-password-toggle{
+  display:grid;place-items:center;flex:0 0 44px;
+  height:44px;margin-right:5px;
+  padding:0;color:#e2f5e8;background:transparent;
+  border:0;border-radius:10px;cursor:pointer;
+}
+#authScreen .auth-password-toggle:hover{background:rgba(255,255,255,.12)}
+#authScreen .auth-options{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:9px;
+  margin:-3px 0 20px;
+}
+#authScreen .auth-remember{
+  display:flex!important;align-items:center;gap:8px;
+  color:#f2fbf4!important;
+  font-size:12px!important;font-weight:600!important;
+  cursor:pointer;
+}
+#authScreen .auth-remember input{
+  width:17px!important;height:17px!important;
+  min-width:17px!important;margin:0;
+  accent-color:#d5eeac;
+}
+#authScreen .auth-text-action{
+  background:none;border:0;padding:4px 0;
+  font-size:12px;font-weight:700;
+  color:#fff;text-decoration:underline;
+  text-underline-offset:3px;cursor:pointer;
+}
+#authScreen .auth-text-action:hover{color:#d4efac}
+#authScreen .auth-scope-details{
+  margin:0 0 22px;
+  border:1px solid rgba(255,255,255,.19);
+  background:rgba(255,255,255,.055);
+  border-radius:12px;
+  padding:11px 14px;
+  color:#f4fbf5;
+}
+#authScreen .auth-scope-details summary{
+  cursor:pointer;
+  color:#ecfbf0;
+  font-size:12px;font-weight:800;
+}
+#authScreen .auth-scope-caption{font-size:10px;font-weight:500;opacity:.75}
+#authScreen .auth-scope-fields{padding-top:13px;display:grid;gap:11px}
+#authScreen .auth-scope-details label{
+  display:grid;gap:6px;
+  color:#fff;font-size:12px;font-weight:700;
+}
+#authScreen .auth-scope-details input{
+  padding:11px 12px;min-height:42px;
+  border-radius:9px;border:1px solid rgba(255,255,255,.25);
+  color:#fff;background:rgba(255,255,255,.1);
+}
+#authScreen .auth-scope-details input::placeholder{color:#c2deca}
+#authScreen .auth-scope-details .auth-scope-note{
+  color:#d1e5d7;margin:3px 0 0;
+  font-size:11px;line-height:1.5;
+}
+#authScreen .auth-submit{
+  width:min(100%,390px);
+  min-height:58px;
+  align-self:center;
+  border:0!important;
+  border-radius:18px;
+  background:#f9f4ec!important;
+  color:#075D38!important;
+  box-shadow:0 7px 17px rgba(0,0,0,.15);
+  font-size:23px;font-weight:800;
+  margin:0 0 22px;
+  transition:background .15s,transform .15s;
+}
+#authScreen .auth-submit:hover:not(:disabled){background:#e7efe0!important;transform:translateY(-1px)}
+#authScreen .auth-signup{
+  margin:0;text-align:center;
+  color:#f0f9f2;font-size:14px;
+}
+#authScreen .auth-signup .auth-text-action{font-size:14px;color:#d5f6ab;margin-left:2px}
+#authScreen .auth-help-message{
+  margin:15px 0 0;padding:12px 14px;
+  color:#fff;background:rgba(0,0,0,.2);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;font-size:12px;line-height:1.5;
+}
+#authScreen .auth-help-message.hidden{display:none!important}
+@media(max-width:900px){
+  #authScreen.auth-screen{padding:18px}
+  #authScreen .auth-shell{min-height:0;grid-template-columns:.76fr 1.24fr;border-radius:29px}
+  #authScreen .auth-brand-panel{padding:25px}
+  #authScreen .auth-card{padding:35px 28px}
+  #authScreen .auth-card #authTitle{font-size:clamp(22px,3vw,30px)}
+}
+@media(max-width:640px){
+  #authScreen.auth-screen{padding:14px;align-items:flex-start}
+  #authScreen .auth-shell{grid-template-columns:1fr;border-radius:25px;min-height:0;max-width:500px;margin:auto}
+  #authScreen .auth-brand-panel{min-height:175px;max-height:205px;padding:12px 24px}
+  #authScreen .auth-brand-logo{width:auto;max-width:260px;height:175px;max-height:100%;object-fit:contain}
+  #authScreen .auth-card{padding:24px 25px 32px}
+  #authScreen .auth-beans-icon{width:72px;height:72px;margin-bottom:12px}
+  #authScreen .auth-card #authTitle{font-size:25px;margin-bottom:21px}
+  #authScreen .auth-input-box{height:51px}
+  #authScreen .auth-submit{min-height:52px;font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){
+  #authScreen .auth-input-box,#authScreen .auth-submit{transition:none}
+}
