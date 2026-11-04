@@ -1620,6 +1620,7 @@
    $('branchForm').addEventListener('submit',async e=>{
      e.preventDefault();await withFormLock(e.currentTarget,async()=>{
        const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),city:$('branchCity').value.trim(),province:$('branchProvince').value.trim(),postalCode:$('branchPostalCode').value.trim(),country:$('branchCountry').value,phone:$('branchPhone').value.trim(),description:$('branchDescription').value.trim(),active:$('branchActive').checked,...(window.donmacBranchGeo?.getCoordinates()||{latitude:null,longitude:null})};
+       if(window.donmacBranchGeo?.getCoordinates().invalid){toast('Enter valid latitude and longitude, or leave both blank.');return;}
        try{await api('/api/branches'+(id?'/'+id:''),{method:id?'PUT':'POST',body});toast(id?'Branch updated.':'Branch created.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
      });
    });

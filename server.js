@@ -35,7 +35,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.63-icon-crop-and-outlines';
+const APP_VERSION = '1.5.65-branches-supply-geo';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1340,7 +1340,7 @@ async function deleteSale(user,reference,body){
 }
 
 function mimeType(file){const ext=path.extname(file).toLowerCase();return({'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'})[ext]||'application/octet-stream';}
-function safeHeaders(extra={}){return{'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",...extra};}
+function safeHeaders(extra={}){return{'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io; frame-src https://www.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",...extra};}
 function binary(res,status,buffer,contentType,headers={}){res.writeHead(status,safeHeaders({'Content-Type':contentType,'Content-Length':buffer.length,...headers}));res.end(buffer);}
 function serveStatic(req,res,pathname){const rel=pathname==='/'?'index.html':decodeURIComponent(pathname).replace(/^\/+/,''),file=path.resolve(PUBLIC_DIR,rel);if(!file.startsWith(path.resolve(PUBLIC_DIR)+path.sep)&&file!==path.join(PUBLIC_DIR,'index.html'))return false;if(!fs.existsSync(file)||!fs.statSync(file).isFile())return false;const data=fs.readFileSync(file);res.writeHead(200,safeHeaders({'Content-Type':mimeType(file),'Content-Length':data.length,'Cache-Control':'no-store'}));res.end(data);return true;}
 
