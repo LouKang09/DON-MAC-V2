@@ -60,8 +60,18 @@
   }catch(_){}
  });
  remember.addEventListener('change',()=>{if(!remember.checked){try{localStorage.removeItem(KEY)}catch(_){}}});
- $('authForgotPassword').addEventListener('click',()=>show('reset'));
- $('authSignupButton').addEventListener('click',()=>show('register'));
+ let features={emailOtpAvailable:false,publicOwnerSignupAvailable:false};
+ fetch('/api/status',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(d=>{
+  if(d.authFeatures)features=d.authFeatures;
+ }).catch(()=>{});
+ $('authForgotPassword').addEventListener('click',()=>{
+  show('reset');
+  if(!features.emailOtpAvailable)message('resetMessage','Email OTP is not configured for this website. The administrator must set up an email sender before reset codes can be delivered.',true);
+ });
+ $('authSignupButton').addEventListener('click',()=>{
+  show('register');
+  if(!features.publicOwnerSignupAvailable)message('regMessage','Self-service Owner registration is not active yet. Account isolation must be completed before new franchises can safely access the POS.',true);
+ });
  document.querySelectorAll('[data-auth-back]').forEach(button=>button.addEventListener('click',()=>show('login')));
  document.querySelectorAll('[data-toggle-password]').forEach(button=>button.addEventListener('click',()=>{
   const target=$(button.dataset.togglePassword);

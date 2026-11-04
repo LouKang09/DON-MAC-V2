@@ -273,3 +273,7 @@
  #authScreen .auth-panel{height:auto;overflow:visible}
  #authScreen .auth-panel>.auth-secondary-panel{height:auto;max-height:none;overflow:visible}
 }
+
+/* Hide Edge's native password-eye icon wherever the custom white icon is used. */
+#authScreen input[type="password"]::-ms-reveal,
+#authScreen input[type="password"]::-ms-clear{display:none!important}
