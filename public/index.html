@@ -179,6 +179,16 @@
             <div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div>
           </section>
         </div>
+        <section id="planDashboardWidgets" class="plan-widget-section admin-only" aria-labelledby="planWidgetHeading" hidden>
+ <div class="plan-widget-heading">
+   <div><p class="eyebrow">PLAN ANALYTICS · LIVE TRANSACTION DATA</p><h3 id="planWidgetHeading">Pro Dashboard Insights</h3><p id="planWidgetDescription">Analytics calculated from recorded sales, with unavailable metrics labeled.</p></div>
+   <button type="button" id="planWidgetCustomize" class="ghost">Customize Widgets</button>
+ </div>
+ <div id="planWidgetCustomizer" class="plan-widget-customizer hidden" aria-label="Dashboard widget preferences"></div>
+ <div id="planWidgetError" role="status" class="plan-widget-info hidden"></div>
+ <div id="planWidgetCards" class="plan-widget-grid" aria-live="polite"></div>
+ <p class="plan-widget-disclaimer">Widget calculations use completed POS records. This account's plan is currently simulated; figures are not sample data unless explicitly marked. Widget visibility and order are saved in this browser.</p>
+</section>
       </section>
 
       <section id="view-pos" class="view active">
@@ -683,6 +693,16 @@
             <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">₱</span><div><h4>Inventory valuation report <small>Planned</small></h4><p>Assess the estimated cost and value of ingredients on hand.</p></div></article>
             <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">▣</span><div><h4>Label printing <small>Planned</small></h4><p>Print ingredient and shelf labels for stock operations.</p></div></article>
           </div>
+<section id="advancedReferenceSection" class="advanced-reference-section" aria-label="Business reference analytics concept">
+ <div class="advanced-reference-header"><div><p class="eyebrow">BUSINESS · DESIGN CONCEPT</p><h2>Advanced Analytics Reference Design</h2><p>The complete eight-section reference dashboard is included here for evaluation. Every figure in this concept is SAMPLE DATA; the live Dashboard above uses recorded POS sales.</p></div><span id="advancedReferencePlan" class="advanced-reference-plan">Business preview</span></div>
+ <div id="advancedReferenceFrame" class="advanced-reference-frame is-locked">
+   <div id="advancedReferenceContent" class="advanced-reference-preview" aria-label="Reference dashboard sample preview"></div>
+   <div id="advancedReferenceScreen" class="advanced-reference-screen" aria-hidden="true"></div>
+   <div id="advancedReferenceLock" class="advanced-reference-gate" role="region" aria-label="Upgrade to view the full Business reference design">
+     <div class="advanced-reference-gate-card"><span class="advanced-reference-lock-icon" aria-hidden="true">◇</span><strong>Unlock the full Business analytics design</strong><p>See Financials, Store Performance, Sales &amp; Menu, Customers, Operations, Staff &amp; Labour, and Alerts. All values are sample previews for now.</p><button type="button" id="advancedReferenceUpgrade" class="primary">Upgrade to Business</button></div>
+   </div>
+ </div>
+</section>
           <div id="advancedBusinessActions" class="advanced-business-actions hidden">
             <button type="button" class="primary" id="advancedOpenInventory">Open Inventory</button>
             <button type="button" class="ghost" id="advancedOpenSales">Open Sales Report</button>
@@ -798,6 +818,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.69"></script>
+  <script src="/app.js?v=1.5.70"></script>
 </body>
 </html>

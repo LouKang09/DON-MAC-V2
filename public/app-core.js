@@ -161,6 +161,7 @@
       :'Pro includes Replenish; Transfer and advanced access require Business.';
     $('advancedUpgradeButton').classList.toggle('hidden',business);
     $('advancedBusinessActions').classList.toggle('hidden',!business);
+    window.donmacPlanWidgets?.setSubscription(sub);
     const history=Array.isArray(sub.history)?sub.history.slice().reverse():[];
     const totalPages=Math.max(1,Math.ceil(history.length/SUBSCRIPTION_ROWS_PER_PAGE));
     subscriptionHistoryPage=Math.max(1,Math.min(totalPages,subscriptionHistoryPage));
@@ -272,6 +273,7 @@
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
     if(view==='pos'){refreshPosDailyCount();requestAnimationFrame(syncCategoryRowNeighbors);}
+    window.donmacPlanWidgets?.onViewChange(view);
     if(view==='dashboard')loadDashboard();if(view==='inventory'){loadInventory();loadDevSubscription();}if(view==='advanced'||view==='account')renderDevSubscription();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();if(view==='supply')window.donmacSupply?.open();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
@@ -1141,6 +1143,7 @@
    $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
    window.__donmacDashboardData=d;
    if(typeof window.renderDonMacDashboardExtras==='function')window.renderDonMacDashboardExtras(d);
+   window.donmacPlanWidgets?.render(d);
   }
   function setupCanvas(canvas){const rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;canvas.width=Math.max(300,rect.width)*ratio;canvas.height=250*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);return{c,w:Math.max(300,rect.width),h:250};}
   function drawLineChart(canvas,values,labels){

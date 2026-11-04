@@ -219,5 +219,33 @@
    const scroll=root.scrollTop;
    root.innerHTML=render();root.scrollTop=scroll;
  });
- window.DonmacReferenceDashboard={render};
+ function advancedHostClick(ev){
+   const preview=document.getElementById('advancedReferenceContent');
+   if(!preview||!preview.contains(ev.target))return;
+   const target=ev.target.closest('[data-rd-section],[data-rd-branch],[data-rd-ranking],[data-rd-toggle]');
+   if(!target||!target.closest('[data-rd-root]'))return;
+   const frame=document.getElementById('advancedReferenceFrame');
+   if(frame?.classList.contains('is-locked'))return;
+   if(target.hasAttribute('data-rd-section')){
+     const key=target.dataset.rdSection;if(!renderers[key])return;state.section=key;
+   }
+   if(target.hasAttribute('data-rd-branch')){
+     const index=Number(target.dataset.rdBranch);
+     if(!Number.isSafeInteger(index)||index<0||index>=branches.length)return;
+     state.branch=index;
+   }
+   if(target.hasAttribute('data-rd-ranking')){
+     if(!['top','bottom'].includes(target.dataset.rdRanking))return;
+     state.ranking=target.dataset.rdRanking;
+   }
+   if(target.hasAttribute('data-rd-toggle')){
+     const id=Number(target.dataset.rdToggle);
+     if(!Number.isSafeInteger(id)||id<0||id>=branches.length)return;
+     if(state.disabled.has(id))state.disabled.delete(id);else state.disabled.add(id);
+     if(state.disabled.size===branches.length)state.disabled.clear();
+   }
+   preview.innerHTML=render();
+ }
+ document.getElementById('advancedReferenceContent')?.addEventListener('click',advancedHostClick);
+ window.DonmacReferenceDashboard={render,renderInto(target){if(target)target.innerHTML=render();}};
 })();

@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.69-manual-address';
+  const VERSION = '1.5.70-tier-dashboards';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -84,6 +84,7 @@
       loadCss('posIconsHoverV1562Css','/pos-icons-hover-v1562.css');
       loadCss('posIconCropV1563Css','/pos-icon-crop-v1563.css');
       loadCss('usersManagementRefinementV1569','/users-management-refinement-v1569.css');
+      loadCss('planDashboardV1570','/plan-dashboard-v1570.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
@@ -105,6 +106,7 @@
       await loadScript('/premium-dashboard-feature-gallery-v1533.js');
       await loadScript('/reference-dashboard-preview-v1535.js');
       await loadScript('/premium-dashboard-preview-v1532.js');
+      await loadScript('/plan-dashboard-v1570.js');
       await loadScript('/pos-categories-admin.js');
       await loadScript('/catalog-batch-v1544.js');
       await loadScript('/internal-chat.js');
@@ -112,7 +114,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.69 manual branch address started.');
+      console.info('Don Macchiatos POS v1.5.70 plan dashboard insights started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
