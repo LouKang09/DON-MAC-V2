@@ -1,0 +1,25 @@
+/* v1.5.69: manual branch addresses; retained compact management layout. */
+/* v1.5.65: compact Branches & Cashiers workspace + location pin editor */
+#view-users .users-management-shell{padding:clamp(15px,1.75vw,23px)!important}
+#view-users .users-heading{margin:0 0 12px!important}
+#view-users .users-heading h2{font-size:clamp(19px,1.9vw,24px);line-height:1.2;margin:2px 0 3px}
+#view-users .users-heading p{margin:0;color:#6f8476}
+#view-users .users-page-tabs{margin:0 0 12px!important;padding:0 0 12px!important;justify-content:flex-start;gap:8px}
+#view-users .users-page-tab{flex:0 1 185px;max-width:185px;min-height:42px}
+#view-users .users-group-heading{padding:5px 2px 13px;margin:0 0 15px;border-bottom:1px solid #e4ede5}
+#view-users .users-group-heading>div{grid-template-columns:48px auto;column-gap:12px}
+#view-users .users-group-symbol{width:46px;height:46px;background:#eff7f2;border:1px solid #e0eae1}
+#view-users .users-group-symbol img{display:block;width:40px;height:40px;object-fit:contain}
+#view-users .users-group-heading h3{font-size:18px}
+#view-users .users-avatar svg{width:31px;height:31px}
+#view-users .users-avatar.staff{background:#777fd0}
+#view-users .users-help{cursor:help}
+
+#view-users .users-group-heading > .users-help{width:36px!important;height:36px!important;border-radius:10px;color:#12643e;background:#eaf6ee;border:1px solid #cbe7d3}
+#view-users .users-group-heading > .users-help svg{width:25px!important;height:25px!important}
+#view-users .users-group-heading > .users-help .users-cog-icon{display:block!important;stroke:none!important;fill:currentColor!important}
+#view-users .users-group-heading > .users-help .users-cog-icon polygon{fill:currentColor!important;stroke:none!important}
+#view-users .users-group-heading > .users-help .users-cog-icon circle{fill:#eaf6ee!important;stroke:none!important}
+#view-supply .supply-notification-pagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #edf2ed}
+#view-supply .supply-notification-pagination span{margin-right:auto;font-size:11px;color:#617c69}
+#view-supply .supply-notification-pagination button{margin-top:0;min-width:66px;cursor:pointer}

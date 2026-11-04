@@ -272,7 +272,6 @@
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
     if(view==='pos'){refreshPosDailyCount();requestAnimationFrame(syncCategoryRowNeighbors);}
-    if(view==='users')window.donmacBranchNetwork?.show();
     if(view==='dashboard')loadDashboard();if(view==='inventory'){loadInventory();loadDevSubscription();}if(view==='advanced'||view==='account')renderDevSubscription();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();if(view==='supply')window.donmacSupply?.open();
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
@@ -1540,7 +1539,7 @@
    }
    const previous=$('newUserBranch').value;
    $('newUserBranch').innerHTML=branchOptions(active,previous);
-   if(state.user.role==='Admin'){renderBranches();window.donmacBranchNetwork?.update(state.branches);}
+   if(state.user.role==='Admin')renderBranches();
   }
 
 
@@ -1589,12 +1588,12 @@
   }
 
   function clearBranchForm(){
-   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';window.donmacBranchGeo?.reset();
+   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';
   }
 
   function editBranch(id){
    const b=state.branches.find(x=>x.id===id);if(!b)return;
-   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';window.donmacBranchGeo?.setCoordinates(b.latitude,b.longitude);$('branchName').focus();
+   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';$('branchName').focus();
   }
 
   async function deleteBranch(id){
@@ -1620,8 +1619,7 @@
    $('newRole').onchange=toggleUserBranch;$('branchFormClear').onclick=clearBranchForm;
    $('branchForm').addEventListener('submit',async e=>{
      e.preventDefault();await withFormLock(e.currentTarget,async()=>{
-       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),city:$('branchCity').value.trim(),province:$('branchProvince').value.trim(),postalCode:$('branchPostalCode').value.trim(),country:$('branchCountry').value,phone:$('branchPhone').value.trim(),description:$('branchDescription').value.trim(),active:$('branchActive').checked,...(window.donmacBranchGeo?.getCoordinates()||{latitude:null,longitude:null})};
-       if(window.donmacBranchGeo?.getCoordinates().invalid){toast('Enter valid latitude and longitude, or leave both blank.');return;}
+       const id=Number($('branchEditId').value||0),body={name:$('branchName').value.trim(),address:$('branchAddress').value.trim(),city:$('branchCity').value.trim(),province:$('branchProvince').value.trim(),postalCode:$('branchPostalCode').value.trim(),country:$('branchCountry').value,phone:$('branchPhone').value.trim(),description:$('branchDescription').value.trim(),active:$('branchActive').checked};
        try{await api('/api/branches'+(id?'/'+id:''),{method:id?'PUT':'POST',body});toast(id?'Branch updated.':'Branch created.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
      });
    });

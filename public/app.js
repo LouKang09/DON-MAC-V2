@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.68-franchise-network-map';
+  const VERSION = '1.5.69-manual-address';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -83,13 +83,10 @@
       loadCss('posPaymentViewportV1559Css','/pos-payment-viewport-v1559.css');
       loadCss('posIconsHoverV1562Css','/pos-icons-hover-v1562.css');
       loadCss('posIconCropV1563Css','/pos-icon-crop-v1563.css');
-      loadCss('branchLocationsV1565Css','/branches-locations-v1565.css');
-      loadCss('branchNetworkV1568Css','/branch-network-v1568.css');
+      loadCss('usersManagementRefinementV1569','/users-management-refinement-v1569.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
-      await loadScript('/branch-network-v1568.js');
-      await loadScript('/branches-locations-v1565.js');
       await loadScript('/supply-franchise.js');
       await loadScript('/pos-quickpay-v1556.js');
       window.donmacSupply?.refreshNotices?.();
@@ -115,7 +112,7 @@
 
 
 
-      console.info('Don Macchiatos POS v1.5.68 branch network overview started.');
+      console.info('Don Macchiatos POS v1.5.69 manual branch address started.');
     } catch (err) {
       // Never sacrifice the working core POS because an enhancement failed.
       console.error('Coffee POS enhancement startup:', err);
