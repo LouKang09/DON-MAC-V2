@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/pos-icon-crop-v1563.css?v=1.5.64" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
   <link rel="stylesheet" href="/users-management-refinement-v1569.css?v=1.5.69" />
-  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.74" />
+  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.75" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -29,7 +29,7 @@
   <section id="authScreen" class="auth-screen hidden" aria-label="Sign in to Don Macchiatos POS">
     <div class="auth-shell">
       <div class="auth-brand-panel" aria-label="Don Macchiatos">
-        <img class="auth-brand-logo" src="/donmac-logo-on-white.svg" alt="Don Macchiatos official logo" width="450" height="540" decoding="async" />
+        <img class="auth-brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos official logo" width="450" height="540" decoding="async" />
       </div>
       <form id="authForm" class="auth-card">
         <img class="auth-beans-icon" src="/assets/catalog/v1562-coffee-beans.svg" alt="" width="116" height="116" decoding="async" />
@@ -52,18 +52,43 @@
           <label class="auth-remember"><input id="authRememberUsername" type="checkbox" /> <span>Remember me</span></label>
           <button type="button" id="authForgotPassword" class="auth-text-action">Forgot password?</button>
         </div>
-        <details class="auth-scope-details" id="authScopeDetails">
-          <summary>Account / Branch <span class="auth-scope-caption">(if usernames are shared)</span></summary>
-          <div class="auth-scope-fields">
-            <label for="authOwnerUsername">Owner username<input id="authOwnerUsername" maxlength="80" autocomplete="off" placeholder="Owner account username" /></label>
-            <label for="authBranchName">Branch name<input id="authBranchName" maxlength="120" autocomplete="off" placeholder="Cashier's assigned branch" /></label>
-            <p class="auth-scope-note">Use this only when different accounts share a cashier username. Owners do not need a branch.</p>
-          </div>
-        </details>
         <button id="authSubmit" class="primary big auth-submit" type="submit">Sign In</button>
         <p class="auth-signup" id="authSignupPrompt">Don't have an account? <button type="button" id="authSignupButton" class="auth-text-action">Sign up</button></p>
         <p id="authHelpMessage" class="auth-help-message hidden" role="status"></p>
       </form>
+      <section id="authRegisterPanel" class="auth-secondary-panel hidden" aria-label="Create franchise Owner account">
+        <img src="/assets/catalog/v1562-coffee-beans.svg" class="auth-beans-icon" alt="" width="56" height="56">
+        <h2>Create an account</h2><p class="auth-secondary-intro">Set up your Owner account.</p>
+        <form id="authRegisterForm" class="auth-secondary-form">
+          <label>Username<input id="regUsername" required minlength="3" maxlength="80" pattern="[A-Za-z0-9._-]{3,80}" autocomplete="username" placeholder="Choose a unique username"></label>
+          <p class="auth-field-status" id="regUsernameStatus" role="status">Username must be unique across all franchisees.</p>
+          <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
+          <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address"></label>
+          <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
+          <label>Password<span class="auth-field-input"><input id="regPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password" placeholder="Minimum 10 characters"><button type="button" class="auth-eye" data-toggle-password="regPassword" aria-label="Show password">Show</button></span></label>
+          <label>Retype Password<span class="auth-field-input"><input id="regConfirmPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password" placeholder="Confirm password"><button type="button" class="auth-eye" data-toggle-password="regConfirmPassword" aria-label="Show password">Show</button></span></label>
+          <button id="regSubmit" type="submit" class="primary auth-submit">Create Account</button>
+        </form>
+        <p id="regMessage" class="auth-secondary-message" role="status"></p>
+        <button type="button" class="auth-back" data-auth-back>Back to Sign In</button>
+      </section>
+      <section id="authResetPanel" class="auth-secondary-panel hidden" aria-label="Reset password">
+        <img src="/assets/catalog/v1562-coffee-beans.svg" class="auth-beans-icon" alt="" width="56" height="56">
+        <h2>Forgot Password?</h2><p class="auth-secondary-intro">Enter your username or email to request a six-digit email verification code.</p>
+        <form id="authResetRequestForm" class="auth-secondary-form">
+          <label>Username or email<input id="resetIdentifier" required maxlength="180" autocomplete="username" placeholder="Username or registered email"></label>
+          <button id="resetSend" class="primary auth-submit" type="submit">Send Email OTP</button>
+        </form>
+        <form id="authResetConfirmForm" class="auth-secondary-form hidden">
+          <label>6-digit OTP<input id="resetCode" required maxlength="6" minlength="6" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" placeholder="000000"></label>
+          <label>New Password<span class="auth-field-input"><input id="resetPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password"><button type="button" class="auth-eye" data-toggle-password="resetPassword">Show</button></span></label>
+          <label>Confirm Password<span class="auth-field-input"><input id="resetConfirmPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password"><button type="button" class="auth-eye" data-toggle-password="resetConfirmPassword">Show</button></span></label>
+          <button id="resetConfirm" type="submit" class="primary auth-submit">Verify OTP &amp; Reset Password</button>
+          <button type="button" id="resetResend" class="auth-back">Resend OTP</button>
+        </form>
+        <p id="resetMessage" class="auth-secondary-message" role="status"></p>
+        <button type="button" class="auth-back" data-auth-back>Back to Sign In</button>
+      </section>
     </div>
   </section>
 
@@ -876,7 +901,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.5.74"></script>
-  <script src="/app.js?v=1.5.74"></script>
+  <script src="/auth-login-v1574.js?v=1.5.75"></script>
+  <script src="/app.js?v=1.5.75"></script>
 </body>
 </html>

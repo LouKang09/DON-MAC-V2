@@ -89,6 +89,7 @@
     $('authHint').textContent=setupRequired?'Set up the first Owner account to access your POS.':'';
     $('authSubmit').textContent=setupRequired?'Create Owner':'Sign In';
     $('authPassword').autocomplete=setupRequired?'new-password':'current-password';
+    window.donmacLoginExperience?.show('login');
     $('authSignupPrompt')?.classList.toggle('hidden',!!setupRequired);
     $('authForgotPassword')?.classList.toggle('hidden',!!setupRequired);
     $('authHelpMessage')?.classList.add('hidden');
@@ -259,7 +260,7 @@
     catch(err){if(err.status===401){state.user=null;resetOrderState({render:false});showAuth(false);return;}throw err;}
     resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password,ownerUsername:$('authOwnerUsername').value.trim(),branchName:$('authBranchName').value.trim()}})).user;resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
   $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
 
   async function refreshPosDailyCount(){
