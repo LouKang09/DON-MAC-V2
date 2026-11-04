@@ -1144,6 +1144,7 @@
    window.__donmacDashboardData=d;
    if(typeof window.renderDonMacDashboardExtras==='function')window.renderDonMacDashboardExtras(d);
    window.donmacPlanWidgets?.render(d);
+   window.donmacDashboardFilters?.refresh(d);
   }
   function setupCanvas(canvas){const rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;canvas.width=Math.max(300,rect.width)*ratio;canvas.height=250*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);return{c,w:Math.max(300,rect.width),h:250};}
   function drawLineChart(canvas,values,labels){
