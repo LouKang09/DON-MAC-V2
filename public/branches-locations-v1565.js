@@ -1,184 +1,194 @@
-/* v1.5.65 - Branch address suggestions & saved logistics coordinates.
-   Photon (OpenStreetMap) supports search-as-you-type. No Nominatim autocomplete. */
-(()=>{
+/* Don Mac POS v1.5.67: Google Maps branch search, address autofill and saved pin.
+   Uses Google Maps JavaScript API + Places API (New) + Geocoding API.
+   Map API key is supplied by the authenticated server, never committed to GitHub. */
+(() => {
   'use strict';
-  const $=id=>document.getElementById(id);
-  const form=$('branchForm');
-  if(!form||window.donmacBranchGeo)return;
-  const fields=[
-    {id:'branchAddress',type:'street'},
-    {id:'branchCity',type:'city'},
-    {id:'branchProvince',type:'province'}
-  ];
-  const cache=new Map();
-  let lastRequest=0;
-  let pendingTimer=null;
-  let pendingController=null;
-  let searchToken=0;
-  const latEl=$('branchLatitude'),lonEl=$('branchLongitude');
-  const status=$('branchMapStatus'),preview=$('branchMapPreview');
-  const iframe=$('branchMapFrame'),directions=$('branchDirectionsLink');
-  function coords(){
-    const a=latEl.value.trim(),b=lonEl.value.trim();
-    if(!a&&!b)return{latitude:null,longitude:null};
-    const latitude=Number(a),longitude=Number(b);
-    if(!a||!b||!Number.isFinite(latitude)||!Number.isFinite(longitude)||
-       latitude < -90||latitude > 90||longitude < -180||longitude > 180)
-       return{latitude:null,longitude:null,invalid:true};
-    return{latitude,longitude};
+  const $ = id => document.getElementById(id);
+  if (!$('branchForm') || window.donmacBranchGeo) return;
+  const mapEl = $('branchGoogleMap');
+  const placeholder = $('branchMapPlaceholder');
+  const status = $('branchMapStatus');
+  const directions = $('branchDirectionsLink');
+  const DEFAULT_CENTER = {lat:12.8797,lng:121.7740};
+  let selected = null;
+  let map = null, marker = null, geocoder = null, autocomplete = null;
+  let ready = false;
+  let initPromise = null, reverseToken = 0;
+  const coordsValid = (lat,lng) =>
+    Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
+  function getCoordinates(){
+    return selected?{latitude:selected.lat,longitude:selected.lng}:{latitude:null,longitude:null};
   }
-  function updateMap(){
-    const c=coords();
-    if(c.latitude===null){
-      preview.classList.add('hidden');directions.classList.add('hidden');
-      iframe.removeAttribute('src');
-      status.textContent=c.invalid?'Enter both valid coordinates to save a map pin.':'No map pin selected. Choose an address suggestion or enter coordinates.';
-      return;
-    }
-    const lat=c.latitude,lon=c.longitude,offset=.012;
-    const params=new URLSearchParams({
-      bbox:[lon-offset,lat-offset,lon+offset,lat+offset].join(','),
-      layer:'mapnik',marker:lat+','+lon
-    });
-    const next='https://www.openstreetmap.org/export/embed.html?'+params.toString();
-    if(iframe.src!==next)iframe.src=next;
-    const dest=new URL('https://www.google.com/maps/dir/');
-    dest.searchParams.set('api','1');dest.searchParams.set('destination',lat+','+lon);
-    directions.href=dest.toString();
-    preview.classList.remove('hidden');directions.classList.remove('hidden');
-    status.textContent='Destination pin ready — save this Branch to store its coordinates.';
+  function showStatus(message){status.textContent=message;}
+  function directionsLink(){
+    directions.classList.toggle('hidden',!selected);
+    if(!selected)return;
+    const url = new URL('https://www.google.com/maps/dir/');
+    url.searchParams.set('api','1');
+    url.searchParams.set('destination',selected.lat+','+selected.lng);
+    directions.href=url.toString();
   }
-  function setCoordinates(latitude,longitude){
-    const valid=latitude!=null&&longitude!=null&&
-      Number.isFinite(Number(latitude))&&Number.isFinite(Number(longitude));
-    latEl.value=valid?String(latitude):'';
-    lonEl.value=valid?String(longitude):'';
-    updateMap();
+  function putPin(){
+    if(!ready||!map)return;
+    if(!selected){if(marker)marker.setMap(null);return;}
+    const where = {lat:selected.lat,lng:selected.lng};
+    if(!marker){
+      marker = new google.maps.Marker({
+        position:where,map,draggable:true,title:'Branch delivery destination',
+        animation:google.maps.Animation.DROP
+      });
+      marker.addListener('dragend',e=>{if(e.latLng)reverseLookup(e.latLng);});
+    } else {marker.setMap(map);marker.setPosition(where);}
+    map.setCenter(where);map.setZoom(17);
+  }
+  function setCoordinates(lat,lng){
+    const a=lat==null?NaN:Number(lat),b=lng==null?NaN:Number(lng);
+    selected=coordsValid(a,b)?{lat:a,lng:b}:null;
+    directionsLink();
+    putPin();
+    showStatus(selected?'Destination pin selected. Save Branch to store it for logistics.':'Search Google Maps to select a delivery destination.');
   }
   function reset(){
-    clearSuggestions();
+    reverseToken++;
     setCoordinates(null,null);
+    if(map){map.setCenter(DEFAULT_CENTER);map.setZoom(6);}
+    if(autocomplete)autocomplete.value='';
   }
-  function clearSuggestions(){
-    clearTimeout(pendingTimer);
-    ++searchToken;
-    if(pendingController)pendingController.abort();
-    pendingController=null;
-    fields.forEach(({id})=>{
-      const input=$(id),list=$(id+'Suggestions');
-      list.replaceChildren();list.classList.remove('is-open');
-      input.setAttribute('aria-expanded','false');
+  function typeOf(parts,type){
+    const item=(parts||[]).find(c=>(c.types||[]).includes(type));
+    return item?String(item.longText||item.long_name||'').trim():'';
+  }
+  function chooseAddress(parts,formatted){
+    const num=typeOf(parts,'street_number');
+    const route=typeOf(parts,'route');
+    const landmark=typeOf(parts,'premise')||typeOf(parts,'point_of_interest');
+    const sublocality=typeOf(parts,'sublocality_level_1')||typeOf(parts,'neighborhood');
+    const city=typeOf(parts,'locality')||typeOf(parts,'postal_town')||typeOf(parts,'administrative_area_level_3')||typeOf(parts,'administrative_area_level_2');
+    const state2=typeOf(parts,'administrative_area_level_2');
+    const state1=typeOf(parts,'administrative_area_level_1');
+    const province=(state2&&state2!==city?state2:state1)||state1;
+    const street=[landmark,[num,route].filter(Boolean).join(' '),sublocality]
+      .filter(Boolean).join(', ')||String(formatted||'').split(',')[0].trim();
+    // Populate only verified components; keep other manually entered data if unknown.
+    if(street)$('branchAddress').value=street.slice(0,250);
+    if(city)$('branchCity').value=city.slice(0,100);
+    if(province)$('branchProvince').value=province.slice(0,100);
+    const postal=typeOf(parts,'postal_code');
+    if(postal)$('branchPostalCode').value=postal.slice(0,12);
+    const country=typeOf(parts,'country');
+    if(country)$('branchCountry').value=country==='Philippines'?'Philippines':'Other';
+  }
+  async function reverseLookup(latLng){
+    if(!latLng)return;
+    const lat=typeof latLng.lat==='function'?latLng.lat():Number(latLng.lat);
+    const lng=typeof latLng.lng==='function'?latLng.lng():Number(latLng.lng);
+    if(!coordsValid(lat,lng))return;
+    const token=++reverseToken;
+    setCoordinates(lat,lng);
+    showStatus('Looking up the selected Google Maps location…');
+    try{
+      const results=await geocoder.geocode({location:{lat,lng}});
+      if(token!==reverseToken)return;
+      if(results.results&&results.results[0]){
+        const result=results.results[0];
+        chooseAddress((result.address_components||[]).map(p=>({types:p.types,longText:p.long_name})),result.formatted_address);
+      }
+      showStatus('Map location selected. Review the address fields, then Save Branch.');
+    }catch(e){
+      if(token===reverseToken)showStatus('Pin saved locally. Address lookup failed; fill the street, city and province manually.');
+    }
+  }
+  async function selectedPlace(event){
+    const place=event.placePrediction?.toPlace?.();
+    if(!place)return;
+    showStatus('Loading the selected Google Maps address…');
+    try{
+      await place.fetchFields({fields:['formattedAddress','location','addressComponents']});
+      if(!place.location)throw Error('This place has no mapped location.');
+      const lat=typeof place.location.lat==='function'?place.location.lat():Number(place.location.lat);
+      const lng=typeof place.location.lng==='function'?place.location.lng():Number(place.location.lng);
+      if(!coordsValid(lat,lng))throw Error('Invalid map coordinates.');
+      reverseToken++;
+      chooseAddress(place.addressComponents||[],place.formattedAddress);
+      setCoordinates(lat,lng);
+      showStatus('Address, city and province filled from Google Maps. Review and Save Branch.');
+    }catch(e){showStatus('Google Maps could not resolve that place: '+(e.message||'Try another result.'));}
+  }
+  async function loadGoogleMaps(apiKey){
+    if(window.google?.maps?.importLibrary)return;
+    await new Promise((resolve,reject)=>{
+      const callback='__donmacGoogleMapsLoaded';
+      const script=document.createElement('script');
+      const cleanup=()=>{delete window[callback];};
+      const timeout=setTimeout(()=>{cleanup();reject(new Error('Google Maps timed out.'))},15000);
+      window[callback]=()=>{clearTimeout(timeout);cleanup();resolve();};
+      script.async=true;
+      script.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(apiKey)+'&v=weekly&loading=async&callback='+callback;
+      script.onerror=()=>{clearTimeout(timeout);cleanup();reject(new Error('Google Maps script was blocked. Check the API key and permitted domain.'))};
+      document.head.appendChild(script);
     });
   }
-  function composeQuery(type,value){
-    const city=$('branchCity').value.trim(),province=$('branchProvince').value.trim();
-    const country=$('branchCountry').value==='Philippines'?'Philippines':'';
-    if(type==='street')return [value,city,province,country].filter(Boolean).join(', ');
-    if(type==='city')return [value,province,country].filter(Boolean).join(', ');
-    return [value,country].filter(Boolean).join(', ');
-  }
-  function labelFor(f,type){
-    const p=f.properties||{};
-    if(type==='city')return p.city||p.name||p.county||'';
-    if(type==='province')return p.state||p.county||p.name||'';
-    return [p.name,p.street,p.city,p.county,p.state].filter((x,i,a)=>x&&a.indexOf(x)===i).join(', ');
-  }
-  function pick(feature,type,value){
-    const p=feature.properties||{},g=feature.geometry||{};
-    if(type==='street'){
-      $('branchAddress').value=[p.housenumber,p.street||p.name].filter(Boolean).join(' ')||value;
-      if(p.city||p.town)$('branchCity').value=p.city||p.town;
-      if(p.state)$('branchProvince').value=p.state;
-      if(Array.isArray(g.coordinates)&&g.coordinates.length>=2)
-        setCoordinates(g.coordinates[1],g.coordinates[0]);
-    }else if(type==='city'){
-      $('branchCity').value=p.city||p.name||value;
-      if(p.state)$('branchProvince').value=p.state;
-    }else{
-      $('branchProvince').value=p.state||p.county||p.name||value;
-    }
-    clearSuggestions();
-  }
-  async function suggest(id,type,value,token){
-    const list=$(id+'Suggestions'),input=$(id);
-    const query=composeQuery(type,value);
-    const key=type+'|'+query.toLowerCase();
-    let features=cache.get(key);
-    if(!features){
-      const wait=Math.max(0,1000-(Date.now()-lastRequest));
-      if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
-      if(token!==searchToken)return;
-      lastRequest=Date.now();
-      const controller=new AbortController();pendingController=controller;
-      const url=new URL('https://photon.komoot.io/api/');
-      url.searchParams.set('q',query);
-      url.searchParams.set('limit','6');
-      url.searchParams.set('lang','en');
-      if($('branchCountry').value==='Philippines')
-        url.searchParams.set('bbox','116,4,128,22');
-      const response=await fetch(url.toString(),{signal:controller.signal});
-      if(!response.ok)throw Error('Location service unavailable');
-      const data=await response.json();
-      features=(Array.isArray(data.features)?data.features:[]).filter(f=>
-        $('branchCountry').value!=='Philippines'||
-        !f.properties?.countrycode||
-        String(f.properties.countrycode).toUpperCase()==='PH'
-      ).slice(0,5);
-      if(cache.size>=100)cache.delete(cache.keys().next().value);
-      cache.set(key,features);
-    }
-    if(token!==searchToken||input.value.trim()!==value)return;
-    list.replaceChildren();
-    if(!features.length){
-      const hint=document.createElement('p');hint.className='branch-suggestions-note';
-      hint.textContent='No match found. You can enter the address manually.';
-      list.appendChild(hint);
-    }else{
-      const seen=new Set();
-      for(const feature of features){
-        const label=labelFor(feature,type);
-        if(!label||seen.has(label))continue;seen.add(label);
-        const button=document.createElement('button');
-        button.type='button';button.className='branch-suggestion';
-        const context=[feature.properties?.city,feature.properties?.state].filter(Boolean).join(', ');
-        button.textContent=label+(context&&!label.includes(context)?' — '+context:'');
-        button.setAttribute('role','option');
-        button.addEventListener('click',()=>pick(feature,type,value));
-        list.appendChild(button);
+  async function init(){
+    if(initPromise)return initPromise;
+    initPromise=(async()=>{
+      showStatus('Checking Google Maps configuration…');
+      const response=await fetch('/api/maps/config',{credentials:'same-origin',cache:'no-store'});
+      if(!response.ok)throw Error('Cannot load the Google Maps configuration.');
+      const config=await response.json();
+      if(!config.enabled||!config.key){
+        placeholder.textContent='Google Maps is not configured. Add GOOGLE_MAPS_BROWSER_API_KEY in Railway to enable interactive search and pin selection.';
+        showStatus('Google Maps needs a browser API key. Branch addresses can still be entered and saved manually.');
+        return;
       }
-    }
-    list.classList.add('is-open');input.setAttribute('aria-expanded','true');
-  }
-  for(const {id,type} of fields){
-    const input=$(id);
-    input.addEventListener('input',()=>{
-      clearSuggestions();setCoordinates(null,null);
-      const value=input.value.trim();
-      if(value.length<3)return;
-      const token=searchToken;
-      pendingTimer=setTimeout(()=>suggest(id,type,value,token).catch(err=>{
-        if(err.name!=='AbortError'&&token===searchToken){
-          const list=$(id+'Suggestions');list.innerHTML='<p class="branch-suggestions-note">Suggestions unavailable. Enter manually.</p>';
-          list.classList.add('is-open');input.setAttribute('aria-expanded','true');
+      placeholder.textContent='Loading Google Maps…';
+      await loadGoogleMaps(config.key);
+      const [{Map},{PlaceAutocompleteElement},{Geocoder}]=await Promise.all([
+        google.maps.importLibrary('maps'),
+        google.maps.importLibrary('places'),
+        google.maps.importLibrary('geocoding')
+      ]);
+      map=new Map(mapEl,{center:selected||DEFAULT_CENTER,zoom:selected?17:6,
+        mapTypeControl:false,streetViewControl:false,fullscreenControl:true,clickableIcons:false});
+      geocoder=new Geocoder();
+      autocomplete=new PlaceAutocompleteElement();
+      autocomplete.placeholder='Search a branch, building, street or landmark';
+      autocomplete.includedRegionCodes=['ph'];
+      $('branchGoogleSearch').replaceChildren(autocomplete);
+      autocomplete.addEventListener('gmp-select',selectedPlace);
+      map.addListener('click',e=>{if(e.latLng)reverseLookup(e.latLng)});
+      // Initialize even when the editing form was populated before the map became visible.
+      ready=true;
+      placeholder.classList.add('hidden');
+      putPin();
+      if(!selected)showStatus('Search for a place above, or click the map to select the branch entrance.');
+      const obs=new ResizeObserver(()=>{
+        if(ready && mapEl.clientWidth>0 && mapEl.clientHeight>0){
+          google.maps.event.trigger(map,'resize');
+          if(selected)map.setCenter(selected);
         }
-      }),900);
+      });
+      obs.observe(mapEl);
+    })().catch(err=>{
+      placeholder.classList.remove('hidden');
+      placeholder.textContent='Google Maps could not load. Check your API key, enabled Maps/Places/Geocoding APIs and billing.';
+      showStatus(err.message||'Google Maps unavailable.');
+      console.warn('Branch Google Maps:',err);
     });
-    input.addEventListener('keydown',e=>{
-      if(e.key==='Escape')clearSuggestions();
-      if(e.key==='ArrowDown'){
-        const first=$(id+'Suggestions').querySelector('button');
-        if(first){e.preventDefault();first.focus();}
-      }
+    return initPromise;
+  }
+  for(const id of ['branchAddress','branchCity','branchProvince']){
+    $(id).addEventListener('input',()=>{
+      if(selected){setCoordinates(null,null);showStatus('Address was changed manually. Search Google Maps again to confirm the destination pin.');}
     });
   }
-  for(const input of [latEl,lonEl]){
-    input.addEventListener('input',updateMap);
-    input.addEventListener('change',updateMap);
-  }
-  $('branchCountry').addEventListener('change',reset);
-  document.addEventListener('click',e=>{
-    if(!e.target.closest('.branch-autocomplete'))clearSuggestions();
+  $('branchCountry').addEventListener('change',()=>{
+    if(selected)setCoordinates(null,null);
   });
-  window.donmacBranchGeo={reset,setCoordinates,getCoordinates:coords};
-  updateMap();
+  window.donmacBranchGeo={reset,setCoordinates,getCoordinates,open:init};
+  if('IntersectionObserver' in window){
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(e=>e.isIntersecting)){observer.disconnect();init();}
+    });
+    observer.observe(mapEl);
+  }else init();
 })();

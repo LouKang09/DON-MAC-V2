@@ -61,3 +61,40 @@
   margin-top:0;min-width:66px;cursor:pointer;
 }
 #view-supply .supply-notification-pagination button:disabled{cursor:default}
+
+/* v1.5.67: proper eight-tooth settings gear and Google Maps branch picker. */
+#view-users .users-group-heading > .users-help .users-cog-icon {
+  display:block!important;width:26px!important;height:26px!important;
+  stroke:none!important;fill:currentColor!important;
+}
+#view-users .users-group-heading > .users-help .users-cog-icon polygon {
+  fill:currentColor!important;stroke:none!important;
+}
+#view-users .users-group-heading > .users-help .users-cog-icon circle {
+  fill:#eaf6ee!important;stroke:none!important;
+}
+#view-users .branch-google-search-label {
+  font-size:12px;font-weight:750;color:#295c41;
+}
+#view-users .branch-google-search {width:100%;min-height:44px}
+#view-users .branch-google-search gmp-place-autocomplete {
+  display:block;width:100%;min-height:44px;
+  color-scheme:light;border-radius:10px;background:#fff;
+  font:inherit;font-size:13px;z-index:5;
+}
+#view-users .branch-map-preview {
+  position:relative;height:300px;overflow:hidden;
+  background:#f0f4f1;border-radius:12px;border:1px solid #d3e5d8;
+}
+#view-users #branchGoogleMap {width:100%;height:100%;min-height:300px}
+#view-users .branch-map-placeholder {
+  position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;padding:28px;text-align:center;
+  color:#536e5c;font-size:12px;line-height:1.65;
+  background:#f3f8f4;z-index:3;
+}
+#view-users .branch-map-placeholder.hidden {display:none!important}
+@media(max-width:700px){
+  #view-users .branch-map-preview{height:250px}
+  #view-users #branchGoogleMap{min-height:250px}
+}

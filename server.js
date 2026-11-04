@@ -35,7 +35,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.65-branches-supply-geo';
+const APP_VERSION = '1.5.67-google-maps-places-branch-search';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1340,7 +1340,7 @@ async function deleteSale(user,reference,body){
 }
 
 function mimeType(file){const ext=path.extname(file).toLowerCase();return({'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'})[ext]||'application/octet-stream';}
-function safeHeaders(extra={}){return{'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io; frame-src https://www.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",...extra};}
+function safeHeaders(extra={}){return{'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com blob:; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com; connect-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com; frame-src https://*.google.com; font-src 'self' https://fonts.gstatic.com; worker-src blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",...extra};}
 function binary(res,status,buffer,contentType,headers={}){res.writeHead(status,safeHeaders({'Content-Type':contentType,'Content-Length':buffer.length,...headers}));res.end(buffer);}
 function serveStatic(req,res,pathname){const rel=pathname==='/'?'index.html':decodeURIComponent(pathname).replace(/^\/+/,''),file=path.resolve(PUBLIC_DIR,rel);if(!file.startsWith(path.resolve(PUBLIC_DIR)+path.sep)&&file!==path.join(PUBLIC_DIR,'index.html'))return false;if(!fs.existsSync(file)||!fs.statSync(file).isFile())return false;const data=fs.readFileSync(file);res.writeHead(200,safeHeaders({'Content-Type':mimeType(file),'Content-Length':data.length,'Cache-Control':'no-store'}));res.end(data);return true;}
 
@@ -1563,6 +1563,11 @@ async function handleApi(req,res,url){
   const delSale=p.match(/^\/api\/sales\/(.+)\/delete$/);if(method==='POST'&&delSale){requireAdminRole(user);return json(res,200,await deleteSale(user,decodeURIComponent(delSale[1]),await readJson(req)),safeHeaders());}
 
   requireAdminRole(user);
+  if(method==='GET'&&p==='/api/maps/config'){
+    // Browser key is deliberately public to the client; restrict it by HTTP referrer and enabled APIs in Google Cloud.
+    const key=String(process.env.GOOGLE_MAPS_BROWSER_API_KEY||'').trim();
+    return json(res,200,{enabled:!!key,key:key||null},safeHeaders());
+  }
   if(method==='GET'&&p==='/api/users')return json(res,200,{users:await listUsers(user)},safeHeaders());
   if(method==='POST'&&p==='/api/users'){const created=await createOrActivateUser(await readJson(req),user);await logAction(user,`Web user saved: ${created.username}`,'User Updated',`${created.role} / ${created.active?'Active':'Inactive'}`);return json(res,201,{user:created},safeHeaders());}
   const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&userMatch)return json(res,200,await deleteUserAccount(user,Number(userMatch[1])),safeHeaders());
