@@ -1,22 +1,24 @@
-/* Don Mac POS v1.5.63: padded, black-outlined icon assets.
-   Keep the existing category hover, selected and adjacent color logic. */
+/* Don Mac POS v1.5.64 — use the exact original PNGs supplied by the owner.
+   These files are used as-is: no replacement artwork, clipping, filters or forced crop.
+   Preserve POS category hover/selection behavior and other catalog icons. */
 #view-pos #categoryTabs .category-tile .category-icon-addons,
 #admin-categories .pos-admin-icon.category-icon-addons {
-  background-image:url("/assets/catalog/v1563-add-on.svg")!important;
-  background-position:center!important;
+  background-image:url("/assets/catalog/donmac-add-on-original-v1564.png")!important;
+  background-position:center center!important;
   background-repeat:no-repeat!important;
-  background-size:88% 88%!important;
+  background-size:contain!important;
   filter:none!important;
 }
 #view-pos #categoryTabs .category-tile .category-icon-promos,
 #admin-categories .pos-admin-icon.category-icon-promos {
-  background-image:url("/assets/catalog/v1563-promotion.svg")!important;
-  background-position:center!important;
+  background-image:url("/assets/catalog/donmac-promotion-original-v1564.png")!important;
+  background-position:center center!important;
   background-repeat:no-repeat!important;
-  background-size:88% 88%!important;
+  background-size:contain!important;
   filter:none!important;
 }
-/* Give all four updated catalog icons room inside the cropped-corner tile. */
+/* The Catalog tiles use their original PNGs from index.html. Show the full image
+   inside a padded, square box so none of its original border is cut off. */
 #view-catalog #adminTabs.catalog-tiles
   .catalog-tile:is([data-admin-tab="categories"],[data-admin-tab="promos"],[data-admin-tab="backups"])
   img.catalog-tab-icon {
@@ -24,8 +26,13 @@
   height:54px!important;
   right:13px!important;
   bottom:13px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  box-sizing:border-box!important;
+  background:transparent!important;
   object-fit:contain!important;
-  object-position:center!important;
+  object-position:center center!important;
   filter:none!important;
   image-rendering:auto!important;
 }
