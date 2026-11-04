@@ -6,6 +6,7 @@ const legacySalesImport = require('./lib/legacy-sales-import');
 const { createDb } = require('./db');
 const { makePdf, salesReportLines, costingReportLines } = require('./lib/pdf');
 const { sendMail } = require('./lib/smtp');
+const accountRecovery = require('./lib/account-recovery');
 const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
@@ -36,7 +37,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.73-dashboard-accounts';
+const APP_VERSION = '1.5.75-login-recovery';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -922,6 +923,14 @@ async function createOrActivateUser(body,actor=null){
   const existing=actor
     ?await usernameAtScope(username,ws,branchId)
     :(await db.query('SELECT id,username,password_hash,role,active,branch_id FROM users WHERE LOWER(username)=LOWER($1)',[username])).rows[0];
+  // New usernames are unique across every franchise and branch, not
+  // just within one Owner/branch combination.
+  const globalAliases=(await db.query(
+    'SELECT id FROM users WHERE LOWER(COALESCE(login_username,username))=LOWER($1) OR LOWER(username)=LOWER($1)',
+    [username])).rows;
+  if(globalAliases.some(x=>Number(x.id)!==Number(existing?.id||0)))
+    throw Object.assign(new Error('This username is already in use. Choose a unique username.'),{status:409});
+
   if(existing){
     const old=existing;
     if(actor&&old.password_hash)throw Object.assign(new Error('This username already exists in the selected branch of your owner account. Use Edit instead.'),{status:409});
@@ -1731,36 +1740,55 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/setup'){const status=await appStatus();if(!status.setupRequired)return json(res,409,{error:'Initial setup has already been completed.'},safeHeaders());const body=await readJson(req),username=String(body.username||'').trim(),password=String(body.password||'');if(username.length<2||password.length<8)return json(res,400,{error:'Use a username of at least 2 characters and a password of at least 8 characters.'},safeHeaders());const user=await createOrActivateUser({username,password,role:'Admin',active:true},null);await db.query('UPDATE chat_workspaces SET owner_user_id=$1 WHERE id IN (SELECT workspace_id FROM chat_memberships WHERE user_id=$1)',[user.id]);await logAction(user,'Web POS initial admin activated','Setup',null);return json(res,201,{ok:true,user},safeHeaders());}
   if(method==='POST'&&p==='/api/auth/login'){
     const body=await readJson(req),username=String(body.username||'').trim();
-    const ownerUsername=String(body.ownerUsername||'').trim();
-    const branchName=String(body.branchName||'').trim();
     checkLoginRate(req,username);
-    // Resolve the public login username without depending on a globally unique
-    // physical DB key. Existing unique usernames remain a one-field sign-in.
+    // The public username is the only login identifier. If older franchises
+    // still have duplicate aliases, a password must match exactly ONE account;
+    // no Owner/Branch field is needed and ambiguous credentials never log in.
     const r=await db.query(
       'SELECT u.id,u.username,COALESCE(u.login_username,u.username) AS login_name,'+
-      'u.password_hash,u.role,u.active,u.branch_id,u.profile_photo,b.name AS branch_name,'+
-      'COALESCE(o.login_username,o.username) AS owner_name '+
-      'FROM users u LEFT JOIN branches b ON b.id=u.branch_id '+
-      'LEFT JOIN chat_memberships m ON m.user_id=u.id '+
-      'LEFT JOIN chat_workspaces w ON w.id=m.workspace_id '+
-      'LEFT JOIN users o ON o.id=w.owner_user_id '+
-      'WHERE LOWER(COALESCE(u.login_username,u.username))=LOWER($1) ORDER BY u.id',[username]);
-    let matches=r.rows;
-    if(ownerUsername)matches=matches.filter(u=>String(u.owner_name||'').toLowerCase()===ownerUsername.toLowerCase());
-    if(branchName)matches=matches.filter(u=>u.role==='User'&&String(u.branch_name||'').toLowerCase()===branchName.toLowerCase());
-    if(matches.length>1){
-      return json(res,409,{error:'Multiple cashier accounts use this username. Expand Account / Branch at sign in and enter the Owner username and Branch name.'},safeHeaders());
-    }
+      'u.password_hash,u.role,u.active,u.branch_id,u.profile_photo '+
+      'FROM users u WHERE LOWER(COALESCE(u.login_username,u.username))=LOWER($1) ORDER BY u.id LIMIT 25',[username]);
+    const matches=r.rows.filter(u=>bool(u.active)&&verifyPassword(String(body.password||''),u.password_hash));
+    if(matches.length!==1)
+      return json(res,401,{error:'Invalid username or password. If more than one account uses these credentials, contact your franchise Owner to assign a unique username.'},safeHeaders());
     const u=matches[0];
-    if(!u||!bool(u.active)||!verifyPassword(String(body.password||''),u.password_hash))
-      return json(res,401,{error:'Invalid username, password or account/branch.'},safeHeaders());
     clearLoginRate(req,username);
     const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
     const owner=await initialOwnerId(u.id);
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
-      branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner}},safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
+      branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner}},
+      safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
+  }
+  if(method==='GET'&&p==='/api/auth/username-available'){
+    const value=String(url.searchParams.get('username')||'').trim();
+    if(!/^[a-zA-Z0-9._-]{3,80}$/.test(value))
+      return json(res,200,{available:false,reason:'3–80 letters, numbers, dots, dashes or underscores.'},safeHeaders({'Cache-Control':'no-store'}));
+    const used=(await db.query(
+      'SELECT 1 FROM users WHERE LOWER(COALESCE(login_username,username))=LOWER($1) OR LOWER(username)=LOWER($1) LIMIT 1',
+      [value])).rows.length>0;
+    return json(res,200,{available:!used},safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/auth/forgot/request'){
+    const body=await readJson(req,4096);
+    const ip=String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'').split(',')[0].trim();
+    return json(res,200,await accountRecovery.request(db,body.identifier,ip),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/auth/forgot/confirm'){
+    const body=await readJson(req,4096);
+    const result=await accountRecovery.confirm(db,body.identifier,String(body.code||''),
+      body.password,body.confirmPassword,hashPassword);
+    if(!result.ok)return json(res,400,{error:'Invalid or expired code. Check your email and try again.'},safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,200,{ok:true,message:'Password updated. Sign in with your new password.'},
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/auth/register'){
+    // Public registration must remain disabled until tenant catalog, stock,
+    // reporting and owner permissions are isolated per workspace.
+    return json(res,503,{error:'Franchise Owner registration is not available yet. Existing franchise owners can add users through Branches & Cashiers.'},
+      safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
@@ -1921,7 +1949,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await supplyChain.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
