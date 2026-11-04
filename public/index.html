@@ -143,8 +143,33 @@
           </section>
         </div>
 
-        <div class="dashboard-insights-grid">
-          <section class="card dashboard-insight-card dashboard-items-card" aria-labelledby="performanceTitle">
+        <div class="dashboard-activity-grid">
+          <section class="card dashboard-insight-card dashboard-recent-card" aria-labelledby="recentTransactionsTitle">
+            <div class="card-head dashboard-widget-head"><div><p class="eyebrow">CHECKOUT ACTIVITY</p><h3 id="recentTransactionsTitle">Recent Transactions</h3></div>
+              <button id="dashboardRecentRefresh" class="dashboard-icon-button" type="button" title="Refresh transactions" aria-label="Refresh recent transactions">↻</button>
+            </div>
+            <div class="dashboard-widget-filters"><label>Status<select id="dashboardActivityStatus"><option value="all">All Transactions</option><option value="sold">Sales</option><option value="voided">Voided / Cancelled</option></select></label>
+              <label>Date<select id="dashboardActivityPeriod"><option value="all">Latest</option><option value="today">Today</option><option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option></select></label>
+            </div>
+            <p id="dashboardRecentScope" class="dashboard-recent-scope">Latest transactions</p>
+            <div id="dashboardRecentTransactions" class="dashboard-recent-table-wrap" aria-live="polite"><div class="empty-state">Loading transactions…</div></div>
+          </section>
+          <section class="card dashboard-stock-card" aria-labelledby="lowStockTitle">
+            <div class="card-head dashboard-widget-head"><div><p class="eyebrow">INVENTORY WATCH</p><h3 id="lowStockTitle">Needs Attention</h3></div>
+              <button id="dashboardRefresh" class="ghost" type="button">Refresh</button>
+            </div>
+            <div class="dashboard-widget-filters"><label>Stock status<select id="dashboardInventoryStatus"><option value="attention">Needs Attention</option><option value="out">Out of Stock</option><option value="low">Low Stock</option><option value="healthy">In Stock</option><option value="all">All Ingredients</option></select></label></div>
+            <p id="dashboardInventoryCount" class="dashboard-recent-scope">Loading inventory…</p>
+            <div class="table-wrap dashboard-inventory-table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div>
+          </section>
+        </div>
+        <section id="planDashboardWidgets" class="plan-widget-section" aria-label="Product performance and plan analytics">
+          <div class="plan-widget-heading admin-only"><h3 id="planWidgetHeading">Pro Dashboard Insights</h3>
+            <button type="button" id="planWidgetCustomize" class="ghost">Customize Widgets</button></div>
+          <div id="planWidgetCustomizer" class="plan-widget-customizer hidden admin-only" aria-label="Dashboard widget preferences"></div>
+          <div id="planWidgetError" role="status" class="plan-widget-info hidden admin-only"></div>
+          <div id="planWidgetCards" class="plan-widget-grid" aria-live="polite">
+            <section class="card dashboard-insight-card dashboard-items-card" aria-labelledby="performanceTitle">
             <div class="card-head">
               <div><p class="eyebrow">THIS MONTH · UNITS SOLD</p><h3 id="performanceTitle">Items Performance</h3></div>
               <span class="dashboard-mini-caption" id="performanceCountLabel">Up to 8 products</span>
@@ -152,32 +177,10 @@
             <div id="dashboardRadar" class="dashboard-radar" role="img" aria-label="Top product quantities on a radar chart"></div>
             <div id="dashboardRadarLegend" class="dashboard-radar-legend"></div>
           </section>
-          <section class="card dashboard-insight-card dashboard-recent-card" aria-labelledby="recentTransactionsTitle">
-            <div class="card-head">
-              <div><p class="eyebrow">LATEST CHECKOUT ACTIVITY</p><h3 id="recentTransactionsTitle">Recent Transactions</h3></div>
-              <button id="dashboardRecentRefresh" class="dashboard-icon-button" type="button" title="Refresh dashboard" aria-label="Refresh recent transactions"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg></button>
-            </div>
-            <p id="dashboardRecentScope" class="dashboard-recent-scope">Recent completed orders in the selected branch.</p>
-            <div id="dashboardRecentTransactions" class="dashboard-recent-table-wrap" aria-live="polite"><div class="empty-state">Loading transactions…</div></div>
-          </section>
-        </div>
-
-        <div class="dashboard-bottom-grid">
-          <section class="card dashboard-stock-card" aria-labelledby="lowStockTitle">
-            <div class="card-head"><div><p class="eyebrow">INVENTORY WATCH</p><h3 id="lowStockTitle">Needs Attention</h3></div><button id="dashboardRefresh" class="ghost" type="button">Refresh</button></div>
-            <div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>UOM</th><th class="num">Stock</th><th class="num">Threshold</th></tr></thead><tbody id="dashboardLowStock"></tbody></table></div>
-          </section>
-        </div>
-        <section id="planDashboardWidgets" class="plan-widget-section admin-only" aria-labelledby="planWidgetHeading" hidden>
- <div class="plan-widget-heading">
-   <div><p class="eyebrow">PLAN ANALYTICS · LIVE TRANSACTION DATA</p><h3 id="planWidgetHeading">Pro Dashboard Insights</h3><p id="planWidgetDescription">Analytics calculated from recorded sales, with unavailable metrics labeled.</p></div>
-   <button type="button" id="planWidgetCustomize" class="ghost">Customize Widgets</button>
- </div>
- <div id="planWidgetCustomizer" class="plan-widget-customizer hidden" aria-label="Dashboard widget preferences"></div>
- <div id="planWidgetError" role="status" class="plan-widget-info hidden"></div>
- <div id="planWidgetCards" class="plan-widget-grid" aria-live="polite"></div>
- <p class="plan-widget-disclaimer">Widget calculations use completed POS records. This account's plan is currently simulated; figures are not sample data unless explicitly marked. Widget visibility and order are saved in this browser.</p>
-</section>
+            <div id="planWidgetFeatureCards" class="admin-only"></div>
+          </div>
+          <p class="plan-widget-disclaimer admin-only">Figures use completed transactions; some concepts require additional inputs. Subscription switching remains in development mode.</p>
+        </section>
       </section>
 
       <section id="view-pos" class="view active">
@@ -807,6 +810,6 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/app.js?v=1.5.70.1"></script>
+  <script src="/app.js?v=1.5.71"></script>
 </body>
 </html>
