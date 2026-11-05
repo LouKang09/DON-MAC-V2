@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/pos-icon-crop-v1563.css?v=1.5.64" />
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
   <link rel="stylesheet" href="/users-management-refinement-v1569.css?v=1.5.69" />
-  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.75" />
+  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.77" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -85,7 +85,18 @@
           <label>New Password<span class="auth-field-input"><input id="resetPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password"><button type="button" class="auth-eye" data-toggle-password="resetPassword">Show</button></span></label>
           <label>Confirm Password<span class="auth-field-input"><input id="resetConfirmPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password"><button type="button" class="auth-eye" data-toggle-password="resetConfirmPassword">Show</button></span></label>
           <button id="resetConfirm" type="submit" class="primary auth-submit">Verify OTP &amp; Reset Password</button>
-          <button type="button" id="resetResend" class="auth-back">Resend OTP</button>
+          <div id="resetOtpResendWidget" class="auth-otp-widget" aria-label="Resend OTP">
+            <p class="auth-otp-caption">Didn't receive your email?</p>
+            <div class="auth-otp-ring">
+              <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                <circle class="auth-otp-track" cx="50" cy="50" r="43" />
+                <circle id="resetOtpProgress" class="auth-otp-progress" cx="50" cy="50" r="43" pathLength="100" />
+              </svg>
+              <span id="resetOtpCountdown" class="auth-otp-countdown" role="timer" aria-live="off">01:00</span>
+              <button type="button" id="resetResend" class="auth-otp-resend hidden" disabled aria-label="Resend OTP">Resend</button>
+            </div>
+            <p id="resetOtpHint" class="auth-otp-hint">You can request another code in 1 minute.</p>
+          </div>
         </form>
         <p id="resetMessage" class="auth-secondary-message" role="status"></p>
         <button type="button" class="auth-back" data-auth-back>Back to Sign In</button>
@@ -903,7 +914,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.5.75"></script>
+  <script src="/auth-login-v1574.js?v=1.5.77"></script>
   <script src="/app.js?v=1.5.75"></script>
 </body>
 </html>
