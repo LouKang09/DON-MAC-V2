@@ -58,6 +58,11 @@ $('officeLoginForm').addEventListener('submit',async e=>{
   if(data.mustChangePassword){selectPage('security');notice('Change the temporary password before managing supply requests.');}
  }catch(err){$('officeLoginError').textContent=err.message;}
 });
+$('officePasswordToggle').addEventListener('click',()=>{
+ const input=$('officePassword'),show=input.type==='password';input.type=show?'text':'password';
+ $('officePasswordToggle').setAttribute('aria-pressed',String(show));
+ $('officePasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password');
+});
 $('officeLogout').onclick=async()=>{try{await api('/api/supply/office/logout',{method:'POST'});}catch(_){}loggedIn(false);};
 function selectPage(name){
  activePage=name;

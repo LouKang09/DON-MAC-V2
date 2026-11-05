@@ -1,19 +1,21 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.5.73"/></head><body>
-<div class="signin-wrap" id="officeLogin">
-  <form class="signin-card" id="officeLoginForm"><div class="brand-icon"><img src="/donmac-logo-hires.svg" alt="Don Macchiatos" /></div>
-    <p class="eyebrow">MAIN OFFICE · SECURE ACCESS</p><h1>Supply Chain</h1><p class="muted">Manage franchise purchase requests, payment verification, deliveries, and conversations.</p>
-    <label>Office username<input id="officeUsername" autocomplete="username" required/></label>
-    <label>Password<input id="officePassword" type="password" autocomplete="current-password" required/></label>
-    <button class="btn solid" type="submit">Sign in to Main Office</button><p id="officeLoginError" class="error" role="alert"></p>
-    <p class="fine">Authorized Main Office personnel only. Franchise owners order through Don Mac POS.</p>
-  </form>
-</div>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.5.73"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.83"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/></head><body>
+<div id="officeLogin"><section id="authScreen" class="auth-screen" aria-label="Supply Chain sign in"><div class="auth-shell">
+<div class="auth-brand-panel"><img class="auth-brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="450" height="540" decoding="async"></div>
+<div class="auth-panel"><form id="officeLoginForm" class="auth-card">
+<img class="auth-beans-icon" src="/assets/catalog/v1562-coffee-beans.svg" alt="" width="116" height="116" decoding="async">
+<h1 id="authTitle">Welcome Back, Please login to Supply Chain</h1>
+<p class="auth-hint">Main Office access for purchase requests, franchise supplies, and deliveries.</p>
+<label for="officeUsername">Username</label><div class="auth-input-box"><svg class="auth-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20v-2.2a7 7 0 0 1 14 0V20Z"/></svg><input id="officeUsername" autocomplete="username" minlength="3" maxlength="80" placeholder="Enter your username" required></div>
+<label for="officePassword">Password</label><div class="auth-input-box auth-password-box"><svg class="auth-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="officePassword" type="password" autocomplete="current-password" minlength="8" maxlength="256" placeholder="Enter your password" required><button id="officePasswordToggle" type="button" class="auth-password-toggle" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6.1 6.8 12 6.8 21.5 12 21.5 12 17.9 17.2 12 17.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.6"/></svg></button></div>
+<button id="officeLoginButton" type="submit" class="auth-submit">Sign In</button>
+<p id="officeLoginError" class="auth-help-message" role="alert"></p>
+</form></div></div></section></div>
 <div class="office-app hidden" id="officeApp">
   <aside class="office-side"><div class="office-brand"><img src="/donmac-logo-hires.svg" alt="" /><div><strong>Don Macchiatos</strong><small>Supply Chain · Main Office</small></div></div>
     <nav aria-label="Office navigation">
       <button type="button" class="side-link active" data-office-page="requests"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9M9 11h6M9 15h6"/></svg></span> Purchase Requests <b id="pendingBadge">0</b></button>
       <button type="button" class="side-link" data-office-page="franchisees"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2M3 4h2M19 4h2"/></svg></span> Franchisee Profile</button>
-      <a class="side-link" href="/platform-admin.html" style="text-decoration:none"><span class="side-icon" aria-hidden="true">▦</span> Platform Accounts</a>
+      
       <button type="button" class="side-link" data-office-page="catalog"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4ZM3 7v10l9 4 9-4V7M12 11v10"/></svg></span> Supply Catalog</button>
       <button type="button" class="side-link" data-office-page="settings"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 14 4l1 2 2 1 2-.3 1.5 2.6-1.5 1.6v2.2l1.5 1.6-1.5 2.6-2-.3-2 1-1 2-2 .5-2-.5-1-2-2-1-2 .3-1.5-2.6 1.5-1.6v-2.2L3.5 9.3 5 6.7l2 .3 2-1 1-2Z"/><circle cx="12" cy="12" r="3"/></svg></span> Office Settings</button>
     <button type="button" class="side-link" data-office-page="security"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></svg></span> Change Password</button></nav><div class="office-side-bottom"><span class="live-dot"></span> Office access <strong id="officeSignedInAs">Main Office</strong><button id="officeLogout" class="text-link">Sign out</button></div>
@@ -76,4 +78,4 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=1.5.73" defer></script></body></html>
+<script src="/supply-office.js?v=1.5.74" defer></script></body></html>
