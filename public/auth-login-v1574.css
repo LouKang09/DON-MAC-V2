@@ -510,12 +510,15 @@
 
 /* v1.5.80 — outer coffee pattern, white logo backing, lifted bean emblems. */
 #authScreen.auth-screen {
-  /* Keep the supplied coffee pattern's warm brown color, without a white veil. */
-  background-color:#c69c6d !important;
-  background-image:url('/assets/login-coffee-pattern.png?v=1.5.81') !important;
+  /* The uploaded pattern was previously converted to opaque white/black.
+     Multiply it against the original coffee brown so white pixels become
+     brown rather than masking the background color. */
+  background-color:#c49a6c !important;
+  background-image:url('/assets/login-coffee-pattern.png?v=1.5.82') !important;
+  background-blend-mode:multiply !important;
   background-repeat:repeat !important;
   background-position:center !important;
-  background-size:240px 240px !important;
+  background-size:224px 224px !important;
 }
 #authScreen .auth-brand-panel {
   background:#fff !important;
