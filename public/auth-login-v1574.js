@@ -9,6 +9,8 @@
  const KEY='donmac_login_remembered_username';
  const pageIds={login:null,register:'authRegisterPanel',reset:'authResetPanel'};
  let page='login',checkSeq=0,available=false;
+ let otpCooldownUntil=0,otpTicker=null,sendingOtp=false;
+ const OTP_RESEND_MS=60000;
  function message(id,text,isError=false){
   const el=$(id);if(!el)return;
   el.textContent=text;el.classList.toggle('error',!!isError);
@@ -125,21 +127,59 @@
   finally{btn.disabled=false;}
  });
  const requestForm=$('authResetRequestForm'),verifyForm=$('authResetConfirmForm');
+ const resend=$('resetResend'),otpCountdown=$('resetOtpCountdown');
+ const otpProgress=$('resetOtpProgress'),otpHint=$('resetOtpHint');
+ function stopOtpTicker(){
+   if(otpTicker!==null){clearInterval(otpTicker);otpTicker=null;}
+ }
+ function secondsRemaining(){
+   return Math.max(0,Math.ceil((otpCooldownUntil-Date.now())/1000));
+ }
+ function renderOtpCountdown(){
+   const secs=secondsRemaining(),active=secs>0;
+   const fraction=Math.min(1,Math.max(0,(otpCooldownUntil-Date.now())/OTP_RESEND_MS));
+   otpProgress.style.strokeDashoffset=String((1-fraction)*100);
+   otpCountdown.textContent=String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');
+   otpCountdown.classList.toggle('hidden',!active);
+   resend.classList.toggle('hidden',active);
+   resend.disabled=active||sendingOtp;
+   resend.setAttribute('aria-disabled',String(resend.disabled));
+   otpHint.textContent=active?'You can request a new code when the timer ends.':'Your code did not arrive? You can resend it now.';
+   if(!active)stopOtpTicker();
+ }
+ function startOtpCooldown(){
+   stopOtpTicker();
+   otpCooldownUntil=Date.now()+OTP_RESEND_MS;
+   renderOtpCountdown();
+   otpTicker=setInterval(renderOtpCountdown,250);
+ }
+ function clearOtpCooldown(){
+   stopOtpTicker();
+   otpCooldownUntil=0;
+   renderOtpCountdown();
+ }
  async function sendCode(){
-  const btn=$('resetSend'),identifier=$('resetIdentifier').value.trim();
-  if(!identifier){message('resetMessage','Enter a username or email.',true);return;}
-  if(btn.disabled)return;
-  btn.disabled=true;
-  try{
-   message('resetMessage','Requesting your email code…');
-   const result=await post('/api/auth/forgot/request',{identifier});
-   message('resetMessage',result.message||'If the account has a registered email, you will receive an OTP.');
-   requestForm.classList.add('hidden');verifyForm.classList.remove('hidden');
-  }catch(e){message('resetMessage',e.message,true);}
-  finally{btn.disabled=false;}
+   const btn=$('resetSend'),identifier=$('resetIdentifier').value.trim();
+   if(!identifier){message('resetMessage','Enter a username or email.',true);return;}
+   if(sendingOtp||secondsRemaining()>0)return;
+   sendingOtp=true;
+   btn.disabled=true;
+   resend.disabled=true;
+   try{
+     message('resetMessage','Requesting your email code…');
+     const result=await post('/api/auth/forgot/request',{identifier});
+     message('resetMessage',result.message||'If the account has a registered email, you will receive an OTP.');
+     requestForm.classList.add('hidden');
+     verifyForm.classList.remove('hidden');
+     startOtpCooldown();
+   }catch(e){
+     message('resetMessage',e.message,true);
+   }finally{
+     sendingOtp=false;btn.disabled=false;renderOtpCountdown();
+   }
  }
  requestForm.addEventListener('submit',e=>{e.preventDefault();sendCode();});
- $('resetResend').addEventListener('click',()=>sendCode());
+ resend.addEventListener('click',()=>sendCode());
  verifyForm.addEventListener('submit',async e=>{
   e.preventDefault();
   const btn=$('resetConfirm');
@@ -153,6 +193,7 @@
     password:value,confirmPassword:confirm
    });
    verifyForm.reset();requestForm.reset();
+   clearOtpCooldown();
    requestForm.classList.remove('hidden');verifyForm.classList.add('hidden');
    show('login');
    message('authHelpMessage',result.message||'Password updated. Sign in again.');
