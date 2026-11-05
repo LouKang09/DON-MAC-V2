@@ -76,3 +76,7 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 .dialog-tip{font-size:11px;line-height:1.5;color:#708573;margin:0}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:8px}
 @media(max-width:1050px){.app{grid-template-columns:210px minmax(0,1fr)}main{padding:26px 22px}.metrics{grid-template-columns:repeat(2,1fr)}.topbar{padding:0 22px}}
 @media(max-width:720px){.app{display:block}.sidebar{position:fixed;z-index:30;left:0;top:0;bottom:0;width:260px;transform:translateX(-110%);transition:transform .2s}.app.nav-open .sidebar{transform:translateX(0)}.menu-toggle{display:block}.topbar{height:66px;padding:0 16px}.topbar-title strong{font-size:14px}main{padding:21px 13px}.page-heading{align-items:flex-start}.page-heading .btn{padding:10px}.page-heading h1{font-size:22px}.metrics{gap:8px}.metric{padding:15px}.metric strong{font-size:25px}.section-header,.toolbar{padding:15px}.toolbar{flex-direction:column;align-items:stretch}.search-box{max-width:none}.filter{justify-content:space-between}.hierarchy{margin-left:30px}.staff-wrap{overflow-x:auto;padding-left:10px}.staff-table{min-width:650px}.two-fields{grid-template-columns:1fr}}
+
+/* Admin Control account settings navigation uses the same sidebar treatment as links. */
+.sidebar button.side-link{border:0;background:transparent;text-align:left;width:100%;font:inherit;cursor:pointer}
+.sidebar button.side-link:hover,.sidebar button.side-link:focus-visible{background:#144735;color:#fff}
