@@ -78,7 +78,7 @@
  }
  function branchSection(owner){
   const active=opened(expandedOwners,owner.workspaceId);
-  if(!active)return'';
+  if(!active&&!search)return'';
   let blocks='';
   for(const b of owner.branches){
    const key=owner.workspaceId+':'+b.id,open=opened(expandedBranches,key)||!!search;
