@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Don Macchiatos • Platform Admin</title>
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.0">
+</head><body>
+<div id="platformLogin" class="login-screen">
+  <form id="platformLoginForm" class="login-card">
+    <img class="login-mark" src="/donmac-logo-hires.svg" alt="Don Macchiatos">
+    <div class="kicker">DON MACCHIATOS · PLATFORM ACCESS</div>
+    <h1>Admin Control Center</h1>
+    <p class="login-description">Sign in with your authorized Main Office credentials to manage franchise owners, branches, and users.</p>
+    <label for="platformUsername">Main Office username</label>
+    <input id="platformUsername" autocomplete="username" required maxlength="100">
+    <label for="platformPassword">Password</label>
+    <input id="platformPassword" type="password" autocomplete="current-password" required>
+    <button id="platformLoginButton" type="submit" class="btn btn-main">Sign in securely</button>
+    <p id="platformLoginError" role="alert" class="notice error hidden"></p>
+    <a class="subtle-link" href="/supply-office.html">Go to Supply Chain</a>
+  </form>
+</div>
+<div id="platformApp" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-logo"><img src="/donmac-logo-hires.svg" alt=""></span>
+      <div><strong>Don Macchiatos</strong><small>Platform Administration</small></div>
+    </div>
+    <div class="nav-label">WORKSPACE</div>
+    <a class="side-link active" href="/platform-admin.html"><span>▦</span> Account Directory</a>
+    <a class="side-link" href="/supply-office.html"><span>▤</span> Main Office Supply</a>
+    <div class="sidebar-foot">
+      <span class="access-chip">Authorized Office Access</span>
+      <button id="platformLogout" class="logout" type="button">Sign out</button>
+    </div>
+  </aside>
+  <div class="content">
+    <header class="topbar">
+      <button type="button" id="menuToggle" class="menu-toggle" aria-label="Toggle navigation">☰</button>
+      <div class="topbar-title"><span>ADMINISTRATION</span><strong>Franchise Management</strong></div>
+      <div class="topbar-right"><span id="officeUserLabel">Main Office</span><div class="avatar">DM</div></div>
+    </header>
+    <main>
+      <div class="page-heading">
+        <div><div class="kicker">ACCOUNT DIRECTORY · LIVE DATABASE</div>
+          <h1>Owners, branches &amp; users</h1>
+          <p>Manage each franchise account and drill down to its branches and assigned staff.</p>
+        </div>
+        <button id="refreshAccounts" class="btn btn-main" type="button" title="Refresh accounts">⟳ Refresh</button>
+      </div>
+      <section class="metrics" aria-label="Account summary">
+        <div class="metric"><span>Account owners</span><strong id="metricOwners">—</strong><small>Registered workspaces</small></div>
+        <div class="metric"><span>Branches</span><strong id="metricBranches">—</strong><small>All franchise locations</small></div>
+        <div class="metric"><span>Users</span><strong id="metricUsers">—</strong><small>Across all branches</small></div>
+        <div class="metric"><span>Active owners</span><strong id="metricActive">—</strong><small>Enabled Owner accounts</small></div>
+      </section>
+      <section class="main-card">
+        <div class="section-header">
+          <div><span class="eyebrow">FRANCHISE ACCOUNTS</span><h2>Account Directory</h2>
+          <p>Expand an account to view branches, then expand a branch to view its users.</p></div>
+          <span id="recordCount" class="record-count">0 accounts</span>
+        </div>
+        <div class="toolbar">
+          <label class="search-box" for="accountSearch"><span aria-hidden="true">⌕</span>
+            <input id="accountSearch" placeholder="Search owner, branch, or user..." autocomplete="off"></label>
+          <label class="filter"><span>Owner Status</span>
+            <select id="statusFilter"><option value="all">All statuses</option>
+              <option value="active">Active</option><option value="inactive">Inactive</option></select></label>
+        </div>
+        <p id="tableMessage" class="notice hidden" role="status"></p>
+        <div class="table-scroll"><table class="owners-table" aria-label="Franchise Owner Accounts">
+          <thead><tr><th>Account Owner</th><th>Number of Branch</th>
+            <th>Subscription</th><th>Amount</th><th>Date Joined</th><th>Status</th></tr></thead>
+          <tbody id="ownersBody"><tr><td colspan="6" class="empty">Loading accounts…</td></tr></tbody>
+        </table></div>
+        <footer class="table-footer"><span id="pageInfo">—</span>
+          <div class="pagination"><button id="pagePrevious" type="button">Previous</button><button id="pageNext" type="button">Next</button></div>
+        </footer>
+      </section>
+      <p class="billing-note">Subscription fields record Main Office administrative information only. They do not process payments or automatically alter POS entitlements.</p>
+    </main>
+  </div>
+</div>
+<dialog id="subscriptionDialog" class="editor">
+<form id="subscriptionForm" method="dialog">
+ <div class="dialog-heading"><div><span class="eyebrow">MANUAL RECORD</span><h2>Manage Subscription</h2><p id="subscriptionOwner"></p></div>
+ <button type="button" class="close-btn" data-close-dialog aria-label="Close">×</button></div>
+ <label>Subscription<select id="subPlan" required><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label>
+ <label>Amount (PHP)<input id="subAmount" type="number" min="0" step="0.01" max="999999999" placeholder="0.00" required></label>
+ <label>Payment status<select id="subStatus" required>
+  <option value="PAID">Paid</option><option value="ON_HOLD">On Hold</option><option value="UNPAID">Unpaid</option></select></label>
+ <p class="dialog-tip">This records a subscription manually; it does not initiate a charge or change POS access.</p>
+ <p id="subscriptionError" class="notice error hidden" role="alert"></p>
+ <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+ <button class="btn btn-main" type="submit" id="saveSubscription">Save record</button></div>
+</form></dialog>
+<dialog id="userDialog" class="editor">
+<form id="userForm" method="dialog">
+ <div class="dialog-heading"><div><span class="eyebrow">FRANCHISE USER</span><h2>Edit user</h2><p id="userSummary"></p></div>
+ <button type="button" class="close-btn" data-close-dialog aria-label="Close">×</button></div>
+ <label>Username<input id="userUsername" readonly></label>
+ <label>Full name<input id="userFullName" maxlength="120"></label>
+ <label>Email<input id="userEmail" type="email" maxlength="180"></label>
+ <label>Phone<input id="userPhone" maxlength="32"></label>
+ <div class="two-fields"><label>Role<select id="userRole">
+    <option value="Admin">Admin / Co-Owner</option><option value="User">Cashier / Staff</option></select></label>
+  <label>Branch<select id="userBranch"></select></label></div>
+ <label class="check-line"><input id="userActive" type="checkbox"> Account active</label>
+ <p id="userOwnerNotice" class="dialog-tip hidden">Changing the Owner's status does not change other branch users' status.</p>
+ <p id="userError" class="notice error hidden" role="alert"></p>
+ <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+  <button id="saveUser" type="submit" class="btn btn-main">Save user</button></div>
+</form></dialog>
+<script defer src="/platform-admin.js?v=1.0.0"></script>
+</body></html>
