@@ -415,3 +415,95 @@
  display:block;
  flex:none;
 }
+
+/* v1.5.79 — uploaded coffee artwork on the logo panel and larger bean emblem. */
+#authScreen .auth-brand-panel {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:#c69c6d !important;
+}
+#authScreen .auth-brand-panel::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background-image:url('/assets/login-coffee-pattern.png?v=1.5.79');
+  background-position:center;
+  background-repeat:repeat;
+  background-size:520px 520px;
+  mix-blend-mode:multiply;
+  opacity:.82;
+}
+#authScreen .auth-brand-panel::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%, rgba(249,234,204,.70) 0%, rgba(249,234,204,.33) 48%, transparent 81%);
+}
+#authScreen .auth-brand-panel .auth-brand-logo {
+  position:relative;
+  z-index:2;
+  border:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+  filter:contrast(1.45);
+}
+/* Increase the original three-bean icon and move it upward in all 3 forms. */
+#authScreen .auth-panel>.auth-card .auth-beans-icon {
+  width:84px;
+  height:84px;
+  min-height:84px;
+  margin:-9px auto -5px;
+  transform:translateY(-8px);
+  border:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+}
+#authScreen .auth-panel>.auth-secondary-panel>.auth-beans-icon {
+  width:82px;
+  height:82px;
+  min-height:82px;
+  flex-shrink:0;
+  align-self:center;
+  margin:-7px auto -3px;
+  transform:translateY(-6px);
+  border:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+}
+@media (max-width:640px) {
+  #authScreen .auth-brand-panel::before {
+    background-size:370px 370px;
+  }
+  #authScreen .auth-panel>.auth-card .auth-beans-icon {
+    width:83px;
+    height:83px;
+    min-height:83px;
+    margin:-5px auto -1px;
+    transform:translateY(-7px);
+  }
+  #authScreen .auth-panel>.auth-secondary-panel>.auth-beans-icon {
+    width:81px;
+    height:81px;
+    min-height:81px;
+    margin:-4px auto 0;
+    transform:translateY(-4px);
+  }
+}
+@media (min-width:641px) and (max-height:565px) {
+  #authScreen .auth-panel>.auth-card .auth-beans-icon {
+    width:68px;
+    height:68px;
+    min-height:68px;
+    margin:-5px auto -3px;
+  }
+  #authScreen .auth-panel>.auth-secondary-panel>.auth-beans-icon {
+    width:68px;
+    height:68px;
+    min-height:68px;
+  }
+}
