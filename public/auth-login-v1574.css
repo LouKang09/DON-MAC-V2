@@ -348,3 +348,37 @@
  #authScreen .auth-panel>.auth-card{justify-content:flex-start}
  #authScreen .auth-panel>.auth-card .auth-beans-icon{width:46px;height:46px;min-height:46px}
 }
+
+/* v1.5.77: circular 60-second OTP resend indicator */
+#authScreen .auth-otp-widget{
+ display:flex;flex-direction:column;align-items:center;gap:8px;
+ padding:5px 0 2px;margin:0 auto;width:100%;text-align:center;
+ color:#e5f6e9;
+}
+#authScreen .auth-otp-caption{font-size:12px;font-weight:650;margin:0;color:#ecfaef}
+#authScreen .auth-otp-ring{
+ display:grid;place-items:center;position:relative;
+ width:88px;height:88px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.035);
+}
+#authScreen .auth-otp-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+#authScreen .auth-otp-track,#authScreen .auth-otp-progress{
+ fill:none;stroke-width:6;stroke-linecap:round;
+}
+#authScreen .auth-otp-track{stroke:rgba(255,255,255,.2)}
+#authScreen .auth-otp-progress{
+ stroke:#d8f7b7;stroke-dasharray:100;stroke-dashoffset:0;transition:stroke-dashoffset .24s linear;
+}
+#authScreen .auth-otp-countdown,#authScreen .auth-otp-resend{
+ position:relative;z-index:1;font-weight:800;font-variant-numeric:tabular-nums;
+}
+#authScreen .auth-otp-countdown{font-size:19px;color:white;letter-spacing:.035em}
+#authScreen .auth-otp-resend{
+ width:70px;height:70px;border:0;cursor:pointer;border-radius:50%;
+ background:transparent;color:#f0ffd9;font-size:12px;padding:0;
+}
+#authScreen .auth-otp-resend:hover:not(:disabled){background:rgba(255,255,255,.13);color:#fff}
+#authScreen .auth-otp-resend:focus-visible{outline:3px solid #d8f7b7;outline-offset:2px}
+#authScreen .auth-otp-resend:disabled{opacity:.65;cursor:default}
+#authScreen .auth-otp-hint{font-size:11px;color:#d1ebd6;line-height:1.4;margin:0}
+#authScreen .auth-otp-resend.hidden,#authScreen .auth-otp-countdown.hidden{display:none!important}
+@media(prefers-reduced-motion:reduce){#authScreen .auth-otp-progress{transition:none}}
