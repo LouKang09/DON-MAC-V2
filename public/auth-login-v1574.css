@@ -382,3 +382,36 @@
 #authScreen .auth-otp-hint{font-size:11px;color:#d1ebd6;line-height:1.4;margin:0}
 #authScreen .auth-otp-resend.hidden,#authScreen .auth-otp-countdown.hidden{display:none!important}
 @media(prefers-reduced-motion:reduce){#authScreen .auth-otp-progress{transition:none}}
+
+/* v1.5.78: prominent, always reachable navigation in registration and recovery */
+#authScreen .auth-panel>.auth-secondary-panel .auth-back-top{
+ display:inline-flex;
+ align-self:flex-start;
+ align-items:center;
+ justify-content:flex-start;
+ flex:0 0 auto;
+ gap:8px;
+ width:auto;
+ min-height:36px;
+ margin:0 0 8px;
+ padding:7px 11px 7px 8px;
+ background:rgba(255,255,255,.10);
+ border:1px solid rgba(255,255,255,.25);
+ border-radius:9px;
+ color:#ffffff;
+ font-size:12px;
+ font-weight:750;
+ text-decoration:none;
+ cursor:pointer;
+}
+#authScreen .auth-panel>.auth-secondary-panel .auth-back-top:hover{
+ background:rgba(255,255,255,.19);
+}
+#authScreen .auth-panel>.auth-secondary-panel .auth-back-top:focus-visible{
+ outline:3px solid #dbefcb;
+ outline-offset:2px;
+}
+#authScreen .auth-panel>.auth-secondary-panel .auth-back-top svg{
+ display:block;
+ flex:none;
+}
