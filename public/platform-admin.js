@@ -117,7 +117,7 @@
     '<td><span class="num">'+number(owner.branchCount)+'</span></td>'+
     '<td>'+(sub?badge(sub.plan,sub.status==='PAID'?'active':'on-hold'):'<span class="status unknown">Not configured</span>')+'</td>'+
     '<td class="currency">'+peso(sub?.amount)+'</td><td>'+esc(date(owner.joinedAt))+'</td>'+
-    '<td>'+badge(owner.active?'Active':'Inactive',owner.active?'active':'inactive')+'</td></tr>');
+    '<td>'+badge(owner.active?'Active':'Inactive',owner.active?'active':'inactive')+(sub?'<div style="margin-top:5px;font-size:10px;color:#708574">Billing: '+esc(sub.status.replace('_',' '))+'</div>':'')+'</td></tr>');
    if(open)rows.push(branchSection(owner));
   }
   $('ownersBody').innerHTML=rows.join('')||'<tr><td colspan="6" class="empty">No matching franchise accounts.</td></tr>';
