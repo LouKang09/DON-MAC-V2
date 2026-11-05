@@ -1,0 +1,8 @@
+/* Reuse the exact POS login artwork, typography and layout on both office portals. */
+#authScreen .auth-hint{margin:0 0 17px;line-height:1.5}
+#authScreen .auth-help-message:empty{display:none}
+#authScreen .auth-card .auth-submit{cursor:pointer}
+#authScreen .auth-card .auth-submit:disabled{cursor:wait;opacity:.65}
+#authScreen .auth-panel>.auth-card{flex:1}
+#authScreen .auth-panel>.auth-card input{box-sizing:border-box}
+@media(min-width:641px){#authScreen .auth-panel>.auth-card{justify-content:center}}

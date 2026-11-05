@@ -3,23 +3,21 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
-<link rel="stylesheet" href="/platform-admin.css?v=1.0.0">
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.1">
+<link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.83">
+<link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
 </head><body>
-<div id="platformLogin" class="login-screen">
-  <form id="platformLoginForm" class="login-card">
-    <img class="login-mark" src="/donmac-logo-hires.svg" alt="Don Macchiatos">
-    <div class="kicker">DON MACCHIATOS · PLATFORM ACCESS</div>
-    <h1>Admin Control Center</h1>
-    <p class="login-description">Sign in with your authorized Main Office credentials to manage franchise owners, branches, and users.</p>
-    <label for="platformUsername">Main Office username</label>
-    <input id="platformUsername" autocomplete="username" required maxlength="100">
-    <label for="platformPassword">Password</label>
-    <input id="platformPassword" type="password" autocomplete="current-password" required>
-    <button id="platformLoginButton" type="submit" class="btn btn-main">Sign in securely</button>
-    <p id="platformLoginError" role="alert" class="notice error hidden"></p>
-    <a class="subtle-link" href="/supply-office.html">Go to Supply Chain</a>
-  </form>
-</div>
+<div id="platformLogin"><section id="authScreen" class="auth-screen" aria-label="Admin Control sign in"><div class="auth-shell">
+<div class="auth-brand-panel"><img class="auth-brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="450" height="540" decoding="async"></div>
+<div class="auth-panel"><form id="platformLoginForm" class="auth-card">
+<img class="auth-beans-icon" src="/assets/catalog/v1562-coffee-beans.svg" alt="" width="116" height="116" decoding="async">
+<h1 id="authTitle">Welcome Back, Please login to Admin Control</h1>
+<p class="auth-hint">Manage franchise accounts and platform administration.</p>
+<label for="platformUsername">Username</label><div class="auth-input-box"><svg class="auth-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20v-2.2a7 7 0 0 1 14 0V20Z"/></svg><input id="platformUsername" autocomplete="username" minlength="3" maxlength="80" placeholder="Enter your username" required></div>
+<label for="platformPassword">Password</label><div class="auth-input-box auth-password-box"><svg class="auth-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="platformPassword" type="password" autocomplete="current-password" minlength="8" maxlength="256" placeholder="Enter your password" required><button id="platformPasswordToggle" type="button" class="auth-password-toggle" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6.1 6.8 12 6.8 21.5 12 21.5 12 17.9 17.2 12 17.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.6"/></svg></button></div>
+<button id="platformLoginButton" type="submit" class="auth-submit">Sign In</button>
+<p id="platformLoginError" class="auth-help-message hidden" role="alert"></p>
+</form></div></div></section></div>
 <div id="platformApp" class="app hidden">
   <aside class="sidebar">
     <div class="brand">
@@ -28,7 +26,7 @@
     </div>
     <div class="nav-label">WORKSPACE</div>
     <a class="side-link active" href="/platform-admin.html"><span>▦</span> Account Directory</a>
-    <a class="side-link" href="/supply-office.html"><span>▤</span> Main Office Supply</a>
+    <button id="platformAccountSettingsButton" class="side-link" type="button"><span>⚙</span> Account Settings</button>
     <div class="sidebar-foot">
       <span class="access-chip">Authorized Office Access</span>
       <button id="platformLogout" class="logout" type="button">Sign out</button>
@@ -111,5 +109,15 @@
  <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
   <button id="saveUser" type="submit" class="btn btn-main">Save user</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.0"></script>
+<dialog id="adminCredentialsDialog" class="editor">
+<form id="adminCredentialsForm" method="dialog">
+<div class="dialog-heading"><div><span class="eyebrow">ADMIN CONTROL · ACCOUNT SECURITY</span><h2 id="adminCredentialsTitle">Update login credentials</h2><p id="adminCredentialsDescription">Change your Admin Control username or password independently of Supply Chain.</p></div><button type="button" id="adminCredentialsClose" class="close-btn" aria-label="Close">×</button></div>
+<label>New username<input id="adminNewUsername" required minlength="3" maxlength="80" pattern="[A-Za-z0-9._-]{3,80}" autocomplete="username"></label>
+<label>Current password<input id="adminCurrentPassword" type="password" required autocomplete="current-password"></label>
+<label>New password (10 characters minimum)<input id="adminNewPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Leave blank to keep your password"></label>
+<label>Confirm new password<input id="adminConfirmPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Repeat your new password"></label>
+<p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
+<div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
+</form></dialog>
+<script defer src="/platform-admin.js?v=1.0.1"></script>
 </body></html>

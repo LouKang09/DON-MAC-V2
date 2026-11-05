@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
  const $=id=>document.getElementById(id);
- let accounts=[],summary={},page=1,search='',status='all',selected=null,officeName='Main Office';
+ let accounts=[],summary={},page=1,search='',status='all',selected=null,officeName='Admin Control',mustChangeAdminPassword=false;
  const PAGE_SIZE=10,expandedOwners=new Set(),expandedBranches=new Set();
  const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const number=x=>new Intl.NumberFormat('en-PH').format(Number(x)||0);
@@ -10,7 +10,7 @@
  const badge=(value,type)=>'<span class="status '+esc(type)+'">'+esc(value)+'</span>';
  const opened=(set,key)=>set.has(String(key));
  async function api(path,options={}){
-  const response=await fetch('/api/supply/office/'+path,{credentials:'same-origin',cache:'no-store',
+  const response=await fetch('/api/supply/office/platform/'+path,{credentials:'same-origin',cache:'no-store',
    ...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}});
   const payload=await response.json().catch(()=>({}));
   if(!response.ok){const error=new Error(payload.error||'Request failed ('+response.status+').');error.status=response.status;throw error;}
@@ -19,13 +19,12 @@
  function error(id,message){const el=$(id);el.textContent=message||'';el.classList.toggle('hidden',!message)}
  function showApp(username){officeName=username||'Main Office';$('officeUserLabel').textContent=officeName;
   $('platformLogin').classList.add('hidden');$('platformApp').classList.remove('hidden')}
- function showLogin(message=''){$('platformLogin').classList.remove('hidden');$('platformApp').classList.add('hidden');
+ function showLogin(message=''){mustChangeAdminPassword=false;if($('adminCredentialsDialog').open)$('adminCredentialsDialog').close();$('platformLogin').classList.remove('hidden');$('platformApp').classList.add('hidden');
   error('platformLoginError',message);}
  async function checkSession(){
   try{
    const user=await api('me');
-   if(user.mustChangePassword){showLogin('Change the temporary Main Office password in Supply Chain before using account management.');return;}
-   showApp(user.username);await reload();
+   showApp(user.username);if(user.mustChangePassword){openAdminCredentials(true);return;}await reload();
   }catch(err){showLogin(err.status===401?'':err.message)}
  }
  $('platformLoginForm').addEventListener('submit',async event=>{
@@ -35,8 +34,8 @@
    const result=await api('login',{method:'POST',body:JSON.stringify({
     username:$('platformUsername').value.trim(),password:$('platformPassword').value})});
    $('platformPassword').value='';
-   if(result.mustChangePassword)throw new Error('Please change the temporary password in Supply Chain first.');
-   showApp($('platformUsername').value.trim());await reload();
+   showApp(result.username||$('platformUsername').value.trim());
+   if(result.mustChangePassword){openAdminCredentials(true);return;}await reload();
   }catch(err){error('platformLoginError',err.message)}
   finally{button.disabled=false}
  });
@@ -209,5 +208,44 @@
  document.querySelectorAll('[data-close-dialog]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
  $('menuToggle').addEventListener('click',()=>$('platformApp').classList.toggle('nav-open'));
  document.querySelectorAll('.sidebar a').forEach(a=>a.addEventListener('click',()=>$('platformApp').classList.remove('nav-open')));
+
+function openAdminCredentials(required=false){
+ mustChangeAdminPassword=required;
+ $('adminCredentialsForm').reset();
+ $('adminNewUsername').value=officeName;
+ error('adminCredentialsError','');
+ $('adminCredentialsTitle').textContent=required?'Secure your Admin Control account':'Update login credentials';
+ $('adminCredentialsDescription').textContent=required?'The initial credentials are temporary. Choose a private password to enable account management.':'Change the username, password, or both. Supply Chain credentials will not be affected.';
+ $('adminNewPassword').required=required;
+ $('adminConfirmPassword').required=required;
+ $('adminCredentialsCancel').classList.toggle('hidden',required);
+ $('adminCredentialsClose').classList.toggle('hidden',required);
+ if(!$('adminCredentialsDialog').open)$('adminCredentialsDialog').showModal();
+}
+$('platformAccountSettingsButton').addEventListener('click',()=>openAdminCredentials(mustChangeAdminPassword));
+$('adminCredentialsCancel').addEventListener('click',()=>{if(!mustChangeAdminPassword)$('adminCredentialsDialog').close();});
+$('adminCredentialsClose').addEventListener('click',()=>{if(!mustChangeAdminPassword)$('adminCredentialsDialog').close();});
+$('adminCredentialsDialog').addEventListener('cancel',event=>{if(mustChangeAdminPassword)event.preventDefault();});
+$('adminCredentialsForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const currentPassword=$('adminCurrentPassword').value,newPassword=$('adminNewPassword').value;
+ if(newPassword!==$('adminConfirmPassword').value){error('adminCredentialsError','New passwords do not match.');return;}
+ const save=$('adminCredentialsSave');save.disabled=true;error('adminCredentialsError','');
+ try{
+  const result=await api('credentials',{method:'POST',body:JSON.stringify({currentPassword,newUsername:$('adminNewUsername').value.trim(),newPassword})});
+  officeName=result.username;$('officeUserLabel').textContent=officeName;
+  mustChangeAdminPassword=false;
+  $('adminCredentialsForm').reset();
+  $('adminCredentialsDialog').close();
+  await reload();
+ }catch(err){error('adminCredentialsError',err.message);}
+ finally{save.disabled=false;}
+});
+$('platformPasswordToggle').addEventListener('click',()=>{
+ const input=$('platformPassword'),show=input.type==='password';input.type=show?'text':'password';
+ $('platformPasswordToggle').setAttribute('aria-pressed',String(show));
+ $('platformPasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password');
+});
+
  checkSession();
 })();
