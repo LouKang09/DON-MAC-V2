@@ -10,6 +10,7 @@ const accountRecovery = require('./lib/account-recovery');
 const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
+const platformAccounts = require('./lib/platform-accounts');
 const supplyChain = require('./lib/supply-chain');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
@@ -1677,6 +1678,20 @@ async function handleOfficeApi(req,res,p,method){
   if(method==='POST'&&p==='/api/supply/office/logout')
     return json(res,200,{ok:true},safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
   if(method==='GET'&&p==='/api/supply/office/me')return json(res,200,{role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME,mustChangePassword:!activeCredential},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/accounts')
+    return json(res,200,await platformAccounts.list(db),safeHeaders());
+  const accountPlan=p.match(/^\/api\/supply\/office\/accounts\/(\d+)\/subscription$/);
+  if(method==='PUT'&&accountPlan){
+    const saved=await platformAccounts.savePlan(db,accountPlan[1],await readJson(req),process.env.SUPPLY_OFFICE_USERNAME||'Main Office');
+    await logAction({username:process.env.SUPPLY_OFFICE_USERNAME||'Main Office'},'Platform account subscription updated','Platform Admin','Workspace '+accountPlan[1]);
+    return json(res,200,saved,safeHeaders());
+  }
+  const memberEdit=p.match(/^\/api\/supply\/office\/accounts\/(\d+)\/users\/(\d+)$/);
+  if(method==='PUT'&&memberEdit){
+    const saved=await platformAccounts.saveUser(db,memberEdit[1],memberEdit[2],await readJson(req));
+    await logAction({username:process.env.SUPPLY_OFFICE_USERNAME||'Main Office'},'Platform account member updated','Platform Admin','Workspace '+memberEdit[1]+' / User '+memberEdit[2]);
+    return json(res,200,saved,safeHeaders());
+  }
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
@@ -1949,13 +1964,13 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleApi(req,res,url);
       if(SUPPLY_OFFICE_PORTAL){
-        const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/donmac-logo-hires.svg']);
+        const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/platform-admin.html','/platform-admin.css','/platform-admin.js','/donmac-logo-hires.svg']);
         const target=url.pathname==='/'?'/supply-office.html':url.pathname;
         if(allowed.has(target)&&serveStatic(req,res,target))return;
         return text(res,404,'Not found','text/plain; charset=utf-8',safeHeaders());
