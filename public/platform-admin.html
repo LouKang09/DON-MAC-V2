@@ -3,7 +3,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
-<link rel="stylesheet" href="/platform-admin.css?v=1.0.3">
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.4">
 <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85">
 <link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
 </head><body>
@@ -41,7 +41,7 @@
         <div><h1>Owners, branches &amp; users</h1>
           <p>Manage each franchise account and drill down to its branches and assigned staff.</p>
         </div>
-        <button id="refreshAccounts" class="btn btn-main" type="button" title="Refresh accounts">⟳ Refresh</button>
+        <button id="refreshAccounts" class="btn btn-main" type="button" title="Refresh accounts" aria-label="Refresh accounts"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11a9 9 0 1 1-2.51-6.33"/><path d="M21 3v6h-6"/></svg><span>Refresh</span></button>
       </div>
       <section class="metrics" aria-label="Account summary">
         <div class="metric"><span>Account owners</span><strong id="metricOwners">—</strong><small>Registered workspaces</small></div>
@@ -118,5 +118,5 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.3"></script>
+<script defer src="/platform-admin.js?v=1.0.4"></script>
 </body></html>
