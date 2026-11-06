@@ -107,7 +107,7 @@ function selectPage(name){
 }
 document.querySelectorAll('[data-office-page]').forEach(b=>b.onclick=()=>selectPage(b.dataset.officePage));
 $('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else refresh();};
-const refreshIcon='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.4 9A7.5 7.5 0 0 1 18.8 7L20 12M4 12l1.2 5a7.5 7.5 0 0 0 13.4-2"/></svg>';
+const refreshIcon="<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 11a9 9 0 1 1-2.51-6.33\"/><path d=\"M21 3v6h-6\"/></svg>";
 $('officeRefresh').innerHTML=refreshIcon;
 $('officeRefresh').classList.add('office-round-refresh');
 $('officeRefresh').setAttribute('aria-label','Refresh Main Office data');
@@ -130,6 +130,7 @@ async function refresh(){
  }catch(err){notice(err.message,true);}
 }
 const expandedOwnerGroups=new Set();
+const expandChevron="<svg class=\"expand-chevron\" viewBox=\"0 0 24 24\" width=\"19\" height=\"19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>";
 function render(){
  const q=$('officeSearch').value.toLowerCase().trim(),status=$('officeStatusFilter').value;
  const matched=all.filter(o=>(!status||o.status===status)&&(!q||
@@ -157,13 +158,13 @@ function render(){
   lines.push('<tr class="office-account-summary"><td>'+
    '<button class="office-account-expand" type="button" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+
    '" aria-label="'+(open?'Collapse':'Expand')+' purchase orders for '+esc(g.owner)+'">'+
-   '<span class="office-account-chevron" aria-hidden="true">'+(open?'⌃':'⌄')+'</span>'+
+   '<span class="office-account-chevron" aria-hidden="true">'+expandChevron+'</span>'+
    '<strong>'+g.orders.length+' order'+(g.orders.length===1?'':'s')+'</strong></button></td>'+
    '<td><strong>'+esc(g.owner)+'</strong><div class="muted">Owner account · '+branches.length+' branch'+(branches.length===1?'':'es')+
    '</div><small>'+esc(branches.slice(0,3).join(', '))+(branches.length>3?'…':'')+'</small></td>'+
    '<td>Franchise account</td><td><b>'+peso(g.total)+'</b></td>'+
    '<td><span class="office-account-status">'+pending+' awaiting review</span></td>'+
-   '<td>'+stamp(g.orders[0]?.created_at)+'</td><td><button type="button" class="office-account-expand office-account-expand-tail" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+'">'+(open?'Collapse':'Expand')+'</button></td></tr>');
+   '<td>'+stamp(g.orders[0]?.created_at)+'</td><td><button type="button" class="office-account-expand office-account-expand-tail" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' purchase orders for '+esc(g.owner)+'"><span class="office-tail-label">'+(open?'Collapse':'Expand')+'</span>'+expandChevron+'</button></td></tr>');
   if(open){
    for(const o of g.orders){
     lines.push('<tr class="office-account-order"><td><b>'+esc(o.id.slice(0,8).toUpperCase())+'</b></td>'+
