@@ -1958,7 +1958,7 @@ async function main(){
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleApi(req,res,url);
       if(SUPPLY_OFFICE_PORTAL){
-        const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/platform-admin.html','/platform-admin.css','/platform-admin.js','/donmac-logo-hires.svg','/auth-login-v1574.css','/office-login-pos.css','/assets/login-coffee-pattern-approved-hd.png','/assets/catalog/v1562-coffee-beans.svg','/assets/login-coffee-beans-bold-outline-v1585.svg']);
+        const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/platform-admin.html','/platform-admin.css','/platform-admin.js','/donmac-logo-hires.svg','/auth-login-v1574.css','/office-login-pos.css','/assets/login-coffee-pattern-approved-hd.png','/assets/catalog/v1562-coffee-beans.svg','/assets/login-coffee-beans-bold-outline-v1585.svg','/assets/login-coffee-beans-white-outline-v1586.svg']);
         const target=url.pathname==='/'?'/supply-office.html':url.pathname;
         if(allowed.has(target)&&serveStatic(req,res,target))return;
         return text(res,404,'Not found','text/plain; charset=utf-8',safeHeaders());
