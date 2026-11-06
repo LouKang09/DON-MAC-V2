@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const stamp=d=>d?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Manila'}).format(new Date(d)):'—';
-const title=s=>String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
+const title=s=>s==='PENDING_REVIEW'?'Pending for review':s==='DELIVERED'?'Delivered · Complete':String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
 async function compactPhoto(file){
  if(!file)return null;
  if(file.size>8*1024*1024||file.size<50||!['image/png','image/jpeg','image/webp'].includes(file.type))
@@ -342,6 +342,65 @@ $('urgentFeeForm').onsubmit=async e=>{
  e.preventDefault();
  try{const d=await api('/api/supply/office/settings',{method:'PUT',body:JSON.stringify({urgentFee:$('officeUrgentFee').value})});notice('Urgent fee is now '+peso(d.urgentFee)+'. Existing orders are unchanged.');}catch(err){notice(err.message,true);}
 };
+
+/* Workflow actions are supplied by the server, so the menu cannot drift
+   from the backend's allowed next stages. Only the next decision is shown. */
+const officeActionLabels={
+ PENDING_REVIEW:{APPROVED:'Approve payment',ON_HOLD:'Place on hold',DENIED:'Deny request'},
+ ON_HOLD:{APPROVED:'Approve payment',DENIED:'Deny request'},
+ DENIED:{APPROVED:'Overturn Denial → Approved'},
+ APPROVED:{PREPARING:'Start preparing'},
+ PREPARING:{DISPATCHED:'Mark dispatched'},
+ DISPATCHED:{DELIVERED:'Mark delivered (complete)'}
+};
+const stageHelp={
+ PENDING_REVIEW:'Pending for review. Verify the submitted payment, then approve, hold, or deny this request.',
+ ON_HOLD:'This request is on hold. Review the reason before approving payment or denying it.',
+ DENIED:'This request was denied. You can overturn the denial and approve payment after reviewing the reason.',
+ APPROVED:'Payment approved. Fulfillment proceeds in order: Preparing → Dispatched → Delivered (Complete).',
+ PREPARING:'Preparing supplies. The next step is to mark the order as dispatched.',
+ DISPATCHED:'Supplies dispatched. Confirm delivery to complete this request.',
+ DELIVERED:'Delivered and complete. No further decisions are available.',
+ COMPLETED:'This legacy request is complete. No further decisions are available.'
+};
+function updateDecisionNote(){
+ const next=$('officeNextStatus').value,overturn=current?.status==='DENIED'&&next==='APPROVED';
+ const requires=next==='ON_HOLD'||next==='DENIED'||overturn;
+ $('officeStatusNote').required=requires;
+ $('officeStatusNote').placeholder=overturn?'Required: explain why the denial is being overturned':
+  next==='ON_HOLD'?'Required: reason for putting this request on hold':
+  next==='DENIED'?'Required: reason for denying this request':
+  'Optional notes for the franchise';
+ const label=officeActionLabels[current?.status]?.[next]||'Choose next action';
+ $('officeStatusSave').textContent=next?(overturn?'Overturn denial & notify franchise':label+' & notify franchise'):'Choose a decision';
+ $('officeStatusSave').disabled=!next;
+}
+$('officeNextStatus').addEventListener('change',updateDecisionNote);
+function configureOfficeStage(order){
+ const state=String(order.status||''),available=Array.isArray(order.nextStatuses)?order.nextStatuses:[];
+ const terminal=state==='DELIVERED'||state==='COMPLETED'||!available.length;
+ $('officeCurrentStage').textContent=title(state);
+ $('officeCurrentStage').className='office-stage-pill '+state.toLowerCase();
+ $('officeStageHint').textContent=stageHelp[state]||'Review the current request status.';
+ $('officeStageDone').classList.toggle('hidden',!terminal);
+ $('officeStageDone').textContent=state==='DELIVERED'?'Delivered · Complete. No further action is required.':
+  'This request has no available next action.';
+ $('officeStatusForm').classList.toggle('hidden',terminal);
+ const select=$('officeNextStatus');
+ select.replaceChildren();
+ const placeholder=document.createElement('option');
+ placeholder.value='';placeholder.textContent='Select next decision';placeholder.disabled=true;placeholder.selected=true;
+ select.appendChild(placeholder);
+ const actions=officeActionLabels[state]||{};
+ for(const next of available){
+  if(!Object.prototype.hasOwnProperty.call(actions,next))continue;
+  const item=document.createElement('option');
+  item.value=next;item.textContent=actions[next];
+  select.appendChild(item);
+ }
+ $('officeStatusNote').value='';
+ updateDecisionNote();
+}
 async function openOrder(id,quiet=false){
  try{
   const d=await api('/api/supply/office/orders/'+encodeURIComponent(id));current=d.order;const o=current;
@@ -358,7 +417,7 @@ async function openOrder(id,quiet=false){
    '<p class="error">The payment image could not be decoded.</p>';
   const img=$('officePaymentImage').querySelector('img');
   if(img)img.addEventListener('error',()=>{$('officePaymentImage').textContent='Payment photo could not be decoded.';});
-  $('officeNextStatus').value=o.status;$('officeStatusNote').value=o.office_note||'';
+  configureOfficeStage(o);
   $('officeTimeline').innerHTML=o.history.map(h=>'<p><b>'+esc(title(h.status))+'</b> · '+stamp(h.created_at)+'<br/>'+esc(h.note||'')+'</p>').join('');
   $('officeMessages').innerHTML=o.messages.map(m=>'<div class="bubble '+(m.sender_role==='office'?'office':'')+'"><small>'+esc(m.sender_name)+' · '+stamp(m.created_at)+'</small>'+esc(m.body)+photoHtml(m.image)+'</div>').join('')||'<p class="muted">No messages yet. Start a conversation with the franchise.</p>';
   $('officeMessages').scrollTop=$('officeMessages').scrollHeight;
@@ -372,10 +431,25 @@ $('officeDetailOverlay').addEventListener('click',e=>{if(e.target===$('officeDet
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOrder();});
 $('officeStatusForm').onsubmit=async e=>{
  e.preventDefault();if(!current)return;
+ const next=$('officeNextStatus').value;
+ if(!next||!Array.isArray(current.nextStatuses)||!current.nextStatuses.includes(next)){
+  notice('Select an available next decision for this request.',true);return;
+ }
+ const overturn=current.status==='DENIED'&&next==='APPROVED';
+ const note=$('officeStatusNote').value.trim();
+ if((next==='ON_HOLD'||next==='DENIED'||overturn)&&!note){
+  notice('Enter a reason before confirming this decision.',true);$('officeStatusNote').focus();return;
+ }
+ if(overturn&&!window.confirm('Overturn this denial and approve payment? This will reserve the required stock and original royalty charges.'))return;
+ const save=$('officeStatusSave');save.disabled=true;
  try{
-  const d=await api('/api/supply/office/orders/'+current.id+'/status',{method:'POST',body:JSON.stringify({status:$('officeNextStatus').value,note:$('officeStatusNote').value})});
-  notice('Request status updated to '+title(d.status)+'. Franchise notified.');await refresh();await openOrder(current.id,true);
+  const d=await api('/api/supply/office/orders/'+current.id+'/status',{method:'POST',body:JSON.stringify({status:next,note})});
+  notice(overturn?'Denial overturned. Payment approved and franchise notified.':
+   d.status==='DELIVERED'?'Delivery confirmed. Request is complete and franchise notified.':
+   'Request updated to '+title(d.status)+'. Franchise notified.');
+  await refresh();
  }catch(err){notice(err.message,true);}
+ finally{save.disabled=false;updateDecisionNote();}
 };
 $('officeChatPhoto').onchange=async e=>{
  try{
