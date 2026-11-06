@@ -47,7 +47,8 @@ async function api(path,options={}){
 function loggedIn(ok,requiresPasswordChange=false){
  $('officeLogin').classList.toggle('hidden',ok);
  $('officeApp').classList.toggle('hidden',!ok);
- if(ok&&!requiresPasswordChange){refresh();if(!timer)timer=setInterval(refresh,30000);}else if(requiresPasswordChange&&timer){clearInterval(timer);timer=null;}
+ if(ok&&!requiresPasswordChange){refresh();if(!timer)timer=setInterval(refresh,30000);}else if(timer){clearInterval(timer);timer=null;}
+ if(!ok){$('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();}
 }
 $('officeLoginForm').addEventListener('submit',async e=>{
  e.preventDefault();$('officeLoginError').textContent='';
@@ -63,12 +64,43 @@ $('officePasswordToggle').addEventListener('click',()=>{
  $('officePasswordToggle').setAttribute('aria-pressed',String(show));
  $('officePasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password');
 });
-$('officeLogout').onclick=async()=>{try{await api('/api/supply/office/logout',{method:'POST'});}catch(_){}loggedIn(false);};
+function syncOfficeNavigation(){
+ const app=$('officeApp'),mobile=window.matchMedia('(max-width:720px)').matches;
+ if(!mobile)app.classList.remove('mobile-nav-open');
+ const opened=mobile?app.classList.contains('mobile-nav-open'):!app.classList.contains('side-collapsed');
+ $('officeSidebarToggle').setAttribute('aria-expanded',String(opened));
+ $('officeSidebarToggle').setAttribute('aria-label',opened?'Collapse navigation':'Expand navigation');
+ $('officeSidebarToggle').title=opened?'Collapse navigation':'Expand navigation';
+ $('officeMobileToggle').setAttribute('aria-expanded',String(app.classList.contains('mobile-nav-open')));
+ $('officeNavScrim').classList.toggle('hidden',!app.classList.contains('mobile-nav-open'));
+}
+$('officeSidebarToggle').addEventListener('click',()=>{
+ const app=$('officeApp');
+ if(window.matchMedia('(max-width:720px)').matches)app.classList.remove('mobile-nav-open');
+ else app.classList.toggle('side-collapsed');
+ syncOfficeNavigation();
+});
+$('officeMobileToggle').addEventListener('click',()=>{
+ $('officeApp').classList.toggle('mobile-nav-open');syncOfficeNavigation();
+});
+$('officeNavScrim').addEventListener('click',()=>{
+ $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
+});
+window.addEventListener('resize',syncOfficeNavigation);
+document.querySelectorAll('[data-office-page]').forEach(button=>{
+ button.title=button.querySelector('.side-text')?.textContent?.trim()||'Office navigation';
+});
+syncOfficeNavigation();
+$('officeLogout').onclick=async()=>{
+ try{await api('/api/supply/office/logout',{method:'POST'});}catch(_){}
+ loggedIn(false);
+};
 function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
  for(const section of ['requests','franchisees','catalog','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
  $('officePageHeading').textContent=({requests:'Purchase requests',franchisees:'Franchisee Profile',catalog:'Supply catalog',settings:'Office settings',security:'Change password'})[name];
+ $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
  if(name==='catalog')loadCatalog();
  if(name==='settings')loadSettings();
