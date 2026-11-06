@@ -139,3 +139,31 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 
 /* Keep sidebar labels at the same compact size as the main POS navigation. */
 .sidebar .side-link span.nav-text{font-size:13px;text-align:left}
+
+/* Main POS-inspired header, version 1.0.3 */
+#platformApp .topbar{min-height:108px;height:auto;padding:10px clamp(13px,1.5vw,23px);gap:14px;justify-content:flex-start;background:#075D38;color:#fff;border-bottom:1px solid #06482B;box-shadow:0 2px 12px rgba(5,60,36,.16);position:sticky;top:0;z-index:15}
+#platformApp .portal-heading{display:flex;align-items:center;gap:14px;min-width:0}
+#platformApp .portal-logo{box-sizing:border-box;flex:0 0 70px;width:70px;height:70px;padding:3px;display:grid;place-items:center;background:#fff;border:1px solid #e6ede8;border-radius:14px;overflow:hidden}
+#platformApp .portal-logo img{display:block;width:100%;height:100%;object-fit:contain;transform:scaleX(1.07);transform-origin:center}
+#platformApp .portal-heading-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+#platformApp .portal-eyebrow{font-size:11px;font-weight:850;letter-spacing:.12em;color:#fff}
+#platformApp .portal-heading-copy h1{font-size:clamp(19px,2vw,25px);line-height:1.15;letter-spacing:-.02em;color:#fff;margin:0;font-weight:850}
+#platformApp .portal-date{font-size:13px;color:#e5f4ec;font-weight:650}
+#platformApp .menu-toggle{color:#fff;min-width:38px;min-height:38px;border-radius:10px;padding:7px}
+#platformApp .menu-toggle:hover{background:rgba(255,255,255,.14)}
+#platformApp .page-heading h1{margin-top:0}
+/* Single rounded stock-management payment pills */
+#platformApp .payment-state{display:inline-flex;align-items:center;gap:9px;min-height:36px;padding:8px 13px;border:0;border-radius:999px;font-size:12px;font-weight:850;line-height:1;white-space:nowrap}
+#platformApp .payment-state svg{width:19px;height:19px;flex:0 0 19px}
+#platformApp .payment-state.paid{background:#dbefcf;color:#176d37}
+#platformApp .payment-state.hold{background:#fff0c6;color:#986512}
+#platformApp .payment-state.unpaid{background:#fde0df;color:#b43836}
+#platformApp .payment-state.unset{background:#edf1ed;color:#66766c}
+@media(max-width:720px){
+ #platformApp .topbar{min-height:76px;padding:9px 11px;gap:9px}
+ #platformApp .portal-logo{flex-basis:52px;width:52px;height:52px;border-radius:11px}
+ #platformApp .portal-heading{gap:9px}
+ #platformApp .portal-eyebrow{font-size:9px}
+ #platformApp .portal-heading-copy h1{font-size:17px}
+ #platformApp .portal-date{font-size:10px}
+}

@@ -158,3 +158,32 @@
  .office-app .office-top .top-controls{margin-left:auto}
 }
 @media(prefers-reduced-motion:reduce){.office-app .office-side{transition:none}}
+
+/* Main POS-inspired header, version 1.5.75 */
+.office-app .office-main{padding:0;min-width:0}
+.office-app .office-top{box-sizing:border-box;position:sticky;top:0;z-index:20;min-height:108px;margin:0 0 26px;padding:10px clamp(13px,1.5vw,23px);display:flex;align-items:center;justify-content:space-between;gap:14px;background:#075D38;color:#fff;border-bottom:1px solid #06482B;box-shadow:0 2px 12px rgba(5,60,36,.16)}
+.office-app .office-top .portal-heading{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
+.office-app .office-top .portal-logo{box-sizing:border-box;display:grid;place-items:center;flex:0 0 70px;width:70px;height:70px;padding:3px;background:#fff;border:1px solid #e6ede8;border-radius:14px;overflow:hidden}
+.office-app .office-top .portal-logo img{width:100%;height:100%;object-fit:contain;transform:scaleX(1.07);transform-origin:center}
+.office-app .office-top .portal-heading-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.office-app .office-top .portal-eyebrow{font-size:11px;font-weight:850;letter-spacing:.12em;color:#fff}
+.office-app .office-top #officePageHeading{font-size:clamp(19px,2vw,25px);font-weight:850;line-height:1.15;letter-spacing:-.02em;color:#fff;margin:0}
+.office-app .office-top .portal-date{font-size:13px;font-weight:650;color:#e5f4ec}
+.office-app .office-top .top-controls{margin-left:auto;color:#fff;flex:none}
+.office-app .office-top #officeRefresh{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.30)}
+.office-app .office-top #officeRefresh:hover{background:rgba(255,255,255,.20)}
+.office-app .office-main > .office-page{padding:0 clamp(18px,3vw,42px) 42px;min-width:0}
+.office-app .office-main > #officeNotice{margin:0 clamp(18px,3vw,42px) 20px}
+.office-app .office-top .office-mobile-toggle{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.30)}
+@media(max-width:720px){
+ .office-app .office-top{min-height:76px;padding:9px 11px;gap:9px}
+ .office-app .office-top .portal-logo{flex-basis:52px;width:52px;height:52px;border-radius:11px}
+ .office-app .office-top .portal-heading{gap:9px}
+ .office-app .office-top .portal-eyebrow{font-size:9px}
+ .office-app .office-top #officePageHeading{font-size:17px}
+ .office-app .office-top .portal-date{font-size:10px}
+ .office-app .office-main > .office-page{padding:0 14px 24px}
+ .office-app .office-main > #officeNotice{margin:0 14px 16px}
+ .office-app .office-top .top-controls{flex-direction:row}
+ .office-app .office-top #officeRefresh{width:38px;height:38px;min-height:38px}
+}

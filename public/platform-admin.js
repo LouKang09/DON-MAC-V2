@@ -3,6 +3,9 @@
  const $=id=>document.getElementById(id);
  let accounts=[],summary={},page=1,search='',status='all',selected=null,officeName='Admin Control',mustChangeAdminPassword=false;
  const PAGE_SIZE=10,expandedOwners=new Set(),expandedBranches=new Set();
+ const headerClock=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+ function updateAdminHeaderDate(){const el=$('adminHeaderDate');if(el)el.textContent=headerClock.format(new Date());}
+ updateAdminHeaderDate();setInterval(updateAdminHeaderDate,60000);
  const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const number=x=>new Intl.NumberFormat('en-PH').format(Number(x)||0);
  const peso=x=>x===null||x===undefined?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(x)||0);
@@ -35,7 +38,7 @@
   return payload;
  }
  function error(id,message){const el=$(id);el.textContent=message||'';el.classList.toggle('hidden',!message)}
- function showApp(username){officeName=username||'Main Office';$('officeUserLabel').textContent=officeName;
+ function showApp(username){officeName=username||'Main Office';updateAdminHeaderDate();
   $('platformLogin').classList.add('hidden');$('platformApp').classList.remove('hidden')}
  function showLogin(message=''){mustChangeAdminPassword=false;if($('adminCredentialsDialog').open)$('adminCredentialsDialog').close();$('platformLogin').classList.remove('hidden');$('platformApp').classList.add('hidden');
   error('platformLoginError',message);}
@@ -279,7 +282,7 @@ $('adminCredentialsForm').addEventListener('submit',async event=>{
  const save=$('adminCredentialsSave');save.disabled=true;error('adminCredentialsError','');
  try{
   const result=await api('credentials',{method:'POST',body:JSON.stringify({currentPassword,newUsername:$('adminNewUsername').value.trim(),newPassword})});
-  officeName=result.username;$('officeUserLabel').textContent=officeName;
+  officeName=result.username;
   mustChangeAdminPassword=false;
   $('adminCredentialsForm').reset();
   $('adminCredentialsDialog').close();

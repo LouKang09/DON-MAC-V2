@@ -3,7 +3,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
-<link rel="stylesheet" href="/platform-admin.css?v=1.0.2">
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.3">
 <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85">
 <link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
 </head><body>
@@ -21,10 +21,6 @@
 <div id="platformApp" class="app hidden">
   <aside class="sidebar" aria-label="Admin Control navigation">
     <div class="sidebar-controls"><button id="platformSidebarToggle" class="sidebar-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" aria-controls="platformNav" title="Collapse navigation"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div>
-    <div class="brand">
-      <span class="brand-logo"><img src="/donmac-logo-hires.svg" alt=""></span>
-      <div class="brand-copy"><strong>Don Macchiatos</strong><small>Platform Administration</small></div>
-    </div>
     <div class="nav-label">WORKSPACE</div>
     <nav id="platformNav" aria-label="Account navigation">
       <a class="side-link active" href="/platform-admin.html" title="Account Directory" aria-label="Account Directory"><span class="nav-icon">▦</span><span class="nav-text">Account Directory</span></a>
@@ -38,13 +34,11 @@
   <div class="content">
     <header class="topbar">
       <button type="button" id="menuToggle" class="menu-toggle" aria-label="Open navigation" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-      <div class="topbar-title"><span>ADMINISTRATION</span><strong>Franchise Management</strong></div>
-      <div class="topbar-right"><span id="officeUserLabel">Main Office</span><div class="avatar">DM</div></div>
+      <div class="portal-heading"><span class="portal-logo"><img src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="70" height="70" decoding="async"></span><div class="portal-heading-copy"><span class="portal-eyebrow">ADMIN CONTROL</span><h1>Franchise Management</h1><span id="adminHeaderDate" class="portal-date"></span></div></div>
     </header>
     <main>
       <div class="page-heading">
-        <div><div class="kicker">ACCOUNT DIRECTORY · LIVE DATABASE</div>
-          <h1>Owners, branches &amp; users</h1>
+        <div><h1>Owners, branches &amp; users</h1>
           <p>Manage each franchise account and drill down to its branches and assigned staff.</p>
         </div>
         <button id="refreshAccounts" class="btn btn-main" type="button" title="Refresh accounts">⟳ Refresh</button>
@@ -124,5 +118,5 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.2"></script>
+<script defer src="/platform-admin.js?v=1.0.3"></script>
 </body></html>

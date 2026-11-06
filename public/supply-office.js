@@ -113,7 +113,9 @@ $('officeRefresh').classList.add('office-round-refresh');
 $('officeRefresh').setAttribute('aria-label','Refresh Main Office data');
 $('officeRefresh').setAttribute('title','Refresh Main Office data');
 
-$('officeClock').textContent=new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(new Date());
+const headerClock=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+function updateOfficeHeaderDate(){$('officeClock').textContent=headerClock.format(new Date());}
+updateOfficeHeaderDate();setInterval(updateOfficeHeaderDate,60000);
 async function refresh(){
  if($('officeApp').classList.contains('hidden'))return;
  try{
