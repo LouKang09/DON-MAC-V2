@@ -2,6 +2,7 @@
 (()=>{
  const $=id=>document.getElementById(id);
  let accounts=[],summary={},page=1,search='',status='all',selected=null,officeName='Admin Control',mustChangeAdminPassword=false;
+ let officeSubscription=null,billingFilter=null,platformChartData=[];
  const PAGE_SIZE=10,expandedOwners=new Set(),expandedBranches=new Set();
  const headerClock=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
  function updateAdminHeaderDate(){const el=$('adminHeaderDate');if(el)el.textContent=headerClock.format(new Date());}
@@ -151,7 +152,15 @@
     '<td>'+badge(owner.active?'Active':'Inactive',owner.active?'active':'inactive')+'</td></tr>');
    if(open)rows.push(branchSection(owner));
   }
-  $('ownersBody').innerHTML=rows.join('')||'<tr><td colspan="9" class="empty">No matching franchise accounts.</td></tr>';
+  if(page===1&&(!search||'supply chain main office tenant'.includes(search))&&(status==='all'||status==='active')){
+   const sub=officeSubscription;
+   rows.unshift('<tr class="owner-row office-tenant-row"><td><div class="owner-heading"><span class="office-tenant-icon" aria-hidden="true">▣</span><div class="owner-identity"><strong>Supply Chain / Main Office</strong><small>Independent platform tenant</small><div class="owner-controls"><button class="link-btn" data-office-subscription="true" type="button">Manage subscription</button></div></div></div></td>'+
+    '<td><span class="num">—</span></td><td>'+(sub?badge(sub.plan,'active'):'<span class="status unknown">Not configured</span>')+'</td>'+
+    '<td class="currency">'+peso(sub?.amount)+'</td><td>'+paymentStatus(sub)+'</td>'+
+    '<td class="due-date">'+(sub?.nextPaymentDate?esc(date(sub.nextPaymentDate+'T12:00:00Z')):'—')+'</td>'+
+    '<td>'+daysRemaining(sub?.nextPaymentDate)+'</td><td>—</td><td>'+badge('Active','active')+'</td></tr>');
+  }
+  $('ownersBody').innerHTML=rows.join('')||'<tr><td colspan="9" class="empty">No matching tenants.</td></tr>';
  }
  $('accountSearch').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();page=1;render()});
  $('statusFilter').addEventListener('change',e=>{status=e.target.value;page=1;render()});
