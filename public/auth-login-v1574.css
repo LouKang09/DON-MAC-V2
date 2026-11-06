@@ -632,3 +632,14 @@
   background-clip:text!important;
   caret-color:#fff!important;
 }
+
+/* v1.5.85: preserve original SVG's bold black bean outlines in every login. */
+#authScreen .auth-beans-icon,
+#authScreen .auth-panel>.auth-card .auth-beans-icon,
+#authScreen .auth-panel>.auth-secondary-panel>.auth-beans-icon {
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  object-fit:contain;
+  image-rendering:auto;
+}
