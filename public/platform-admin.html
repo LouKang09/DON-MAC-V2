@@ -3,7 +3,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
-<link rel="stylesheet" href="/platform-admin.css?v=1.0.6">
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.7">
 <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85">
 <link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
 </head><body>
@@ -50,10 +50,11 @@
         <div class="metric"><span>Users</span><strong id="metricUsers">—</strong><small>Across all branches</small></div>
         <div class="metric"><span>Active owners</span><strong id="metricActive">—</strong><small>Enabled Owner accounts</small></div>
       </section>
+      <section class="main-card platform-dashboard" id="platformDashboard"><div class="section-header"><div><span class="eyebrow">PLATFORM ANALYTICS</span><h2>Subscription Dashboard</h2><p>Verified subscription revenue, receivables and tenant payment status across all franchisees and Supply Chain.</p></div></div><div class="platform-dashboard-kpis"><div><small>Verified revenue</small><strong id="kpiRevenue">—</strong></div><div><small>Receivables</small><strong id="kpiReceivable">—</strong></div><div><small>Subscribers</small><strong id="kpiSubscribers">—</strong></div><div><small>Active</small><strong id="kpiPaidActive">—</strong></div><div><small>Pending / On Hold</small><strong id="kpiPending">—</strong></div><div><small>Inactive</small><strong id="kpiInactive">—</strong></div><div><small>Due / Overdue</small><strong id="kpiDue">—</strong></div><div><small>Unpaid</small><strong id="kpiUnpaid">—</strong></div><div><small>Billing transactions</small><strong id="kpiTransactions">—</strong></div></div><p class="platform-dashboard-info">Only PayMongo-verified receipts count as collected revenue; manually marked subscriptions do not create payments.</p><div class="platform-chart-card"><div class="platform-chart-heading"><h3>Tenant subscription status</h3><label>Chart view <select id="platformChartType"><option value="bar">Bar Chart</option><option value="pie">Pie Chart</option></select></label></div><div id="platformChartBody" class="platform-chart-body">Loading billing data…</div></div></section>
       <section class="main-card">
         <div class="section-header">
-          <div><span class="eyebrow">FRANCHISE ACCOUNTS</span><h2>Account Directory</h2>
-          <p>Expand an account to view branches, then expand a branch to view its users.</p></div>
+          <div><span class="eyebrow">ALL PLATFORM TENANTS</span><h2>Account Directory</h2>
+          <p>Manage each franchise and the Supply Chain tenant, with subscription history for the selected account.</p></div>
           <span id="recordCount" class="record-count">0 accounts</span>
         </div>
         <div class="toolbar">
@@ -95,7 +96,7 @@
         </div>
         <div class="section-header"><div><h3>Verified payment ledger</h3>
           <p>Receipts are recorded after PayMongo's signed webhook is verified. Rows marked Paid Review require manual attention.</p></div>
-          <span id="adminBillingCount" class="record-count">0 invoices</span></div>
+          <div class="platform-ledger-filter"><span id="adminLedgerTenant">All tenants</span><button id="adminLedgerAll" class="btn btn-secondary" type="button">All Transactions</button><span id="adminBillingCount" class="record-count">0 invoices</span></div></div>
         <div class="table-scroll"><table class="owners-table platform-invoice-table" aria-label="Platform tenant payment ledger">
           <thead><tr><th>Invoice</th><th>Tenant</th><th>Plan</th><th>Amount</th><th>Status</th><th>Method</th><th>Created</th><th>Paid</th></tr></thead>
           <tbody id="adminBillingRows"><tr><td colspan="8">No payments yet.</td></tr></tbody></table></div>
@@ -117,7 +118,7 @@
  <label>Next payment date<input id="subNextPaymentDate" type="date" autocomplete="off"></label>
  <p class="dialog-tip">Payment dates are entered manually. Existing subscriptions show no due date until one is recorded.</p>
  <p class="dialog-tip">This records a subscription manually; it does not initiate a charge or change POS access.</p>
- <p id="subscriptionError" class="notice error hidden" role="alert"></p>
+ <div class="subscription-history-preview"><h3>Verified subscription payment history</h3><div id="subscriptionPaymentHistory">Choose a tenant to see previous payments.</div></div><p id="subscriptionError" class="notice error hidden" role="alert"></p>
  <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
  <button class="btn btn-main" type="submit" id="saveSubscription">Save record</button></div>
 </form></dialog>
@@ -148,5 +149,5 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.5"></script>
+<script defer src="/platform-admin.js?v=1.0.7"></script>
 </body></html>
