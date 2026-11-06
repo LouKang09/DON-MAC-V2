@@ -298,6 +298,48 @@ $('franchiseFeeForm').onsubmit=async event=>{
   await loadFranchisees();
  }catch(e){notice(e.message,true);}
 };
+
+let distributionPage=1;
+const openDistributions=new Set();
+async function loadDistributionDashboard(){
+ try{
+  const d=await api('/api/supply/office/dashboard');
+  $('distOrders').textContent=Number(d.ordersDistributed||0).toLocaleString('en-PH');
+  $('distUnits').textContent=Number(d.unitsDistributed||0).toLocaleString('en-PH');
+  $('distFranchisees').textContent=Number(d.activeFranchisees||0).toLocaleString('en-PH');
+  $('distRevenue').textContent=peso(d.revenue);
+  $('distNet').textContent=d.netRevenue===null?'Cost incomplete':peso(d.netRevenue);
+  $('distTopName').textContent=d.topProducts?.[0]?.name||'No requests yet';
+  $('distCostNote').textContent=d.netRevenue===null?
+   'Net revenue cannot be calculated: '+Number(d.unknownCostLines||0)+' delivered line(s) have no recorded purchase cost. Record unit costs for future orders.':
+   'Net revenue equals fulfilled supply sales plus urgent fees minus recorded product costs. Franchise royalties are excluded.';
+  const products=d.topProducts||[],max=Math.max(1,...products.map(p=>Number(p.quantity)||0));
+  $('distTopProducts').innerHTML=products.map(p=>
+   '<div class="distribution-top-row"><span>'+esc(p.name)+'</span><div class="distribution-top-track"><i style="width:'+Math.max(2,Math.round(100*Number(p.quantity)/max))+'%"></i></div><strong>'+Number(p.quantity).toLocaleString('en-PH')+' units</strong></div>'
+  ).join('')||'<p class="muted">No supply requests recorded yet.</p>';
+ }catch(err){notice(err.message,true);}
+}
+async function loadDistributionHistory(){
+ try{
+  const d=await api('/api/supply/office/distributions?page='+distributionPage);
+  const items=d.transactions||[],pages=Math.max(1,Math.ceil(Number(d.total||0)/10));
+  distributionPage=Math.min(pages,Math.max(1,distributionPage));
+  $('distributionRows').innerHTML=items.map(o=>{
+   const expanded=openDistributions.has(o.id);
+   const detail='<tr class="distribution-detail-row"><td colspan="7"><div class="distribution-detail-inner"><strong>Distributed items</strong><table><thead><tr><th>Item</th><th>Unit</th><th>Qty</th><th>Sale amount</th><th>Unit cost</th></tr></thead><tbody>'+o.items.map(item=>
+    '<tr><td>'+esc(item.name)+'</td><td>'+esc(item.unit)+'</td><td>'+Number(item.qty)+'</td><td>'+peso(item.amount)+'</td><td>'+(item.unitCost==null?'Unknown':peso(item.unitCost))+'</td></tr>'
+    ).join('')+'</tbody></table></div></td></tr>';
+   return '<tr><td>'+stamp(o.completedAt)+'</td><td><strong>'+esc(o.id.slice(0,8).toUpperCase())+'</strong></td>'+
+    '<td>'+esc(o.franchise)+'<small>'+esc(o.branch)+'</small></td><td>'+Number(o.units)+'</td>'+
+    '<td>'+peso(o.saleAmount)+'</td><td>'+peso(o.royalties)+'</td><td><button type="button" class="btn outline" data-distribution="'+esc(o.id)+'" aria-expanded="'+expanded+'">'+(expanded?'Hide':'View')+'</button></td></tr>'+(expanded?detail:'');
+  }).join('')||'<tr><td colspan="7">No completed distribution transactions yet.</td></tr>';
+  $('distributionPages').innerHTML='<span>Page '+distributionPage+' of '+pages+' · '+Number(d.total||0)+' transactions</span>'+
+   '<button type="button" data-dist-change="-1" '+(distributionPage===1?'disabled':'')+'>Previous</button>'+
+   '<button type="button" data-dist-change="1" '+(distributionPage===pages?'disabled':'')+'>Next</button>';
+  $('distributionPages').querySelectorAll('[data-dist-change]').forEach(b=>b.onclick=()=>{distributionPage+=Number(b.dataset.distChange);loadDistributionHistory();});
+  $('distributionRows').querySelectorAll('[data-distribution]').forEach(b=>b.onclick=()=>{openDistributions.has(b.dataset.distribution)?openDistributions.delete(b.dataset.distribution):openDistributions.add(b.dataset.distribution);loadDistributionHistory();});
+ }catch(err){notice(err.message,true);}
+}
 async function loadCatalog(){
  try{const d=await api('/api/supply/office/catalog');catalogProducts=d.products||[];renderCatalog();}catch(err){notice(err.message,true);}
 }
@@ -331,6 +373,20 @@ function renderCatalog(){
  });
 }
 
+
+$('officeNewProductForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const button=$('officeNewProductSave');button.disabled=true;
+ try{
+  const data={name:$('officeNewProductName').value.trim(),uom:$('officeNewProductUom').value.trim(),
+   price:$('officeNewProductPrice').value,costPrice:$('officeNewProductCost').value,stockQty:$('officeNewProductStock').value};
+  await api('/api/supply/office/products',{method:'POST',body:JSON.stringify(data)});
+  $('officeNewProductForm').reset();$('officeNewProductStock').value='0';
+  $('officeNewProductForm').closest('details').open=false;
+  notice('New supply product added. Franchisees can now request it.');catalogPage=1;await loadCatalog();
+ }catch(err){notice(err.message,true);}
+ finally{button.disabled=false;}
+});
 $('officePasswordForm').onsubmit=async e=>{
  e.preventDefault();
  const currentPassword=$('officeOldPassword').value,newPassword=$('officeNewPassword').value;
