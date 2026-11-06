@@ -384,7 +384,7 @@ function configureOfficeStage(order){
  $('officeCurrentStage').textContent=title(state);
  $('officeCurrentStage').className='office-stage-pill '+state.toLowerCase();
  $('officeStageHint').textContent=(stageHelp[state]||'Review the current request status.')+
-  (state==='APPEAL_REVIEW'?' (Appeal '+Number(order.appeal_count||0)+' of 2)':'');
+  (state==='APPEAL_REVIEW'?' (Appeal '+Number(order.appeal_count||0)+' of 2)':state==='DENIED'&&Number(order.appeal_count||0)>=2?' (Both appeals denied; final decision)':'');
  $('officeStageDone').classList.toggle('hidden',!terminal);
  $('officeStageDone').textContent=state==='DELIVERED'?'Delivered · Complete. No further action is required.':
   'This request has no available next action.';
