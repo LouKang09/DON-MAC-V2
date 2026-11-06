@@ -198,3 +198,27 @@
 #officeOrdersBody .office-account-expand-tail{display:inline-flex;align-items:center;gap:7px}
 .office-app .office-top #officeRefresh.office-round-refresh svg{width:21px;height:21px}
 @media(max-width:720px){.office-app .office-side-controls{justify-content:flex-end}}
+
+
+/* v1.5.77 — stage-specific payment decision controls. */
+.office-stage-current{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:10px 0 9px;color:#667a6d;font-size:12px;font-weight:750}
+.office-stage-pill{display:inline-flex;align-items:center;min-height:31px;border-radius:999px;padding:7px 13px;font-size:11px;font-weight:850;line-height:1.2;background:#e6f1e9;color:#205b3c}
+.office-stage-pill.pending_review{background:#fff1d6;color:#946019}
+.office-stage-pill.on_hold{background:#fff0c6;color:#946019}
+.office-stage-pill.denied{background:#fce1e3;color:#af323c}
+.office-stage-pill.approved,.office-stage-pill.preparing,.office-stage-pill.dispatched{background:#e0f1e7;color:#17633e}
+.office-stage-pill.delivered,.office-stage-pill.completed{background:#d9f2dc;color:#136239}
+.office-stage-hint{margin:4px 0 15px;color:#557160;font-size:12px;line-height:1.55}
+.office-stage-complete{margin:8px 0 14px;padding:13px 15px;background:#e5f5e7;color:#155e36;border-radius:11px;border:1px solid #c9e7cc;font-size:12px;font-weight:800}
+#officeStatusForm label{font-weight:780}
+#officeStatusForm select:invalid{color:#697f71}
+#officeStatusSave{align-self:flex-start;max-width:100%;white-space:normal;text-align:center}
+
+/* Sign-out icon is centered like the Main POS in both sidebar modes. */
+.office-app .office-signout{justify-content:center;text-align:center}
+@media(min-width:721px){
+ .office-app.side-collapsed .office-side-bottom{align-items:center}
+ .office-app.side-collapsed .office-signout{display:grid;place-items:center;width:100%;padding:10px 0;gap:0}
+ .office-app.side-collapsed .office-signout svg{justify-self:center;margin:0}
+}
+@media(max-width:720px){.office-app .office-signout{justify-content:center}}
