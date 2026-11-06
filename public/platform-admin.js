@@ -236,8 +236,24 @@
   finally{button.disabled=false}
  });
  document.querySelectorAll('[data-close-dialog]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
- $('menuToggle').addEventListener('click',()=>$('platformApp').classList.toggle('nav-open'));
- document.querySelectorAll('.sidebar a').forEach(a=>a.addEventListener('click',()=>$('platformApp').classList.remove('nav-open')));
+ function syncPlatformNavigation(){
+  const app=$('platformApp'),mobile=window.matchMedia('(max-width:720px)').matches;
+  const expanded=mobile?app.classList.contains('nav-open'):!app.classList.contains('nav-collapsed');
+  $('platformSidebarToggle').setAttribute('aria-expanded',String(expanded));
+  $('platformSidebarToggle').setAttribute('aria-label',expanded?'Collapse navigation':'Expand navigation');
+  $('platformSidebarToggle').title=expanded?'Collapse navigation':'Expand navigation';
+  $('menuToggle').setAttribute('aria-expanded',String(app.classList.contains('nav-open')));
+ }
+ $('platformSidebarToggle').addEventListener('click',()=>{
+  const app=$('platformApp');
+  if(window.matchMedia('(max-width:720px)').matches)app.classList.remove('nav-open');
+  else app.classList.toggle('nav-collapsed');
+  syncPlatformNavigation();
+ });
+ $('menuToggle').addEventListener('click',()=>{$('platformApp').classList.toggle('nav-open');syncPlatformNavigation();});
+ document.querySelectorAll('.sidebar a').forEach(a=>a.addEventListener('click',()=>{$('platformApp').classList.remove('nav-open');syncPlatformNavigation();}));
+ window.addEventListener('resize',syncPlatformNavigation);
+ syncPlatformNavigation();
 
 function openAdminCredentials(required=false){
  mustChangeAdminPassword=required;
