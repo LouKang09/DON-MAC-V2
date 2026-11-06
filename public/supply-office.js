@@ -98,10 +98,11 @@ $('officeLogout').onclick=async()=>{
 function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
- for(const section of ['requests','franchisees','catalog','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({requests:'Purchase requests',franchisees:'Franchisee Profile',catalog:'Supply catalog',settings:'Office settings',security:'Change password'})[name];
+ for(const section of ['requests','franchisees','catalog','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
+ $('officePageHeading').textContent=({requests:'Purchase requests',franchisees:'Franchisee Profile',catalog:'Supply catalog',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
  $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
+ if(name==='billing')window.donmacTenantBilling?.load(true);
  if(name==='catalog')loadCatalog();
  if(name==='settings')loadSettings();
 }
