@@ -281,6 +281,36 @@
 
 
  let adminInvoices=[],billingPage=1,billingTotal=0;
+
+ const chartColors=['#188d56','#e9b54a','#d34c4c','#81968b','#cbd8ce'];
+ function renderPlatformChart(){
+  const items=Array.isArray(platformChartData)?platformChartData:[],total=items.reduce((a,x)=>a+Number(x.value||0),0);
+  const host=$('platformChartBody');
+  if(!total){host.innerHTML='<p class="empty">No tenant status data yet.</p>';return;}
+  if($('platformChartType').value==='pie'){
+   let position=0;
+   const gradient=items.map((item,i)=>{const next=position+100*Number(item.value||0)/total;
+    const piece=chartColors[i]+' '+position.toFixed(2)+'% '+next.toFixed(2)+'%';position=next;return piece;}).join(',');
+   host.innerHTML='<div class="platform-pie-layout"><div class="platform-pie" style="background:conic-gradient('+gradient+')"><span>'+total+' tenants</span></div><div class="platform-pie-key">'+items.map((item,i)=>
+    '<div><i style="background:'+chartColors[i]+'"></i><span>'+esc(item.label)+'</span><strong>'+number(item.value)+'</strong></div>').join('')+'</div></div>';
+  }else{
+   const max=Math.max(1,...items.map(x=>Number(x.value||0)));
+   host.innerHTML='<div class="platform-bars">'+items.map((item,i)=>
+    '<div class="platform-bar-row"><span>'+esc(item.label)+'</span><div class="platform-bar-track"><i style="background:'+chartColors[i]+';width:'+Math.max(0,Math.round(100*Number(item.value||0)/max))+'%"></i></div><strong>'+number(item.value)+'</strong></div>').join('')+'</div>';
+  }
+ }
+ $('platformChartType').addEventListener('change',renderPlatformChart);
+ function renderPlatformKPIs(m){
+  const keys={Revenue:peso(m.totalRevenue),Receivable:peso(m.receivable),Subscribers:number(m.subscribers),
+   PaidActive:number(m.active),Pending:number(m.pending),Inactive:number(m.inactive),Due:number(m.due),
+   Unpaid:number(m.unpaid),Transactions:number(m.allTransactions)};
+  for(const [key,value] of Object.entries(keys))$('kpi'+key).textContent=value;
+  platformChartData=Array.isArray(m.chart)?m.chart:[];renderPlatformChart();
+ }
+ $('adminLedgerAll').addEventListener('click',()=>{
+  billingFilter=null;billingPage=1;reloadBilling();
+ });
+
  function renderBillingLedger(){
   const records=adminInvoices,pages=Math.max(1,Math.ceil(billingTotal/10));
   billingPage=Math.max(1,Math.min(pages,billingPage));
@@ -293,10 +323,18 @@
    '<td>'+peso(i.amount)+'</td><td>'+badge(String(i.status).replaceAll('_',' '),i.status==='PAID'?'active':i.status==='PENDING'?'on-hold':'unknown')+'</td>'+
    '<td>'+esc(i.paymentMethod||'—')+'</td><td>'+esc(date(i.createdAt))+'</td><td>'+esc(date(i.paidAt))+'</td></tr>';
   }).join('')||'<tr><td colspan="8" class="empty">No subscription payments recorded yet.</td></tr>';
+  if($('subscriptionDialog').open){
+   $('subscriptionPaymentHistory').innerHTML=records.length?
+    '<div class="table-scroll"><table class="subscription-history-table"><thead><tr><th>Invoice</th><th>Amount</th><th>Status</th><th>Paid date</th></tr></thead><tbody>'+
+    records.map(i=>'<tr><td>'+esc(i.id.slice(0,8).toUpperCase())+'</td><td>'+peso(i.amount)+'</td><td>'+esc(i.status)+'</td><td>'+esc(date(i.paidAt))+'</td></tr>').join('')+
+    '</tbody></table></div><small>'+number(billingTotal)+' billing records for this tenant</small>':
+    '<p class="muted">No subscription payments recorded for this tenant yet.</p>';
+  }
  }
  async function reloadBilling(){
   try{
-   const data=await api('billing?page='+billingPage),ready=Boolean(data.checkoutConfigured);
+   const filters=billingFilter?'&tenantKind='+encodeURIComponent(billingFilter.kind)+'&tenantId='+encodeURIComponent(billingFilter.id):'';
+   const data=await api('billing?page='+billingPage+filters),ready=Boolean(data.checkoutConfigured);
    $('adminPayMongoStatus').textContent=ready?'PayMongo '+String(data.paymentMode).toUpperCase()+' configured':'PayMongo not connected';
    $('adminPayMongoStatus').classList.toggle('ready',ready);
    $('adminBillingMode').textContent=ready?data.paymentMode:'Not connected';
@@ -306,10 +344,14 @@
    $('adminBillingPending').textContent=number(data.pendingCount||0);
    $('adminBillingNotice').textContent=ready?'PayMongo keys detected. Payments require merchant activation and registered webhooks.':
     'PayMongo is not connected. Tenant payment buttons are disabled, and no money is being collected.';
+   const metrics=data.metrics||{};
+   renderPlatformKPIs(metrics);
+   officeSubscription=data.supplyOffice||null;
+   $('adminLedgerTenant').textContent=billingFilter?'Showing '+billingFilter.label:'All tenants';
    const office=data.supplyOffice;
    $('adminOfficePlan').value=office?.plan||'PRO';$('adminOfficeAmount').value=office?.amount??'';
    $('adminOfficeStatus').value=office?.status||'UNPAID';$('adminOfficeDue').value=office?.nextPaymentDate||'';
-   renderBillingLedger();
+   renderBillingLedger();render();
   }catch(err){$('adminBillingNotice').textContent='Billing cannot load: '+err.message;}
  }
  $('adminOfficePlanForm').addEventListener('submit',async e=>{
