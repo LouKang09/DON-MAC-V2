@@ -187,3 +187,14 @@
  .office-app .office-top .top-controls{flex-direction:row}
  .office-app .office-top #officeRefresh{width:38px;height:38px;min-height:38px}
 }
+
+/* Consistent right-aligned collapse and SVG controls. */
+.office-app .office-side-controls{justify-content:flex-end}
+@media(min-width:721px){.office-app.side-collapsed .office-side-controls{justify-content:flex-end}}
+#officeOrdersBody .expand-chevron{display:block;width:18px;height:18px;transition:transform .16s ease}
+#officeOrdersBody .office-account-expand[aria-expanded=false] .expand-chevron{transform:rotate(-90deg)}
+#officeOrdersBody .office-account-expand[aria-expanded=true] .expand-chevron{transform:rotate(0deg)}
+#officeOrdersBody .office-account-chevron{flex:0 0 27px}
+#officeOrdersBody .office-account-expand-tail{display:inline-flex;align-items:center;gap:7px}
+.office-app .office-top #officeRefresh.office-round-refresh svg{width:21px;height:21px}
+@media(max-width:720px){.office-app .office-side-controls{justify-content:flex-end}}
