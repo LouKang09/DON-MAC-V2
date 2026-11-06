@@ -222,3 +222,8 @@
  .office-app.side-collapsed .office-signout svg{justify-self:center;margin:0}
 }
 @media(max-width:720px){.office-app .office-signout{justify-content:center}}
+
+/* Appeal review requires an explicit owner submission. */
+.office-app .office-stage-pill.appeal_review{background:#e7eafa;color:#4e55a7}
+.office-app .badge.appeal_review{background:#e7eafa;color:#4e55a7}
+.office-app .office-appeal-notice{margin:10px 0 16px;border:1px solid #cbd3ee;border-radius:11px;background:#f3f5ff;color:#37468a;padding:12px 14px;font-size:12px;font-weight:750;line-height:1.55;overflow-wrap:anywhere}
