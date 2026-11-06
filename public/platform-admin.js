@@ -11,13 +11,13 @@
  const peso=x=>x===null||x===undefined?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(x)||0);
  const date=x=>{if(!x)return'—';const d=new Date(x);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-PH',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Manila'}).format(d)};
  const badge=(value,type)=>'<span class="status '+esc(type)+'">'+esc(value)+'</span>';
+  const expandChevron="<svg class=\"expand-chevron\" viewBox=\"0 0 24 24\" width=\"19\" height=\"19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>";
   const paymentStatus=sub=>{
-   if(!sub)return'<span class="payment-state unset">Not configured</span>';
-   const st=['PAID','ON_HOLD','UNPAID'].includes(sub.status)?sub.status:'UNKNOWN';
-   const label=st==='ON_HOLD'?'On Hold':st==='PAID'?'Paid':st==='UNPAID'?'Unpaid':'Unknown';
-   const svg=st==='PAID'?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" aria-hidden="true"><path d="M4 19v-3M9 19v-6M14 19V9M19 19V5"/></svg>':
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 9v5M12 17.5h.01"/></svg>';
-   return'<span class="payment-state '+(st==='PAID'?'paid':st==='ON_HOLD'?'hold':st==='UNPAID'?'unpaid':'unset')+'" title="'+label+'">'+svg+'<span>'+label+'</span></span>';
+    if(!sub)return'<span class="payment-state unset">Not configured</span>';
+    const st=['PAID','ON_HOLD','UNPAID'].includes(sub.status)?sub.status:'UNKNOWN';
+    const label=st==='ON_HOLD'?'On Hold':st==='PAID'?'Paid':st==='UNPAID'?'Unpaid':'Unknown';
+    const svg=st==='PAID'?"<svg class=\"payment-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M5.5 9h.01M18.5 15h.01M12 8v8M14 10c-1.2-1.5-4.1-1.5-4.1.3 0 2 4.2.9 4.2 3.1 0 1.8-3 2.2-4.3.7\"/></svg>":st==='UNPAID'?"<svg class=\"payment-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"11\" fill=\"currentColor\"/><path d=\"M12 6.7v7.1\" stroke=\"#fff\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"12\" cy=\"17.5\" r=\"1.45\" fill=\"#fff\"/></svg>":"<svg class=\"payment-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3 22 20H2L12 3Z\"/><path d=\"M12 9v5M12 17.5h.01\"/></svg>";
+    return'<span class="payment-state '+(st==='PAID'?'paid':st==='ON_HOLD'?'hold':st==='UNPAID'?'unpaid':'unset')+'" title="'+label+'">'+svg+'<span>'+label+'</span></span>';
   };
   const dueDays=value=>{
    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return null;
@@ -102,7 +102,7 @@
   let blocks='';
   for(const b of owner.branches){
    const key=owner.workspaceId+':'+b.id,open=opened(expandedBranches,key)||!!search;
-   blocks+='<div class="branch-row"><button class="expand" type="button" aria-expanded="'+open+'" data-toggle-branch="'+esc(key)+'">'+(open?'⌄':'›')+'</button>'+
+   blocks+='<div class="branch-row"><button class="expand" type="button" aria-expanded="'+open+'" data-toggle-branch="'+esc(key)+'">'+expandChevron+'</button>'+
     '<div class="branch-title"><strong>'+esc(b.name)+'</strong><small>'+esc([b.city,b.province].filter(Boolean).join(', ')||'Location not specified')+'</small></div>'+
     '<span class="branch-counter">'+number(b.users.length)+' users</span>'+badge(b.active?'Active':'Inactive',b.active?'active':'inactive')+'</div>';
    if(open)blocks+=renderStaff(b.users,owner);
@@ -110,14 +110,14 @@
   const coOwners=(owner.allBranchAdmins||[]).filter(u=>!u.isOwner);
   if(coOwners.length){
    const key=owner.workspaceId+':all-branch-admins',open=opened(expandedBranches,key)||!!search;
-   blocks+='<div class="branch-row"><button type="button" class="expand" aria-expanded="'+open+'" data-toggle-branch="'+key+'">'+(open?'⌄':'›')+'</button>'+
+   blocks+='<div class="branch-row"><button type="button" class="expand" aria-expanded="'+open+'" data-toggle-branch="'+key+'">'+expandChevron+'</button>'+
     '<div class="branch-title"><strong>Co-Owners · All Branches</strong><small>Account administrators can manage every branch</small></div>'+
     '<span class="branch-counter">'+number(coOwners.length)+' administrators</span></div>';
    if(open)blocks+=renderStaff(coOwners,owner);
   }
   if(owner.unassigned.length){
    const key=owner.workspaceId+':unassigned',open=opened(expandedBranches,key)||!!search;
-   blocks+='<div class="branch-row"><button type="button" class="expand" aria-expanded="'+open+'" data-toggle-branch="'+key+'">'+(open?'⌄':'›')+'</button>'+
+   blocks+='<div class="branch-row"><button type="button" class="expand" aria-expanded="'+open+'" data-toggle-branch="'+key+'">'+expandChevron+'</button>'+
     '<div class="branch-title"><strong>Unassigned Users</strong><small>Staff members without branch assignments</small></div>'+
     '<span class="branch-counter">'+number(owner.unassigned.length)+' users</span></div>';
    if(open)blocks+=renderStaff(owner.unassigned,owner);
@@ -137,7 +137,7 @@
    const open=opened(expandedOwners,owner.workspaceId)||!!search;
    const sub=owner.subscription;
    rows.push('<tr class="owner-row"><td><div class="owner-heading"><button type="button" class="expand" data-toggle-owner="'+owner.workspaceId+
-    '" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(owner.ownerUsername)+'">'+(open?'⌄':'›')+'</button>'+
+    '" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(owner.ownerUsername)+'">'+expandChevron+'</button>'+
     '<div class="owner-identity"><strong>'+esc(owner.ownerUsername)+'</strong><small>'+esc(owner.ownerFullName||'Account Owner')+'</small>'+
     '<div class="owner-controls"><button class="link-btn" type="button" data-subscribe="'+owner.workspaceId+'">Manage subscription</button>'+
     (owner.ownerId?'<button class="link-btn" type="button" data-edit-user="'+owner.workspaceId+':'+owner.ownerId+'">Edit owner</button>':'')+
