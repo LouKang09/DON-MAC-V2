@@ -92,6 +92,7 @@
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
       await loadScript('/supply-franchise.js?v=1.5.79');
+      await loadScript('/tenant-billing-ui.js?v=1');
       await loadScript('/pos-quickpay-v1556.js');
       window.donmacSupply?.refreshNotices?.();
 
