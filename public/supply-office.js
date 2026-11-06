@@ -349,16 +349,16 @@ const officeActionLabels={
  PENDING_REVIEW:{APPROVED:'Approve payment',ON_HOLD:'Place on hold',DENIED:'Deny request'},
  ON_HOLD:{APPROVED:'Approve payment',DENIED:'Deny request'},
  DENIED:{APPROVED:'Overturn Denial → Approved'},
- APPROVED:{PREPARING:'Start preparing'},
- PREPARING:{DISPATCHED:'Mark dispatched'},
+ APPROVED:{PREPARING:'Start preparing',DISPATCHED:'Mark dispatched',DELIVERED:'Mark delivered (complete)'},
+ PREPARING:{DISPATCHED:'Mark dispatched',DELIVERED:'Mark delivered (complete)'},
  DISPATCHED:{DELIVERED:'Mark delivered (complete)'}
 };
 const stageHelp={
  PENDING_REVIEW:'Pending for review. Verify the submitted payment, then approve, hold, or deny this request.',
  ON_HOLD:'This request is on hold. Review the reason before approving payment or denying it.',
  DENIED:'This request was denied. You can overturn the denial and approve payment after reviewing the reason.',
- APPROVED:'Payment approved. Fulfillment proceeds in order: Preparing → Dispatched → Delivered (Complete).',
- PREPARING:'Preparing supplies. The next step is to mark the order as dispatched.',
+ APPROVED:'Payment approved. Choose Preparing, Dispatched, or Delivered (Complete) based on the actual order progress.',
+ PREPARING:'Preparing supplies. Mark as Dispatched, or Delivered (Complete) once the order reaches the customer.',
  DISPATCHED:'Supplies dispatched. Confirm delivery to complete this request.',
  DELIVERED:'Delivered and complete. No further decisions are available.',
  COMPLETED:'This legacy request is complete. No further decisions are available.'
