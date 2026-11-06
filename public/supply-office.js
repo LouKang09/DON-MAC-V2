@@ -153,7 +153,7 @@ function render(){
  const lines=[];
  for(const g of chosen){
   const open=expandedOwnerGroups.has(g.id);
-  const pending=g.orders.filter(o=>o.status==='PENDING_REVIEW').length;
+  const pending=g.orders.filter(o=>['PENDING_REVIEW','APPEAL_REVIEW'].includes(o.status)).length;
   const branches=[...g.branches];
   lines.push('<tr class="office-account-summary"><td>'+
    '<button class="office-account-expand" type="button" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+
