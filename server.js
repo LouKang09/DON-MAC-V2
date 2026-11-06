@@ -1725,9 +1725,10 @@ async function handleFranchiseSupplyApi(req,res,p,method,user){
   if(method==='GET'&&p==='/api/supply/notifications')return json(res,200,await supplyChain.notices(db,user),safeHeaders());
   if(method==='POST'&&p==='/api/supply/notifications/read')
     return json(res,200,await supplyChain.markRead(db,user,(await readJson(req)).ids),safeHeaders());
-  const match=p.match(/^\/api\/supply\/orders\/([0-9a-f-]{36})(?:\/messages)?$/i);
+  const match=p.match(/^\/api\/supply\/orders\/([0-9a-f-]{36})(?:\/(messages|appeal))?$/i);
   if(match){
     if(method==='GET'&&p.endsWith(match[1]))return json(res,200,{order:await supplyChain.detail(db,match[1],workspaceId,false)},safeHeaders());
+    if(method==='POST'&&p.endsWith('/appeal'))return json(res,201,await (async()=>{const body=await readJson(req);return supplyChain.submitAppeal(db,user,match[1],body.reason)})(),safeHeaders());
     if(method==='POST'&&p.endsWith('/messages'))return json(res,201,
       await (async()=>{const b=await readJson(req);return supplyChain.send(db,match[1],workspaceId,'franchise',user.username,b.body,b.image)})(),safeHeaders());
   }
