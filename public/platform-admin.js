@@ -168,6 +168,7 @@
  $('pageNext').addEventListener('click',()=>{page++;render()});
  $('ownersBody').addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;
+  if(button.hasAttribute('data-office-subscription')){openOfficePlan();return;}
   if(button.hasAttribute('data-toggle-owner')){
    const key=button.dataset.toggleOwner;
    if(expandedOwners.has(key))expandedOwners.delete(key);else expandedOwners.add(key);
@@ -186,6 +187,7 @@
  });
  function openPlan(owner){
   if(!owner)return;
+  billingFilter={kind:'FRANCHISE',id:String(owner.workspaceId),label:owner.ownerUsername};billingPage=1;reloadBilling();
   selected={kind:'subscription',owner};
   $('subscriptionOwner').textContent=owner.ownerUsername+' · Workspace #'+owner.workspaceId;
   $('subPlan').value=owner.subscription?.plan||'PRO';
@@ -195,12 +197,22 @@
   error('subscriptionError','');
   $('subscriptionDialog').showModal();
  }
+ function openOfficePlan(){
+  selected={kind:'office'};
+  billingFilter={kind:'SUPPLY_OFFICE',id:'supply-office',label:'Supply Chain / Main Office'};billingPage=1;reloadBilling();
+  $('subscriptionOwner').textContent='Supply Chain / Main Office · Independent tenant';
+  $('subPlan').value=officeSubscription?.plan||'PRO';
+  $('subStatus').value=officeSubscription?.status||'UNPAID';
+  $('subAmount').value=officeSubscription?.amount??'';
+  $('subNextPaymentDate').value=officeSubscription?.nextPaymentDate||'';
+  error('subscriptionError','');$('subscriptionDialog').showModal();
+ }
  $('subscriptionForm').addEventListener('submit',async e=>{
-  e.preventDefault();if(selected?.kind!=='subscription')return;
+  e.preventDefault();if(!['subscription','office'].includes(selected?.kind))return;
   const btn=$('saveSubscription');btn.disabled=true;error('subscriptionError','');
   try{
-   await api('accounts/'+selected.owner.workspaceId+'/subscription',{method:'PUT',
-    body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,amount:$('subAmount').value,nextPaymentDate:$('subNextPaymentDate').value})});
+   const resource=selected.kind==='office'?'billing/supply-office':'accounts/'+selected.owner.workspaceId+'/subscription';
+   await api(resource,{method:'PUT',body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,amount:$('subAmount').value,nextPaymentDate:$('subNextPaymentDate').value})});
    $('subscriptionDialog').close();await reload();
   }catch(err){error('subscriptionError',err.message)}
   finally{btn.disabled=false}
