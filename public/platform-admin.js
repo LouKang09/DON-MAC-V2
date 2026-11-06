@@ -259,14 +259,14 @@
  syncPlatformNavigation();
 
 
- let adminInvoices=[],billingPage=1;
+ let adminInvoices=[],billingPage=1,billingTotal=0;
  function renderBillingLedger(){
-  const records=adminInvoices,pages=Math.max(1,Math.ceil(records.length/10));
+  const records=adminInvoices,pages=Math.max(1,Math.ceil(billingTotal/10));
   billingPage=Math.max(1,Math.min(pages,billingPage));
-  $('adminBillingCount').textContent=number(records.length)+' invoices';
+  $('adminBillingCount').textContent=number(billingTotal)+' invoices';
   $('adminBillingPageInfo').textContent='Page '+billingPage+' of '+pages;
   $('adminBillingPrevious').disabled=billingPage===1;$('adminBillingNext').disabled=billingPage===pages;
-  $('adminBillingRows').innerHTML=records.slice((billingPage-1)*10,billingPage*10).map(i=>{
+  $('adminBillingRows').innerHTML=records.map(i=>{
    const name=i.tenantKind==='SUPPLY_OFFICE'?'Supply Chain / Main Office':(findOwner(i.tenantId)?.ownerUsername||'Franchise #'+i.tenantId);
    return'<tr><td><strong>'+esc(i.id.slice(0,8).toUpperCase())+'</strong></td><td>'+esc(name)+'</td><td>'+esc(i.plan)+'</td>'+
    '<td>'+peso(i.amount)+'</td><td>'+badge(String(i.status).replaceAll('_',' '),i.status==='PAID'?'active':i.status==='PENDING'?'on-hold':'unknown')+'</td>'+
@@ -275,13 +275,14 @@
  }
  async function reloadBilling(){
   try{
-   const data=await api('billing'),ready=Boolean(data.checkoutConfigured);
+   const data=await api('billing?page='+billingPage),ready=Boolean(data.checkoutConfigured);
    $('adminPayMongoStatus').textContent=ready?'PayMongo '+String(data.paymentMode).toUpperCase()+' configured':'PayMongo not connected';
    $('adminPayMongoStatus').classList.toggle('ready',ready);
    $('adminBillingMode').textContent=ready?data.paymentMode:'Not connected';
    adminInvoices=Array.isArray(data.invoices)?data.invoices:[];
-   $('adminBillingPaid').textContent=number(adminInvoices.filter(i=>i.status==='PAID').length);
-   $('adminBillingPending').textContent=number(adminInvoices.filter(i=>i.status==='PENDING').length);
+   billingTotal=Number(data.totalCount||0);
+   $('adminBillingPaid').textContent=number(data.paidCount||0);
+   $('adminBillingPending').textContent=number(data.pendingCount||0);
    $('adminBillingNotice').textContent=ready?'PayMongo keys detected. Payments require merchant activation and registered webhooks.':
     'PayMongo is not connected. Tenant payment buttons are disabled, and no money is being collected.';
    const office=data.supplyOffice;
@@ -300,8 +301,8 @@
    $('adminBillingNotice').textContent='Supply Chain subscription saved.';
   }catch(err){error('adminOfficeError',err.message)}finally{save.disabled=false;}
  });
- $('adminBillingPrevious').addEventListener('click',()=>{billingPage--;renderBillingLedger()});
- $('adminBillingNext').addEventListener('click',()=>{billingPage++;renderBillingLedger()});
+ $('adminBillingPrevious').addEventListener('click',()=>{billingPage--;reloadBilling()});
+ $('adminBillingNext').addEventListener('click',()=>{billingPage++;reloadBilling()});
  $('platformBillingButton').addEventListener('click',()=>{
   $('platformBilling').scrollIntoView({behavior:'smooth',block:'start'});
   $('platformApp').classList.remove('nav-open');syncPlatformNavigation();
