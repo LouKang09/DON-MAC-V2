@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/audit-logs-compact-v1552.css?v=1.5.52" />
   <link rel="stylesheet" href="/archive-compare-v1553.css?v=1.5.53" />
   <link rel="stylesheet" href="/supply-franchise.css?v=1.5.61" />
+  <link rel="stylesheet" href="/tenant-billing.css?v=1" />
   <link rel="stylesheet" href="/topbar-responsive-v1554.css?v=1.5.55" />
   <link rel="stylesheet" href="/pos-compact-checkout-v1556.css?v=1.5.56" />
   <link rel="stylesheet" href="/sidebar-responsive-v1557.css?v=1.5.57" />
@@ -836,6 +837,24 @@
             <button id="saveAccountPlan" class="primary" type="button">Apply Demo Plan</button>
           </div>
         </div>
+
+        <section id="tenantBilling" data-api-base="/api/billing" class="tenant-billing-section" aria-label="Actual tenant subscription billing">
+          <div class="tenant-billing-head"><div><span class="tenant-billing-label">REAL SUBSCRIPTION BILLING</span>
+            <h2>Pay your Don Mac POS subscription</h2>
+            <p>Secure PayMongo checkout is available once the platform owner configures billing. This is separate from the demo plan preview above.</p></div>
+            <span id="tenantBillingGateway" class="tenant-gateway disabled">PayMongo not connected yet</span>
+          </div>
+          <div class="tenant-billing-values"><div><small>Assigned Plan</small><strong id="tenantBillingPlan">—</strong></div>
+            <div><small>Amount Due</small><strong id="tenantBillingAmount">—</strong></div>
+            <div><small>Payment Status</small><strong id="tenantBillingStatus">—</strong></div>
+            <div><small>Next Payment</small><strong id="tenantBillingDue">—</strong></div></div>
+          <div class="tenant-billing-actions"><button id="tenantPayNow" type="button" disabled>Pay Now with PayMongo</button>
+            <button class="secondary" type="button" id="tenantBillingReload">Refresh Billing</button></div>
+          <p id="tenantBillingMessage" class="tenant-billing-message" role="status">Checking subscription details…</p>
+          <h3 class="tenant-billing-history-head">Verified payment history</h3>
+          <div class="tenant-billing-scroll"><table><thead><tr><th>Invoice</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="tenantBillingHistory"><tr><td colspan="5" class="tenant-billing-empty">No transactions recorded.</td></tr></tbody></table></div>
+        </section>
         <div class="card spaced plan-history-card">
           <div class="card-head"><div><p class="eyebrow">PLAN CHANGE HISTORY</p><h3>Subscription history</h3></div><span class="muted">Demo entries, not billing transactions</span></div>
           <div class="table-wrap">
@@ -926,6 +945,6 @@
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.5.77"></script>
-  <script src="/app.js?v=1.5.76"></script>
+  <script src="/app.js?v=1.5.80"></script>
 </body>
 </html>
