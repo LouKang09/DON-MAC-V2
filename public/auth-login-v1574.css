@@ -115,11 +115,18 @@
   font-size:16px;font-weight:550;
 }
 #authScreen .auth-input-box input::placeholder{color:rgba(255,255,255,.6)}
-#authScreen .auth-input-box input:-webkit-autofill{
+/* Keep browser autofill from drawing a nested green capsule inside the textbox. */
+#authScreen .auth-input-box > input:-webkit-autofill,
+#authScreen .auth-input-box > input:-webkit-autofill:hover,
+#authScreen .auth-input-box > input:-webkit-autofill:focus {
   -webkit-text-fill-color:#fff!important;
-  -webkit-box-shadow:0 0 0 60px #146747 inset!important;
+  -webkit-box-shadow:none!important;
+  box-shadow:none!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
   caret-color:#fff!important;
 }
+
 #authScreen .auth-password-toggle{
   display:grid;place-items:center;flex:0 0 44px;
   height:44px;margin-right:5px;
@@ -589,4 +596,39 @@
     min-height:72px !important;
     transform:translateY(-9px) !important;
   }
+}
+
+/* One continuous username/password field surface across all three portals. */
+#authScreen .auth-input-box > input {
+  display:block;
+  flex:1 1 0%;
+  box-sizing:border-box;
+  min-width:0;
+  min-height:0!important;
+  height:100%;
+  margin:0!important;
+  padding-block:0!important;
+  border:0!important;
+  border-radius:0!important;
+  outline:0!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  -webkit-box-shadow:none!important;
+  -webkit-appearance:none;
+  appearance:none;
+  color:#fff!important;
+}
+#authScreen .auth-input-box > input:-webkit-autofill,
+#authScreen .auth-input-box > input:-webkit-autofill:hover,
+#authScreen .auth-input-box > input:-webkit-autofill:focus,
+#authScreen .auth-input-box > input:autofill {
+  border-radius:0!important;
+  -webkit-text-fill-color:#fff!important;
+  -webkit-box-shadow:none!important;
+  box-shadow:none!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  caret-color:#fff!important;
 }
