@@ -8,6 +8,24 @@
  const peso=x=>x===null||x===undefined?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(x)||0);
  const date=x=>{if(!x)return'—';const d=new Date(x);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-PH',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Manila'}).format(d)};
  const badge=(value,type)=>'<span class="status '+esc(type)+'">'+esc(value)+'</span>';
+  const paymentStatus=sub=>{
+   if(!sub)return'<span class="payment-state unset">Not configured</span>';
+   const st=['PAID','ON_HOLD','UNPAID'].includes(sub.status)?sub.status:'UNKNOWN';
+   const label=st==='ON_HOLD'?'On Hold':st==='PAID'?'Paid':st==='UNPAID'?'Unpaid':'Unknown';
+   const svg=st==='PAID'?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" aria-hidden="true"><path d="M4 19v-3M9 19v-6M14 19V9M19 19V5"/></svg>':
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 9v5M12 17.5h.01"/></svg>';
+   return'<span class="payment-state '+(st==='PAID'?'paid':st==='ON_HOLD'?'hold':st==='UNPAID'?'unpaid':'unset')+'" title="'+label+'">'+svg+'<span>'+label+'</span></span>';
+  };
+  const dueDays=value=>{
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return null;
+   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,Number(x.value)]));
+   const start=Date.UTC(parts.year,parts.month-1,parts.day),end=Date.parse(value+'T00:00:00Z');
+   return Number.isFinite(end)?Math.round((end-start)/86400000):null;
+  };
+  const daysRemaining=value=>{const n=dueDays(value);if(n===null)return'<span class="due-days unset">—</span>';
+   if(n<0)return'<span class="due-days overdue">'+number(-n)+' day'+(n===-1?'':'s')+' overdue</span>';
+   return'<span class="due-days '+(n<=7?'soon':'normal')+'">'+(n===0?'Due today':number(n)+' day'+(n===1?'':'s')+' left')+'</span>';
+  };
  const opened=(set,key)=>set.has(String(key));
  async function api(path,options={}){
   const response=await fetch('/api/supply/office/platform/'+path,{credentials:'same-origin',cache:'no-store',
@@ -61,8 +79,8 @@
  }
  $('refreshAccounts').addEventListener('click',reload);
  const findOwner=ws=>accounts.find(x=>x.workspaceId===Number(ws));
- const findUser=(owner,uid)=>[...owner.branches.flatMap(b=>b.users||[]),...owner.unassigned].find(u=>u.id===Number(uid));
- const allText=a=>[a.ownerUsername,a.ownerFullName,a.ownerEmail,...a.branches.flatMap(b=>[b.name,...b.users.flatMap(u=>[u.username,u.fullName,u.email])]),...a.unassigned.flatMap(u=>[u.username,u.fullName,u.email])].join(' ').toLowerCase();
+ const findUser=(owner,uid)=>[...(owner.allBranchAdmins||[]),...owner.branches.flatMap(b=>b.users||[]),...owner.unassigned].find(u=>u.id===Number(uid));
+ const allText=a=>[a.ownerUsername,a.ownerFullName,a.ownerEmail,...a.branches.flatMap(b=>[b.name,...b.users.flatMap(u=>[u.username,u.fullName,u.email])]),...(a.allBranchAdmins||[]).flatMap(u=>[u.username,u.fullName,u.email]),...a.unassigned.flatMap(u=>[u.username,u.fullName,u.email])].join(' ').toLowerCase();
  function filtered(){
   return accounts.filter(x=>(status==='all'||(status==='active')===!!x.active)&&(!search||allText(x).includes(search)));
  }
@@ -86,15 +104,23 @@
     '<span class="branch-counter">'+number(b.users.length)+' users</span>'+badge(b.active?'Active':'Inactive',b.active?'active':'inactive')+'</div>';
    if(open)blocks+=renderStaff(b.users,owner);
   }
+  const coOwners=(owner.allBranchAdmins||[]).filter(u=>!u.isOwner);
+  if(coOwners.length){
+   const key=owner.workspaceId+':all-branch-admins',open=opened(expandedBranches,key)||!!search;
+   blocks+='<div class="branch-row"><button type="button" class="expand" aria-expanded="'+open+'" data-toggle-branch="'+key+'">'+(open?'⌄':'›')+'</button>'+
+    '<div class="branch-title"><strong>Co-Owners · All Branches</strong><small>Account administrators can manage every branch</small></div>'+
+    '<span class="branch-counter">'+number(coOwners.length)+' administrators</span></div>';
+   if(open)blocks+=renderStaff(coOwners,owner);
+  }
   if(owner.unassigned.length){
    const key=owner.workspaceId+':unassigned',open=opened(expandedBranches,key)||!!search;
    blocks+='<div class="branch-row"><button type="button" class="expand" aria-expanded="'+open+'" data-toggle-branch="'+key+'">'+(open?'⌄':'›')+'</button>'+
-    '<div class="branch-title"><strong>Owner / Unassigned Users</strong><small>Administrators and staff without branch assignments</small></div>'+
+    '<div class="branch-title"><strong>Unassigned Users</strong><small>Staff members without branch assignments</small></div>'+
     '<span class="branch-counter">'+number(owner.unassigned.length)+' users</span></div>';
    if(open)blocks+=renderStaff(owner.unassigned,owner);
   }
   if(!blocks)blocks='<p class="empty">No branches or users registered.</p>';
-  return'<tr class="hierarchy-row"><td colspan="6"><div class="hierarchy"><div class="hierarchy-head">BRANCHES &amp; MEMBERS · '+number(owner.userCount)+' USERS</div>'+blocks+'</div></td></tr>';
+  return'<tr class="hierarchy-row"><td colspan="9"><div class="hierarchy"><div class="hierarchy-head">BRANCHES &amp; MEMBERS · '+number(owner.userCount)+' USERS</div>'+blocks+'</div></td></tr>';
  }
  function render(){
   const list=filtered(),pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
@@ -114,12 +140,15 @@
     (owner.ownerId?'<button class="link-btn" type="button" data-edit-user="'+owner.workspaceId+':'+owner.ownerId+'">Edit owner</button>':'')+
     '</div></div></div></td>'+
     '<td><span class="num">'+number(owner.branchCount)+'</span></td>'+
-    '<td>'+(sub?badge(sub.plan,sub.status==='PAID'?'active':'on-hold'):'<span class="status unknown">Not configured</span>')+'</td>'+
-    '<td class="currency">'+peso(sub?.amount)+'</td><td>'+esc(date(owner.joinedAt))+'</td>'+
-    '<td>'+badge(owner.active?'Active':'Inactive',owner.active?'active':'inactive')+(sub?'<div style="margin-top:5px;font-size:10px;color:#708574">Billing: '+esc(sub.status.replace('_',' '))+'</div>':'')+'</td></tr>');
+    '<td>'+(sub?badge(sub.plan,'active'):'<span class="status unknown">Not configured</span>')+'</td>'+
+    '<td class="currency">'+peso(sub?.amount)+'</td>'+
+    '<td>'+paymentStatus(sub)+'</td>'+
+    '<td class="due-date">'+(sub?.nextPaymentDate?esc(date(sub.nextPaymentDate+'T12:00:00Z')):'—')+'</td>'+
+    '<td>'+daysRemaining(sub?.nextPaymentDate)+'</td><td>'+esc(date(owner.joinedAt))+'</td>'+
+    '<td>'+badge(owner.active?'Active':'Inactive',owner.active?'active':'inactive')+'</td></tr>');
    if(open)rows.push(branchSection(owner));
   }
-  $('ownersBody').innerHTML=rows.join('')||'<tr><td colspan="6" class="empty">No matching franchise accounts.</td></tr>';
+  $('ownersBody').innerHTML=rows.join('')||'<tr><td colspan="9" class="empty">No matching franchise accounts.</td></tr>';
  }
  $('accountSearch').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();page=1;render()});
  $('statusFilter').addEventListener('change',e=>{status=e.target.value;page=1;render()});
@@ -150,6 +179,7 @@
   $('subPlan').value=owner.subscription?.plan||'PRO';
   $('subStatus').value=owner.subscription?.status||'UNPAID';
   $('subAmount').value=owner.subscription?.amount??'';
+  $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||'';
   error('subscriptionError','');
   $('subscriptionDialog').showModal();
  }
@@ -158,7 +188,7 @@
   const btn=$('saveSubscription');btn.disabled=true;error('subscriptionError','');
   try{
    await api('accounts/'+selected.owner.workspaceId+'/subscription',{method:'PUT',
-    body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,amount:$('subAmount').value})});
+    body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,amount:$('subAmount').value,nextPaymentDate:$('subNextPaymentDate').value})});
    $('subscriptionDialog').close();await reload();
   }catch(err){error('subscriptionError',err.message)}
   finally{btn.disabled=false}
