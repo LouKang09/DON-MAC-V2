@@ -180,3 +180,11 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 #platformApp .payment-state .payment-icon{display:block;flex:0 0 20px;width:20px;height:20px}
 @media(max-width:720px){#platformApp .sidebar-controls,#platformApp.nav-collapsed .sidebar-controls{justify-content:flex-end}}
 @media(prefers-reduced-motion:reduce){#platformApp .expand .expand-chevron{transition:none}}
+
+
+/* Center the sign-out control and its icon like Main POS. */
+#platformApp .sidebar .logout{justify-content:center;text-align:center}
+#platformApp.nav-collapsed .sidebar-foot{display:flex;justify-content:center;padding:10px 0}
+#platformApp.nav-collapsed .sidebar .logout{display:grid;place-items:center;width:100%;padding:10px 0;gap:0}
+#platformApp.nav-collapsed .sidebar .logout svg{justify-self:center;margin:0}
+@media(max-width:720px){#platformApp .sidebar .logout,#platformApp.nav-collapsed .sidebar .logout{justify-content:center;text-align:center}}
