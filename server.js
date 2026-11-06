@@ -13,6 +13,7 @@ const devSubscription = require('./lib/development-subscriptions');
 const platformAccounts = require('./lib/platform-accounts');
 const platformAdminAuth = require('./lib/platform-admin-auth');
 const platformBilling = require('./lib/platform-billing');
+const posFinance = require('./lib/pos-finance');
 const supplyChain = require('./lib/supply-chain');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
@@ -1700,6 +1701,13 @@ async function handleOfficeApi(req,res,p,method){
   if(method==='POST'&&p==='/api/supply/office/billing/checkout')
     return json(res,200,await platformBilling.requestCheckout(db,'SUPPLY_OFFICE','supply-office',
       process.env.PAYMONGO_OFFICE_RETURN_URL||'https://don-mac-supply-office-production.up.railway.app/supply-office.html?billing=return'),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='GET'&&p==='/api/supply/office/dashboard')return json(res,200,await supplyChain.operationsDashboard(db),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='GET'&&p==='/api/supply/office/distributions'){
+    const page=new URL(req.url,'http://localhost').searchParams.get('page');
+    return json(res,200,await supplyChain.distributionHistory(db,page),safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/supply/office/products')
+    return json(res,201,await supplyChain.createProduct(db,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
@@ -1817,6 +1825,16 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
+  // POS tenant operations; all data is restricted to the signed-in franchise workspace.
+  if(p==='/api/finance/expenses' || p==='/api/finance/transactions'){
+    const q=new URL(req.url,'http://localhost').searchParams;
+    const params={page:q.get('page'),branchId:q.get('branchId'),start:q.get('start'),end:q.get('end')};
+    if(method==='GET')return json(res,200,p.endsWith('/expenses')?
+      await posFinance.expenses(db,user,params):await posFinance.transactions(db,user,params),safeHeaders({'Cache-Control':'no-store'}));
+    if(method==='POST'&&p.endsWith('/expenses'))
+      return json(res,200,await posFinance.saveExpense(db,user,await readJson(req)),safeHeaders());
+    return json(res,405,{error:'Method not allowed.'},safeHeaders());
+  }
   if(p==='/api/billing/me'||p==='/api/billing/checkout'){
    if(user.role!=='Admin')return json(res,403,{error:'Subscription billing is available to franchise Owners and Co-Owners only.'},safeHeaders());
    const membership=await db.query('SELECT workspace_id FROM chat_memberships WHERE user_id=$1 ORDER BY workspace_id LIMIT 1',[user.id]);
@@ -1984,7 +2002,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await platformBilling.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
