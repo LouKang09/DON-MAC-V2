@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
-const title=s=>String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
+const title=s=>s==='APPEAL_REVIEW'?'Appeal review':String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
 const date=s=>new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(new Date(s));
 let products=[],branches=[],urgentFee=0,royaltyQuote={dueTotal:0,dueMonths:[],reservedTotal:0},orders=[],notices=[],currentId=null,encodedPhoto='',page=1,productPage=1,chatPhoto=null,loaded=false,timer=null,processing=false;
 const quantities=new Map();
@@ -186,6 +186,7 @@ async function openOrder(id){
    ['Branch',o.branch_name],['Priority',title(o.priority)],['Total',money(o.total)],['Submitted',date(o.created_at)],
    ['Royalty included',money(o.royalty_total||0)],['Payment reference',o.payment_reference||'Attached photo'],['Main Office note',o.office_note||'Awaiting update']
   ].map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
+  configureAppeal(o);
   $('supplyTimeline').innerHTML=o.history.map(x=>'<div><b>'+esc(title(x.status))+'</b><small>'+date(x.created_at)+' · '+esc(x.actor)+(x.note?' · '+esc(x.note):'')+'</small></div>').join('');
   $('supplyDetailItems').innerHTML=o.items.map(i=>'<tr><td>'+esc(i.product_name)+'</td><td>'+esc(i.uom)+'</td><td>'+i.quantity+'</td><td>'+money(i.amount)+'</td></tr>').join('');
   $('supplyMessages').innerHTML=o.messages.map(m=>'<div class="supply-message '+esc(m.sender_role)+'"><small>'+esc(m.sender_name)+' · '+date(m.created_at)+'</small>'+esc(m.body)+photoHtml(m.image)+'</div>').join('')||'<p class="muted">No messages yet.</p>';
@@ -193,6 +194,35 @@ async function openOrder(id){
   $('supplyOrderDetail').scrollIntoView({behavior:'smooth',block:'start'});
  }catch(err){alert(err.message,true);}
 }
+
+function configureAppeal(order){
+ const count=Math.max(0,Number(order.appeal_count||0)),denied=order.status==='DENIED';
+ const remaining=Math.max(0,2-count),available=denied&&remaining>0;
+ $('supplyAppealPanel').classList.toggle('hidden',!available);
+ $('supplyAppealMessage').classList.toggle('hidden',available||(!denied&&order.status!=='APPEAL_REVIEW'));
+ if(available){
+  $('supplyAppealInfo').textContent='You may submit up to two appeals. '+remaining+' appeal'+(remaining===1?'':'s')+' remaining. Main Office will review your explanation.';
+  $('supplyAppealReason').value='';
+ }else if(order.status==='APPEAL_REVIEW'){
+  $('supplyAppealMessage').textContent='Appeal '+count+' of 2 submitted. Awaiting Main Office review.';
+ }else if(denied){
+  $('supplyAppealMessage').textContent='Both appeals were denied. No further appeal can be submitted for this request.';
+ }
+}
+$('supplyAppealForm').onsubmit=async event=>{
+ event.preventDefault();if(!currentId)return;
+ const reason=$('supplyAppealReason').value.trim();
+ if(reason.length<10){alert('Please enter an appeal reason with at least 10 characters.',true);return;}
+ const button=$('supplyAppealSubmit');button.disabled=true;
+ try{
+  const id=currentId;
+  const response=await api('/api/supply/orders/'+encodeURIComponent(id)+'/appeal',
+   {method:'POST',body:JSON.stringify({reason})});
+  alert('Appeal '+response.appealCount+' of 2 submitted for review.');
+  await Promise.all([loadOrders(),openOrder(id)]);
+ }catch(err){alert(err.message,true);}
+ finally{button.disabled=false;}
+};
 $('supplyDetailClose').onclick=()=>{$('supplyOrderDetail').classList.add('hidden');currentId=null;};
 $('supplyChatPhoto').onchange=async e=>{
  try{
