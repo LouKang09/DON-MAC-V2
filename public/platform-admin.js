@@ -74,7 +74,7 @@
    $('metricBranches').textContent=number(summary.branches);
    $('metricUsers').textContent=number(summary.users);
    $('metricActive').textContent=number(summary.activeOwners);
-   render();
+   render();await reloadBilling();
   }catch(err){
    error('tableMessage',err.message);
    if(err.status===401)showLogin('Please sign in again.');
@@ -257,6 +257,55 @@
  document.querySelectorAll('.sidebar a').forEach(a=>a.addEventListener('click',()=>{$('platformApp').classList.remove('nav-open');syncPlatformNavigation();}));
  window.addEventListener('resize',syncPlatformNavigation);
  syncPlatformNavigation();
+
+
+ let adminInvoices=[],billingPage=1;
+ function renderBillingLedger(){
+  const records=adminInvoices,pages=Math.max(1,Math.ceil(records.length/10));
+  billingPage=Math.max(1,Math.min(pages,billingPage));
+  $('adminBillingCount').textContent=number(records.length)+' invoices';
+  $('adminBillingPageInfo').textContent='Page '+billingPage+' of '+pages;
+  $('adminBillingPrevious').disabled=billingPage===1;$('adminBillingNext').disabled=billingPage===pages;
+  $('adminBillingRows').innerHTML=records.slice((billingPage-1)*10,billingPage*10).map(i=>{
+   const name=i.tenantKind==='SUPPLY_OFFICE'?'Supply Chain / Main Office':(findOwner(i.tenantId)?.ownerUsername||'Franchise #'+i.tenantId);
+   return'<tr><td><strong>'+esc(i.id.slice(0,8).toUpperCase())+'</strong></td><td>'+esc(name)+'</td><td>'+esc(i.plan)+'</td>'+
+   '<td>'+peso(i.amount)+'</td><td>'+badge(String(i.status).replaceAll('_',' '),i.status==='PAID'?'active':i.status==='PENDING'?'on-hold':'unknown')+'</td>'+
+   '<td>'+esc(i.paymentMethod||'—')+'</td><td>'+esc(date(i.createdAt))+'</td><td>'+esc(date(i.paidAt))+'</td></tr>';
+  }).join('')||'<tr><td colspan="8" class="empty">No subscription payments recorded yet.</td></tr>';
+ }
+ async function reloadBilling(){
+  try{
+   const data=await api('billing'),ready=Boolean(data.checkoutConfigured);
+   $('adminPayMongoStatus').textContent=ready?'PayMongo '+String(data.paymentMode).toUpperCase()+' configured':'PayMongo not connected';
+   $('adminPayMongoStatus').classList.toggle('ready',ready);
+   $('adminBillingMode').textContent=ready?data.paymentMode:'Not connected';
+   adminInvoices=Array.isArray(data.invoices)?data.invoices:[];
+   $('adminBillingPaid').textContent=number(adminInvoices.filter(i=>i.status==='PAID').length);
+   $('adminBillingPending').textContent=number(adminInvoices.filter(i=>i.status==='PENDING').length);
+   $('adminBillingNotice').textContent=ready?'PayMongo keys detected. Payments require merchant activation and registered webhooks.':
+    'PayMongo is not connected. Tenant payment buttons are disabled, and no money is being collected.';
+   const office=data.supplyOffice;
+   $('adminOfficePlan').value=office?.plan||'PRO';$('adminOfficeAmount').value=office?.amount??'';
+   $('adminOfficeStatus').value=office?.status||'UNPAID';$('adminOfficeDue').value=office?.nextPaymentDate||'';
+   renderBillingLedger();
+  }catch(err){$('adminBillingNotice').textContent='Billing cannot load: '+err.message;}
+ }
+ $('adminOfficePlanForm').addEventListener('submit',async e=>{
+  e.preventDefault();const save=$('adminOfficeSave');save.disabled=true;error('adminOfficeError','');
+  try{
+   await api('billing/supply-office',{method:'PUT',body:JSON.stringify({
+    plan:$('adminOfficePlan').value,amount:$('adminOfficeAmount').value,
+    status:$('adminOfficeStatus').value,nextPaymentDate:$('adminOfficeDue').value})});
+   await reloadBilling();
+   $('adminBillingNotice').textContent='Supply Chain subscription saved.';
+  }catch(err){error('adminOfficeError',err.message)}finally{save.disabled=false;}
+ });
+ $('adminBillingPrevious').addEventListener('click',()=>{billingPage--;renderBillingLedger()});
+ $('adminBillingNext').addEventListener('click',()=>{billingPage++;renderBillingLedger()});
+ $('platformBillingButton').addEventListener('click',()=>{
+  $('platformBilling').scrollIntoView({behavior:'smooth',block:'start'});
+  $('platformApp').classList.remove('nav-open');syncPlatformNavigation();
+ });
 
 function openAdminCredentials(required=false){
  mustChangeAdminPassword=required;
