@@ -136,3 +136,6 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
  .app.nav-collapsed .sidebar-foot{padding:15px 8px}
  .app.nav-collapsed .sidebar .logout{justify-content:flex-start;padding:11px}
 }
+
+/* Keep sidebar labels at the same compact size as the main POS navigation. */
+.sidebar .side-link span.nav-text{font-size:13px;text-align:left}
