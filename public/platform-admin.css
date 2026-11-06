@@ -188,3 +188,27 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 #platformApp.nav-collapsed .sidebar .logout{display:grid;place-items:center;width:100%;padding:10px 0;gap:0}
 #platformApp.nav-collapsed .sidebar .logout svg{justify-self:center;margin:0}
 @media(max-width:720px){#platformApp .sidebar .logout,#platformApp.nav-collapsed .sidebar .logout{justify-content:center;text-align:center}}
+
+/* Platform owner's independent PayMongo subscription billing area */
+.platform-billing{margin-top:23px}
+.platform-billing-connection{font-size:11px;font-weight:850;color:#8e6719;background:#fff0ca;padding:9px 14px;border-radius:999px;white-space:nowrap}
+.platform-billing-connection.ready{background:#def2e6;color:#176940}
+.platform-billing .section-header{align-items:center;flex-wrap:wrap}
+.platform-billing .section-header h3{font-size:16px;font-weight:850;color:#1b4830;margin:0}
+.platform-billing .section-header p{max-width:72ch}
+.platform-billing-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.platform-billing-metrics>div{padding:15px;background:#f3faf5;border:1px solid #e0eee4;border-radius:12px}
+.platform-billing-metrics small{display:block;color:#68816f;font-size:10px;font-weight:750;margin-bottom:6px}
+.platform-billing-metrics strong{font-size:19px;color:#194d32;overflow-wrap:anywhere}
+.platform-office-plan{padding:18px;margin:17px 0 22px;background:#f8fbf8;border:1px solid #dce9df;border-radius:13px}
+.platform-office-plan h3{color:#204a32;font-size:16px;margin:0 0 5px}
+.platform-office-plan p{color:#647b6a;font-size:11px;margin:0 0 14px;line-height:1.55}
+.platform-office-plan form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;align-items:end}
+.platform-office-plan form label{min-width:0;display:grid;gap:6px;font-size:11px;color:#45614e;font-weight:750}
+.platform-office-plan form input,.platform-office-plan form select{box-sizing:border-box;width:100%;min-height:40px;border:1px solid #cddfd3;border-radius:9px;padding:8px 10px;background:#fff;color:#214530;font-size:12px}
+.platform-office-plan form button{grid-column:1/-1;justify-self:start;min-height:40px}
+.platform-invoice-table{min-width:920px}
+.platform-invoice-table th,.platform-invoice-table td{padding:13px 14px}
+#platformBilling{scroll-margin-top:115px}
+@media(max-width:920px){.platform-office-plan form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.platform-billing-metrics{grid-template-columns:1fr}.platform-office-plan form{grid-template-columns:1fr}}
