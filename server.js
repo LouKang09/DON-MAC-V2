@@ -12,6 +12,7 @@ const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
 const platformAccounts = require('./lib/platform-accounts');
 const platformAdminAuth = require('./lib/platform-admin-auth');
+const platformBilling = require('./lib/platform-billing');
 const supplyChain = require('./lib/supply-chain');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
@@ -81,6 +82,15 @@ async function readJson(req,maxBytes=1024*1024) {
   });
 }
 
+async function readRawWebhook(req,maxBytes=262144){
+ const chunks=[];let size=0;
+ for await(const chunk of req){
+  size+=chunk.length;
+  if(size>maxBytes)throw Object.assign(new Error('Webhook payload too large.'),{status:413});
+  chunks.push(chunk);
+ }
+ return Buffer.concat(chunks);
+}
 function parseCookies(req) {
   const cookie = req.headers.cookie || '';
   const out = {};
@@ -1648,6 +1658,11 @@ function issueSupplyOfficeSession(credentialVersion='bootstrap'){
 }
 async function handleOfficeApi(req,res,p,method){
   if(!SUPPLY_OFFICE_PORTAL)return json(res,404,{error:'Office portal unavailable on this service.'},safeHeaders());
+  // Public callback has no user cookie: PayMongo's signed raw body is mandatory.
+  if(method==='POST'&&p==='/api/supply/office/billing/webhook'){
+   const raw=await readRawWebhook(req);
+   return json(res,200,await platformBilling.processWebhook(db,raw,req.headers['paymongo-signature']),safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(p.startsWith('/api/supply/office/platform/'))return platformAdminAuth.handle(req,res,p,method,{db,readJson,json,safeHeaders,parseCookies,checkLoginRate,clearLoginRate,platformAccounts,logAction});
   if(method==='POST'&&p==='/api/supply/office/login'){
     const credentials=await readJson(req);
@@ -1680,6 +1695,11 @@ async function handleOfficeApi(req,res,p,method){
   if(method==='POST'&&p==='/api/supply/office/logout')
     return json(res,200,{ok:true},safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
   if(method==='GET'&&p==='/api/supply/office/me')return json(res,200,{role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME,mustChangePassword:!activeCredential},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/billing/me')
+    return json(res,200,await platformBilling.tenantSummary(db,'SUPPLY_OFFICE','supply-office'),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/supply/office/billing/checkout')
+    return json(res,200,await platformBilling.requestCheckout(db,'SUPPLY_OFFICE','supply-office',
+      process.env.PAYMONGO_OFFICE_RETURN_URL||'https://don-mac-supply-office-production.up.railway.app/supply-office.html?billing=return'),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
@@ -1797,6 +1817,17 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
   const user=await requireUser(req,res);if(!user)return;
+  if(p==='/api/billing/me'||p==='/api/billing/checkout'){
+   if(user.role!=='Admin')return json(res,403,{error:'Subscription billing is available to franchise Owners and Co-Owners only.'},safeHeaders());
+   const membership=await db.query('SELECT workspace_id FROM chat_memberships WHERE user_id=$1 ORDER BY workspace_id LIMIT 1',[user.id]);
+   const ws=membership.rows[0]?.workspace_id;
+   if(!ws)return json(res,404,{error:'Tenant workspace not found.'},safeHeaders());
+   if(method==='GET'&&p==='/api/billing/me')
+    return json(res,200,await platformBilling.tenantSummary(db,'FRANCHISE',ws),safeHeaders({'Cache-Control':'no-store'}));
+   if(method==='POST'&&p==='/api/billing/checkout')
+    return json(res,200,await platformBilling.requestCheckout(db,'FRANCHISE',ws,
+      process.env.PAYMONGO_POS_RETURN_URL||'https://donmacpos.com/?billing=return'),safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(p.startsWith('/api/supply/'))return handleFranchiseSupplyApi(req,res,p,method,user);
   if(method==='GET'&&p==='/api/account/subscription')
     return json(res,200,await getSubscriptionForUi(user),safeHeaders({'Cache-Control':'no-store'}));
@@ -1953,7 +1984,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await platformBilling.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
