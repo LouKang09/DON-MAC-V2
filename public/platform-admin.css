@@ -212,3 +212,44 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 #platformBilling{scroll-margin-top:115px}
 @media(max-width:920px){.platform-office-plan form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.platform-billing-metrics{grid-template-columns:1fr}.platform-office-plan form{grid-template-columns:1fr}}
+
+
+/* Centralized subscription operations dashboard, November 2026. */
+#platformApp .platform-dashboard{margin-bottom:22px}
+#platformApp .platform-dashboard-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+#platformApp .platform-dashboard-kpis>div{min-width:0;border:1px solid #daebdf;background:#f3faf5;border-radius:13px;padding:15px 17px}
+#platformApp .platform-dashboard-kpis small{font-size:11px;color:#64816d;font-weight:750;display:block}
+#platformApp .platform-dashboard-kpis strong{display:block;color:#124b31;font-size:clamp(16px,2vw,23px);margin-top:7px;overflow-wrap:anywhere}
+#platformApp .platform-dashboard-info{font-size:11px;color:#687f6f;line-height:1.5;border-left:3px solid #218b59;padding:9px 12px;background:#f7faf7;margin-bottom:17px}
+#platformApp .platform-chart-card{border:1px solid #dceadd;border-radius:13px;padding:16px;background:#fff}
+#platformApp .platform-chart-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:21px}
+#platformApp .platform-chart-heading h3{font-size:16px;color:#194e32;margin:0}
+#platformApp .platform-chart-heading label{font-size:11px;color:#597765;display:flex;align-items:center;gap:8px}
+#platformApp #platformChartType{border:1px solid #cbded1;border-radius:8px;background:white;color:#195236;padding:8px 10px}
+#platformApp .platform-bar-row{display:grid;grid-template-columns:minmax(90px,130px) minmax(90px,1fr) 45px;gap:10px;align-items:center;margin:11px 0;font-size:12px;color:#43634f}
+#platformApp .platform-bar-row strong{text-align:right;color:#244734}
+#platformApp .platform-bar-track{height:18px;background:#edf2ed;border-radius:99px;overflow:hidden}
+#platformApp .platform-bar-track i{height:100%;min-width:0;display:block;border-radius:99px}
+#platformApp .platform-pie-layout{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+#platformApp .platform-pie{width:195px;height:195px;border-radius:50%;display:grid;place-items:center}
+#platformApp .platform-pie span{display:grid;place-items:center;background:#fff;width:108px;height:108px;border-radius:50%;color:#26543a;font-weight:850;font-size:15px}
+#platformApp .platform-pie-key{display:grid;gap:10px;min-width:200px}
+#platformApp .platform-pie-key>div{display:flex;align-items:center;gap:9px;font-size:12px;color:#4d725a}
+#platformApp .platform-pie-key i{display:block;width:14px;height:14px;border-radius:4px;flex:none}
+#platformApp .platform-pie-key span{flex:1}
+#platformApp .platform-pie-key strong{font-size:12px;color:#153e29}
+#platformApp .office-tenant-row{background:#f3faf6}
+#platformApp .office-tenant-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:#dcefe3;color:#14633b;flex:none;font-size:20px}
+#platformApp .platform-ledger-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#platformApp #adminLedgerTenant{font-weight:800;color:#275d3f;font-size:12px}
+#platformApp #adminLedgerAll{font-size:11px}
+#platformApp .subscription-history-preview{margin:13px 0;padding:14px;border:1px solid #d9eadf;border-radius:10px;background:#fafcfb;max-height:245px;overflow:auto}
+#platformApp .subscription-history-preview h3{font-size:13px;color:#1d5838;margin:0 0 10px}
+#platformApp .subscription-history-preview p{font-size:12px;color:#597462}
+#platformApp .subscription-history-table{width:100%;min-width:430px;border-collapse:collapse}
+#platformApp .subscription-history-table th,#platformApp .subscription-history-table td{padding:9px;border-bottom:1px solid #e2ece4;font-size:11px;text-align:left}
+#platformApp .subscription-history-preview small{display:block;margin-top:9px;color:#617d6a}
+/* Supply Chain's plan is managed in the same directory editor as every franchise. */
+#platformApp .platform-office-plan{display:none!important}
+@media(max-width:1120px){#platformApp .platform-dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:530px){#platformApp .platform-dashboard-kpis{grid-template-columns:1fr}#platformApp .platform-pie{width:175px;height:175px}#platformApp .platform-bar-row{grid-template-columns:85px minmax(70px,1fr) 28px}}
