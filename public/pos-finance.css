@@ -1,0 +1,32 @@
+/* POS transaction and expense management, branch scoped and responsive. */
+#view-transactions .pos-finance-shell,#view-expenses .pos-finance-shell{min-width:0;padding:clamp(14px,2vw,28px)}
+.pos-finance-shell .card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:19px}
+.pos-finance-shell .card-head h3{font-size:21px;color:#174e35;margin:3px 0}
+.pos-finance-shell .card-head p.muted{font-size:12px;max-width:75ch}
+.pos-finance-filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:17px 0}
+.pos-finance-filters label,.pos-finance-form label{display:flex;flex-direction:column;gap:6px;color:#4b7058;font-weight:750;font-size:11px}
+.pos-finance-filters label{flex:1 1 140px}
+.pos-finance-filters input,.pos-finance-filters select,.pos-finance-form input,.pos-finance-form select{min-height:41px;min-width:0;max-width:100%;border:1px solid #c6ddcf;border-radius:10px;background:#fff;color:#244937;padding:9px 11px;font:inherit}
+.pos-finance-filters button{min-height:41px}
+.pos-finance-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:13px 0 20px;align-items:end;padding:18px;border:1px solid #d9e9de;border-radius:14px;background:#f7fbf8}
+.pos-finance-form .pos-finance-note{grid-column:span 2}
+.pos-finance-form .pos-finance-note input{width:100%}
+.pos-finance-form button{min-height:41px}
+.pos-finance-summary{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:18px}
+.pos-finance-summary>div{border:1px solid #d5e7db;background:#eff8f1;border-radius:13px;padding:14px 18px;flex:1 1 180px}
+.pos-finance-summary small{display:block;color:#588065;font-weight:740;font-size:11px}
+.pos-finance-summary strong{display:block;color:#115532;font-size:23px;margin-top:5px}
+.pos-finance-table{min-width:1000px;width:100%;border-collapse:collapse}
+.pos-finance-table.expenses-table{min-width:1540px}
+.pos-finance-table th{background:#f0f5f0;font-size:10px;text-align:left;padding:13px 12px;color:#4c715a;white-space:nowrap}
+.pos-finance-table td{padding:12px;border-bottom:1px solid #e1ece5;font-size:11px;white-space:nowrap}
+.pos-finance-table tbody tr:hover{background:#f7fbf8}
+.pos-finance-table td:first-child{font-weight:730}
+.pos-finance-table .finance-edit{background:#e8f4eb;border:1px solid #b9ddc5;border-radius:9px;color:#17613a;padding:7px 12px;font-weight:800;cursor:pointer}
+.pos-finance-pagination{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:18px;color:#577963;font-size:11px}
+.pos-finance-pagination button{border:1px solid #c2ddcd;border-radius:8px;padding:8px 13px;background:white;color:#215b3b;cursor:pointer}
+.pos-finance-pagination button:disabled{opacity:.45;cursor:default}
+.pos-finance-message{padding:11px 14px;background:#e5f5e8;border:1px solid #b6dec2;color:#21603b;border-radius:10px;font-size:12px}
+.pos-finance-message.bad{background:#ffe7e7;border-color:#efbabb;color:#a9363d}
+@media(max-width:950px){.pos-finance-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.pos-finance-form{grid-template-columns:1fr;padding:12px}.pos-finance-form .pos-finance-note{grid-column:auto}.pos-finance-summary strong{font-size:19px}}
