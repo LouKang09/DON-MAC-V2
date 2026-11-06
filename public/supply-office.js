@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const stamp=d=>d?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Manila'}).format(new Date(d)):'—';
-const title=s=>s==='PENDING_REVIEW'?'Pending for review':s==='DELIVERED'?'Delivered · Complete':String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
+const title=s=>s==='PENDING_REVIEW'?'Pending for review':s==='APPEAL_REVIEW'?'Appeal review':s==='DELIVERED'?'Delivered · Complete':String(s||'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase());
 async function compactPhoto(file){
  if(!file)return null;
  if(file.size>8*1024*1024||file.size<50||!['image/png','image/jpeg','image/webp'].includes(file.type))
@@ -121,12 +121,12 @@ async function refresh(){
  try{
   const d=await api('/api/supply/office/orders');all=d.orders||[];
   $('statTotal').textContent=all.length;
-  $('statPending').textContent=all.filter(x=>x.status==='PENDING_REVIEW').length;
+  $('statPending').textContent=all.filter(x=>['PENDING_REVIEW','APPEAL_REVIEW'].includes(x.status)).length;
   $('statHold').textContent=all.filter(x=>x.status==='ON_HOLD').length;
   $('statActive').textContent=all.filter(x=>['APPROVED','PREPARING','DISPATCHED','DELIVERED'].includes(x.status)).length;
-  $('pendingBadge').textContent=all.filter(x=>x.status==='PENDING_REVIEW').length;
+  $('pendingBadge').textContent=all.filter(x=>['PENDING_REVIEW','APPEAL_REVIEW'].includes(x.status)).length;
   render();
-  if(current&&$('officeDetailOverlay').getAttribute('aria-hidden')==='false')await openOrder(current.id,true);
+  // Keep the in-progress selection and reason intact while the list auto-refreshes.
  }catch(err){notice(err.message,true);}
 }
 const expandedOwnerGroups=new Set();
@@ -348,7 +348,7 @@ $('urgentFeeForm').onsubmit=async e=>{
 const officeActionLabels={
  PENDING_REVIEW:{APPROVED:'Approve payment',ON_HOLD:'Place on hold',DENIED:'Deny request'},
  ON_HOLD:{APPROVED:'Approve payment',DENIED:'Deny request'},
- DENIED:{APPROVED:'Overturn Denial → Approved'},
+ APPEAL_REVIEW:{APPROVED:'Overturn denial → Approved',DENIED:'Deny appeal'},
  APPROVED:{PREPARING:'Start preparing',DISPATCHED:'Mark dispatched',DELIVERED:'Mark delivered (complete)'},
  PREPARING:{DISPATCHED:'Mark dispatched',DELIVERED:'Mark delivered (complete)'},
  DISPATCHED:{DELIVERED:'Mark delivered (complete)'}
@@ -356,7 +356,8 @@ const officeActionLabels={
 const stageHelp={
  PENDING_REVIEW:'Pending for review. Verify the submitted payment, then approve, hold, or deny this request.',
  ON_HOLD:'This request is on hold. Review the reason before approving payment or denying it.',
- DENIED:'This request was denied. You can overturn the denial and approve payment after reviewing the reason.',
+ DENIED:'This request was denied. Only the franchise can appeal (up to two times). Wait for an appeal before acting.',
+ APPEAL_REVIEW:'An appeal was submitted. Review its reason, then overturn the denial or deny the appeal.',
  APPROVED:'Payment approved. Choose Preparing, Dispatched, or Delivered (Complete) based on the actual order progress.',
  PREPARING:'Preparing supplies. Mark as Dispatched, or Delivered (Complete) once the order reaches the customer.',
  DISPATCHED:'Supplies dispatched. Confirm delivery to complete this request.',
@@ -364,11 +365,12 @@ const stageHelp={
  COMPLETED:'This legacy request is complete. No further decisions are available.'
 };
 function updateDecisionNote(){
- const next=$('officeNextStatus').value,overturn=current?.status==='DENIED'&&next==='APPROVED';
- const requires=next==='ON_HOLD'||next==='DENIED'||overturn;
+ const next=$('officeNextStatus').value,overturn=current?.status==='APPEAL_REVIEW'&&next==='APPROVED';
+ const requires=next==='ON_HOLD'||next==='DENIED'||overturn||current?.status==='APPEAL_REVIEW';
  $('officeStatusNote').required=requires;
  $('officeStatusNote').placeholder=overturn?'Required: explain why the denial is being overturned':
   next==='ON_HOLD'?'Required: reason for putting this request on hold':
+  next==='DENIED'&&current?.status==='APPEAL_REVIEW'?'Required: reason for denying this appeal':
   next==='DENIED'?'Required: reason for denying this request':
   'Optional notes for the franchise';
  const label=officeActionLabels[current?.status]?.[next]||'Choose next action';
@@ -381,7 +383,8 @@ function configureOfficeStage(order){
  const terminal=state==='DELIVERED'||state==='COMPLETED'||!available.length;
  $('officeCurrentStage').textContent=title(state);
  $('officeCurrentStage').className='office-stage-pill '+state.toLowerCase();
- $('officeStageHint').textContent=stageHelp[state]||'Review the current request status.';
+ $('officeStageHint').textContent=(stageHelp[state]||'Review the current request status.')+
+  (state==='APPEAL_REVIEW'?' (Appeal '+Number(order.appeal_count||0)+' of 2)':'');
  $('officeStageDone').classList.toggle('hidden',!terminal);
  $('officeStageDone').textContent=state==='DELIVERED'?'Delivered · Complete. No further action is required.':
   'This request has no available next action.';
@@ -435,9 +438,9 @@ $('officeStatusForm').onsubmit=async e=>{
  if(!next||!Array.isArray(current.nextStatuses)||!current.nextStatuses.includes(next)){
   notice('Select an available next decision for this request.',true);return;
  }
- const overturn=current.status==='DENIED'&&next==='APPROVED';
+ const overturn=current.status==='APPEAL_REVIEW'&&next==='APPROVED';
  const note=$('officeStatusNote').value.trim();
- if((next==='ON_HOLD'||next==='DENIED'||overturn)&&!note){
+ if((next==='ON_HOLD'||next==='DENIED'||overturn||current.status==='APPEAL_REVIEW')&&!note){
   notice('Enter a reason before confirming this decision.',true);$('officeStatusNote').focus();return;
  }
  if(overturn&&!window.confirm('Overturn this denial and approve payment? This will reserve the required stock and original royalty charges.'))return;
@@ -447,7 +450,8 @@ $('officeStatusForm').onsubmit=async e=>{
   notice(overturn?'Denial overturned. Payment approved and franchise notified.':
    d.status==='DELIVERED'?'Delivery confirmed. Request is complete and franchise notified.':
    'Request updated to '+title(d.status)+'. Franchise notified.');
-  await refresh();
+  const savedId=current.id;
+  await refresh();await openOrder(savedId,true);
  }catch(err){notice(err.message,true);}
  finally{save.disabled=false;updateDecisionNote();}
 };
