@@ -1708,7 +1708,7 @@ async function handleOfficeApi(req,res,p,method){
   }
   if(method==='POST'&&p==='/api/supply/office/products')
     return json(res,201,await supplyChain.createProduct(db,await readJson(req)),safeHeaders());
-  if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db),safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db,true),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
     return json(res,200,await supplyChain.saveProduct(db,Number(productMatch[1]),await readJson(req)),safeHeaders());
