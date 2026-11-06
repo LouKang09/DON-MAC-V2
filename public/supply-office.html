@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.5.76"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.5.77"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/></head><body>
 <div id="officeLogin"><section id="authScreen" class="auth-screen" aria-label="Supply Chain sign in"><div class="auth-shell">
 <div class="auth-brand-panel"><img class="auth-brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="450" height="540" decoding="async"></div>
 <div class="auth-panel"><form id="officeLoginForm" class="auth-card">
@@ -77,8 +77,20 @@
   <div id="officeDetailSummary"></div>
   <h3>Supply items</h3><div class="table-scroll"><table><thead><tr><th>Item</th><th>UOM</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody id="officeDetailItems"></tbody></table></div>
   <h3>Payment verification</h3><p class="muted" id="officePaymentReference"></p><div id="officePaymentImage"></div>
-  <h3>Process request</h3><form id="officeStatusForm"><label>Update stage<select id="officeNextStatus"><option value="PENDING_REVIEW">Pending review</option><option value="APPROVED">Approved</option><option value="ON_HOLD">On hold</option><option value="DENIED">Denied</option><option value="PREPARING">Preparing</option><option value="DISPATCHED">Dispatched</option><option value="DELIVERED">Delivered</option><option value="COMPLETED">Completed</option></select></label><label>Office notes / reason<textarea id="officeStatusNote" rows="3" maxlength="1000" placeholder="Required when on hold or denied"></textarea></label><button class="btn solid">Save status &amp; notify franchise</button></form>
+  <h3>Process request</h3>
+  <div class="office-stage-current"><span>Current stage</span><strong id="officeCurrentStage" class="office-stage-pill" role="status">Pending for review</strong></div>
+  <p id="officeStageHint" class="office-stage-hint" role="status">Review the payment proof and choose a decision.</p>
+  <form id="officeStatusForm">
+    <label id="officeDecisionLabel">Next decision
+      <select id="officeNextStatus" required><option value="" selected disabled>Choose a decision</option></select>
+    </label>
+    <label>Office notes / reason
+      <textarea id="officeStatusNote" rows="3" maxlength="1000" placeholder="Required when placing on hold, denying, or overturning a denial"></textarea>
+    </label>
+    <button id="officeStatusSave" class="btn solid" type="submit">Confirm decision &amp; notify franchise</button>
+  </form>
+  <p id="officeStageDone" class="office-stage-complete hidden" role="status">Delivered · Complete. No further action is required.</p>
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=1.5.77" defer></script></body></html>
+<script src="/supply-office.js?v=1.5.78" defer></script></body></html>
