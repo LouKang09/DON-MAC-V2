@@ -3,7 +3,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
-<link rel="stylesheet" href="/platform-admin.css?v=1.0.5">
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.6">
 <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85">
 <link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
 </head><body>
@@ -24,6 +24,7 @@
     <div class="nav-label">WORKSPACE</div>
     <nav id="platformNav" aria-label="Account navigation">
       <a class="side-link active" href="/platform-admin.html" title="Account Directory" aria-label="Account Directory"><span class="nav-icon">▦</span><span class="nav-text">Account Directory</span></a>
+      <button id="platformBillingButton" class="side-link" type="button" title="Billing &amp; Payments" aria-label="Billing &amp; Payments"><span class="nav-icon">₱</span><span class="nav-text">Billing &amp; Payments</span></button>
       <button id="platformAccountSettingsButton" class="side-link" type="button" title="Account Settings" aria-label="Account Settings"><span class="nav-icon">⚙</span><span class="nav-text">Account Settings</span></button>
     </nav>
     <div class="sidebar-foot">
@@ -72,7 +73,36 @@
           <div class="pagination"><button id="pagePrevious" type="button">Previous</button><button id="pageNext" type="button">Next</button></div>
         </footer>
       </section>
-      <p class="billing-note">Subscription fields record Main Office administrative information only. They do not process payments or automatically alter POS entitlements.</p>
+
+      <section class="main-card platform-billing" id="platformBilling" aria-label="PayMongo platform subscription billing">
+        <div class="section-header"><div>
+          <span class="eyebrow">PLATFORM BILLING</span><h2>Tenant Subscriptions &amp; Payments</h2>
+          <p>All franchise subscriptions and the separate Supply Chain tenant are payable to your single PayMongo merchant account.</p></div>
+          <span id="adminPayMongoStatus" class="platform-billing-connection">Not configured</span></div>
+        <p id="adminBillingNotice" class="notice" role="status">Loading billing status…</p>
+        <div class="platform-billing-metrics"><div><small>Payments recorded</small><strong id="adminBillingPaid">0</strong></div>
+          <div><small>Pending checkouts</small><strong id="adminBillingPending">0</strong></div>
+          <div><small>Active merchant</small><strong id="adminBillingMode">Unconfigured</strong></div></div>
+        <div class="platform-office-plan">
+          <div><h3>Supply Chain tenant</h3><p>Configure its own software subscription. Supply order payments remain bank transfer + manual verification.</p></div>
+          <form id="adminOfficePlanForm">
+            <label>Plan<select id="adminOfficePlan"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label>
+            <label>Amount (₱)<input type="number" min="0" max="999999999" step="0.01" required id="adminOfficeAmount" placeholder="Enter amount"></label>
+            <label>Payment status<select id="adminOfficeStatus"><option value="UNPAID">Unpaid</option><option value="ON_HOLD">On Hold</option><option value="PAID">Paid (manual)</option></select></label>
+            <label>Next payment<input type="date" id="adminOfficeDue"></label>
+            <button id="adminOfficeSave" type="submit" class="btn btn-main">Save Supply Chain Plan</button>
+          </form><p id="adminOfficeError" class="notice hidden" role="status"></p>
+        </div>
+        <div class="section-header"><div><h3>Verified payment ledger</h3>
+          <p>Receipts are recorded after PayMongo's signed webhook is verified. Rows marked Paid Review require manual attention.</p></div>
+          <span id="adminBillingCount" class="record-count">0 invoices</span></div>
+        <div class="table-scroll"><table class="owners-table platform-invoice-table" aria-label="Platform tenant payment ledger">
+          <thead><tr><th>Invoice</th><th>Tenant</th><th>Plan</th><th>Amount</th><th>Status</th><th>Method</th><th>Created</th><th>Paid</th></tr></thead>
+          <tbody id="adminBillingRows"><tr><td colspan="8">No payments yet.</td></tr></tbody></table></div>
+        <div class="table-footer"><span id="adminBillingPageInfo">—</span><div class="pagination">
+          <button id="adminBillingPrevious" type="button">Previous</button><button id="adminBillingNext" type="button">Next</button></div></div>
+      </section>
+      <p class="billing-note">Admin Control manages plan amounts and due dates. Manual status changes are administrative; only verified PayMongo webhook payments automatically renew billing. POS sales and Supply Chain bank payments remain separate.</p>
     </main>
   </div>
 </div>
@@ -118,5 +148,5 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.4"></script>
+<script defer src="/platform-admin.js?v=1.0.5"></script>
 </body></html>
