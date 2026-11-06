@@ -75,6 +75,7 @@
       loadCss('auditLogsCompactV1552Css', '/audit-logs-compact-v1552.css');
       loadCss('archiveCompareV1553Css', '/archive-compare-v1553.css');
       loadCss('supplyFranchiseV1554Css','/supply-franchise.css');
+      loadCss('posFinanceV20261107','/pos-finance.css');
       loadCss('topbarResponsiveV1554Css','/topbar-responsive-v1554.css');
       loadCss('posCompactCheckoutV1556Css','/pos-compact-checkout-v1556.css');
       loadCss('sidebarResponsiveV1557Css','/sidebar-responsive-v1557.css');
@@ -93,6 +94,7 @@
       // Supply Chain initializes independently of optional dashboard/chat layers.
       await loadScript('/supply-franchise.js?v=1.5.79');
       await loadScript('/tenant-billing-ui.js?v=1');
+      await loadScript('/pos-finance.js');
       await loadScript('/pos-quickpay-v1556.js');
       window.donmacSupply?.refreshNotices?.();
 
