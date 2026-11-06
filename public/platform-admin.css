@@ -80,3 +80,59 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 /* Admin Control account settings navigation uses the same sidebar treatment as links. */
 .sidebar button.side-link{border:0;background:transparent;text-align:left;width:100%;font:inherit;cursor:pointer}
 .sidebar button.side-link:hover,.sidebar button.side-link:focus-visible{background:#144735;color:#fff}
+
+
+/* Payment status mirrors the POS inventory's signal / caution indicators. */
+.owners-table{min-width:1260px}
+.owners-table td{padding-inline:15px}
+.payment-state{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-size:11px;font-weight:800}
+.payment-state svg{flex:none}
+.payment-state.paid{color:#158653}
+.payment-state.hold{color:#ca901c}
+.payment-state.unpaid{color:#cc3b40}
+.payment-state.unset{color:#82938a;font-weight:600}
+.due-date{font-weight:750;white-space:nowrap;color:#315740}
+.due-days{font-size:11px;font-weight:750;white-space:nowrap}
+.due-days.unset{color:#92a59a}
+.due-days.normal{color:#387758}
+.due-days.soon{color:#c08b20}
+.due-days.overdue{color:#c3423c}
+
+/* POS-style three-line collapse and anchored logout, full-width or icon-only. */
+.sidebar-controls{display:flex;align-items:center;min-height:44px;padding:0 6px 8px}
+.sidebar-toggle{display:grid;place-items:center;flex:none;width:39px;height:39px;border:1px solid rgba(205,238,214,.22);border-radius:10px;background:transparent;color:#effaf2;cursor:pointer}
+.sidebar-toggle:hover,.sidebar-toggle:focus-visible{background:#15573a}
+.sidebar nav{display:flex;flex-direction:column;gap:6px}
+.sidebar .side-link{min-height:45px;box-sizing:border-box;white-space:nowrap}
+.sidebar .side-link .nav-icon{width:25px;min-width:25px;text-align:center;line-height:1.3}
+.sidebar .side-link .nav-text{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sidebar-foot{margin-top:auto}
+.sidebar .logout{display:flex;align-items:center;gap:11px;width:100%;min-height:45px;cursor:pointer;white-space:nowrap}
+.sidebar .logout svg{flex:none}
+.sidebar .logout:hover,.sidebar .logout:focus-visible{background:#15573a}
+.app.nav-collapsed{grid-template-columns:76px minmax(0,1fr)}
+.app.nav-collapsed .sidebar{padding:16px 8px}
+.app.nav-collapsed .sidebar-controls{justify-content:center;padding:0 0 8px}
+.app.nav-collapsed .brand{justify-content:center;padding:6px 0 24px}
+.app.nav-collapsed .brand-logo{width:42px;height:42px;flex:none}
+.app.nav-collapsed .brand-logo img{width:39px;height:39px}
+.app.nav-collapsed .brand-copy,
+.app.nav-collapsed .nav-label,
+.app.nav-collapsed .sidebar .nav-text,
+.app.nav-collapsed .access-chip,
+.app.nav-collapsed .logout-label{display:none}
+.app.nav-collapsed .sidebar .side-link{justify-content:center;padding:9px 5px}
+.app.nav-collapsed .sidebar-foot{padding:10px 0}
+.app.nav-collapsed .sidebar .logout{justify-content:center;padding:10px 0}
+@media(max-width:720px){
+ .app.nav-collapsed{display:block}
+ .app.nav-collapsed .sidebar{width:260px;padding:25px 16px}
+ .app.nav-collapsed .sidebar-controls{justify-content:flex-start;padding:0 6px 8px}
+ .app.nav-collapsed .brand{justify-content:flex-start;padding:7px 8px 28px}
+ .app.nav-collapsed .brand-copy,.app.nav-collapsed .nav-label,
+ .app.nav-collapsed .sidebar .nav-text,.app.nav-collapsed .access-chip,
+ .app.nav-collapsed .logout-label{display:initial}
+ .app.nav-collapsed .sidebar .side-link{justify-content:flex-start;padding:14px}
+ .app.nav-collapsed .sidebar-foot{padding:15px 8px}
+ .app.nav-collapsed .sidebar .logout{justify-content:flex-start;padding:11px}
+}
