@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/topbar-green-v1549.css?v=1.5.52" />
   <link rel="stylesheet" href="/audit-logs-compact-v1552.css?v=1.5.52" />
   <link rel="stylesheet" href="/archive-compare-v1553.css?v=1.5.53" />
-  <link rel="stylesheet" href="/supply-franchise.css?v=1.5.60" />
+  <link rel="stylesheet" href="/supply-franchise.css?v=1.5.61" />
   <link rel="stylesheet" href="/topbar-responsive-v1554.css?v=1.5.55" />
   <link rel="stylesheet" href="/pos-compact-checkout-v1556.css?v=1.5.56" />
   <link rel="stylesheet" href="/sidebar-responsive-v1557.css?v=1.5.57" />
@@ -695,7 +695,18 @@
     <div class="table-wrap"><table><thead><tr><th>Request</th><th>Branch</th><th>Priority</th><th>Total</th><th>Progress</th><th>Submitted</th><th></th></tr></thead><tbody id="supplyOrdersBody"></tbody></table></div><nav id="supplyOrdersPagination" class="supply-pagination" aria-label="Supply order pages"></nav>
   </div>
   <section id="supplyOrderDetail" class="card supply-detail hidden"><div class="card-head"><div><p class="eyebrow">CURRENT REQUEST</p><h3 id="supplyDetailHeading">Order details</h3></div><button type="button" class="primary supply-close" id="supplyDetailClose"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg> Close</button></div>
-    <div id="supplyDetailSummary" class="supply-detail-grid"></div><h4>Fulfillment timeline</h4><div id="supplyTimeline" class="supply-timeline"></div>
+    <div id="supplyDetailSummary" class="supply-detail-grid"></div>
+    <section id="supplyAppealPanel" class="supply-appeal hidden" aria-label="Appeal denied supply request">
+      <h4>Appeal denied request</h4>
+      <p id="supplyAppealInfo" class="supply-appeal-info"></p>
+      <form id="supplyAppealForm" class="supply-appeal-form">
+        <label for="supplyAppealReason">Reason for appeal</label>
+        <textarea id="supplyAppealReason" minlength="10" maxlength="1000" rows="3" required placeholder="Explain why Main Office should reconsider the denial (at least 10 characters)"></textarea>
+        <button id="supplyAppealSubmit" type="submit" class="primary">Submit appeal for review</button>
+      </form>
+    </section>
+    <p id="supplyAppealMessage" class="supply-appeal-message hidden" role="status"></p>
+    <h4>Fulfillment timeline</h4><div id="supplyTimeline" class="supply-timeline"></div>
     <h4>Items</h4><div class="table-wrap"><table><thead><tr><th>Item</th><th>UOM</th><th>Quantity</th><th>Price</th></tr></thead><tbody id="supplyDetailItems"></tbody></table></div>
     <h4>Messages with Main Office</h4><div id="supplyMessages" class="supply-messages"></div><form id="supplyMessageForm" class="supply-message-form"><input id="supplyMessageText" maxlength="1500" placeholder="Ask Main Office about this request..." aria-label="Message Main Office"/><label class="supply-chat-file" title="Attach image"><svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM8 13l3-3 6 7M16 8h.01"/></svg><input id="supplyChatPhoto" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Attach photo to chat"/></label><button type="submit" class="primary">Send</button></form><div id="supplyChatPreview" class="supply-chat-preview hidden"></div>
   </section>
@@ -915,6 +926,6 @@
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.5.77"></script>
-  <script src="/app.js?v=1.5.75"></script>
+  <script src="/app.js?v=1.5.76"></script>
 </body>
 </html>
