@@ -130,8 +130,10 @@
   const list=filtered(),pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
   page=Math.max(1,Math.min(pages,page));
   const selected=list.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
-  $('recordCount').textContent=number(list.length)+' accounts';
-  $('pageInfo').textContent=list.length?'Showing '+((page-1)*PAGE_SIZE+1)+'–'+Math.min(page*PAGE_SIZE,list.length)+' of '+list.length+' owners':'No matching owners';
+  const officeVisible=page===1&&(!search||'supply chain main office tenant'.includes(search))&&(status==='all'||status==='active');
+  const tenantCount=list.length+(officeVisible?1:0);
+  $('recordCount').textContent=number(tenantCount)+' tenants';
+  $('pageInfo').textContent=tenantCount?'Page '+page+' of '+pages+' · '+tenantCount+' matching tenants':'No matching tenants';
   $('pagePrevious').disabled=page<=1;$('pageNext').disabled=page>=pages;
   const rows=[];
   for(const owner of selected){
@@ -152,7 +154,7 @@
     '<td>'+badge(owner.active?'Active':'Inactive',owner.active?'active':'inactive')+'</td></tr>');
    if(open)rows.push(branchSection(owner));
   }
-  if(page===1&&(!search||'supply chain main office tenant'.includes(search))&&(status==='all'||status==='active')){
+  if(officeVisible){
    const sub=officeSubscription;
    rows.unshift('<tr class="owner-row office-tenant-row"><td><div class="owner-heading"><span class="office-tenant-icon" aria-hidden="true">▣</span><div class="owner-identity"><strong>Supply Chain / Main Office</strong><small>Independent platform tenant</small><div class="owner-controls"><button class="link-btn" data-office-subscription="true" type="button">Manage subscription</button></div></div></div></td>'+
     '<td><span class="num">—</span></td><td>'+(sub?badge(sub.plan,'active'):'<span class="status unknown">Not configured</span>')+'</td>'+
