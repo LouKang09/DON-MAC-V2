@@ -421,6 +421,9 @@ async function openOrder(id,quiet=false){
   const img=$('officePaymentImage').querySelector('img');
   if(img)img.addEventListener('error',()=>{$('officePaymentImage').textContent='Payment photo could not be decoded.';});
   configureOfficeStage(o);
+  const appeal=(o.history||[]).filter(x=>x.status==='APPEAL_REVIEW').at(-1);
+  $('officeAppealNotice').classList.toggle('hidden',!appeal||o.status!=='APPEAL_REVIEW');
+  $('officeAppealNotice').textContent=appeal?'Appeal '+Number(o.appeal_count||0)+' of 2: '+String(appeal.note||'No reason provided'):'';
   $('officeTimeline').innerHTML=o.history.map(h=>'<p><b>'+esc(title(h.status))+'</b> · '+stamp(h.created_at)+'<br/>'+esc(h.note||'')+'</p>').join('');
   $('officeMessages').innerHTML=o.messages.map(m=>'<div class="bubble '+(m.sender_role==='office'?'office':'')+'"><small>'+esc(m.sender_name)+' · '+stamp(m.created_at)+'</small>'+esc(m.body)+photoHtml(m.image)+'</div>').join('')||'<p class="muted">No messages yet. Start a conversation with the franchise.</p>';
   $('officeMessages').scrollTop=$('officeMessages').scrollHeight;
