@@ -196,7 +196,7 @@
                 <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
                 <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
                 <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
-                <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">ALL</option></select></span>
+                <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">All</option></select></span>
                 <button id="applyTrend" class="primary" type="button">Apply</button>
               </div>
             </div>
@@ -917,8 +917,8 @@
           <div class="card-head"><div><p class="eyebrow">PLAN CHANGE HISTORY</p><h3>Subscription history</h3></div><span class="muted">Recorded account changes</span></div>
           <div class="table-wrap">
             <table class="plan-history-table" aria-label="Subscription history">
-              <thead><tr><th>Date</th><th>Plan</th><th>Start Date</th><th>Renew Date</th><th>Days Remaining</th><th>Status</th></tr></thead>
-              <tbody id="subscriptionHistoryBody"><tr><td colspan="6" class="muted">Loading subscription history…</td></tr></tbody>
+              <thead><tr><th>Date</th><th>Plan</th><th>Start Date</th><th>Renew Date</th><th>Days Remaining</th><th>Status</th><th>Remark</th></tr></thead>
+              <tbody id="subscriptionHistoryBody"><tr><td colspan="7" class="muted">Loading subscription history…</td></tr></tbody>
             </table>
           </div>
           <nav id="subscriptionHistoryPagination" class="plan-history-pagination" aria-label="Subscription history pages"></nav>
