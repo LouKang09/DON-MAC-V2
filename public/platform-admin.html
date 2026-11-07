@@ -127,10 +127,16 @@
  <div class="dialog-heading"><div><span class="eyebrow">MANUAL RECORD</span><h2>Manage Subscription</h2><p id="subscriptionOwner"></p></div>
  <button type="button" class="close-btn" data-close-dialog aria-label="Close">×</button></div>
  <label>Subscription<select id="subPlan" required><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label>
- <label>Amount (PHP)<input id="subAmount" type="number" min="0" step="0.01" max="999999999" placeholder="0.00" required></label>
+ <label>Base subscription (PHP, before extra branches)<input id="subAmount" type="number" min="0" step="0.01" max="999999999" placeholder="0.00" required></label>
  <label>Payment status<select id="subStatus" required>
   <option value="PAID">Paid</option><option value="ON_HOLD">On Hold</option><option value="UNPAID">Unpaid</option></select></label>
  <label>Next payment date<input id="subNextPaymentDate" type="date" autocomplete="off"></label>
+ <p id="subBranchQuote" class="dialog-tip" role="status"></p>
+ <fieldset id="subDowngradeBranches" class="branch-downgrade-choice hidden">
+  <legend>Pro downgrade · choose 3 accessible branches</legend>
+  <p>Other branches will be deactivated; their cashiers must be reassigned.</p>
+  <div id="subKeepBranchChoices" class="branch-downgrade-list"></div>
+ </fieldset>
  <p class="dialog-tip">Payment dates are entered manually. Existing subscriptions show no due date until one is recorded.</p>
  <p class="dialog-tip">Only Admin Control can change payment status. Unpaid or On Hold disables POS sign-in until the account is marked Paid. Saving the record does not initiate a charge.</p>
  <div class="subscription-history-preview"><h3>Verified subscription payment history</h3><div id="subscriptionPaymentHistory">Choose a tenant to see previous payments.</div></div><p id="subscriptionError" class="notice error hidden" role="alert"></p>
