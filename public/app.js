@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.99-franchise-activation-preflight';
+  const VERSION = '1.6.00-branch-subscriptions-office-campaigns';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -107,6 +107,7 @@
       loadCss('dmAccountControl20261107','/account-subscription-v20261107.css');
       loadCss('dmAdvancedLive20261108','/advanced-analytics-v20261108.css');
       loadCss('dmProductGalleryWidgetDrag20261108','/pos-gallery-widget-drag-v20261108.css');
+      loadCss('dmBranchCampaignNotifications','/franchise-promotions-branches-v20261108.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
@@ -138,6 +139,7 @@
       await loadScript('/catalog-batch-v1544.js');
       await loadScript('/internal-chat.js');
       await loadScript('/refresh-controls-v20261107.js');
+      await loadScript('/notifications-campaigns-v20261108.js');
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
 
 
