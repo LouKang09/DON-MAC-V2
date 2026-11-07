@@ -77,6 +77,18 @@
         </footer>
       </section>
 
+      <section class="main-card franchise-request-section" id="franchiseRequestSection" aria-label="Franchise signup requests">
+        <div class="section-header"><div><span class="eyebrow">FRANCHISE REQUESTS</span>
+          <h2>New account applications</h2>
+          <p>Review self-service requests. These applications do not create login credentials or share catalog data. Activation requires a separate isolated workspace.</p>
+        </div><button id="refreshFranchiseRequests" class="btn btn-main" type="button">Refresh Requests</button></div>
+        <p id="franchiseRequestsMessage" class="notice hidden" role="status"></p>
+        <div class="table-scroll"><table class="owners-table franchise-requests-table" aria-label="New franchise account applications">
+          <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Status</th><th>Review</th></tr></thead>
+          <tbody id="franchiseRequestsBody"><tr><td colspan="7">Loading applications…</td></tr></tbody>
+        </table></div>
+      </section>
+
       <section class="main-card platform-billing" id="platformBilling" aria-label="PayMongo platform subscription billing">
         <div class="section-header"><div>
           <span class="eyebrow">PLATFORM BILLING</span><h2>Tenant Subscriptions &amp; Payments</h2>
