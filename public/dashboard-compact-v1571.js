@@ -8,7 +8,7 @@
  const fmt=n=>Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:3});
  const pesos=n=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(n||0));
  const date=d=>{try{return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(d))}catch(_){return String(d||'').slice(0,20)}};
- let activityRequest=0,inventoryRequest=0,inventoryPage=1,activityPage=1,allInventory=[];
+ let activityRequest=0,inventoryRequest=0,inventoryPage=1,activityPage=1,allInventory=[],inventoryLoadedAt=0;
  const pages=$('dashboardActivityPages')||(()=>{
   const nav=document.createElement('nav');nav.id='dashboardActivityPages';
   nav.className='dashboard-activity-pages';nav.setAttribute('aria-label','Recent transaction pages');
@@ -43,13 +43,14 @@
   });
  }
  async function refreshInventory(){
+  if(inventoryLoadedAt&&Date.now()-inventoryLoadedAt<12000){renderInventory();return;}
   const seq=++inventoryRequest;
   $('dashboardInventoryCount').textContent='Loading shared company inventory…';
   try{
    const res=await fetch('/api/inventory',{credentials:'same-origin',cache:'no-store'});
    if(!res.ok)throw Error('Inventory unavailable (HTTP '+res.status+').');
    const data=await res.json();if(seq!==inventoryRequest)return;
-   allInventory=Array.isArray(data.items)?data.items:[];renderInventory();
+   allInventory=Array.isArray(data.items)?data.items:[];inventoryLoadedAt=Date.now();renderInventory();
   }catch(e){
    if(seq!==inventoryRequest)return;
    $('dashboardInventoryCount').textContent=e.message;
