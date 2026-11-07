@@ -1124,12 +1124,16 @@
   $('salesPdf').onclick=()=>window.open('/api/reports/sales.pdf?'+reportQuery(),'_blank');
   $('costingPdf').onclick=()=>window.open('/api/reports/costing.pdf?'+reportQuery(),'_blank');
 
+  let dashboardRequestId=0;
   async function loadDashboard(){
+   const requestId=++dashboardRequestId;
    try{
      const q=new URLSearchParams({view:$('trendView').value});
      if($('trendView').value==='custom'){q.set('from',$('trendFrom').value);q.set('to',$('trendTo').value);}
      if(state.user.role==='Admin'&&$('dashboardBranch').value!=='all')q.set('branchId',$('dashboardBranch').value);
-     state.dashboard=await api('/api/dashboard?'+q);
+     const result=await api('/api/dashboard?'+q);
+     if(requestId!==dashboardRequestId)return;
+     state.dashboard=result;
      renderDashboard();
    }catch(err){toast(err.message);}
   }
@@ -1137,10 +1141,12 @@
    const d=state.dashboard;if(!d)return;
    $('trendPeriodLabel').textContent=(d.grain==='hourly'?'HOURLY · ':'DAILY · ')+d.from+(d.to!==d.from?' TO '+d.to:'');
    const statCards=[
-     {title:'Total Revenue',value:peso(d.rangeActual),caption:d.grain==='hourly'?'Selected day':'Selected range',glyph:'revenue'},
+     {title:'Total Revenue',value:peso(d.rangeActual),gross:peso(d.rangeGross),net:peso(d.rangeActual),caption:d.grain==='hourly'?'Selected day':'Selected range',glyph:'revenue'},
      {title:'Orders',value:num(d.rangeTransactions,0),caption:'Completed · selected range',glyph:'orders'},
-     {title:'Today Sales',value:peso(d.metrics.todayActual),caption:'Gross '+peso(d.metrics.todayGross),glyph:'today'},
-     {title:'Month Revenue',value:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
+     {title:'Today Sales',value:peso(d.metrics.todayActual),gross:peso(d.metrics.todayGross),net:peso(d.metrics.todayActual),caption:'Today · completed sales',glyph:'today'},
+     {title:'Month Revenue',value:peso(d.metrics.monthActual),gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
+     {title:'Total Expenses',value:d.rangeExpenses==null?'—':peso(d.rangeExpenses),caption:d.rangeExpenses==null?'Owner / Co-Owner only':'Selected range · expense ledger',glyph:'expense'},
+     {title:'Discount',value:peso(d.rangeDiscount),caption:'Selected range · completed sales',glyph:'discount'},
      {title:'Low Stock Alerts',value:num(d.metrics.lowStockCount,0),caption:'Ingredients needing attention',glyph:'alert'}
    ];
    const statIcons={
@@ -1148,9 +1154,15 @@
      orders:'<path d="M5 4h14v16l-2.5-1.5L14 20l-2.5-1.5L9 20l-2-1.5L5 20V4z"/><path d="M9 9h6M9 13h6"/>',
      today:'<path d="M3 20h18M6 17v-5M12 17V7M18 17V4"/>',
      month:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M8 17h6"/>',
+     expense:'<path d="M3 6h18v14H3zM6 10h12M6 14h5M14 15l2 2 4-4"/>',
+     discount:'<path d="M3 11V4h7l11 11-7 7L3 11z"/><circle cx="7.5" cy="8" r="1.3"/>',
      alert:'<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.4h.01"/>'
    };
-   $('dashboardSummary').innerHTML=statCards.map(c=>`<article class="summary-card"><div class="dash-summary-label"><span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${statIcons[c.glyph]}</svg></span><span>${esc(c.title)}</span></div><strong>${c.value}</strong><small>${esc(c.caption)}</small></article>`).join('');
+   $('dashboardSummary').innerHTML=statCards.map(c=>'<article class="summary-card'+(c.gross?' dash-financial-card':'')+'">'+
+      '<div class="dash-card-main"><div class="dash-summary-label"><span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+statIcons[c.glyph]+'</svg></span><span>'+esc(c.title)+'</span></div>'+
+      '<strong>'+c.value+'</strong><small>'+esc(c.caption)+'</small></div>'+
+      (c.gross?'<div class="dash-gross-net" aria-label="Gross and net sales"><span>Gross:<b>'+c.gross+'</b></span><span>Net:<b>'+c.net+'</b></span></div>':'')+
+      '</article>').join('');
    $('dashboardLowStock').innerHTML=d.lowStock.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(String(x.uom).toUpperCase())}</td><td class="num stock-low">${num(x.stock)}</td><td class="num">${num(x.lowStockThreshold)}</td></tr>`).join('')||'<tr><td colspan="4" class="stock-ok">No low-stock ingredients.</td></tr>';
    const max=Math.max(1,...d.categorySales.map(x=>x.amount));
    $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
