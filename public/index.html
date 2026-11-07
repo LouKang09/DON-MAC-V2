@@ -55,22 +55,21 @@
           <button type="button" id="authForgotPassword" class="auth-text-action">Forgot password?</button>
         </div>
         <button id="authSubmit" class="primary big auth-submit" type="submit">Sign In</button>
-        <p class="auth-signup" id="authSignupPrompt">Don't have an account? <button type="button" id="authSignupButton" class="auth-text-action">Sign up</button></p>
+        <p class="auth-signup" id="authSignupPrompt">Need a franchise account? <button type="button" id="authSignupButton" class="auth-text-action">Request access</button></p>
         <p id="authHelpMessage" class="auth-help-message hidden" role="status"></p>
       </form>
-      <section id="authRegisterPanel" class="auth-secondary-panel hidden" aria-label="Create franchise Owner account">
+      <section id="authRegisterPanel" class="auth-secondary-panel hidden" aria-label="Request franchise Owner account">
         <button type="button" class="auth-back auth-back-top" data-auth-back aria-label="Back to Sign In"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M5 12h14"/></svg><span>Back to Sign In</span></button>
         <img src="/assets/login-coffee-beans-all-white-strokes-v1587.svg" class="auth-beans-icon" alt="" width="56" height="56">
-        <h2>Create an account</h2><p class="auth-secondary-intro">Set up your Owner account.</p>
+        <h2>Request franchise account</h2><p class="auth-secondary-intro">Submit details for Admin Control review. This does not create a POS login yet.</p>
         <form id="authRegisterForm" class="auth-secondary-form">
           <label>Username<input id="regUsername" required minlength="3" maxlength="80" pattern="[A-Za-z0-9._-]{3,80}" autocomplete="username" placeholder="Choose a unique username"></label>
           <p class="auth-field-status" id="regUsernameStatus" role="status">Username must be unique across all franchisees.</p>
           <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
           <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address"></label>
           <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
-          <label>Password<span class="auth-field-input"><input id="regPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password" placeholder="Minimum 10 characters"><button type="button" class="auth-eye" data-toggle-password="regPassword" aria-label="Show password">Show</button></span></label>
-          <label>Retype Password<span class="auth-field-input"><input id="regConfirmPassword" required type="password" minlength="10" maxlength="256" autocomplete="new-password" placeholder="Confirm password"><button type="button" class="auth-eye" data-toggle-password="regConfirmPassword" aria-label="Show password">Show</button></span></label>
-          <button id="regSubmit" type="submit" class="primary auth-submit">Create Account</button>
+          <p class="auth-field-status">No password is requested until a separate franchise workspace is approved.</p>
+          <button id="regSubmit" type="submit" class="primary auth-submit">Submit Request</button>
         </form>
         <p id="regMessage" class="auth-secondary-message" role="status"></p>
       </section>
