@@ -72,7 +72,15 @@
       const r=await fetch(url,opts);let data={};
       try{data=await r.json();}catch(_){if(!r.ok)data={error:`Server returned ${r.status} without a readable response.`};}
       if(r.status===401&&state.user){state.user=null;resetOrderState({render:false});showAuth(false);throw Object.assign(new Error('Your session expired. Please sign in again.'),{status:401});}
-      if(!r.ok){const e=new Error(data.error||`Request failed (${r.status})`);e.status=r.status;e.details=data.details;throw e;}
+      if(!r.ok){
+        const e=new Error(data.error||`Request failed (${r.status})`);
+        e.status=r.status;e.details=data.details;e.code=data.code;
+        if(data.code==='SUBSCRIPTION_INACTIVE'&&state.user){
+          state.user=null;resetOrderState({render:false});showAuth(false);
+          $('authHint').textContent=e.message;
+        }
+        throw e;
+      }
       return data;
     }catch(err){
       if(err?.name==='AbortError')throw Object.assign(new Error('The POS server did not respond in time. Please retry.'),{status:0});
@@ -140,55 +148,54 @@
   let subscriptionHistoryPage=1;
   const SUBSCRIPTION_ROWS_PER_PAGE=10;
   function renderDevSubscription(){
-    const sub=state.subscription;
-    if(!sub)return;
+    const sub=state.subscription;if(!sub)return;
     const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
-    $('planSwitcher').value=sub.plan;
-    $('planSwitcher').disabled=!admin;
-    $('accountPlanSelect').value=sub.plan;
-    $('accountStatusSelect').value=sub.status;
+    $('accountPlanPill').textContent=(business?'Business':'Pro')+' Plan User';
+    $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
     $('saveAccountPlan').disabled=!admin;
     $('accountPlanName').textContent=business?'Business':'Pro';
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
     $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
-    $('accountRemaining').textContent=String(sub.daysRemaining||0);
+    $('accountRemaining').textContent=sub.daysRemaining==null?'—':String(sub.daysRemaining);
+    const label=({PAID:'Paid',ON_HOLD:'On Hold',UNPAID:'Unpaid',NOT_CONFIGURED:'Not configured'})[sub.status]||'Not configured';
+    $('accountPaymentStatus').textContent='Payment status: '+label;
+    $('accountPaymentStatus').dataset.status=sub.status;
+    $('accountPlanMessage').textContent=sub.pendingPlan?
+      'Requested '+(sub.pendingPlan.plan==='BUSINESS'?'Business':'Pro')+' plan · awaiting Admin Control approval.':
+      'Plan updates are reviewed by Admin Control. Only Admin Control changes payment status.';
     $('transferPlanGate').classList.toggle('hidden',business);
     $('inventoryTransferTab').disabled=!business;
-    $('inventoryTransferTab').title=business?'Transfer Inventory':
-      'For Business accounts only — use Upgrade to change your demo plan';
+    $('inventoryTransferTab').title=business?'Transfer Inventory':'Request an approved Business plan in Account Settings.';
     const card=$('inventoryTransferTab').closest('.inv-operation-card');
     card?.classList.toggle('plan-locked',!business);
     if(!business){
-      closeTransferEditorIfOpen();
-      $('transferForm').classList.add('hidden');
+      closeTransferEditorIfOpen();$('transferForm').classList.add('hidden');
       $('inventoryTransferTab').classList.remove('active');
       $('inventoryTransferTab').setAttribute('aria-expanded','false');
-      $('inventoryTransferTab').setAttribute('aria-pressed','false');
-      card?.classList.remove('active');
+      $('inventoryTransferTab').setAttribute('aria-pressed','false');card?.classList.remove('active');
     }
-    $('advancedPlanSubtitle').textContent=business
-      ?'Business access is active for transfer and inventory history.'
-      :'Gain deeper insight into your inventory with Business.';
-    $('advancedPlanNotice').textContent=business
-      ?'This is a development preview. Planned modules are clearly labeled below.'
-      :'Pro includes Replenish; Transfer and advanced access require Business.';
+    $('advancedPlanSubtitle').textContent=business?
+      'Business access is active for transfer and inventory history.':
+      'Gain deeper insight into your inventory with Business.';
+    $('advancedPlanNotice').textContent=business?
+      'Business features and reporting are available below.':
+      'Pro includes Replenish; Transfer and advanced access require Business.';
     $('advancedUpgradeButton').classList.toggle('hidden',business);
     $('advancedBusinessActions').classList.toggle('hidden',!business);
     window.donmacPlanWidgets?.setSubscription(sub);
-    const history=Array.isArray(sub.history)?sub.history.slice().reverse():[];
-    const totalPages=Math.max(1,Math.ceil(history.length/SUBSCRIPTION_ROWS_PER_PAGE));
+    const history=Array.isArray(sub.history)?sub.history:[],totalPages=Math.max(1,Math.ceil(history.length/SUBSCRIPTION_ROWS_PER_PAGE));
     subscriptionHistoryPage=Math.max(1,Math.min(totalPages,subscriptionHistoryPage));
     const start=(subscriptionHistoryPage-1)*SUBSCRIPTION_ROWS_PER_PAGE;
     $('subscriptionHistoryBody').innerHTML=history.slice(start,start+SUBSCRIPTION_ROWS_PER_PAGE).map(row=>{
-      const remaining=Math.max(0,Math.ceil((new Date(row.renewDate)-Date.now())/86400000));
+      const remaining=row.renewDate?Math.max(0,Math.ceil((Date.parse(String(row.renewDate).slice(0,10)+'T00:00:00Z')-
+       Date.parse(manilaToday()+'T00:00:00Z'))/86400000)):null;
       return '<tr><td>'+esc(planDisplayDate(row.date))+'</td><td><strong>'+
         esc(row.plan==='BUSINESS'?'Business':'Pro')+'</strong></td><td>'+
         esc(planDisplayDate(row.startDate))+'</td><td>'+esc(planDisplayDate(row.renewDate))+
-        '</td><td class="num">'+num(remaining,0)+'</td><td>'+
+        '</td><td class="plan-days-cell">'+(remaining==null?'—':num(remaining,0))+'</td><td>'+
         subscriptionBadge(row.status)+'</td></tr>';
-    }).join('')||'<tr><td colspan="6">No subscription changes recorded.</td></tr>';
-    const pagination=$('subscriptionHistoryPagination');
-    pagination.innerHTML='<span>Showing '+(history.length?start+1:0)+'–'+
+    }).join('')||'<tr><td colspan="6">No subscription changes recorded yet.</td></tr>';
+    $('subscriptionHistoryPagination').innerHTML='<span>Showing '+(history.length?start+1:0)+'–'+
       Math.min(start+SUBSCRIPTION_ROWS_PER_PAGE,history.length)+' of '+history.length+
       ' records · Page '+subscriptionHistoryPage+' of '+totalPages+'</span>'+
       '<button type="button" data-plan-page="previous" '+(subscriptionHistoryPage===1?'disabled':'')+'>Previous</button>'+
@@ -196,35 +203,19 @@
   }
   async function loadDevSubscription(){
     if(!state.user)return;
-    try{
-      state.subscription=await api('/api/account/subscription');
-      renderDevSubscription();
-    }catch(error){
-      $('inventoryTransferTab').disabled=true;
-      $('transferPlanGate').classList.remove('hidden');
-      $('planSwitcher').disabled=true;
-      toast('Subscription: '+error.message);
-    }
+    try{state.subscription=await api('/api/account/subscription');renderDevSubscription();}
+    catch(error){$('inventoryTransferTab').disabled=true;$('transferPlanGate').classList.remove('hidden');toast('Subscription: '+error.message);}
   }
-  async function changeDevSubscription(plan,status){
+  async function requestPlanUpdate(plan){
     if(state.user?.role!=='Admin')return;
-    return withActionLock('dev-subscription',async()=>{
-      const top=$('planSwitcher'),save=$('saveAccountPlan');
-      top.disabled=true;save.disabled=true;
+    return withActionLock('update-plan',async()=>{
+      const button=$('saveAccountPlan');button.disabled=true;
       try{
-        state.subscription=await api('/api/account/subscription/demo',{
-          method:'POST',body:{plan,status}
-        });
-        subscriptionHistoryPage=1;
-        renderDevSubscription();
-        toast('Preview plan: '+(plan==='BUSINESS'?'Business':'Pro')+' (no charge).');
-      }catch(error){
-        renderDevSubscription();
-        toast('Plan change failed: '+error.message);
-      }finally{
-        top.disabled=state.user?.role!=='Admin';
-        save.disabled=state.user?.role!=='Admin';
-      }
+        const result=await api('/api/account/subscription/update-plan',{method:'POST',body:{plan}});
+        state.subscription=result.subscription;subscriptionHistoryPage=1;renderDevSubscription();
+        toast(result.message||'Plan update request sent to Admin Control.');
+      }catch(error){renderDevSubscription();toast('Plan update failed: '+error.message);}
+      finally{button.disabled=state.user?.role!=='Admin';}
     });
   }
   function openPlanUpgrade(){
@@ -238,10 +229,8 @@
     subscriptionHistoryPage+=button.dataset.planPage==='next'?1:-1;
     renderDevSubscription();
   });
-  $('planSwitcher').addEventListener('change',e=>
-    changeDevSubscription(e.target.value,state.subscription?.status||'PAID'));
   $('saveAccountPlan').addEventListener('click',()=>
-    changeDevSubscription($('accountPlanSelect').value,$('accountStatusSelect').value));
+    requestPlanUpdate($('accountPlanSelect').value));
   $('topbarProfileButton').addEventListener('click',()=>{
     if(state.user?.role!=='Admin'){
       toast('Account Settings are available to the Owner and Co-Owners.');
@@ -257,10 +246,10 @@
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
     try{state.user=(await api('/api/auth/me')).user;}
-    catch(err){if(err.status===401){state.user=null;resetOrderState({render:false});showAuth(false);return;}throw err;}
-    resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');
+    catch(err){if(err.status===401||err.status===403){state.user=null;resetOrderState({render:false});showAuth(false);if(err.status===403)$('authHint').textContent=err.message;return;}throw err;}
+    resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView('pos');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await loadBranches();await loadDevSubscription();await loadCatalog();switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
   $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
 
   async function refreshPosDailyCount(){
@@ -815,7 +804,7 @@
     });
     $('inventoryTransferTab').addEventListener('click',()=>{
       if(state.subscription?.plan!=='BUSINESS'){
-        toast('Transfer Inventory requires Business. Use Upgrade to switch the demo plan.');
+        toast('Transfer Inventory requires an approved Business plan. Request an update through Account Settings.');
         return;
       }
       operation(openOperation==='transfer'?null:'transfer');
