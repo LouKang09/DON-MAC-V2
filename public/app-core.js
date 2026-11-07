@@ -75,7 +75,7 @@
       if(!r.ok){
         const e=new Error(data.error||`Request failed (${r.status})`);
         e.status=r.status;e.details=data.details;e.code=data.code;
-        if(data.code==='SUBSCRIPTION_INACTIVE'&&state.user){
+        if(['SUBSCRIPTION_INACTIVE','BRANCH_INACTIVE'].includes(data.code)&&state.user){
           state.user=null;resetOrderState({render:false});showAuth(false);
           $('authHint').textContent=e.message;
         }
