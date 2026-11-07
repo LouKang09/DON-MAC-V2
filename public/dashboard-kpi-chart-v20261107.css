@@ -35,28 +35,24 @@
 #view-dashboard .summary-card:nth-child(7) .dash-summary-icon{background:#fff2dc;color:#ae691b}
 #view-dashboard .dashboard-chart-mode-label{min-width:88px}
 #view-dashboard #dashboardChartMode{font-weight:800;color:#075d38!important;min-width:88px}
-#view-dashboard .dashboard-trend-visual:has(.dm-heat-scroll),
+#view-dashboard .dashboard-trend-visual:has(.dm-bars-scroll),
 #view-dashboard .dashboard-trend-visual:has(.dm-pie-chart){min-height:250px}
-#view-dashboard .dm-heat-scroll{width:100%;overflow-x:auto;overflow-y:hidden;padding:11px 0 13px}
-#view-dashboard .dm-heat-inner{display:flex;flex-direction:column;gap:7px;padding:0 4px}
-#view-dashboard .dm-heat-head,#view-dashboard .dm-heat-row{
-  display:grid;grid-template-columns:116px repeat(var(--dm-columns),minmax(29px,1fr));
-  align-items:center;gap:5px;
+/* Tiles mode: grouped vertical bars with a numeric Y-axis and time on the X-axis. */
+#view-dashboard .dm-bars-scroll{
+  width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;
+  overscroll-behavior-inline:contain;padding:5px 0 3px;scrollbar-gutter:stable;
 }
-#view-dashboard .dm-heat-head{font-size:10px;font-weight:700;color:#526b5b;padding-bottom:5px}
-#view-dashboard .dm-heat-head span:not(:first-child){
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;text-align:center;
+#view-dashboard .dm-bars-svg{
+  display:block;max-width:none!important;height:304px!important;min-height:304px;
+  overflow:visible;touch-action:pan-x pan-y;
 }
-#view-dashboard .dm-heat-row strong{
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#204332;
+#view-dashboard .dm-bar-column{
+  cursor:crosshair;transition:filter .14s ease,opacity .14s ease;
+  stroke:rgba(19,47,31,.15);stroke-width:.8px;
 }
-#view-dashboard .dm-heat-tile{
-  height:27px;min-width:26px;border:1px solid rgba(25,62,41,.13)!important;
-  border-radius:5px;cursor:crosshair;transition:transform .12s,box-shadow .12s;
-}
-#view-dashboard .dm-heat-tile:hover,#view-dashboard .dm-heat-tile:focus-visible{
-  transform:scale(1.13);outline:2px solid #194e30!important;outline-offset:1px;
-  box-shadow:0 1px 5px #174b2d44;position:relative;z-index:1;
+#view-dashboard .dm-bar-column:hover,#view-dashboard .dm-bar-column:focus-visible{
+  filter:brightness(1.12) drop-shadow(0 1px 3px rgba(23,58,37,.35));
+  stroke:#123e29;stroke-width:2px;outline:none;
 }
 #view-dashboard .dm-pie-chart{display:grid;place-items:center;min-height:245px}
 #view-dashboard .dm-pie-chart svg{max-width:340px;width:100%;height:auto;overflow:visible}
@@ -98,4 +94,35 @@
  #view-dashboard .dashboard-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
  #view-dashboard .dashboard-chart-mode-label{display:none!important}
  #view-dashboard .plan-widget-heading h3{color:#1e3c2a!important;background:none;text-shadow:none!important}
+}
+
+/* Keep Checkout Activity's outer dimensions fixed during background sync. */
+#view-dashboard .dashboard-activity-grid > .dashboard-recent-card{
+  min-width:0;overflow:hidden;
+}
+#view-dashboard .dashboard-recent-card #dashboardRecentTransactions{
+  box-sizing:border-box;height:310px!important;min-height:310px!important;
+  max-height:310px!important;overflow:auto!important;
+  scrollbar-gutter:stable;overflow-anchor:none;
+}
+#view-dashboard .dashboard-recent-card .dashboard-activity-pages{
+  box-sizing:border-box;min-height:43px;align-content:center;
+}
+@media(max-width:600px){
+  #view-dashboard .dashboard-recent-card #dashboardRecentTransactions{
+    height:285px!important;min-height:285px!important;max-height:285px!important;
+  }
+}
+/* Supply Chain subheading must remain readable on the coffee-pattern outer canvas. */
+#app #view-supply .supply-head > div:first-child > p.muted{
+  display:inline-block;max-width:74ch;padding:10px 14px;
+  color:#fff!important;background:rgba(7,58,36,.85);
+  border:1px solid rgba(235,246,237,.18);border-radius:10px;
+  font-size:13px!important;line-height:1.5;font-weight:750;
+  text-shadow:0 1px 2px rgba(0,0,0,.45);
+}
+@media print{
+ #app #view-supply .supply-head > div:first-child > p.muted{
+  color:#153f2c!important;background:transparent;text-shadow:none;border:0;padding:0;
+ }
 }
