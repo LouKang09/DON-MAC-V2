@@ -1919,6 +1919,19 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/account/subscription/demo')
     return json(res,410,{error:'This subscription preview endpoint has been retired. Update your plan through Account Settings.'},safeHeaders());
   if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
+  if(method==='GET'&&p==='/api/pos/today-count'){
+    const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
+    if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
+    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',
+      year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const after=addDays(today,1);
+    const args=['Sold',new Date(today+'T00:00:00+08:00').toISOString(),
+      new Date(after+'T00:00:00+08:00').toISOString()];
+    if(branchId!=null)args.push(Number(branchId));
+    const rows=await db.query('SELECT COUNT(*) AS count FROM sales WHERE status=$1 AND sold_at >= $2 AND sold_at < $3'+
+      (branchId==null?'':' AND branch_id=$4'),args);
+    return json(res,200,{count:Number(rows.rows[0]?.count||0)},safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(),safeHeaders());
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
