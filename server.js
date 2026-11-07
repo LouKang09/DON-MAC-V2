@@ -11,6 +11,7 @@ const branchSupport = require('./lib/branch-support');
 const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
 const platformAccounts = require('./lib/platform-accounts');
+const branchPlans = require('./lib/franchise-branch-plans');
 const platformAdminAuth = require('./lib/platform-admin-auth');
 const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
@@ -135,9 +136,11 @@ async function getUser(req, conn = db) {
   if (!token) return null;
   const tokenHash = hashToken(token);
   const result = await conn.query(
-    `SELECT u.id, u.username, u.role, u.active, u.branch_id, u.profile_photo, COALESCE(u.login_username,u.username) AS login_name, s.expires_at, w.owner_user_id
+    `SELECT u.id, u.username, u.role, u.active, u.branch_id, u.profile_photo, assigned_branch.active AS assigned_branch_active,
+         COALESCE(u.login_username,u.username) AS login_name, s.expires_at, w.owner_user_id
        FROM sessions s
        JOIN users u ON u.id = s.user_id
+       LEFT JOIN branches assigned_branch ON assigned_branch.id=u.branch_id
        LEFT JOIN chat_memberships cm ON cm.user_id=u.id
        LEFT JOIN chat_workspaces w ON w.id=cm.workspace_id
       WHERE s.token_hash = $1`, [tokenHash]
@@ -147,13 +150,21 @@ async function getUser(req, conn = db) {
     await conn.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     return null;
   }
-  return { id: Number(row.id), username: row.login_name||row.username, photoData:row.profile_photo||null, role: row.role, branchId: row.branch_id==null?null:Number(row.branch_id), isOwner:Number(row.owner_user_id)===Number(row.id) };
+  return { id: Number(row.id), username: row.login_name||row.username, photoData:row.profile_photo||null, role: row.role,
+    branchId: row.branch_id==null?null:Number(row.branch_id),
+    branchActive:row.role==='Admin'||bool(row.assigned_branch_active),
+    isOwner:Number(row.owner_user_id)===Number(row.id) };
 }
 
 async function requireUser(req, res, role) {
   const user = await getUser(req);
   if (!user) {
     json(res, 401, { error: 'Authentication required.' });
+    return null;
+  }
+  if(user.role==='User'&&!user.branchActive){
+    json(res,403,{error:'Your assigned branch was deactivated after a plan change. Contact your Owner to move your account to an active branch.',
+      code:'BRANCH_INACTIVE'},safeHeaders({'Cache-Control':'no-store'}));
     return null;
   }
   if (role && user.role !== role) {
@@ -410,7 +421,7 @@ async function requestSubscriptionPlan(user,input){
  const ws=await workspaceIdForUser(user.id);
  if(!ws)throw Object.assign(new Error('Franchise workspace is unavailable.'),{status:404});
  const plan=String(input?.plan||'').trim().toUpperCase();
- const result=await platformAccounts.requestPlan(db,ws,user,plan);
+ const result=await platformAccounts.requestPlan(db,ws,user,plan,input?.keepBranchIds);
  await logAction(user,'Subscription plan requested: '+plan,'Plan Request',result.message);
  return{...result,subscription:await getSubscriptionForUi(user)};
 }
@@ -1853,12 +1864,16 @@ async function handleApi(req,res,url){
     // no Owner/Branch field is needed and ambiguous credentials never log in.
     const r=await db.query(
       'SELECT u.id,u.username,COALESCE(u.login_username,u.username) AS login_name,'+
-      'u.password_hash,u.role,u.active,u.branch_id,u.profile_photo '+
-      'FROM users u WHERE LOWER(COALESCE(u.login_username,u.username))=LOWER($1) ORDER BY u.id LIMIT 25',[username]);
+      'u.password_hash,u.role,u.active,u.branch_id,u.profile_photo,b.active AS branch_active '+
+      'FROM users u LEFT JOIN branches b ON b.id=u.branch_id '+
+      'WHERE LOWER(COALESCE(u.login_username,u.username))=LOWER($1) ORDER BY u.id LIMIT 25',[username]);
     const matches=r.rows.filter(u=>bool(u.active)&&verifyPassword(String(body.password||''),u.password_hash));
     if(matches.length!==1)
       return json(res,401,{error:'Invalid username or password. If more than one account uses these credentials, contact your franchise Owner to assign a unique username.'},safeHeaders());
     const u=matches[0];
+    if(u.role==='User'&&!bool(u.branch_active))
+      return json(res,403,{error:'Your assigned branch is inactive. Please contact your Owner or Co-Owner to move your account to an active branch.',
+        code:'BRANCH_INACTIVE'},safeHeaders({'Cache-Control':'no-store'}));
     const access=await platformAccounts.workspaceAccess(db,u.id);
     if(!access.allowed)return json(res,403,{
       error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
@@ -1983,7 +1998,12 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'))},safeHeaders());
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
-  if(method==='GET'&&p==='/api/branches')return json(res,200,{branches:await accessibleBranches(user)},safeHeaders());
+  if(method==='GET'&&p==='/api/branches'){
+    const branches=await accessibleBranches(user);
+    const ws=await workspaceIdForUser(user.id);
+    return json(res,200,{branches,
+      branchPricing:user.role==='Admin'&&ws?await branchPlans.entitlements(db,ws):null},safeHeaders());
+  }
   if((method==='GET'||method==='PUT')&&p==='/api/dashboard/widgets'){
     const plan=String(url.searchParams.get('plan')||'').toUpperCase();
     return json(res,200,await widgetSettings(user,plan,method==='PUT'?await readJson(req,4096):null),
@@ -2020,8 +2040,35 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/users')return json(res,200,{users:await listUsers(user)},safeHeaders());
   if(method==='POST'&&p==='/api/users'){const created=await createOrActivateUser(await readJson(req),user);await logAction(user,`Web user saved: ${created.username}`,'User Updated',`${created.role} / ${created.active?'Active':'Inactive'}`);return json(res,201,{user:created},safeHeaders());}
   const userMatch=p.match(/^\/api\/users\/(\d+)$/);if(method==='PUT'&&userMatch)return json(res,200,await updateUserAccount(user,Number(userMatch[1]),await readJson(req)),safeHeaders());if(method==='DELETE'&&userMatch)return json(res,200,await deleteUserAccount(user,Number(userMatch[1])),safeHeaders());
-  if(method==='POST'&&p==='/api/branches'){const branch=await branchSupport.saveBranch(db,user,await readJson(req),null,logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,201,{branch},safeHeaders());}
-  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT'){await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));const branch=await branchSupport.saveBranch(db,user,await readJson(req),Number(branchMatch[1]),logAction);await internalChat.assignBranch(db,user.id,branch.id);return json(res,200,{branch},safeHeaders());}if(branchMatch&&method==='DELETE'){await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());}
+  if(method==='POST'&&p==='/api/branches'){
+    const body=await readJson(req),ws=await workspaceIdForUser(user.id);
+    if(!ws)throw Object.assign(new Error('Franchise workspace is unavailable.'),{status:403});
+    const branch=await db.transaction(async tx=>{
+      await branchPlans.allowNewBranch(tx,ws);
+      const created=await branchSupport.saveBranch(tx,user,body,null,async()=>{});
+      await internalChat.assignBranch(tx,user.id,created.id);
+      await branchPlans.updateRenewalTotal(tx,ws);
+      return created;
+    });
+    await logAction(user,'Branch saved: '+branch.name,'Branch Added','Next renewal amount recalculated');
+    return json(res,201,{branch,branchPricing:await branchPlans.entitlements(db,ws)},safeHeaders());
+  }
+  const branchMatch=p.match(/^\/api\/branches\/(\d+)$/);if(branchMatch&&method==='PUT'){
+    await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));
+    const ws=await workspaceIdForUser(user.id),body=await readJson(req);
+    const branch=await db.transaction(async tx=>{
+      await branchPlans.lock(tx,ws);
+      const current=await branchPlans.entitlements(tx,ws);
+      const old=current.branches.find(x=>x.id===Number(branchMatch[1]));
+      if(current.plan==='PRO'&&old&&!old.active&&body.active!==false&&current.activeBranches>=3)
+        throw Object.assign(new Error('Upgrade to Business to add more active branches.'),{status:409});
+      const saved=await branchSupport.saveBranch(tx,user,body,Number(branchMatch[1]),async()=>{});
+      await branchPlans.updateRenewalTotal(tx,ws);
+      return saved;
+    });
+    await logAction(user,'Branch updated: '+branch.name,'Branch Updated',null);
+    return json(res,200,{branch,branchPricing:await branchPlans.entitlements(db,ws)},safeHeaders());
+  }if(branchMatch&&method==='DELETE'){await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());}
 
    if(method==='GET'&&p==='/api/admin/pos-categories')
      return json(res,200,{categories:await listPosCategories()},safeHeaders());
