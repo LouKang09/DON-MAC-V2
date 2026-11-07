@@ -33,7 +33,7 @@
  const two=(a,b)=>'<div class="pw-pair-metrics">'+a+b+'</div>';
  const metric=(label,value,sub='')=>'<div class="pw-metric"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong>'+(sub?'<span>'+esc(sub)+'</span>':'')+'</div>';
  const rows=(list,cb)=>list.length?'<div class="pw-lines">'+list.map(cb).join('')+'</div>':empty('No recorded transactions available for this calculation.');
- let subscription=null,analytics=null,loading=false,seq=0,customizing=false,roleAllowed=true;
+ let subscription=null,analytics=null,loading=false,seq=0,customizing=false,roleAllowed=window.donmacAuthenticatedRole==='Admin';
  let orderState={},hiddenState={},prefsLoaded=false,prefsSeq=0,saveQueue=Promise.resolve();
  const features=()=>subscription?.plan==='BUSINESS'?[...PRO,...BUSINESS,...UNIVERSAL]:[...PRO,...UNIVERSAL];
  const ordered=()=>{
@@ -42,6 +42,7 @@
   return [...order,...ids.filter(id=>!order.includes(id))].map(id=>entries.find(x=>x[0]===id));
  };
  async function loadSettings(plan){
+  if(!roleAllowed)return;
   const token=++prefsSeq;prefsLoaded=false;orderState={ids:[]};hiddenState={};
   try{
    const resp=await fetch('/api/dashboard/widgets?plan='+encodeURIComponent(plan),
@@ -63,7 +64,7 @@
   }
  }
  function saveSettings(){
-  if(!prefsLoaded||!subscription)return;
+  if(!roleAllowed||!prefsLoaded||!subscription)return;
   const plan=subscription.plan;
   const values={order:ordered().map(x=>x[0]),hidden:Object.keys(hiddenState).filter(x=>hiddenState[x])};
   const status=$('planWidgetSaveState');
@@ -296,16 +297,35 @@
      if(d.plan!==subscription.plan){setSubscription({...subscription,plan:d.plan});return;}
      redraw();
    }catch(e){
-     if(token!==seq)return;loading=false;root.hidden=false;
+     if(token!==seq||!roleAllowed)return;loading=false;root.hidden=false;
      $('planWidgetFeatureCards').replaceChildren();
      $('planWidgetError').classList.remove('hidden');
      $('planWidgetError').textContent=e.message||'Unable to load analytics.';
    }
  }
+ function hideRestrictedWidgets(){
+   ++seq;++prefsSeq;
+   loading=false;analytics=null;prefsLoaded=false;customizing=false;
+   $('planWidgetError').classList.add('hidden');
+   $('planWidgetError').textContent='';
+   $('planWidgetFeatureCards').replaceChildren();
+   $('planWidgetCustomizer').classList.add('hidden');
+   $('planWidgetCustomize').textContent='Customize Widgets';
+   // Ordinary Items Performance remains visible for Cashiers.
+ }
+ function setRole(role){
+   const allowed=role==='Admin';
+   const changed=allowed!==roleAllowed;
+   roleAllowed=allowed;
+   if(!allowed){hideRestrictedWidgets();return;}
+   if(changed&&subscription)loadSettings(subscription.plan);
+ }
  function setSubscription(next){
    if(!next)return;
    const changed=!subscription||subscription.plan!==next.plan;
-   subscription=next;updateReference();
+   subscription=next;
+   updateReference();
+   if(!roleAllowed){hideRestrictedWidgets();return;}
    if(changed){
      analytics=null;
      $('planWidgetHeading')?.closest('.plan-widget-heading')?.classList.add('pending-account-analytics');
@@ -343,7 +363,7 @@
    const nav=document.querySelector('.nav[data-view="account"]');
    if(nav){nav.click();const sel=$('accountPlanSelect');if(sel){sel.value='BUSINESS';sel.focus();}}
  });
- window.donmacPlanWidgets={setSubscription,render,onViewChange};
+ window.donmacPlanWidgets={setSubscription,setRole,render,onViewChange};
  fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
    .then(r=>r.ok?r.json():null).then(setSubscription).catch(()=>{});
 })();
