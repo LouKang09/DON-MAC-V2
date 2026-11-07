@@ -41,7 +41,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.75-login-recovery';
+const APP_VERSION = '1.5.88-subscription-access';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -154,6 +154,13 @@ async function requireUser(req, res, role) {
   }
   if (role && user.role !== role) {
     json(res, 403, { error: 'Administrator access required.' });
+    return null;
+  }
+  const access=await platformAccounts.workspaceAccess(db,user.id);
+  if(!access.allowed){
+    json(res,403,{error:'Your subscription is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
+      '. POS access is disabled. Please contact Admin Control.',
+      code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
     return null;
   }
   return user;
@@ -379,50 +386,37 @@ async function subscriptionState(conn=db){
   return current;
 }
 async function getSubscriptionForUi(user){
-  const current=await subscriptionState();
-  const common={
-    plan:current.plan,status:current.status,developmentMode:true,
-    entitlements:devSubscription.entitlements(current.plan),
-    notice:'Development preview only: no subscription payment or automatic renewal is processed.'
-  };
-  // Staff need to know only the permitted plan features. Keep plan history,
-  // renewal metadata and change actors on Admin-only Account Settings.
-  if(user?.role!=='Admin')return common;
-  return {...current,...common,daysRemaining:devSubscription.remainingDays(current.renewAt)};
+ const ws=await workspaceIdForUser(user.id);
+ if(!ws)throw Object.assign(new Error('Subscription account not found.'),{status:404});
+ const current=await platformAccounts.accountSubscription(db,ws);
+ const common={plan:current.plan,status:current.status,configured:current.configured,
+  entitlements:devSubscription.entitlements(current.plan)};
+ if(user.role!=='Admin')return common;
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const remaining=renewAt=>{
+  if(!renewAt)return null;
+  const date=String(renewAt).slice(0,10);
+  const days=Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000);
+  return Number.isFinite(days)?Math.max(0,days):null;
+ };
+ return {...current,...common,daysRemaining:remaining(current.renewAt)};
 }
-async function saveDemoSubscription(user,input){
-  requireAdminRole(user);
-  const plan=String(input?.plan||'');
-  const status=String(input?.status||'PAID');
-  // The switch is an owner/admin development control and cannot be used as
-  // an externally verified subscription or payment record.
-  return db.transaction(async tx=>{
-    const lock=tx.engine==='postgres'?' FOR UPDATE':'';
-    const record=await tx.query('SELECT setting_value FROM app_settings WHERE setting_key=$1'+lock,[devSubscription.KEY]);
-    const previous=record.rows.length
-      ?devSubscription.parse(record.rows[0].setting_value)
-      :await subscriptionState(tx);
-    if(!previous)throw Object.assign(new Error('Subscription settings are invalid; refusing to rewrite subscription history.'),{status:409});
-    const next=devSubscription.transition(previous,plan,status,user.id);
-    if(next!==previous){
-      await tx.query(
-        'INSERT INTO app_settings (setting_key,setting_value,updated_at) VALUES ($1,$2,$3) ON CONFLICT (setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=excluded.updated_at',
-        [devSubscription.KEY,JSON.stringify(next),nowIso()]
-      );
-      await logAction(user,`Development plan changed: ${previous.plan} / ${previous.status} → ${plan} / ${status}`,
-        'Subscription Demo', 'No charge or actual subscription was created',tx);
-    }
-    return {...next,daysRemaining:devSubscription.remainingDays(next.renewAt),
-      entitlements:devSubscription.entitlements(next.plan),
-      notice:'Development preview only: no subscription payment or automatic renewal is processed.'};
+async function requestSubscriptionPlan(user,input){
+ requireAdminRole(user);
+ const ws=await workspaceIdForUser(user.id);
+ if(!ws)throw Object.assign(new Error('Franchise workspace is unavailable.'),{status:404});
+ const plan=String(input?.plan||'').trim().toUpperCase();
+ const result=await platformAccounts.requestPlan(db,ws,user,plan);
+ await logAction(user,'Subscription plan requested: '+plan,'Plan Request',result.message);
+ return{...result,subscription:await getSubscriptionForUi(user)};
+}
+async function requireBusinessPlan(user){
+ const ws=await workspaceIdForUser(user.id);
+ const sub=ws?await platformAccounts.accountSubscription(db,ws):null;
+ if(sub?.plan!=='BUSINESS'||!sub?.configured)
+  throw Object.assign(new Error('Inventory transfer requires an approved Business plan. Contact Admin Control to update your subscription.'),{
+   status:403,code:'BUSINESS_PLAN_REQUIRED'
   });
-}
-async function requireBusinessPlan(){
-  const sub=await subscriptionState();
-  if(sub.plan!=='BUSINESS')
-    throw Object.assign(new Error('Inventory transfer requires a Business plan. Open Account Settings to upgrade (development preview).'),{
-      status:403,code:'BUSINESS_PLAN_REQUIRED'
-    });
 }
 
 async function getCatalog(conn=db) {
@@ -644,7 +638,7 @@ async function replenish(user,body){
 async function transfer(user,body){
   // Enforce entitlements in the mutation route as well as the UI; direct
   // API requests from Pro accounts cannot bypass the disabled button.
-  await requireBusinessPlan();
+  await requireBusinessPlan(user);
   validateMovementItems(body.items);
   const branch=String(body.branch||'').trim(),receivedBy=String(body.receivedBy||'').trim(),remarks=String(body.remarks||'').trim();
   if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});
@@ -1841,6 +1835,11 @@ async function handleApi(req,res,url){
     if(matches.length!==1)
       return json(res,401,{error:'Invalid username or password. If more than one account uses these credentials, contact your franchise Owner to assign a unique username.'},safeHeaders());
     const u=matches[0];
+    const access=await platformAccounts.workspaceAccess(db,u.id);
+    if(!access.allowed)return json(res,403,{
+      error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
+        '. POS access is disabled. Please contact Admin Control.',
+      code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
     clearLoginRate(req,username);
     const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
@@ -1880,7 +1879,15 @@ async function handleApi(req,res,url){
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
-  if(method==='GET'&&p==='/api/auth/me'){const user=await getUser(req);return user?json(res,200,{user},safeHeaders()):json(res,401,{error:'Not signed in.'},safeHeaders());}
+  if(method==='GET'&&p==='/api/auth/me'){
+    const user=await getUser(req);
+    if(!user)return json(res,401,{error:'Not signed in.'},safeHeaders());
+    const access=await platformAccounts.workspaceAccess(db,user.id);
+    if(!access.allowed)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
+      '. POS access is disabled. Please contact Admin Control.',
+      code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,200,{user},safeHeaders());
+  }
   const user=await requireUser(req,res);if(!user)return;
   // POS tenant operations; all data is restricted to the signed-in franchise workspace.
   if(p==='/api/finance/expenses' || p==='/api/finance/transactions'){
@@ -1906,8 +1913,10 @@ async function handleApi(req,res,url){
   if(p.startsWith('/api/supply/'))return handleFranchiseSupplyApi(req,res,p,method,user);
   if(method==='GET'&&p==='/api/account/subscription')
     return json(res,200,await getSubscriptionForUi(user),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/account/subscription/update-plan')
+    return json(res,200,await requestSubscriptionPlan(user,await readJson(req)),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/account/subscription/demo')
-    return json(res,200,await saveDemoSubscription(user,await readJson(req)),safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,410,{error:'This subscription preview endpoint has been retired. Update your plan through Account Settings.'},safeHeaders());
   if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
   if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(),safeHeaders());
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req)),safeHeaders());
