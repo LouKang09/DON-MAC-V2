@@ -44,6 +44,8 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
    if(sql.startsWith('SELECT id FROM chat_workspaces'))return{rows:[{id:42}]};
    if(sql.startsWith('SELECT plan FROM platform_account_plans'))
      return{rows:state.plan?[state.plan]:[]};
+   if(sql.startsWith('SELECT plan,started_at FROM platform_account_plan_history'))
+     return{rows:state.history.length?[state.history[state.history.length-1]]:[]};
    if(sql.startsWith('SELECT plan,amount,status,next_payment_date,updated_at FROM platform_account_plans')||
       sql.startsWith('SELECT plan,status,next_payment_date,updated_at FROM platform_account_plans'))
      return{rows:state.plan?[state.plan]:[]};
