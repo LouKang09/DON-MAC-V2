@@ -6,9 +6,9 @@
 #app .main,
 #platformApp .content,
 #officeApp .office-main{
-  background-color:#eee5d8!important;
+  background-color:#d9c3a6!important;
   background-image:
-    linear-gradient(rgba(249,247,242,.28),rgba(249,247,242,.28)),
+    linear-gradient(rgba(28,20,14,.14),rgba(28,20,14,.14)),
     var(--dm-coffee-workspace-art)!important;
   background-position:center top,center top!important;
   background-repeat:repeat,repeat!important;
