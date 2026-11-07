@@ -75,11 +75,23 @@
    $('metricBranches').textContent=number(summary.branches);
    $('metricUsers').textContent=number(summary.users);
    $('metricActive').textContent=number(summary.activeOwners);
-   render();await Promise.all([reloadBilling(),reloadFranchiseRequests()]);
+   render();await Promise.all([reloadBilling(),reloadFranchiseRequests(),reloadFranchiseActivationReadiness()]);
   }catch(err){
    error('tableMessage',err.message);
    if(err.status===401)showLogin('Please sign in again.');
   }finally{button.disabled=false}
+ }
+ async function reloadFranchiseActivationReadiness(){
+   const el=$('franchiseActivationReadiness');if(!el)return;
+   try{
+     const result=await api('franchise-activation-readiness');
+     const blocked=Number(result.missingCount||0);
+     el.classList.toggle('is-ready',!!result.activationEnabled);
+     el.innerHTML='<strong>Direct activation: '+(result.activationEnabled?'Enabled':'Locked — isolation in progress')+'</strong>'+
+       '<p>'+esc(result.message||'')+'</p>'+
+       (blocked?'<p>'+blocked+' of '+Number(result.checkedTables||0)+' live data tables still require workspace scoping.</p>':'')+
+       '<small>Admin Control can prepare independent catalogs for verified applications, but preparation does not create a login.</small>';
+   }catch(e){el.textContent='Activation readiness could not be verified. Direct activation remains locked.';}
  }
  function renderFranchiseRequests(){
    const rows=franchiseSignupRequests;
