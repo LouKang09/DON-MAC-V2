@@ -2099,7 +2099,18 @@ async function handleApi(req,res,url){
     });
     await logAction(user,'Branch updated: '+branch.name,'Branch Updated',null);
     return json(res,200,{branch,branchPricing:await branchPlans.entitlements(db,ws)},safeHeaders());
-  }if(branchMatch&&method==='DELETE'){await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));return json(res,200,await branchSupport.deleteBranch(db,user,Number(branchMatch[1]),logAction),safeHeaders());}
+  }if(branchMatch&&method==='DELETE'){
+    await ensureBranchInOwnerWorkspace(user,Number(branchMatch[1]));
+    const ws=await workspaceIdForUser(user.id);
+    const deleted=await db.transaction(async tx=>{
+      await branchPlans.lock(tx,ws);
+      const result=await branchSupport.deleteBranch(tx,user,Number(branchMatch[1]),async()=>{});
+      await branchPlans.updateRenewalTotal(tx,ws);
+      return result;
+    });
+    await logAction(user,'Branch deleted: '+branchMatch[1],'Branch Deleted',null);
+    return json(res,200,{...deleted,branchPricing:await branchPlans.entitlements(db,ws)},safeHeaders());
+  }
 
    if(method==='GET'&&p==='/api/admin/pos-categories')
      return json(res,200,{categories:await listPosCategories()},safeHeaders());
