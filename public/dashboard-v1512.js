@@ -31,40 +31,76 @@
     tip.style.top=Math.max(26,Math.min(rect.height-18,event.clientY-rect.top-18))+'px';
     tip.classList.remove('hidden');
   }
+  // Tiles renders grouped vertical columns (categories beside one another per period).
   function renderTileChart(holder,tip,labels,active){
-    const columns=Math.max(1,labels.length);
-    const max=Math.max(1,...active.flatMap(s=>s.values.map(v=>Number(v)||0)));
-    const header='<div class="dm-heat-head"><span>Category</span>'+
-      labels.map((label,i)=>'<span title="'+esc(label)+'">'+
-        (columns>18&&i%Math.ceil(columns/12)!==0?'':esc(label))+'</span>').join('')+'</div>';
-    const rows=active.map(s=>{
-      const color=palette[s.name]||'#6d8f7c';
-      return '<div class="dm-heat-row"><strong title="'+esc(s.name)+'">'+esc(s.name)+'</strong>'+
-        s.values.map((v,i)=>{
-          const amount=Math.max(0,Number(v)||0),strength=amount/max;
-          return '<button type="button" class="dm-heat-tile" data-heat-series="'+esc(s.name)+'" data-heat-index="'+i+'" '+
-            'aria-label="'+esc(s.name+' '+labels[i]+' '+peso(amount))+'" '+
-            'style="background:color-mix(in srgb,'+color+' '+Math.round(14+strength*86)+'%,white)"></button>';
-        }).join('')+'</div>';
+    if(!active.length){
+      holder.innerHTML='<div class="dashboard-recent-empty">Select a category to compare sales.</div>';
+      return;
+    }
+    const count=labels.length,seriesCount=active.length;
+    const groupWidth=Math.max(56,Math.min(112,seriesCount*17+24));
+    const W=Math.max(660,80+count*groupWidth),H=304,L=62,R=18,T=20,B=48;
+    const plotW=W-L-R,plotH=H-T-B;
+    const max=Math.max(1,...active.flatMap(s=>s.values.map(v=>Math.max(0,Number(v)||0))));
+    const magnitude=Math.pow(10,Math.floor(Math.log10(max))),normalized=max/magnitude;
+    const multiplier=normalized<=1?1:normalized<=2?2:normalized<=2.5?2.5:normalized<=5?5:10;
+    const ceiling=Math.max(1,multiplier*magnitude);
+    const step=plotW/count,spacing=3;
+    const barWidth=Math.max(4,Math.min(22,(step-15-(seriesCount-1)*spacing)/seriesCount));
+    const cluster=seriesCount*barWidth+(seriesCount-1)*spacing;
+    const fmt=value=>value>=1000000?(value/1000000).toFixed(1)+'m':
+      value>=1000?(value/1000).toFixed(value%1000===0?0:1)+'k':
+      Number(value.toFixed(2)).toLocaleString('en-PH');
+    const grid=Array.from({length:5},(_,i)=>{
+      const y=T+i*plotH/4,amount=ceiling*(4-i)/4;
+      return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+
+        '" stroke="#d9dfd9" stroke-width="1"/>'+
+        '<text x="'+(L-11)+'" y="'+(y+4)+'" text-anchor="end" fill="#526658" font-size="12">'+
+        fmt(amount)+'</text>';
     }).join('');
-    holder.innerHTML='<div class="dm-heat-scroll"><div class="dm-heat-inner" style="--dm-columns:'+columns+
-      ';min-width:'+Math.max(520,125+columns*38)+'px">'+header+rows+'</div></div>';
-    holder.setAttribute('aria-label','Sales heatmap by category and time');
-    function announce(event,tile){
-      const series=active.find(s=>s.name===tile.dataset.heatSeries),i=Number(tile.dataset.heatIndex);
+    const every=Math.max(1,Math.ceil(count/12));
+    const ticks=labels.map((label,i)=>{
+      if(i!==0&&i!==count-1&&i%every!==0)return '';
+      const x=L+(i+.5)*step;
+      return '<text x="'+x+'" y="'+(H-17)+'" text-anchor="middle" font-size="12" fill="#53695a">'+
+        esc(label)+'</text>';
+    }).join('');
+    const rects=labels.map((label,i)=>{
+      const x0=L+i*step+(step-cluster)/2;
+      return active.map((series,j)=>{
+        const amount=Math.max(0,Number(series.values[i])||0);
+        const height=amount/ceiling*plotH;
+        if(height<=0)return '';
+        const x=x0+j*(barWidth+spacing),y=T+plotH-height;
+        return '<rect class="dm-bar-column" data-bar-series="'+esc(series.name)+
+          '" data-bar-index="'+i+'" tabindex="0" role="img" aria-label="'+
+          esc(series.name+' · '+label+' · '+peso(amount))+'" '+
+          'x="'+x.toFixed(2)+'" y="'+y.toFixed(2)+'" width="'+barWidth.toFixed(2)+
+          '" height="'+height.toFixed(2)+'" rx="1.5" fill="'+
+          (palette[series.name]||'#6d8f7c')+'"/>';
+      }).join('');
+    }).join('');
+    holder.innerHTML='<div class="dm-bars-scroll" role="group" aria-label="Grouped sales columns. Scroll for more dates.">'+
+      '<svg class="dm-bars-svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+
+      '" xmlns="http://www.w3.org/2000/svg" aria-label="Grouped column chart of category sales">'+
+      '<g>'+grid+ticks+'</g><g>'+rects+'</g></svg></div>';
+    holder.setAttribute('aria-label','Grouped sales columns: '+active.map(s=>s.name+
+      ' '+peso(s.values.reduce((n,v)=>n+Number(v||0),0))).join('; '));
+    function announce(event,el){
+      const series=active.find(s=>s.name===el.dataset.barSeries),i=Number(el.dataset.barIndex);
       if(!series||!Number.isInteger(i)||i<0||i>=labels.length)return;
-      showChartTip(event,'<span>'+esc(series.name)+' · '+esc(labels[i])+'</span><div><strong>'+
-        peso(series.values[i])+'</strong></div>');
+      showChartTip(event,'<span>'+esc(labels[i])+' · '+esc(series.name)+'</span>'+
+        '<div><strong>'+peso(series.values[i])+'</strong></div>');
     }
     holder.onpointermove=event=>{
-      const tile=event.target.closest('.dm-heat-tile');
-      if(tile)announce(event,tile);else tip?.classList.add('hidden');
+      const bar=event.target.closest('.dm-bar-column');
+      if(bar)announce(event,bar);else tip?.classList.add('hidden');
     };
     holder.onpointerleave=()=>tip?.classList.add('hidden');
     holder.onfocusin=event=>{
-      const tile=event.target.closest('.dm-heat-tile');if(!tile)return;
-      const rect=tile.getBoundingClientRect();
-      announce({clientX:rect.left+rect.width/2,clientY:rect.top},tile);
+      const bar=event.target.closest('.dm-bar-column');if(!bar)return;
+      const rect=bar.getBoundingClientRect();
+      announce({clientX:rect.left+rect.width/2,clientY:rect.top},bar);
     };
     holder.onfocusout=()=>tip?.classList.add('hidden');
   }
