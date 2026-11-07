@@ -88,6 +88,12 @@
       throw err;
     }finally{clearTimeout(timer);}
   }
+  // Existing signed-in terminals detect Admin Control suspension on focus and periodic sync.
+  window.donmacCheckAccountAccess=async()=>{
+    if(!state.user)return false;
+    try{await api('/api/auth/me');return !!state.user;}
+    catch(_){return false;}
+  };
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){
     window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);
