@@ -1,147 +1,102 @@
 'use strict';
+/* Regression tests for Admin Control subscriptions and POS access restrictions. */
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const vm=require('node:vm');
-const plans=require('./lib/development-subscriptions');
-const read=p=>fs.readFileSync(p,'utf8');
-const server=read('server.js'),html=read('public/index.html'),
-  core=read('public/app-core.js'),css=read('public/dev-plans-v1543.css'),
-  appJs=read('public/app.js');
-
-function count(id){return [...html.matchAll(new RegExp('id="'+id+'"','g'))].length;}
-for(const id of ['planSwitcher','view-advanced','view-account','transferPlanGate',
-  'transferUpgradeButton','advancedUpgradeButton','subscriptionHistoryBody',
-  'accountPlanSelect','accountStatusSelect','saveAccountPlan','accountStartedAt',
-  'accountRenewAt','accountRemaining','topbarProfileButton','subscriptionHistoryPagination']){
-  assert.equal(count(id),1,'Missing/duplicate subscription element: '+id);
+const platform=require('./lib/platform-accounts');
+const read=path=>fs.readFileSync(path,'utf8');
+const html=read('public/index.html'),core=read('public/app-core.js'),
+  server=read('server.js'),css=read('public/account-subscription-v20261107.css');
+const count=id=>(html.match(new RegExp('id="'+id+'"','g'))||[]).length;
+for(const id of ['view-account','accountPlanPill','accountPlanSelect',
+  'accountPlanName','accountStartedAt','accountRenewAt','accountRemaining',
+  'accountPaymentStatus','accountPlanMessage','saveAccountPlan',
+  'subscriptionHistoryBody','subscriptionHistoryPagination']){
+  assert.equal(count(id),1,'Missing/duplicate current subscription control: '+id);
 }
-assert(/<option value="User">Cashier<\/option>/.test(html));
-assert(html.includes('data-view="advanced"')&&html.includes('data-view="account"'));
-assert(html.includes('>Upgrade to Business</button>'));
-assert(html.includes('>Apply Demo Plan</button>'));
-assert(html.includes('Business plan users only'));
-assert(html.includes('PAID')&&html.includes('ON_HOLD')&&html.includes('UNPAID'));
-assert(html.includes('No payment is collected'));
-assert(html.includes('Date</th><th>Plan</th><th>Start Date</th><th>Renew Date</th><th>Days Remaining</th><th>Status'));
-assert(html.includes('Advanced Report / Inventory Management'));
-assert(html.includes('Purchase orders')&&html.includes('Transfer orders')&&
-  html.includes('Stock adjustments')&&html.includes('Inventory counts')&&
-  html.includes('Production')&&html.includes('Inventory history')&&
-  html.includes('Inventory valuation report')&&html.includes('Label printing'));
-assert(html.includes('Planned'), 'Unbuilt advanced features must be marked planned');
-assert(html.includes('id="dbEngine" hidden'), 'Original database badge must be hidden');
-assert(css.includes('#liveSyncStatus'), 'Auto Sync text badge must be visually removed');
-assert(css.includes('110px') && css.includes('106px'), 'Header logo should be about old sidebar size');
-assert(appJs.includes('devPlansV1543Css'), 'CSS must be loaded');
-assert(core.includes("await loadDevSubscription();await loadCatalog()"));
-assert(core.includes("changeDevSubscription(e.target.value"));
-assert(core.includes("if(state.subscription?.plan!=='BUSINESS')"));
-assert(core.includes("if(!business){"));
-assert(core.includes('subscriptionBadge(row.status)'));
-assert(core.includes('SUBSCRIPTION_ROWS_PER_PAGE=10'));
-assert(core.includes("history.slice(start,start+SUBSCRIPTION_ROWS_PER_PAGE)"));
-assert(core.includes("subscriptionHistoryPage+=button.dataset.planPage"));
-assert(server.includes("Never manufacture a new history row"));
-
-assert(server.includes("const APP_VERSION = '1.5.61-franchisee-monthly-royalties';"));
-assert(server.includes("if(method==='GET'&&p==='/api/account/subscription')"));
+assert(!html.includes('id="planSwitcher"'));
+assert(!html.includes('id="accountStatusSelect"'));
+assert(!html.includes('DEVELOPMENT MODE'));
+assert(!html.includes('development-only subscription preview'));
+assert(html.includes('>Update Plan</button>'));
+assert(html.includes('Account Type: <strong id="accountPlanPill">'));
+assert(css.includes('.plan-history-table td.plan-days-cell'));
+assert(css.includes('#accountPlanPill'));
+assert(core.includes("api('/api/account/subscription/update-plan'"));
+assert(core.includes("Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()])"));
+assert(core.includes("api('/api/pos/today-count?branchId="));
+assert(server.includes("code:'SUBSCRIPTION_INACTIVE'"));
+assert(server.includes("platformAccounts.workspaceAccess(db,u.id)"));
+assert(server.includes("platformAccounts.workspaceAccess(db,user.id)"));
+assert(server.includes("await requireBusinessPlan(user)"));
+assert(server.includes("platformAccounts.accountSubscription(db,ws)"));
+assert(server.includes("if(method==='POST'&&p==='/api/account/subscription/update-plan')"));
 assert(server.includes("if(method==='POST'&&p==='/api/account/subscription/demo')"));
-assert(server.includes("await requireBusinessPlan();"));
-assert(server.includes("await db.query(\n    'INSERT INTO app_settings"));
-assert(server.includes("SELECT username AS cashier FROM users WHERE role=$1"),
-  'Cashier dropdown should query account roles rather than admin transaction snapshots');
+assert(read('public/platform-admin.js').includes('requested-plan-marker'));
 
-const start='2026-10-31T12:00:00.000Z';
-const original=plans.initial(start);
-assert.equal(original.plan,'PRO');
-assert.equal(original.status,'PAID');
-assert.equal(original.history.length,1);
-assert.equal(original.renewAt,plans.nextRenewAt(start));
-assert.equal(plans.nextRenewAt('2026-01-31T00:00:00.000Z'),'2026-02-28T00:00:00.000Z');
-assert.equal(plans.entitlements('PRO').transfer,false);
-assert.equal(plans.entitlements('PRO').replenish,true);
-assert.equal(plans.entitlements('BUSINESS').transfer,true);
-assert.equal(plans.parse('not JSON'),null);
-assert.equal(plans.parse(JSON.stringify(original)).plan,'PRO');
-const repeatedBaseline={...original.history[0],
-  date:'2026-11-01T12:00:00.000Z',startDate:'2026-11-01T12:00:00.000Z',
-  renewDate:plans.nextRenewAt('2026-11-01T12:00:00.000Z'),actorId:null};
-assert.equal(plans.normalizeHistory([original.history[0],repeatedBaseline]).length,1,
-  'Recurring synthetic snapshots are not separate subscriptions');
-assert.equal(plans.transition(original,'PRO','PAID',1,'2026-11-02T00:00:00Z'),original,
-  'Reading or selecting the existing plan must not generate a new history row');
-
-
-let store=JSON.stringify(original),audit=[],transactions=0;
-const db={
-  engine:'postgres',
-  async query(sql,args=[]){
-    if(sql.includes('SELECT setting_value FROM app_settings'))return {rows:[{setting_value:store}]};
-    if(sql.includes('INSERT INTO app_settings')&&sql.includes('DO UPDATE SET')){
-      store=args[1];return {rows:[]};
-    }
-    throw Error('unexpected test SQL: '+sql);
-  },
-  async transaction(work){
-    transactions++;
-    return work(this);
-  }
-};
-const scope={
-  db,devSubscription:plans,Date,Number,String,Math,JSON,
-  nowIso:()=>new Date().toISOString(),
-  requireAdminRole:user=>{
-    if(user?.role!=='Admin')throw Object.assign(new Error('Administrator access required.'),{status:403});
-  },
-  logAction:async(user,activity,status,remark)=>audit.push({user,activity,status,remark})
-};
-const from=server.indexOf('async function subscriptionState('),
-  to=server.indexOf('async function getCatalog(',from),
-  fromTransfer=server.indexOf('async function transfer(user,body){'),
-  toTransfer=server.indexOf('async function listInventoryMovements',fromTransfer);
-assert(from>=0&&to>from&&fromTransfer>=0&&toTransfer>fromTransfer);
-vm.runInNewContext(server.slice(from,to),scope);
-vm.runInNewContext(server.slice(fromTransfer,toTransfer),scope);
-const admin={id:1,role:'Admin',username:'Owner'};
-const cashier={id:2,role:'User',username:'Cashier'};
-scope.validateMovementItems=()=>{throw Error('VALIDATION_CALLED');};
 (async()=>{
-  let state=await scope.getSubscriptionForUi(admin);
-  const cashierView=await scope.getSubscriptionForUi(cashier);
-  assert.equal(cashierView.plan,'PRO');
-  assert.equal(cashierView.entitlements.transfer,false);
-  assert.equal(cashierView.history,undefined,'Staff must not receive subscription history');
-  assert.equal(state.plan,'PRO');
-  assert.equal(state.entitlements.transfer,false);
-  assert.equal(state.history.length,1);
-  await assert.rejects(()=>scope.requireBusinessPlan(),e=>e.status===403&&e.code==='BUSINESS_PLAN_REQUIRED');
-  await assert.rejects(()=>scope.transfer(cashier,{items:[{ingredientId:1,qty:2}]}),e=>e.status===403,
-    'Even direct HTTP requests must not transfer stock on Pro');
-  await assert.rejects(()=>scope.saveDemoSubscription(cashier,{plan:'BUSINESS',status:'PAID'}),
-    e=>e.status===403,'Only Admin can switch plans');
-
-  state=await scope.saveDemoSubscription(admin,{plan:'BUSINESS',status:'PAID'});
-  assert.equal(state.plan,'BUSINESS');
-  assert.equal(state.entitlements.transfer,true);
-  assert.equal(state.history.length,2);
-  await scope.requireBusinessPlan();
-  await assert.rejects(()=>scope.transfer(admin,{items:[{ingredientId:1,qty:2}]}),
-    /VALIDATION_CALLED/,'Business gate should allow the existing transfer validation to run');
-  state=await scope.saveDemoSubscription(admin,{plan:'BUSINESS',status:'PAID'});
-  assert.equal(state.history.length,2,'Duplicate switch must not invent a billing period');
-  state=await scope.saveDemoSubscription(admin,{plan:'BUSINESS',status:'ON_HOLD'});
-  assert.equal(state.history.length,3);
-  assert.equal(state.status,'ON_HOLD');
-  assert.equal(state.startedAt,JSON.parse(store).startedAt);
-  state=await scope.saveDemoSubscription(admin,{plan:'PRO',status:'UNPAID'});
-  assert.equal(state.plan,'PRO');
-  assert.equal(state.status,'UNPAID');
-  assert.equal(state.history.length,4);
-  assert.equal(state.entitlements.transfer,false);
-  await assert.rejects(()=>scope.requireBusinessPlan(),e=>e.status===403);
-  assert(audit.length===3);
-  assert(transactions>=4);
-  await assert.rejects(()=>scope.saveDemoSubscription(admin,{plan:'FREE',status:'PAID'}),e=>e.status===400);
-  await assert.rejects(()=>scope.saveDemoSubscription(admin,{plan:'PRO',status:'UNKNOWN'}),e=>e.status===400);
-  console.log('v1.5.43 Pro/Business demo plans, access, history and UI checks passed.');
+ const state={plan:null,pending:null,history:[]};
+ const migrations=[];
+ const db={
+  engine:'postgres',
+  async exec(sql){migrations.push(sql);},
+  async transaction(action){return action(this);},
+  async query(sql,args=[]){
+   if(sql.startsWith('SELECT id FROM chat_workspaces'))return{rows:[{id:42}]};
+   if(sql.startsWith('SELECT plan FROM platform_account_plans'))
+     return{rows:state.plan?[state.plan]:[]};
+   if(sql.startsWith('SELECT plan,amount,status,next_payment_date,updated_at FROM platform_account_plans')||
+      sql.startsWith('SELECT plan,status,next_payment_date,updated_at FROM platform_account_plans'))
+     return{rows:state.plan?[state.plan]:[]};
+   if(sql.startsWith('SELECT requested_plan,requested_at FROM platform_account_plan_requests'))
+     return{rows:state.pending?[state.pending]:[]};
+   if(sql.startsWith('SELECT plan,status,started_at,renew_at,changed_at,actor FROM platform_account_plan_history'))
+     return{rows:[...state.history].reverse()};
+   if(sql.startsWith('SELECT p.status,p.plan FROM chat_memberships'))
+     return{rows:state.plan?[state.plan]:[]};
+   if(sql.startsWith('INSERT INTO platform_account_plan_requests')){
+     state.pending={requested_plan:args[1],requested_at:args[2]};return{rows:[]};
+   }
+   if(sql.startsWith('DELETE FROM platform_account_plan_requests')){
+     state.pending=null;return{rows:[]};
+   }
+   if(sql.startsWith('INSERT INTO platform_account_plans')){
+     state.plan={plan:args[1],amount:args[2],status:args[3],next_payment_date:args[4],
+       updated_at:args[5]};return{rows:[]};
+   }
+   if(sql.startsWith('INSERT INTO platform_account_plan_history')){
+     state.history.push({plan:args[2],status:args[3],started_at:args[4],
+       renew_at:args[5],changed_at:args[6],actor:args[7]});return{rows:[]};
+   }
+   throw Error('Unexpected subscription SQL: '+sql);
+  }
+ };
+ await platform.migrate(db);
+ assert(migrations.some(sql=>sql.includes('platform_account_plan_history')));
+ assert(migrations.some(sql=>sql.includes('platform_account_plan_requests')));
+ const owner={id:7,role:'Admin'},staff={id:8,role:'User'};
+ assert.equal((await platform.workspaceAccess(db,owner.id)).allowed,true,
+  'Existing unconfigured accounts must not be automatically locked');
+ assert.equal((await platform.accountSubscription(db,42)).status,'NOT_CONFIGURED');
+ await assert.rejects(platform.requestPlan(db,42,staff,'BUSINESS'));
+ const request=await platform.requestPlan(db,42,owner,'BUSINESS');
+ assert.equal(request.pendingPlan.plan,'BUSINESS');
+ assert.equal((await platform.accountSubscription(db,42)).pendingPlan.plan,'BUSINESS');
+ await platform.savePlan(db,42,{plan:'BUSINESS',status:'ON_HOLD',amount:'1199',
+   nextPaymentDate:'2026-12-07'},'Admin Control');
+ assert.equal((await platform.workspaceAccess(db,owner.id)).allowed,false);
+ assert.equal((await platform.accountSubscription(db,42)).pendingPlan,null);
+ assert.equal(state.history.length,1);
+ await platform.savePlan(db,42,{plan:'BUSINESS',status:'PAID',amount:'1199',
+   nextPaymentDate:'2026-12-07'},'Admin Control');
+ assert.equal((await platform.workspaceAccess(db,owner.id)).allowed,true);
+ assert.equal(state.history.length,2);
+ await platform.savePlan(db,42,{plan:'BUSINESS',status:'PAID',amount:'1199',
+   nextPaymentDate:'2026-12-07'},'Admin Control');
+ assert.equal(state.history.length,2,'No duplicate history for an unchanged plan/status/date');
+ const sub=await platform.accountSubscription(db,42);
+ assert.equal(sub.plan,'BUSINESS');
+ assert.equal(sub.status,'PAID');
+ assert.equal(sub.history.length,2);
+ assert.equal(sub.renewAt,'2026-12-07');
+ console.log('Admin Control subscription history, plan requests and access checks passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
