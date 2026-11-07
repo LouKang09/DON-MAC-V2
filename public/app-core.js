@@ -199,8 +199,9 @@
         esc(row.plan==='BUSINESS'?'Business':'Pro')+'</strong></td><td>'+
         esc(planDisplayDate(row.startDate))+'</td><td>'+esc(planDisplayDate(row.renewDate))+
         '</td><td class="plan-days-cell">'+(remaining==null?'—':num(remaining,0))+'</td><td>'+
-        subscriptionBadge(row.status)+'</td></tr>';
-    }).join('')||'<tr><td colspan="6">No subscription changes recorded yet.</td></tr>';
+        subscriptionBadge(row.status)+'</td><td class="plan-remark-cell">'+
+        esc(row.remark||'Subscription record')+'</td></tr>';
+    }).join('')||'<tr><td colspan="7">No subscription changes recorded yet.</td></tr>';
     $('subscriptionHistoryPagination').innerHTML='<span>Showing '+(history.length?start+1:0)+'–'+
       Math.min(start+SUBSCRIPTION_ROWS_PER_PAGE,history.length)+' of '+history.length+
       ' records · Page '+subscriptionHistoryPage+' of '+totalPages+'</span>'+
@@ -1551,8 +1552,8 @@
   $('createBackup').onclick=()=>withActionLock('create-backup',async()=>{try{const d=await api('/api/backups',{method:'POST',timeoutMs:60000});toast(`Backup created: ${d.name}`);await loadBackups();}catch(err){toast(err.message);}});
   async function restoreBackup(name){return withActionLock(`restore-backup:${name}`,async()=>{if(!confirm(`Restore ${name}? This will replace the current SQLite database.`))return;if(!confirm('Final warning: a pre-restore backup will be created automatically. Continue with restore?'))return;try{await api(`/api/backups/${encodeURIComponent(name)}/restore`,{method:'POST',timeoutMs:60000});alert('Database restored. Please sign in again.');location.reload();}catch(err){toast(err.message);}});}
 
-  function branchOptions(list,selected,includeAll=false){
-   return (includeAll?'<option value="all">ALL</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
+  function branchOptions(list,selected,includeAll=false,allLabel='All branches'){
+   return (includeAll?'<option value="all">'+esc(allLabel)+'</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
   }
 
   async function loadBranches(){
@@ -1566,7 +1567,7 @@
      $('posBranch').innerHTML=branchOptions(active,state.posBranchId);
      $('posBranch').classList.remove('hidden');$('posBranchReadOnly').classList.add('hidden');
      const dashboardSelected=$('dashboardBranch').value||'all',reportSelected=$('reportBranch').value||'all';
-     $('dashboardBranch').innerHTML=branchOptions(state.branches,dashboardSelected,true);
+     $('dashboardBranch').innerHTML=branchOptions(state.branches,dashboardSelected,true,'All');
      $('dashboardBranch').value=state.branches.some(x=>String(x.id)===dashboardSelected)?dashboardSelected:'all';
      $('reportBranch').innerHTML=branchOptions(state.branches,reportSelected,true);
      $('reportBranch').value=state.branches.some(x=>String(x.id)===reportSelected)?reportSelected:'all';
