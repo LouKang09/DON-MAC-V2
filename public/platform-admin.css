@@ -253,3 +253,15 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 #platformApp .platform-office-plan{display:none!important}
 @media(max-width:1120px){#platformApp .platform-dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:530px){#platformApp .platform-dashboard-kpis{grid-template-columns:1fr}#platformApp .platform-pie{width:175px;height:175px}#platformApp .platform-bar-row{grid-template-columns:85px minmax(70px,1fr) 28px}}
+
+/* Admin Control self-service requests never activate users automatically. */
+.franchise-request-section .section-header{gap:15px}
+.franchise-request-section .section-header p{max-width:76ch;line-height:1.5}
+.franchise-requests-table{width:100%;min-width:790px}
+.franchise-requests-table th,.franchise-requests-table td{
+  vertical-align:middle;text-align:left;padding:12px 10px;font-size:12px
+}
+.franchise-requests-table td:last-child{white-space:nowrap}
+.franchise-requests-table a{color:#0e7147;overflow-wrap:anywhere}
+.franchise-requests-table .link-btn{margin:0 4px 3px 0}
+@media(max-width:700px){.franchise-request-section .section-header{flex-wrap:wrap}}
