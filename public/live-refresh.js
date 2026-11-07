@@ -140,6 +140,9 @@
     if (!manual && editingInventory()) { stamp('EDITING'); return; }
     locks.add(view);
     try {
+      // An existing open session must react if Admin Control places its plan on hold.
+      if (typeof window.donmacCheckAccountAccess === 'function' &&
+          !(await window.donmacCheckAccountAccess())) return;
       if (view === 'pos') {
         await refreshPosAvailability();
       } else if (view === 'dashboard') {
