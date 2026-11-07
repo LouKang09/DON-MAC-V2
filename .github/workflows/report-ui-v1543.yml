@@ -20,6 +20,10 @@ jobs:
           node --check public/app-core.js
           node --check public/app.js
           node --check lib/platform-accounts.js
+          node --check lib/franchise-branch-plans.js
+          node --check lib/office-promotions.js
+          node --check public/office-campaign-ui-v20261108.js
+          node --check public/notifications-campaigns-v20261108.js
           node --check lib/franchise-email-verification.js
           node --check lib/franchise-tenant-staging.js
           node --check lib/franchise-activation-readiness.js
