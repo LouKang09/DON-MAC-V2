@@ -34,6 +34,12 @@
   if(branch)p.set('branchId',branch);
   const start=$(base+'Start').value,end=$(base+'End').value;
   if(start)p.set('start',start);if(end)p.set('end',end);
+  if(trans){
+   for(const [key,id] of [['status','financeTransactionStatus'],['payment','financeTransactionPayment'],
+    ['orderType','financeTransactionOrderType'],['search','financeTransactionSearch']]){
+     const value=$(id)?.value?.trim();if(value)p.set(key,value);
+   }
+  }
   p.set('page',state[kind].page);
   return p.toString();
  }
@@ -97,7 +103,18 @@
  }
  $('financeTransactionRefresh').onclick=()=>load('transactions');
  $('financeExpenseRefresh').onclick=()=>load('expenses');
- $('financeTransactionApply').onclick=()=>{state.transactions.page=1;load('transactions');};
+ const applyTransactionFilters=()=>{state.transactions.page=1;load('transactions');};
+ $('financeTransactionApply').onclick=applyTransactionFilters;
+ $('financeTransactionReset').onclick=()=>{
+  $('financeTransactionStart').value=now.slice(0,7)+'-01';
+  $('financeTransactionEnd').value=now;
+  for(const id of ['financeTransactionBranch','financeTransactionStatus','financeTransactionPayment',
+   'financeTransactionOrderType','financeTransactionSearch'])$(id).value='';
+  applyTransactionFilters();
+ };
+ $('financeTransactionSearch').addEventListener('keydown',event=>{
+  if(event.key==='Enter'){event.preventDefault();applyTransactionFilters();}
+ });
  $('financeExpenseApply').onclick=()=>{state.expenses.page=1;load('expenses');};
  $('financeExpenseForm').addEventListener('submit',async e=>{
   e.preventDefault();
