@@ -1367,11 +1367,13 @@ async function planDashboardInsights(user,requestedBranch){
   const oldest=addDays(today,-60),end=addDays(today,1);
   const startIso=new Date(oldest+'T00:00:00+08:00').toISOString();
   const endIso=new Date(end+'T00:00:00+08:00').toISOString();
-  const baseParams=branchId==null?[startIso,endIso]:[startIso,endIso,branchId];
-  const whereBranch=branchId==null?'':' AND s.branch_id=$3';
+  if(!workspace)throw Object.assign(new Error('Franchise account has no workspace.'),{status:403});
+  const baseParams=[startIso,endIso,workspace,...(branchId==null?[]:[branchId])];
+  const whereBranch=branchId==null?'':' AND s.branch_id=$4';
   const salesR=await db.query(
     'SELECT s.id,s.sold_at,s.branch_id,s.status,s.actual,s.discount_amount,s.payment_mode '+
-    'FROM sales s WHERE s.sold_at >= $1 AND s.sold_at < $2'+whereBranch+
+    'FROM sales s JOIN chat_workspace_branches w ON w.branch_id=s.branch_id '+
+    'WHERE s.sold_at >= $1 AND s.sold_at < $2 AND w.workspace_id=$3'+whereBranch+
     ' ORDER BY s.sold_at DESC,s.id DESC LIMIT 15001',baseParams
   );
   const partialSales=salesR.rows.length>15000;
@@ -1391,11 +1393,12 @@ async function planDashboardInsights(user,requestedBranch){
   const itemsR=await db.query(
     'SELECT s.id AS sale_id,s.branch_id,si.product_name_snapshot,si.quantity,si.line_total,si.is_add_on '+
     'FROM sale_items si JOIN sales s ON s.id=si.sale_id '+
-    'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
-    (branchId==null?'':' AND s.branch_id=$4')+
+    'JOIN chat_workspace_branches w ON w.branch_id=s.branch_id '+
+    'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3 AND w.workspace_id=$4'+
+    (branchId==null?'':' AND s.branch_id=$5')+
     ' ORDER BY s.id DESC,si.id LIMIT 30001',
-    branchId==null?['Sold',new Date(dayMinus(29)+'T00:00:00+08:00').toISOString(),endIso]:
-     ['Sold',new Date(dayMinus(29)+'T00:00:00+08:00').toISOString(),endIso,branchId]
+    ['Sold',new Date(dayMinus(29)+'T00:00:00+08:00').toISOString(),endIso,workspace,
+      ...(branchId==null?[]:[branchId])]
   );
   const partialItems=itemsR.rows.length>30000;
   const items=itemsR.rows.slice(0,30000);
@@ -1448,7 +1451,9 @@ async function planDashboardInsights(user,requestedBranch){
     }
   };
   if(plan==='BUSINESS'){
-    const bRows=(await db.query('SELECT id,name,created_at FROM branches ORDER BY id')).rows;
+    const bRows=(await db.query('SELECT b.id,b.name,b.created_at FROM branches b '+
+      'JOIN chat_workspace_branches w ON w.branch_id=b.id WHERE w.workspace_id=$1 ORDER BY b.id',
+      [workspace])).rows;
     const names=new Map(bRows.map(b=>[Number(b.id),b.name]));
     const storeResults=bRows
       .filter(b=>branchId==null||Number(b.id)===branchId)
