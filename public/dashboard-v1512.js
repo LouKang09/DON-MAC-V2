@@ -21,6 +21,101 @@
   const hiddenSeries=new Set();
   let currentData=null;
 
+  let chartMode='lines';
+  function showChartTip(event,content){
+    const tip=$('trendTooltip'),holder=$('salesTrendChart');
+    if(!tip||!holder)return;
+    const rect=holder.getBoundingClientRect();
+    tip.innerHTML=content;
+    tip.style.left=Math.max(75,Math.min(rect.width-75,event.clientX-rect.left))+'px';
+    tip.style.top=Math.max(26,Math.min(rect.height-18,event.clientY-rect.top-18))+'px';
+    tip.classList.remove('hidden');
+  }
+  function renderTileChart(holder,tip,labels,active){
+    const columns=Math.max(1,labels.length);
+    const max=Math.max(1,...active.flatMap(s=>s.values.map(v=>Number(v)||0)));
+    const header='<div class="dm-heat-head"><span>Category</span>'+
+      labels.map((label,i)=>'<span title="'+esc(label)+'">'+
+        (columns>18&&i%Math.ceil(columns/12)!==0?'':esc(label))+'</span>').join('')+'</div>';
+    const rows=active.map(s=>{
+      const color=palette[s.name]||'#6d8f7c';
+      return '<div class="dm-heat-row"><strong title="'+esc(s.name)+'">'+esc(s.name)+'</strong>'+
+        s.values.map((v,i)=>{
+          const amount=Math.max(0,Number(v)||0),strength=amount/max;
+          return '<button type="button" class="dm-heat-tile" data-heat-series="'+esc(s.name)+'" data-heat-index="'+i+'" '+
+            'aria-label="'+esc(s.name+' '+labels[i]+' '+peso(amount))+'" '+
+            'style="background:color-mix(in srgb,'+color+' '+Math.round(14+strength*86)+'%,white)"></button>';
+        }).join('')+'</div>';
+    }).join('');
+    holder.innerHTML='<div class="dm-heat-scroll"><div class="dm-heat-inner" style="--dm-columns:'+columns+
+      ';min-width:'+Math.max(520,125+columns*38)+'px">'+header+rows+'</div></div>';
+    holder.setAttribute('aria-label','Sales heatmap by category and time');
+    function announce(event,tile){
+      const series=active.find(s=>s.name===tile.dataset.heatSeries),i=Number(tile.dataset.heatIndex);
+      if(!series||!Number.isInteger(i)||i<0||i>=labels.length)return;
+      showChartTip(event,'<span>'+esc(series.name)+' · '+esc(labels[i])+'</span><div><strong>'+
+        peso(series.values[i])+'</strong></div>');
+    }
+    holder.onpointermove=event=>{
+      const tile=event.target.closest('.dm-heat-tile');
+      if(tile)announce(event,tile);else tip?.classList.add('hidden');
+    };
+    holder.onpointerleave=()=>tip?.classList.add('hidden');
+    holder.onfocusin=event=>{
+      const tile=event.target.closest('.dm-heat-tile');if(!tile)return;
+      const rect=tile.getBoundingClientRect();
+      announce({clientX:rect.left+rect.width/2,clientY:rect.top},tile);
+    };
+    holder.onfocusout=()=>tip?.classList.add('hidden');
+  }
+  function renderPieChart(holder,tip,active){
+    const segments=active.map(s=>({
+      name:s.name,value:s.values.reduce((sum,v)=>sum+(Number(v)||0),0),
+      color:palette[s.name]||'#6d8f7c'
+    })).filter(s=>s.value>0);
+    const total=segments.reduce((sum,s)=>sum+s.value,0);
+    if(!total){
+      holder.innerHTML='<div class="dashboard-recent-empty">No completed sales for this range.</div>';
+      holder.setAttribute('aria-label','No completed sales for this range');return;
+    }
+    const cx=165,cy=150,r=112;
+    let angle=-Math.PI/2;
+    const shapes=segments.map((s,i)=>{
+      const span=s.value/total*2*Math.PI,finish=angle+span;
+      const start=[cx+r*Math.cos(angle),cy+r*Math.sin(angle)];
+      const end=[cx+r*Math.cos(finish),cy+r*Math.sin(finish)];
+      const arc=segments.length===1?
+        '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+s.color+'"/>':
+        '<path d="M '+cx+' '+cy+' L '+start[0]+' '+start[1]+' A '+r+' '+r+' 0 '+(span>Math.PI?1:0)+
+          ' 1 '+end[0]+' '+end[1]+' Z" fill="'+s.color+'"/>';
+      angle=finish;
+      return '<g tabindex="0" class="dm-pie-segment" data-pie-index="'+i+'" role="img" aria-label="'+
+        esc(s.name+' '+peso(s.value)+' '+(s.value/total*100).toFixed(1)+' percent')+'">'+arc+'</g>';
+    }).join('');
+    holder.innerHTML='<div class="dm-pie-chart"><svg viewBox="0 0 330 300" aria-label="Sales share by category">'+
+      shapes+'<circle cx="165" cy="150" r="60" fill="white" pointer-events="none"/>'+
+      '<text x="165" y="143" text-anchor="middle" fill="#456451" font-size="13" pointer-events="none">NET SALES</text>'+
+      '<text x="165" y="165" text-anchor="middle" fill="#153d2a" font-size="19" font-weight="800" pointer-events="none">'+
+      esc(peso(total))+'</text></svg></div>';
+    holder.setAttribute('aria-label','Net sales by category: '+segments.map(s=>s.name+' '+peso(s.value)).join('; '));
+    function announce(event,element){
+      const selected=segments[Number(element.dataset.pieIndex)];if(!selected)return;
+      showChartTip(event,'<span>'+esc(selected.name)+' · '+(selected.value/total*100).toFixed(1)+'%</span>'+
+        '<div><strong>'+peso(selected.value)+'</strong></div>');
+    }
+    holder.onpointermove=event=>{
+      const segment=event.target.closest('.dm-pie-segment');
+      if(segment)announce(event,segment);else tip?.classList.add('hidden');
+    };
+    holder.onpointerleave=()=>tip?.classList.add('hidden');
+    holder.onfocusin=event=>{
+      const segment=event.target.closest('.dm-pie-segment');if(!segment)return;
+      const rect=segment.getBoundingClientRect();
+      announce({clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2},segment);
+    };
+    holder.onfocusout=()=>tip?.classList.add('hidden');
+  }
+
   function renderSalesChart(data){
     const holder=$('salesTrendChart'),legend=$('dashboardSalesLegend'),tip=$('trendTooltip');
     if(!holder||!legend)return;
@@ -34,6 +129,9 @@
     }
     legend.innerHTML=series.map(s=>'<button class="dashboard-series-key'+(hiddenSeries.has(s.name)?' series-muted':'')+'" type="button" data-series="'+esc(s.name)+'" aria-pressed="'+String(!hiddenSeries.has(s.name))+'" title="'+esc(s.name)+' sales"><i style="background:'+palette[s.name]+'"></i>'+esc(s.name)+'</button>').join('');
     const active=series.filter(s=>!hiddenSeries.has(s.name));
+    holder.onpointermove=null;holder.onpointerleave=null;holder.onfocusin=null;holder.onfocusout=null;
+    if(chartMode==='tiles'){renderTileChart(holder,tip,labels,active);return;}
+    if(chartMode==='pie'){renderPieChart(holder,tip,active);return;}
     const maxValue=Math.max(1,...active.flatMap(s=>s.values.map(Number)));
     const W=990,H=295,L=69,R=23,T=27,B=43;
     const PW=W-L-R,PH=H-T-B;
@@ -164,6 +262,10 @@
       }
     }
   };
+  $('dashboardChartMode')?.addEventListener('change',event=>{
+    chartMode=['lines','tiles','pie'].includes(event.target.value)?event.target.value:'lines';
+    if(currentData)renderSalesChart(currentData);
+  });
   $('dashboardSalesLegend')?.addEventListener('click',event=>{
     const button=event.target.closest('button[data-series]');if(!button)return;
     const name=button.dataset.series;
