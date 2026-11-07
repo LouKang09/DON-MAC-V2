@@ -348,9 +348,11 @@
   function reconcileCartWithCatalog(){
     if(!state.catalog)return false;
     let changed=false;
-    const productIds=new Set(state.catalog.products.map(x=>x.id)),addonIds=new Set(state.catalog.addOns.map(x=>x.id)),packageIds=new Set(state.catalog.packages.filter(x=>x.sellable&&!x.contents?.some(c=>c.active===false)).map(x=>x.id)),promoIds=new Set(state.catalog.promos.map(x=>x.id));
+    const productIds=new Set(state.catalog.products.map(x=>x.id)),addonIds=new Set(state.catalog.addOns.map(x=>x.id)),packageIds=new Set(state.catalog.packages.filter(x=>x.sellable&&!x.contents?.some(c=>c.active===false)).map(x=>x.id)),
+      campaignIds=new Set((state.catalog.officePromos||[]).filter(p=>p.eligible&&p.remaining>0&&Date.parse(p.endsAt)>Date.now()).map(x=>x.id)),
+      promoIds=new Set(state.catalog.promos.map(x=>x.id));
     const before=state.cart.length;
-    state.cart=state.cart.filter(x=>x.kind==='product'?productIds.has(x.id):x.kind==='addon'?addonIds.has(x.id):x.kind==='package'?packageIds.has(x.id):false);
+    state.cart=state.cart.filter(x=>x.kind==='product'?productIds.has(x.id):x.kind==='addon'?addonIds.has(x.id):x.kind==='package'?packageIds.has(x.id):x.kind==='officePromo'?campaignIds.has(x.id):false);
     if(state.cart.length!==before)changed=true;
     if(state.promoId&&!promoIds.has(state.promoId)){state.promoId=null;const n=state.cart.length;state.cart=state.cart.filter(x=>x.kind!=='addon');if(state.cart.length!==n)changed=true;changed=true;}
     const snapshot=JSON.stringify(state.cart);enforceAddonLimits();if(JSON.stringify(state.cart)!==snapshot)changed=true;
@@ -397,7 +399,7 @@
     const all=activePosCategories();
     if(!all.some(c=>c.name===state.category))state.category=all[0]?.name||'Coffee';
     const counts={Coffee:0,'Non Coffee':0,Food:0,'Add-ons':state.catalog?.addOns?.length||0,
-      Promos:state.catalog?.promos?.length||0,Packages:state.catalog?.packages?.length||0};
+      Promos:(state.catalog?.promos?.length||0)+(state.catalog?.officePromos||[]).filter(p=>p.active&&p.status!=='ENDED'&&Date.parse(p.endsAt)>Date.now()).length,Packages:state.catalog?.packages?.length||0};
     for(const p of state.catalog?.products||[])if(Object.hasOwn(counts,p.category))counts[p.category]++;
     for(const c of all)if(!c.builtin)counts[c.name]=(state.catalog?.products||[]).filter(p=>(c.productIds||[]).includes(p.id)).length;
     $('categoryTabs').innerHTML=all.map(c=>{
@@ -457,23 +459,59 @@
   }
   function renderCatalog(){
     if(!state.catalog)return;hideAvailabilityTooltip();const q=normalize(state.query);let html='';
-    if(state.category==='Promos'){const items=state.catalog.promos.filter(p=>!q||normalize(p.name).includes(q));html=items.map(p=>`<button class="product-card promo ${state.promoId===p.id?'selected':''}" data-promo="${p.id}"><div class="cat">PROMO · ${esc(p.inclusion)}</div><h4>${esc(p.name)}</h4><div class="price">${peso(p.price)}</div></button>`).join('');}
+    if(state.category==='Promos'){
+      const items=state.catalog.promos.filter(p=>!q||normalize(p.name).includes(q));
+      html=items.map(p=>`<button class="product-card promo ${state.promoId===p.id?'selected':''}" data-promo="${p.id}"><div class="cat">PROMO · ${esc(p.inclusion)}</div><h4>${esc(p.name)}</h4><div class="price">${peso(p.price)}</div></button>`).join('');
+      html+=(state.catalog.officePromos||[]).filter(p=>p.active&&p.status!=='ENDED'&&Date.parse(p.endsAt)>Date.now()&&(!q||normalize(p.buttonName).includes(q))).map(p=>{
+        const started=Date.parse(p.startsAt)<=Date.now(),eligible=started&&p.eligible&&p.remaining>0;
+        const status=!started?'COMING SOON':eligible?'MAIN OFFICE · READY TO SELL':'MAIN OFFICE · REQUIRED SUPPLIES NOT PURCHASED';
+        return `<button class="product-card promo office-promo-button" data-office-promo="${esc(p.id)}" ${eligible&&!state.promoId?'':'disabled'}><div class="cat">${esc(status)}</div><h4>${esc(p.buttonName)}</h4><div class="price">${peso(p.price)}</div><small data-office-countdown="${esc(p.endsAt)}">Calculating countdown…</small>${!eligible?'<div class="unavailable">Purchase and receive the required promotional supplies first.</div>':''}</button>`;
+      }).join('');
+    }
     else if(state.category==='Packages'){const items=state.catalog.packages.filter(p=>!q||normalize(p.name).includes(q));html=items.map(p=>{const enabled=p.sellable&&p.available&&!state.promoId;const label=state.promoId?'NOT ALLOWED WITH PROMO':availabilityLabel(p);const card=`<button class="product-card package" data-package="${p.id}" ${enabled?'':'disabled'}><div class="cat">PACKAGE · ${p.itemCount} ITEM TYPE(S)</div><h4>${esc(p.name)}</h4><div class="price">${p.sellable?peso(p.price):'Not Available'}</div>${label?`<div class="unavailable">${esc(label)}</div>`:''}</button>`;return state.promoId?card:availabilityWrap(card,p);}).join('');}
     else if(state.category==='Add-ons'){const items=state.catalog.addOns.filter(a=>!q||normalize(a.name).includes(q));html=items.map(a=>`<button class="product-card" data-addon="${a.id}" ${state.promoId?'':'disabled'}><div class="cat">PROMO UPGRADE · NO COSTING</div><h4>${esc(a.name)}</h4><div class="price">${peso(a.price)}</div>${state.promoId?'':'<div class="unavailable">PROMO ONLY</div>'}</button>`).join('');}
     else{const currentCategory=activePosCategories().find(c=>c.name===state.category);
       const items=state.catalog.products.filter(p=>
         (currentCategory&&!currentCategory.builtin?(currentCategory.productIds||[]).includes(p.id):p.category===state.category)
         &&(!q||normalize(p.name).includes(q)));html=items.map(p=>{const enabled=p.available&&canAddProduct(p),label=availabilityLabel(p);const card=`<button class="product-card ${p.stockWarnings?.length?'low-warning':''}" data-product="${p.id}" ${enabled?'':'disabled'}><div class="cat">${esc(p.category)}</div>${productArt(p)}<h4>${esc(p.name)}</h4><div class="price">${p.available?peso(p.price):'Not Available'}</div><span class="product-add-circle" aria-hidden="true">+</span>${label?`<div class="unavailable ${p.available?'warning':''}">${esc(label)}</div>`:''}</button>`;return availabilityWrap(card,p);}).join('');}
-    $('catalogGrid').innerHTML=html||'<div class="empty-state"><div><b>No items found</b>Try another search.</div></div>';$('catalogGrid').querySelectorAll('[data-product]').forEach(b=>b.onclick=()=>addItem('product',Number(b.dataset.product)));$('catalogGrid').querySelectorAll('[data-addon]').forEach(b=>b.onclick=()=>addItem('addon',Number(b.dataset.addon)));$('catalogGrid').querySelectorAll('[data-package]').forEach(b=>b.onclick=()=>addItem('package',Number(b.dataset.package)));$('catalogGrid').querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>selectPromo(Number(b.dataset.promo)));bindAvailabilityTooltips();
+    $('catalogGrid').innerHTML=html||'<div class="empty-state"><div><b>No items found</b>Try another search.</div></div>';$('catalogGrid').querySelectorAll('[data-product]').forEach(b=>b.onclick=()=>addItem('product',Number(b.dataset.product)));$('catalogGrid').querySelectorAll('[data-addon]').forEach(b=>b.onclick=()=>addItem('addon',Number(b.dataset.addon)));$('catalogGrid').querySelectorAll('[data-package]').forEach(b=>b.onclick=()=>addItem('package',Number(b.dataset.package)));$('catalogGrid').querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>selectPromo(Number(b.dataset.promo)));
+    $('catalogGrid').querySelectorAll('[data-office-promo]').forEach(b=>b.onclick=()=>addItem('officePromo',b.dataset.officePromo));
+    refreshOfficePromoCountdown();bindAvailabilityTooltips();
   }
+  function refreshOfficePromoCountdown(){
+    document.querySelectorAll('[data-office-countdown]').forEach(el=>{
+      const remaining=Date.parse(el.dataset.officeCountdown)-Date.now();
+      if(remaining<=0){el.closest('[data-office-promo]')?.remove();return;}
+      const seconds=Math.ceil(remaining/1000),days=Math.floor(seconds/86400),
+        hours=Math.floor(seconds%86400/3600),minutes=Math.floor(seconds%3600/60),secs=seconds%60;
+      el.textContent='Ends in '+(days?days+'d ':'')+[hours,minutes,secs].map(x=>String(x).padStart(2,'0')).join(':');
+    });
+  }
+  setInterval(()=>{if(state.user)refreshOfficePromoCountdown();},1000);
+  setInterval(()=>{if(state.user?.role==='User'&&document.querySelector('#view-pos.active'))updateCatalogAvailability().catch(()=>{});},30000);
   function selectPromo(id){if(state.promoId===id){cancelPromo();return;}if(state.cart.length&&!confirm('Selecting a promo will clear the current order. Continue?'))return;state.cart=[];state.promoId=id;$('seniorEnabled').checked=false;$('seniorFields').classList.add('hidden');$('seniorName').value='';$('seniorId').value='';state.pendingSaleRequestId=null;state.category='Coffee';renderAll();}
   function cancelPromo(){state.promoId=null;state.cart=[];state.pendingSaleRequestId=null;renderAll();}
-  function addItem(kind,id){if(kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p)return;if(!p.available){toast(`${p.name} is not available. ${p.availabilityMessage||'Check its recipe and ingredient stock.'}`);return;}if(!canAddProduct(p)){toast('Promo item limit reached for this category.');return;}}if(kind==='package'){const p=state.catalog.packages.find(p=>p.id===id);if(!p?.sellable||!p.available){toast(`This package is not available. ${p?.availabilityMessage||'Check its composition and ingredient stock.'}`);return;}if(state.promoId){toast('Packages cannot be combined with a promo.');return;}}if(kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!state.promoId){toast('This upgrade can only be used during a promo.');return;}if(!canAddAddon(a)){toast(`${a.name} cannot exceed the matching promo item quantity.`);return;}}const line=cartItem(kind,id);if(line)line.qty++;else state.cart.push({kind,id,qty:1});state.pendingSaleRequestId=null;renderAll();}
-  function changeQty(kind,id,delta){const line=cartItem(kind,id);if(!line)return;if(delta>0&&kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p||!canAddProduct(p)){toast('Promo item limit reached.');return;}}if(delta>0&&kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!canAddAddon(a)){toast('Upgrade quantity cannot exceed the matching promo item quantity.');return;}}line.qty+=delta;if(line.qty<=0)state.cart=state.cart.filter(x=>x!==line);if(delta<0&&kind==='product')enforceAddonLimits();state.pendingSaleRequestId=null;renderAll();}
+  function addItem(kind,id){if(kind==='officePromo'){
+    const p=(state.catalog.officePromos||[]).find(p=>p.id===id);
+    if(!p||!p.eligible||p.remaining<1||Date.parse(p.endsAt)<=Date.now()){
+      toast('Main Office promotional supplies must be purchased and delivered before selling.');return;
+    }
+    if(state.promoId||$('seniorEnabled').checked){
+      toast('Main Office promotions cannot be combined with other POS discounts.');return;
+    }
+   }if(kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p)return;if(!p.available){toast(`${p.name} is not available. ${p.availabilityMessage||'Check its recipe and ingredient stock.'}`);return;}if(!canAddProduct(p)){toast('Promo item limit reached for this category.');return;}}if(kind==='package'){const p=state.catalog.packages.find(p=>p.id===id);if(!p?.sellable||!p.available){toast(`This package is not available. ${p?.availabilityMessage||'Check its composition and ingredient stock.'}`);return;}if(state.promoId){toast('Packages cannot be combined with a promo.');return;}}if(kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!state.promoId){toast('This upgrade can only be used during a promo.');return;}if(!canAddAddon(a)){toast(`${a.name} cannot exceed the matching promo item quantity.`);return;}}const line=cartItem(kind,id);if(line)line.qty++;else state.cart.push({kind,id,qty:1});state.pendingSaleRequestId=null;renderAll();}
+  function changeQty(kind,id,delta){const line=cartItem(kind,id);if(!line)return;
+    if(delta>0&&kind==='officePromo'){
+      const p=(state.catalog.officePromos||[]).find(p=>p.id===id);
+      if(!p?.eligible||line.qty>=p.remaining){toast('Insufficient promotional supply credits.');return;}
+    }if(delta>0&&kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p||!canAddProduct(p)){toast('Promo item limit reached.');return;}}if(delta>0&&kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!canAddAddon(a)){toast('Upgrade quantity cannot exceed the matching promo item quantity.');return;}}line.qty+=delta;if(line.qty<=0)state.cart=state.cart.filter(x=>x!==line);if(delta<0&&kind==='product')enforceAddonLimits();state.pendingSaleRequestId=null;renderAll();}
   function clearCart(){resetOrderState();}
-  function cartDisplayLine(x){if(x.kind==='product')return state.catalog.products.find(p=>p.id===x.id);if(x.kind==='addon')return state.catalog.addOns.find(a=>a.id===x.id);return state.catalog.packages.find(p=>p.id===x.id);}
+  function cartDisplayLine(x){if(x.kind==='officePromo'){
+    const p=(state.catalog.officePromos||[]).find(p=>p.id===x.id);
+    return p?{...p,name:p.buttonName,category:'Main Office Promotion'}:null;
+   }if(x.kind==='product')return state.catalog.products.find(p=>p.id===x.id);if(x.kind==='addon')return state.catalog.addOns.find(a=>a.id===x.id);return state.catalog.packages.find(p=>p.id===x.id);}
   function localGross(){return state.cart.reduce((a,x)=>{const p=cartDisplayLine(x);return a+(p?Number(p.price)*x.qty:0);},0);}
-  function renderOrder(){if(!state.cart.length){$('orderList').innerHTML='<div class="empty-state"><div><b>Your order is empty</b>Select an item to begin.</div></div>';return;}$('orderList').innerHTML=state.cart.map(x=>{const p=cartDisplayLine(x);if(!p)return'';return`<div class="order-row"><div><h4>${esc(p.name)}</h4><div class="row-sub">${x.kind==='addon'?'PROMO UPGRADE':x.kind==='package'?'PACKAGE':esc(p.category||'')} · ${peso(p.price)} each</div></div><div><strong>${peso(Number(p.price)*x.qty)}</strong><div class="qty-control"><button data-minus="${x.kind}:${x.id}">−</button><span>${x.qty}</span><button data-plus="${x.kind}:${x.id}">+</button></div></div></div>`;}).join('');$('orderList').querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.minus.split(':');changeQty(k,Number(id),-1);});$('orderList').querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.plus.split(':');changeQty(k,Number(id),1);});}
+  function renderOrder(){if(!state.cart.length){$('orderList').innerHTML='<div class="empty-state"><div><b>Your order is empty</b>Select an item to begin.</div></div>';return;}$('orderList').innerHTML=state.cart.map(x=>{const p=cartDisplayLine(x);if(!p)return'';return`<div class="order-row"><div><h4>${esc(p.name)}</h4><div class="row-sub">${x.kind==='addon'?'PROMO UPGRADE':x.kind==='package'?'PACKAGE':esc(p.category||'')} · ${peso(p.price)} each</div></div><div><strong>${peso(Number(p.price)*x.qty)}</strong><div class="qty-control"><button data-minus="${x.kind}:${x.id}">−</button><span>${x.qty}</span><button data-plus="${x.kind}:${x.id}">+</button></div></div></div>`;}).join('');$('orderList').querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.minus.split(':');changeQty(k,k==='officePromo'?id:Number(id),-1);});$('orderList').querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.plus.split(':');changeQty(k,k==='officePromo'?id:Number(id),1);});}
   function renderPromo(){const p=promoById();$('promoBanner').classList.toggle('hidden',!p);if(!p)return;const c=cartCounts();$('promoBanner').innerHTML=`<div><b>${esc(p.name)}</b> · Food ${c.food}/${p.foodLimit} · Coffee ${c.coffee}/${p.coffeeLimit} · Promo ${peso(p.price)} <span class="muted">(+ upgrades)</span></div><button id="cancelPromo">CANCEL PROMO</button>`;$('cancelPromo').onclick=cancelPromo;}
   function quotePayload(){return{items:state.cart.map(x=>({kind:x.kind,id:x.id,qty:x.qty})),promoId:state.promoId,senior:{enabled:$('seniorEnabled').checked,name:$('seniorName').value.trim(),id:$('seniorId').value.trim()}};}
   async function refreshQuote(){const seq=++quoteSeq,gross=localGross();$('grossAmount').textContent=peso(gross);$('payButton').disabled=true;state.quote=null;if(!state.cart.length){$('adjustmentAmount').textContent=peso(0);$('actualAmount').textContent=peso(0);$('payButton').textContent='Pay ₱0.00';$('quoteMessage').textContent='';return;}try{const quote=await api('/api/quote',{method:'POST',body:quotePayload()});if(seq!==quoteSeq)return;state.quote=quote;$('grossAmount').textContent=peso(quote.gross);$('adjustmentAmount').textContent=peso(quote.adjustment);$('actualAmount').textContent=peso(quote.actual);$('payButton').textContent=`Pay ${peso(quote.actual)}`;$('payButton').disabled=false;$('quoteMessage').textContent='';}catch(err){if(seq!==quoteSeq)return;$('adjustmentAmount').textContent='—';$('actualAmount').textContent='—';$('payButton').textContent='Complete Order';$('quoteMessage').textContent=err.message;if(err.status===409)await updateCatalogAvailability();}}
