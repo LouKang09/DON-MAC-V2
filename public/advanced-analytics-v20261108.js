@@ -104,110 +104,106 @@
      '<span>'+esc(x.name)+'</span><strong>'+esc(percent(x[field],sum))+'</strong></div>').join('')+'</div></div>';
  }
  function dashboard(d){
-  const s=d.summary;
-  return title('Business overview','Completed transactions and recorded expenses for the selected period.')+
-   kpis([['Net sales',peso(s.net),fmt(s.orders)+' completed orders'],
-    ['Recorded expenses',peso(s.expenses),'Expense ledger entries'],
-    ['Operating balance',peso(s.operatingBalance),'Before cost of goods and unrecorded costs'],
-    ['Average ticket',peso(s.avgTicket),'Net sales per completed order']])+
-   '<div class="rd-section-grid">'+panel('12-month net sales / expenses',comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Recorded expenses'}]))+
+  const s=d.summary,a=d.daily;
+  return title('Business overview','Completed sales and recorded expenses for the selected dates.')+
+   kpis([['Net sales',peso(s.net),fmt(s.orders)+' completed orders',a.map(x=>x.net)],
+    ['Recorded expenses',peso(s.expenses),'From saved expense entries',a.map(x=>x.expenses)],
+    ['Operating balance',peso(s.operatingBalance),'Net sales less recorded expenses',a.map(x=>x.operatingBalance)],
+    ['Average ticket',peso(s.avgTicket),'Net sales per completed order',a.map(x=>x.avgTicket)]])+
+   '<div class="rd-section-grid">'+panel('Monthly net sales and expenses',
+     comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Recorded expenses'}]))+
     panel('Branch sales ranking',ranking(d.branchesPerformance,x=>x.name,x=>x.net))+'</div>'+
-    panel('Recent attention items',alertRows(d.alerts.slice(0,5)))+note(d.sourceNotes.costs);
+    panel('Recent attention items',alertRows(d.alerts.slice(0,8)));
  }
  function financials(d){
-  const s=d.summary;
-  return title('Financials','Net sales, discounts, recorded expense categories and payment mix.')+
-   kpis([['Gross sales',peso(s.gross),'Before recorded discounts'],
-    ['Discount amount',peso(s.discount),'Recorded POS discounts'],
-    ['Net sales',peso(s.net),'Completed transactions only'],
-    ['Operating balance',peso(s.operatingBalance),'Before COGS and other unrecorded costs']])+
-   '<div class="rd-section-grid">'+panel('Recorded expenses by category',
+  const s=d.summary,a=d.daily;
+  return title('Financials','Recorded gross sales, discounts, payment mix and expenses.')+
+   kpis([['Gross sales',peso(s.gross),'Before POS adjustments',a.map(x=>x.gross)],
+    ['Discount amount',peso(s.discount),'Recorded sale discounts',a.map(x=>x.discount)],
+    ['Net sales',peso(s.net),'Completed sales after adjustments',a.map(x=>x.net)],
+    ['Operating balance',peso(s.operatingBalance),'Net sales less recorded expenses',a.map(x=>x.operatingBalance)]])+
+   '<div class="rd-section-grid">'+panel('Expenses by category',
      ranking(d.expenseCategories,x=>x.name[0].toUpperCase()+x.name.slice(1),x=>x.amount))+
      panel('Payment method share',donut(d.paymentMix))+'</div>'+
-   panel('Financial trend · 12 months',comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Expenses'}]))+
-   note(d.sourceNotes.costs);
+   panel('Monthly financial trend',comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Expenses'}]));
  }
  function store(d){
   const branches=d.branchesPerformance,s=d.summary;
-  return title('Store performance','Compare actual performance across franchise branches.')+
-   kpis([['Branches in view',fmt(branches.length),'Franchise-scoped locations'],
-    ['Top branch',branches[0]?.name||'—','By recorded net sales'],
-    ['Combined net sales',peso(s.net),'Selected locations'],
-    ['Voided / cancelled',fmt(s.voided),'Recorded exceptions']])+
+  return title('Store performance','Compare actual completed transactions across registered branches.')+
+   kpis([['Branches in view',fmt(branches.length),'Registered franchise locations'],
+    ['Top branch',branches[0]?.name||'—','Highest recorded net sales'],
+    ['Combined net sales',peso(s.net),'All selected locations',d.daily.map(x=>x.net)],
+    ['Voided / cancelled',fmt(s.voided),'Recorded cancelled transactions',d.daily.map(x=>x.voided)]])+
    '<div class="rd-section-grid">'+panel('Branch leaderboard',ranking(branches,x=>x.name,x=>x.net,15))+
    panel('Branch sales and expenses',lines(branches,['Location','Orders','Net sales','Expenses'],x=>
     '<tr><td><strong>'+esc(x.name)+'</strong></td><td>'+fmt(x.orders)+'</td><td>'+peso(x.net)+'</td><td>'+peso(x.expenses)+'</td></tr>'))+'</div>'+
-   panel('Historical sales by month',comparisonChart(d.months,[{key:'net',name:'Net sales'}]))+
-   note('Branch expenses reflect only entries recorded in the expense ledger. Shared inventory cannot be allocated to individual locations.');
+   panel('Historical sales by month',comparisonChart(d.months,[{key:'net',name:'Net sales'}]));
  }
  function sales(d){
-  const s=d.summary;
-  return title('Sales & Menu','Recorded menu quantities, item line totals and order channels.')+
-   kpis([['Completed orders',fmt(s.orders),'Selected period'],
-    ['Net sales',peso(s.net),'After POS adjustments'],
-    ['Discount amount',peso(s.discount),'All completed discounted orders'],
-    ['Items analyzed',fmt(d.topProducts.reduce((n,x)=>n+x.qty,0)),'Top 20 displayed items only']])+
+  const s=d.summary,a=d.daily;
+  return title('Sales & Menu','Purchased item quantities and sales channels from completed orders.')+
+   kpis([['Completed orders',fmt(s.orders),'Selected period',a.map(x=>x.orders)],
+    ['Net sales',peso(s.net),'Recorded POS receipts',a.map(x=>x.net)],
+    ['Discount amount',peso(s.discount),'Applied discounts',a.map(x=>x.discount)],
+    ['Items sold',fmt(s.itemUnits),'All recorded sale-item quantities']])+
    '<div class="rd-section-grid">'+panel('Top menu items · line subtotals',
     ranking(d.topProducts,x=>x.name,x=>x.amount,12))+
    panel('Order types',donut(d.orderTypes))+'</div>'+
    panel('Branch product comparison',lines(d.branchProducts.slice(0,20),
     ['Branch','Menu item','Units','Line subtotal'],x=>'<tr><td>'+esc(x.branch)+'</td><td>'+esc(x.name)+
-    '</td><td>'+fmt(x.qty)+'</td><td>'+peso(x.amount)+'</td></tr>'))+
-   note('Menu item line subtotals are before transaction-level discounts. Item subtotals must not be added to the net-sales KPI.');
+    '</td><td>'+fmt(x.qty)+'</td><td>'+peso(x.amount)+'</td></tr>'));
  }
  function customers(d){
   const s=d.summary;
-  return title('Customers','Insights from optional customer names entered on completed checkouts.')+
+  return title('Customers','Only customer names actually recorded on completed transactions.')+
    kpis([['Identified customers',fmt(s.recordedCustomers),'Distinct recorded names'],
     ['Returning names',fmt(s.repeatCustomers),'Names appearing in multiple orders'],
-    ['Named order records',fmt(d.namedCustomers.reduce((n,x)=>n+x.orders,0)),'Top 15 names displayed only'],
-    ['Completed orders',fmt(s.orders),'Includes anonymous orders']])+
-   panel('Customer history · recorded names only',
+    ['Named orders',fmt(s.namedOrders),'All completed orders with a name'],
+    ['Completed orders',fmt(s.orders),'Includes anonymous transactions',d.daily.map(x=>x.orders)]])+
+   panel('Customer purchases · recorded names',
     lines(d.namedCustomers,['Customer name','Orders','Net spend'],x=>'<tr><td><strong>'+esc(x.name)+
-    '</strong></td><td>'+fmt(x.orders)+'</td><td>'+peso(x.net)+'</td></tr>'))+
-   note(d.sourceNotes.customers);
+    '</strong></td><td>'+fmt(x.orders)+'</td><td>'+peso(x.net)+'</td></tr>'));
  }
  function operations(d){
-  const m=d.movementSummary;
-  return title('Operations','Recorded replenishments, transfers and the shared ingredient stock ledger.')+
-   kpis([['Stock transfers',fmt(m.transfer),'Inventory movement records'],
-    ['Replenishment movements',fmt(m.replenish),'Recorded entries'],
-    ['Sales stock movements',fmt(m.sale),'Movement records'],
-    ['Stock alerts',fmt(d.stockAlerts.length),'Up to 12 shared-stock warnings']])+
+  const m=d.movementSummary,s=d.summary;
+  return title('Operations','Recorded movement ledger and shared ingredient stock balances.')+
+   kpis([['Stock transfers',fmt(m.transfer),'Saved inventory transfer entries'],
+    ['Replenishments',fmt(m.replenish),'Saved replenishment entries'],
+    ['Sale stock movements',fmt(m.sale),'Tracked sale deduction entries'],
+    ['Low stock ingredients',fmt(s.stockAlertCount),'Shared active ingredient stock']])+
    '<div class="rd-section-grid">'+panel('Ingredient stock attention',lines(d.stockAlerts,
     ['Ingredient','On hand','Threshold'],x=>'<tr><td>'+esc(x.name)+'</td><td>'+fmt(x.stock)+' '+esc(x.uom)+
     '</td><td>'+fmt(x.threshold)+'</td></tr>'))+
     panel('Recent inventory movements',lines(d.movements.slice(0,12),
      ['Date','Movement','Ingredient','Qty'],x=>'<tr><td>'+esc(date(x.date))+'</td><td>'+esc(x.type)+
      '</td><td>'+esc(x.ingredient)+'</td><td>'+fmt(x.qty)+' '+esc(x.uom)+'</td></tr>'))+'</div>'+
-   note(d.sourceNotes.stock);
+   note('Inventory stock is shared between locations; movement counts describe saved ledger entries, not branch-level stock.');
  }
  function staff(d){
-  const s=d.summary;
-  return title('Staff & Labour','Recorded cashier transaction throughput; no invented attendance or payroll hours.')+
-   kpis([['Cashiers with sales',fmt(d.cashiers.length),'Up to 25 names'],
-    ['Sales processed',peso(s.net),'Completed orders'],
-    ['Completed transactions',fmt(s.orders),'Recorded cashier activity'],
-    ['Average order value',peso(s.avgTicket),'Net sales per order']])+
+  const s=d.summary,a=d.daily;
+  return title('Staff & Labour','Cashier performance calculated from completed sales.')+
+   kpis([['Cashiers with sales',fmt(s.cashierCount),'Recorded cashier names'],
+    ['Sales processed',peso(s.net),'Completed order value',a.map(x=>x.net)],
+    ['Completed transactions',fmt(s.orders),'Cashier-processed orders',a.map(x=>x.orders)],
+    ['Average order value',peso(s.avgTicket),'Net sales per order',a.map(x=>x.avgTicket)]])+
    panel('Cashier performance',lines(d.cashiers,['Cashier','Completed orders','Net sales','Average sale'],x=>
     '<tr><td><strong>'+esc(x.name)+'</strong></td><td>'+fmt(x.orders)+'</td><td>'+
-    peso(x.net)+'</td><td>'+peso(x.orders?x.net/x.orders:0)+'</td></tr>'))+
-   note(d.sourceNotes.staff);
+    peso(x.net)+'</td><td>'+peso(x.orders?x.net/x.orders:0)+'</td></tr>'));
  }
  function alertRows(alerts){
-  return alerts.length?'<div class="rd-alert-list">'+alerts.map((a,i)=>
-   '<div><span class="rd-alert-dot '+(i<2?'urgent':'')+'"></span><strong>'+esc(a.title)+
+  return alerts.length?'<div class="rd-alert-list">'+alerts.map(a=>
+   '<div class="aa-hoverable" tabindex="0" data-aa-tip="'+esc(a.title+' · '+a.location+': '+a.detail)+
+   '"><span class="rd-alert-dot"></span><strong>'+esc(a.title)+
    '</strong><span>'+esc(a.location)+'</span><p>'+esc(a.detail)+'</p></div>').join('')+'</div>':
    empty('No recorded exceptions match the current filters.');
  }
  function alerts(d){
-  return title('Alerts & Action Center','Exceptions based only on recorded stock and sales events.')+
-   kpis([['Stock thresholds',fmt(d.stockAlerts.length),'Shared ingredients needing attention'],
-    ['Voided transactions',fmt(d.summary.voided),'Current reporting range'],
-    ['Branches reviewed',fmt(d.branchesPerformance.length),'Selected franchise scope'],
-    ['Active alerts',fmt(d.alerts.length),'Derived from real records']])+
-   panel('Recorded exceptions',alertRows(d.alerts))+
-   note('Attention items are indicators, not an automated fraud judgement. Shared stock warnings are not branch-specific.');
+  return title('Alerts & Action Center','Current low-stock thresholds and recorded sales exceptions.')+
+   kpis([['Low stock ingredients',fmt(d.summary.stockAlertCount),'Shared inventory thresholds'],
+    ['Voided transactions',fmt(d.summary.voided),'Selected period',d.daily.map(x=>x.voided)],
+    ['Branches reviewed',fmt(d.branchesPerformance.length),'Selected franchise locations'],
+    ['Attention entries',fmt(d.alerts.length),'Items in this action center']])+
+   panel('Recorded exceptions',alertRows(d.alerts));
  }
  const views={dashboard,financials,store,sales,customers,operations,staff,alerts};
  function showModel(){
@@ -227,7 +223,6 @@
    '<main class="rd-main">'+header+
    '<p class="aa-period-caption">Completed POS transactions · '+esc(d.period.start)+' to '+esc(d.period.end)+'</p>'+
    notice+'<div class="rd-body">'+(views[section]||views.dashboard)(d)+'</div>'+
-   '<div class="rd-bottom-note">Read-only analytical workspace. Reports reflect saved POS records and do not replace physical inventory counting or financial reconciliation.</div>'+
    '</main></section>';
   root.innerHTML=markup;
  }
