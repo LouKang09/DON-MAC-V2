@@ -32,7 +32,7 @@
     '<strong>'+esc(value)+'</strong><div class="aa-kpi-caption">'+esc(caption)+'</div>'+
     sparkline(values||model.months.map(m=>m.net),tones[idx%tones.length])+'</article>';
  }
- const kpis=list=>'<div class="rd-kpi-grid">'+list.map((x,i)=>metric(...x,i)).join('')+'</div>';
+ const kpis=list=>'<div class="rd-kpi-grid">'+list.map((x,i)=>metric(x[0],x[1],x[2],null,i)).join('')+'</div>';
  const panel=(name,content,extra='')=>'<article class="rd-panel '+extra+'"><div class="rd-panel-title">'+esc(name)+'</div>'+content+'</article>';
  function comparisonChart(rows,series){
   if(!rows.length)return empty('No recorded sales for the selected period.');
