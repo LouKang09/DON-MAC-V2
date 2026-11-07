@@ -257,6 +257,30 @@
    if(owner)openUser(owner,findUser(owner,uid));
   }
  });
+ function updateSubscriptionBranchQuote(){
+   const franchise=selected?.kind==='subscription',plan=$('subPlan').value;
+   const branches=franchise?(selected.owner.branches||[]).filter(b=>b.active):[];
+   const active=branches.length,needChoice=franchise&&plan==='PRO'&&active>3;
+   $('subDowngradeBranches').classList.toggle('hidden',!needChoice);
+   if(needChoice){
+     const old=(selected.owner.pendingPlan?.keepBranchIds||[]),chosen=old.length===3?old:branches.slice(0,3).map(b=>b.id);
+     const previous=[...$('subKeepBranchChoices').querySelectorAll('input:checked')].map(e=>Number(e.value));
+     const keep=previous.length?previous:chosen;
+     $('subKeepBranchChoices').innerHTML=branches.map(b=>
+       '<label><input type="checkbox" value="'+b.id+'" '+(keep.includes(b.id)?'checked':'')+'/>'+
+       esc(b.name)+'</label>').join('');
+   }
+   const count=franchise?(needChoice?3:active):0,extras=Math.max(0,count-1);
+   const rate=plan==='BUSINESS'?899:799;
+   const base=Number($('subAmount').value)||0;
+   $('subBranchQuote').textContent=franchise?
+     'First branch included · '+extras+' extra active '+(extras===1?'branch':'branches')+
+     ' × ₱'+rate+' · Next renewal: ₱'+(base+extras*rate).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})+
+     (needChoice?' · Select 3 to retain; excess branches will be deactivated.':''):
+     'Supply Office uses independent subscription pricing.';
+ }
+ $('subPlan').addEventListener('change',updateSubscriptionBranchQuote);
+ $('subAmount').addEventListener('input',updateSubscriptionBranchQuote);
  function openPlan(owner){
   if(!owner)return;
   billingFilter={kind:'FRANCHISE',id:String(owner.workspaceId),label:owner.ownerUsername};billingPage=1;reloadBilling();
@@ -265,9 +289,10 @@
    (owner.pendingPlan?' · Requested '+owner.pendingPlan.plan+' plan (awaiting review)':'');
   $('subPlan').value=owner.pendingPlan?.plan||owner.subscription?.plan||'PRO';
   $('subStatus').value=owner.subscription?.status||'UNPAID';
-  $('subAmount').value=owner.subscription?.amount??'';
+  $('subAmount').value=owner.subscription?.baseAmount??owner.subscription?.amount??'';
   $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||'';
   error('subscriptionError','');
+  updateSubscriptionBranchQuote();
   $('subscriptionDialog').showModal();
  }
  function openOfficePlan(){
@@ -278,14 +303,18 @@
   $('subStatus').value=officeSubscription?.status||'UNPAID';
   $('subAmount').value=officeSubscription?.amount??'';
   $('subNextPaymentDate').value=officeSubscription?.nextPaymentDate||'';
-  error('subscriptionError','');$('subscriptionDialog').showModal();
+  error('subscriptionError','');updateSubscriptionBranchQuote();$('subscriptionDialog').showModal();
  }
  $('subscriptionForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!['subscription','office'].includes(selected?.kind))return;
   const btn=$('saveSubscription');btn.disabled=true;error('subscriptionError','');
   try{
    const resource=selected.kind==='office'?'billing/supply-office':'accounts/'+selected.owner.workspaceId+'/subscription';
-   await api(resource,{method:'PUT',body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,amount:$('subAmount').value,nextPaymentDate:$('subNextPaymentDate').value})});
+   const needSelection=selected.kind==='subscription'&&!$('subDowngradeBranches').classList.contains('hidden');
+   const keepBranchIds=needSelection?[...$('subKeepBranchChoices').querySelectorAll('input:checked')].map(x=>Number(x.value)):[];
+   if(needSelection&&keepBranchIds.length!==3)throw new Error('Choose exactly 3 branches to remain accessible on Pro.');
+   await api(resource,{method:'PUT',body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,
+      amount:$('subAmount').value,nextPaymentDate:$('subNextPaymentDate').value,keepBranchIds})});
    $('subscriptionDialog').close();await reload();
   }catch(err){error('subscriptionError',err.message)}
   finally{btn.disabled=false}
