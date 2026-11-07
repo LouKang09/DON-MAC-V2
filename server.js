@@ -12,6 +12,7 @@ const internalChat = require('./lib/internal-chat');
 const devSubscription = require('./lib/development-subscriptions');
 const platformAccounts = require('./lib/platform-accounts');
 const branchPlans = require('./lib/franchise-branch-plans');
+const officePromotions = require('./lib/office-promotions');
 const platformAdminAuth = require('./lib/platform-admin-auth');
 const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
@@ -434,7 +435,7 @@ async function requireBusinessPlan(user){
   });
 }
 
-async function getCatalog(conn=db) {
+async function getCatalog(conn=db,workspaceId=0) {
   const productsR=await conn.query(`SELECT id,sku,name,category,price,image_data,active FROM products WHERE active=$1 ORDER BY category,name`,[true]);
   const addR=await conn.query(`SELECT id,name,price,exclude_from_costing,active FROM add_ons WHERE active=$1 ORDER BY name`,[true]);
   const promoR=await conn.query(`SELECT id,name,inclusion_label,promo_price,food_limit,coffee_limit,active FROM promos WHERE active=$1 ORDER BY id`,[true]);
@@ -487,6 +488,7 @@ async function getCatalog(conn=db) {
     addOns:addR.rows.map(a=>({id:Number(a.id),name:a.name,price:Number(a.price),excludeFromCosting:bool(a.exclude_from_costing)})),
     promos:promoR.rows.map(p=>({id:Number(p.id),name:p.name,inclusion:p.inclusion_label,price:Number(p.promo_price),foodLimit:Number(p.food_limit||0),coffeeLimit:Number(p.coffee_limit||0)})),
     packages,
+    officePromos:workspaceId?await officePromotions.forWorkspace(conn,workspaceId):[],
     categories:(await listPosCategories()).filter(c=>c.active)
   };
 }
@@ -495,17 +497,19 @@ function validateCartInput(items){
   if(!Array.isArray(items)||!items.length)throw Object.assign(new Error('Add at least one item to the order.'),{status:400});
   if(items.length>100)throw Object.assign(new Error('Order has too many lines.'),{status:400});
   for(const x of items){
-    if(!['product','addon','package'].includes(x.kind))throw Object.assign(new Error('Invalid item type.'),{status:400});
-    if(!Number.isInteger(Number(x.id))||Number(x.id)<=0)throw Object.assign(new Error('Invalid item id.'),{status:400});
+    if(!['product','addon','package','officePromo'].includes(x.kind))throw Object.assign(new Error('Invalid item type.'),{status:400});
+    if((x.kind==='officePromo'?!/^[0-9a-f-]{36}$/i.test(String(x.id||'')):
+      (!Number.isInteger(Number(x.id))||Number(x.id)<=0)))throw Object.assign(new Error('Invalid item id.'),{status:400});
     if(!Number.isInteger(Number(x.qty))||Number(x.qty)<=0||Number(x.qty)>999)throw Object.assign(new Error('Quantity must be a positive whole number.'),{status:400});
   }
 }
 
-async function quoteOrder(conn,input){
+async function quoteOrder(conn,input,workspaceId=0){
   const items=input.items||[];validateCartInput(items);
   const productLines=items.filter(x=>x.kind==='product');
   const addonLines=items.filter(x=>x.kind==='addon');
   const packageLines=items.filter(x=>x.kind==='package');
+  const campaignLines=items.filter(x=>x.kind==='officePromo');
   const productIds=[...new Set(productLines.map(x=>Number(x.id)))];
   const addonIds=[...new Set(addonLines.map(x=>Number(x.id)))];
   const packageIds=[...new Set(packageLines.map(x=>Number(x.id)))];
@@ -541,6 +545,17 @@ async function quoteOrder(conn,input){
     lines.push({kind:'addon',id:Number(a.id),productId:null,addOnId:Number(a.id),packageId:null,name:a.name,category:'Add-on',qty,unitPrice:Number(a.price),lineTotal,isAddOn:true,isPackage:false,excludeFromCosting:bool(a.exclude_from_costing),components:[]});
   }
   if(input.promoId&&packageLines.length)throw Object.assign(new Error('Packages cannot be combined with a promo.'),{status:400});
+  if(campaignLines.length&&(input.promoId||input.senior?.enabled||addonLines.length))
+    throw Object.assign(new Error('Main Office promotional buttons cannot be combined with additional discounts or POS promos.'),{status:400});
+  if(campaignLines.length&&!workspaceId)throw Object.assign(new Error('Franchise workspace is required for Main Office promotions.'),{status:403});
+  for(const c of campaignLines){
+    const campaign=await officePromotions.verifySale(conn,workspaceId,String(c.id),Number(c.qty));
+    const price=Number(campaign.price),qty=Number(c.qty),lineTotal=money(price*qty);
+    gross=money(gross+lineTotal);
+    lines.push({kind:'officePromo',id:String(c.id),productId:null,addOnId:null,packageId:null,
+      name:campaign.buttonName,category:'Main Office Promotion',qty,unitPrice:price,lineTotal,
+      isAddOn:false,isPackage:false,excludeFromCosting:true,components:[]});
+  }
   if(addonLines.length&&!input.promoId)throw Object.assign(new Error('FLAVORED FRIES and PREMIUM COFFEE upgrades can only be used during a promo.'),{status:400});
   if(addonLines.length){
     for(const line of lines.filter(x=>x.isAddOn)){
@@ -606,7 +621,9 @@ async function createSale(user,body){
     const tableLabel=String(body.tableLabel||'').trim();
     if(!['Dine In','Take Away','Order Online'].includes(orderType))throw Object.assign(new Error('Choose a valid order type.'),{status:400});
     if(customerName.length>120||tableLabel.length>80)throw Object.assign(new Error('Customer name or table label is too long.'),{status:400});
-    const quote=await quoteOrder(tx,body);let tender=quote.actual,change=0,paymentReference=null;
+    const workspace=await workspaceIdForUser(user.id);
+    if((body.items||[]).some(x=>x.kind==='officePromo'))await officePromotions.lockForSale(tx,workspace,body.items);
+    const quote=await quoteOrder(tx,body,workspace);let tender=quote.actual,change=0,paymentReference=null;
     if(mode==='Cash'){tender=money(Number(body.tender||0));if(!Number.isFinite(tender)||tender<quote.actual||tender>MAX_MONEY)throw Object.assign(new Error('Cash tender must cover the amount due and stay within the supported amount range.'),{status:400});change=money(tender-quote.actual);}else{paymentReference=String(body.paymentReference||'').trim();if(!paymentReference||paymentReference.length>150)throw Object.assign(new Error('Enter a GCash reference up to 150 characters.'),{status:400});}
     let reference=null;for(let tries=0;tries<8;tries++){const candidate=makeReference();const exists=await tx.query('SELECT id FROM sales WHERE reference=$1',[candidate]);if(!exists.rows.length){reference=candidate;break;}}if(!reference)throw new Error('Unable to generate a unique sale reference.');
     const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id,branch_id,order_type,customer_name,table_label) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null,branchId,orderType,customerName||null,tableLabel||null]);
@@ -614,6 +631,7 @@ async function createSale(user,body){
     for(const line of quote.lines){
       const itemR=await tx.query(`INSERT INTO sale_items (sale_id,product_id,add_on_id,package_id,product_name_snapshot,quantity,unit_price,line_total,is_add_on,is_package,exclude_from_costing) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,[saleId,line.productId,line.addOnId,line.packageId,line.name,line.qty,line.unitPrice,line.lineTotal,line.isAddOn,line.isPackage,line.excludeFromCosting]);
       const saleItemId=Number(itemR.rows[0].id);
+      if(line.kind==='officePromo')await officePromotions.recordSale(tx,saleId,workspace,branchId,line.id,line.qty);
       if(line.isPackage)for(const c of line.components)await tx.query(`INSERT INTO sale_item_components (sale_item_id,product_id,product_name_snapshot,quantity) VALUES ($1,$2,$3,$4)`,[saleItemId,c.productId,c.name,c.qty]);
     }
     const locked=new Map();if(tx.engine==='postgres'&&quote.requirements.length){const ids=quote.requirements.map(r=>r.ingredientId).sort((a,b)=>a-b);const lr=await tx.query(`SELECT id,stock_qty FROM ingredients WHERE id IN (${placeholders(1,ids.length)}) ORDER BY id FOR UPDATE`,ids);for(const row of lr.rows)locked.set(Number(row.id),Number(row.stock_qty));}
@@ -1812,6 +1830,17 @@ async function handleOfficeApi(req,res,p,method){
     const body=await readJson(req);
     return json(res,200,await supplyRoyalties.setMonthStatus(db,Number(royaltyStatus[1]),royaltyStatus[2],String(body.status||''),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
   }
+  if(method==='GET'&&p==='/api/supply/office/promotions')
+    return json(res,200,{campaigns:await officePromotions.all(db)},safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/supply/office/promotions')
+    return json(res,201,await officePromotions.create(db,await readJson(req,12000),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  const promotion=p.match(/^\/api\/supply\/office\/promotions\/([0-9a-f-]{36})(?:\/(participants|deactivate))?$/i);
+  if(promotion){
+    if(method==='GET'&&promotion[2]==='participants')
+      return json(res,200,{participants:await officePromotions.participants(db,promotion[1])},safeHeaders());
+    if(method==='POST'&&promotion[2]==='deactivate')
+      return json(res,200,await officePromotions.deactivate(db,promotion[1]),safeHeaders());
+  }
   if(method==='GET'&&p==='/api/supply/office/orders')return json(res,200,{orders:await supplyChain.list(db)},safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.priceSettings(db),safeHeaders());
   if(method==='PUT'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.setUrgentFee(db,(await readJson(req)).urgentFee),safeHeaders());
@@ -1990,8 +2019,10 @@ async function handleApi(req,res,url){
       (branchId==null?'':' AND branch_id=$4'),args);
     return json(res,200,{count:Number(rows.rows[0]?.count||0)},safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(),safeHeaders());
-  if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req)),safeHeaders());
+  if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(db,await workspaceIdForUser(user.id)),safeHeaders());
+  if(method==='GET'&&p==='/api/office-promotions')
+    return json(res,200,{campaigns:await officePromotions.forWorkspace(db,await workspaceIdForUser(user.id))},safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id)),safeHeaders());
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
   const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
   if(method==='GET'&&p==='/api/inventory')return json(res,200,{items:await getInventory()},safeHeaders());
@@ -2176,7 +2207,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
