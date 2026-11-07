@@ -1356,7 +1356,8 @@ async function dashboardData(params={},branchId=null,user=null){
    No subscription billing or POS writes. */
 async function planDashboardInsights(user,requestedBranch){
   requireAdminRole(user);
-  const plan=(await subscriptionState()).plan;
+  const workspace=await workspaceIdForUser(user.id);
+  const plan=workspace?(await platformAccounts.accountSubscription(db,workspace)).plan:'PRO';
   const branchId=await branchSupport.salesScope(db,user,requestedBranch);
   if(branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
   const today=new Intl.DateTimeFormat('en-CA',{
