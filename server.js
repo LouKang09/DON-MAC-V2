@@ -14,6 +14,7 @@ const platformAccounts = require('./lib/platform-accounts');
 const platformAdminAuth = require('./lib/platform-admin-auth');
 const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
+const advancedAnalytics = require('./lib/advanced-analytics');
 const supplyChain = require('./lib/supply-chain');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
@@ -41,7 +42,7 @@ const SESSION_HOURS_RAW = Number(process.env.SESSION_HOURS || 12);
 const SESSION_HOURS = Number.isFinite(SESSION_HOURS_RAW) && SESSION_HOURS_RAW > 0 ? Math.min(SESSION_HOURS_RAW, 168) : 12;
 const MANILA_TZ = 'Asia/Manila';
 const SUPPLY_OFFICE_PORTAL=process.env.SUPPLY_OFFICE_PORTAL==='true';
-const APP_VERSION = '1.5.88-subscription-access';
+const APP_VERSION = '1.5.92-live-advanced-analytics';
 const MAX_MONEY = 9_999_999_999.99;
 const MAX_STOCK = 999_999_999_999;
 const MAX_RECIPE_VALUE = 999_999_999;
@@ -1947,6 +1948,10 @@ async function handleApi(req,res,url){
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/dashboard/activity')return json(res,200,await dashboardActivity(user,Object.fromEntries(url.searchParams)),safeHeaders());
+  if(method==='GET'&&p==='/api/advanced/analytics'){
+    return json(res,200,await advancedAnalytics.read(db,user,Object.fromEntries(url.searchParams)),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/dashboard/plan-insights')return json(res,200,await planDashboardInsights(user,url.searchParams.get('branchId')),safeHeaders());
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId,user),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/cashiers'){
