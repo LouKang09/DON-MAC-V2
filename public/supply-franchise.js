@@ -223,6 +223,7 @@ $('supplyAppealForm').onsubmit=async event=>{
  }catch(err){alert(err.message,true);}
  finally{button.disabled=false;}
 };
+$('supplyDetailRefresh').onclick=()=>{if(currentId)openOrder(currentId);};
 $('supplyDetailClose').onclick=()=>{$('supplyOrderDetail').classList.add('hidden');currentId=null;};
 $('supplyChatPhoto').onchange=async e=>{
  try{
