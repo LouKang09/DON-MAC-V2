@@ -411,5 +411,6 @@ $('platformPasswordToggle').addEventListener('click',()=>{
  $('platformPasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password');
 });
 
+ window.donmacPlatformAdmin={refreshAccounts:reload,refreshBilling:reloadBilling};
  checkSession();
 })();
