@@ -1,0 +1,126 @@
+/* Dashboard, transaction filters, supply request and cashier controls — v20261107. */
+
+/* Sales Statistic: refresh on far left; current-day pill beside the title. */
+#view-dashboard .dashboard-statistics-card .dm-sales-heading {
+  display:flex;align-items:center;justify-content:flex-start;gap:13px;
+  flex-wrap:nowrap;margin-bottom:12px;
+}
+#view-dashboard .dm-sales-heading > #dashboardChartRefresh.dm-refresh {
+  order:0;flex:0 0 41px!important;margin:0!important;align-self:center;
+  width:41px!important;height:41px!important;border-radius:11px!important;
+  background:#075d38!important;border-color:#075d38!important;color:#fff!important;
+}
+#view-dashboard .dm-sales-heading > #dashboardChartRefresh.dm-refresh:hover {
+  background:#05472b!important;border-color:#05472b!important;
+}
+#view-dashboard .dm-sales-heading .dashboard-chart-heading {
+  order:1;flex:1 1 auto;min-width:0;
+}
+#view-dashboard .dm-sales-title-row {
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:1px 0 3px;
+}
+#view-dashboard .dm-sales-title-row #dashboardStatisticsTitle {
+  flex:0 0 auto;margin:0;
+}
+#view-dashboard .dm-sales-title-row #dashboardRangePill {
+  display:inline-flex;align-items:center;flex:none;
+  margin:0!important;max-width:100%;min-height:25px;
+  padding:5px 11px;border-radius:999px;white-space:normal;
+  font-size:10px;font-weight:750;
+}
+#view-dashboard .dm-sales-heading #trendChartHint {display:block;}
+
+/* Transaction Ledger: usable filters, consistent alignment and two action buttons. */
+#view-transactions .dm-transaction-filters {
+  display:grid;grid-template-columns:repeat(4,minmax(155px,1fr));
+  align-items:end;gap:12px;margin:15px 0 20px;
+}
+#view-transactions .dm-transaction-filters label {
+  min-width:0;flex:none;
+}
+#view-transactions .dm-transaction-filters input,
+#view-transactions .dm-transaction-filters select {width:100%;max-width:100%;}
+#view-transactions .dm-transaction-filter-actions {
+  display:flex;gap:9px;align-items:center;flex-wrap:wrap;
+  align-self:end;min-height:41px;
+}
+#view-transactions .dm-transaction-filter-actions button {
+  min-height:41px;padding:9px 15px;border-radius:10px;
+  white-space:nowrap;font-size:11px;font-weight:780;
+}
+#view-transactions #financeTransactionReset {
+  color:#175638;background:#edf7f0;border:1px solid #badcc9;
+}
+#view-transactions #financeTransactionReset:hover {background:#d8efdf;}
+
+/* Supply Chain: refresh first, Close last, then a breathing gap before details. */
+#view-supply #supplyOrderDetail > .card-head {
+  display:flex;align-items:center;gap:12px;justify-content:space-between;
+  margin-bottom:0;flex-wrap:wrap;
+}
+#view-supply #supplyOrderDetail .dm-request-header-actions {
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:9px;flex:0 0 auto;margin-left:auto;
+}
+#view-supply #supplyOrderDetail .dm-request-header-actions #supplyDetailClose {
+  order:2;flex:0 0 auto;margin-left:0;
+}
+#view-supply #supplyOrderDetail .dm-request-header-actions #supplyDetailRefresh {
+  order:1;flex:0 0 41px!important;
+}
+#view-supply #supplyDetailSummary {
+  margin-top:21px;padding-top:1px;
+}
+
+/* Cashier and branch tables: matching gear and refresh square buttons. */
+#view-users .dm-users-heading-actions {
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:9px;flex:0 0 auto;margin-left:auto;
+}
+#view-users .users-group-heading > .dm-users-heading-actions > .users-help {
+  box-sizing:border-box;display:inline-flex!important;
+  align-items:center;justify-content:center;
+  width:41px!important;height:41px!important;min-width:41px!important;
+  min-height:41px!important;border-radius:11px!important;
+  padding:0!important;margin:0!important;
+  background:#075d38!important;border:1px solid #075d38!important;
+  color:#ffffff!important;cursor:help;
+}
+#view-users .dm-users-heading-actions .users-cog-icon {
+  width:23px!important;height:23px!important;display:block!important;
+  color:#fff!important;fill:#fff!important;
+}
+#view-users .dm-users-heading-actions .users-cog-icon polygon {
+  fill:#fff!important;stroke:none!important;
+}
+#view-users .dm-users-heading-actions .users-cog-icon circle {
+  fill:#075d38!important;stroke:none!important;
+}
+#view-users .users-group-heading > .dm-users-heading-actions > .users-help:hover {
+  background:#05472b!important;border-color:#05472b!important;
+}
+#view-users .dm-users-heading-actions button.dm-refresh {
+  margin:0!important;
+}
+@media(max-width:1020px){
+ #view-transactions .dm-transaction-filters {grid-template-columns:repeat(3,minmax(140px,1fr));}
+}
+@media(max-width:720px){
+ #view-transactions .dm-transaction-filters {grid-template-columns:repeat(2,minmax(0,1fr));}
+ #view-dashboard .dm-sales-heading {gap:9px;}
+ #view-dashboard .dm-sales-title-row {gap:7px;}
+ #view-users .dm-users-heading-actions {gap:7px;}
+}
+@media(max-width:540px){
+ #view-transactions .dm-transaction-filters {grid-template-columns:1fr;}
+ #view-transactions .dm-transaction-filter-actions button {flex:1 1 115px;}
+ #view-supply #supplyOrderDetail .dm-request-header-actions {width:auto;}
+ #view-supply #supplyDetailSummary {margin-top:17px;}
+ #view-users .users-group-heading > .dm-users-heading-actions > .users-help {
+  width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;
+ }
+ #view-dashboard .dm-sales-heading > #dashboardChartRefresh.dm-refresh {
+  width:38px!important;height:38px!important;flex-basis:38px!important;
+ }
+}
