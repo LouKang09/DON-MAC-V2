@@ -465,7 +465,7 @@
       html+=(state.catalog.officePromos||[]).filter(p=>p.active&&p.status!=='ENDED'&&Date.parse(p.endsAt)>Date.now()&&(!q||normalize(p.buttonName).includes(q))).map(p=>{
         const started=Date.parse(p.startsAt)<=Date.now(),eligible=started&&p.eligible&&p.remaining>0;
         const status=!started?'COMING SOON':eligible?'MAIN OFFICE · READY TO SELL':'MAIN OFFICE · REQUIRED SUPPLIES NOT PURCHASED';
-        return `<button class="product-card promo office-promo-button" data-office-promo="${esc(p.id)}" ${eligible&&!state.promoId?'':'disabled'}><div class="cat">${esc(status)}</div><h4>${esc(p.buttonName)}</h4><div class="price">${peso(p.price)}</div><small data-office-countdown="${esc(p.endsAt)}">Calculating countdown…</small>${!eligible?'<div class="unavailable">Purchase and receive the required promotional supplies first.</div>':''}</button>`;
+        return `<button class="product-card promo office-promo-button" data-office-promo="${esc(p.id)}" ${eligible&&!state.promoId?'':'disabled'}><div class="cat">${esc(status)}</div><h4>${esc(p.buttonName)}</h4><div class="price">${peso(p.price)}</div><small data-office-countdown="${esc(p.endsAt)}" data-office-start="${esc(p.startsAt)}">Calculating countdown…</small>${!eligible?'<div class="unavailable">Purchase and receive the required promotional supplies first.</div>':''}</button>`;
       }).join('');
     }
     else if(state.category==='Packages'){const items=state.catalog.packages.filter(p=>!q||normalize(p.name).includes(q));html=items.map(p=>{const enabled=p.sellable&&p.available&&!state.promoId;const label=state.promoId?'NOT ALLOWED WITH PROMO':availabilityLabel(p);const card=`<button class="product-card package" data-package="${p.id}" ${enabled?'':'disabled'}><div class="cat">PACKAGE · ${p.itemCount} ITEM TYPE(S)</div><h4>${esc(p.name)}</h4><div class="price">${p.sellable?peso(p.price):'Not Available'}</div>${label?`<div class="unavailable">${esc(label)}</div>`:''}</button>`;return state.promoId?card:availabilityWrap(card,p);}).join('');}
@@ -478,17 +478,26 @@
     $('catalogGrid').querySelectorAll('[data-office-promo]').forEach(b=>b.onclick=()=>addItem('officePromo',b.dataset.officePromo));
     refreshOfficePromoCountdown();bindAvailabilityTooltips();
   }
+  const officePromoTransitionSynced=new Set();
   function refreshOfficePromoCountdown(){
     document.querySelectorAll('[data-office-countdown]').forEach(el=>{
-      const remaining=Date.parse(el.dataset.officeCountdown)-Date.now();
-      if(remaining<=0){el.closest('[data-office-promo]')?.remove();return;}
-      const seconds=Math.ceil(remaining/1000),days=Math.floor(seconds/86400),
-        hours=Math.floor(seconds%86400/3600),minutes=Math.floor(seconds%3600/60),secs=seconds%60;
-      el.textContent='Ends in '+(days?days+'d ':'')+[hours,minutes,secs].map(x=>String(x).padStart(2,'0')).join(':');
+      const now=Date.now(),end=Date.parse(el.dataset.officeCountdown),
+        start=Date.parse(el.dataset.officeStart||''),id=el.closest('[data-office-promo]')?.dataset.officePromo;
+      if(now>=end){el.closest('[data-office-promo]')?.remove();return;}
+      const upcoming=Number.isFinite(start)&&now<start;
+      if(!upcoming&&Number.isFinite(start)&&id&&!officePromoTransitionSynced.has(id)){
+        officePromoTransitionSynced.add(id);
+        if(state.user?.role==='User')updateCatalogAvailability().catch(()=>{});
+      }
+      const remaining=(upcoming?start:end)-now,seconds=Math.ceil(remaining/1000),
+        days=Math.floor(seconds/86400),hours=Math.floor(seconds%86400/3600),
+        minutes=Math.floor(seconds%3600/60),secs=seconds%60;
+      el.textContent=(upcoming?'Starts in ':'Ends in ')+(days?days+'d ':'')+
+        [hours,minutes,secs].map(x=>String(x).padStart(2,'0')).join(':');
     });
   }
   setInterval(()=>{if(state.user)refreshOfficePromoCountdown();},1000);
-  setInterval(()=>{if(state.user?.role==='User'&&document.querySelector('#view-pos.active'))updateCatalogAvailability().catch(()=>{});},30000);
+  setInterval(()=>{if(state.user?.role==='User'&&document.querySelector('#view-pos.active'))updateCatalogAvailability().catch(()=>{});},15000);
   function selectPromo(id){if(state.promoId===id){cancelPromo();return;}if(state.cart.length&&!confirm('Selecting a promo will clear the current order. Continue?'))return;state.cart=[];state.promoId=id;$('seniorEnabled').checked=false;$('seniorFields').classList.add('hidden');$('seniorName').value='';$('seniorId').value='';state.pendingSaleRequestId=null;state.category='Coffee';renderAll();}
   function cancelPromo(){state.promoId=null;state.cart=[];state.pendingSaleRequestId=null;renderAll();}
   function addItem(kind,id){if(kind==='officePromo'){
