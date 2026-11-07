@@ -89,9 +89,10 @@
       '<button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>';
      return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
-      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(x.status,x.status==='PENDING'?'unknown':x.status==='CONTACTED'?'active':'inactive')+
+      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(x.emailVerifiedAt?'Verified':'Pending',x.emailVerifiedAt?'active':'unknown')+
+      '</td><td>'+badge(x.status,x.status==='PENDING'?'unknown':x.status==='CONTACTED'?'active':'inactive')+
       '</td><td>'+actions+'</td></tr>';
-   }).join('')||'<tr><td colspan="7">No franchise applications received.</td></tr>';
+   }).join('')||'<tr><td colspan="8">No franchise applications received.</td></tr>';
  }
  async function reloadFranchiseRequests(){
    const data=await api('franchise-requests');
