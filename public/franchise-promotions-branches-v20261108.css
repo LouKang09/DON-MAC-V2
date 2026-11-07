@@ -1,0 +1,37 @@
+.branch-allowance-notice,.branch-plan-pricing{margin:10px 0;padding:11px 14px;background:#e9f6ed;color:#174c32;border:1px solid #bcdcc8;border-radius:10px;font-weight:760;font-size:12px;line-height:1.5}
+.branch-limit-reached #branchSaveButton,.branch-limit-reached .users-action-save{opacity:.5;cursor:not-allowed}
+.branch-downgrade-choice{border:1px solid #dec899;border-radius:10px;padding:13px 15px;margin:10px 0;grid-column:1/-1;background:#fffaf0;min-width:0}
+.branch-downgrade-choice.hidden{display:none!important}
+.branch-downgrade-choice legend{font-size:13px;font-weight:850;color:#704d11}
+.branch-downgrade-choice p{font-size:11px;color:#785821}
+.branch-downgrade-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:11px}
+.branch-downgrade-list label{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #e6d6b7;background:#fff;border-radius:8px;font-size:12px;min-width:0}
+.branch-downgrade-list input{accent-color:#075d38;flex:0 0 auto}
+.office-promo-button{border:2px solid #9cbfa4!important;background:linear-gradient(155deg,#f0f9f0,#fffdf2)!important}
+.office-promo-button:not(:disabled):hover{border-color:#07824c!important;box-shadow:0 9px 20px rgba(7,93,56,.18)!important}
+.office-promo-button .cat{color:#075d38!important}
+.office-promo-button small[data-office-countdown]{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;background:#e0f4e6;color:#125e37;font-size:11px;font-weight:850;margin-top:7px}
+.dm-notifications-dialog{border:0;border-radius:18px;background:transparent;padding:0;width:min(670px,calc(100vw - 24px));max-height:88vh;overflow:visible;box-shadow:0 15px 45px rgba(0,0,0,.24)}
+.dm-notifications-dialog::backdrop{background:rgba(13,31,22,.57)}
+.dm-notifications-card{background:#fff;color:#1b3828;padding:20px 24px;border-radius:18px;max-height:88vh;overflow-y:auto}
+.dm-notifications-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.dm-notifications-heading h2{font-size:21px;margin:0}
+.dm-notifications-heading button{border:0;background:#e8f3eb;color:#174b30;border-radius:8px;font-size:23px;width:35px;height:35px;cursor:pointer}
+.dm-notification-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1px solid #deeadf;padding:0 0 10px;margin-bottom:16px}
+.dm-notification-tabs button{border:1px solid #c9dfd0;background:#f6faf7;border-radius:9px;padding:10px;color:#2f6747;font-weight:830;cursor:pointer}
+.dm-notification-tabs button.active{background:#075d38;color:#fff;border-color:#075d38}
+.dm-notifications-content.hidden{display:none!important}
+.dm-notifications-content{font-size:13px;line-height:1.5}
+.dm-notifications-content .update-section{padding:10px 0}
+.dm-notif-version{font-size:12px;font-weight:850;color:#075d38}
+.dm-notif-promo{padding:14px;border-radius:12px;border:1px solid #cddfce;background:#f8fbf8;margin-bottom:12px}
+.dm-notif-promo>div:first-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-notif-promo strong{font-size:14px}
+.dm-notif-promo p{margin:8px 0;color:#476a50}
+.dm-promo-pill{font-size:10px;padding:4px 7px;border-radius:20px;background:#deefe2;color:#075d38;font-weight:850}
+.dm-notif-promo p[data-promo-timer]{font-weight:850;color:#0c5f37;font-size:13px}
+.dm-notif-promo .dm-promo-ready{color:#12653d;font-weight:800}
+.dm-notif-promo .dm-promo-locked{color:#94611a;font-weight:760}
+.dm-notif-promo button{background:#075d38;color:#fff;border:0;border-radius:8px;padding:9px 11px;cursor:pointer;font-weight:760}
+.dm-notif-empty{padding:25px;text-align:center;color:#658471}
+@media(max-width:560px){.branch-downgrade-list{grid-template-columns:1fr}.dm-notifications-card{padding:14px}}
