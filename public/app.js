@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.75-account-forms';
+  const VERSION = '1.5.76-refresh-per-table';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -48,6 +48,7 @@
       loadCss('v155Css', '/v155.css');
       loadCss('v156Css', '/v156.css');
       loadCss('posRefreshCss', '/pos-refresh.css');
+      loadCss('dmUnifiedRefreshV20261107', '/refresh-controls-v20261107.css');
       loadCss('sidebarNavCss', '/sidebar-v1511.css');
       loadCss('dashboardEnhancementsCss', '/dashboard-v1512.css');
       loadCss('dashboardRefinementCss', '/dashboard-v1513.css');
@@ -118,6 +119,7 @@
       await loadScript('/pos-categories-admin.js');
       await loadScript('/catalog-batch-v1544.js');
       await loadScript('/internal-chat.js');
+      await loadScript('/refresh-controls-v20261107.js');
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
 
 
