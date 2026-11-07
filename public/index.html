@@ -196,7 +196,7 @@
                 <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
                 <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
                 <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
-                <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">All branches</option></select></span>
+                <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">ALL</option></select></span>
                 <button id="applyTrend" class="primary" type="button">Apply</button>
               </div>
             </div>
@@ -480,7 +480,7 @@
             <div class="report-filter-fields">
               <label class="report-field report-field-period"><span>Period</span><select id="reportPeriod"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label>
               <label class="report-field report-field-date"><span>Report date</span><input id="reportDate" type="date" /></label>
-              <label class="report-field report-field-branch admin-only"><span>Branch</span><select id="reportBranch" aria-label="Report branch"><option value="all">All branches</option></select></label>
+              <label class="report-field report-field-branch admin-only"><span>Branch</span><select id="reportBranch" aria-label="Report branch"><option value="all">ALL</option></select></label>
               <div class="report-field report-field-cashier">
                 <span id="reportCashierLabel">Cashiers</span>
                 <details class="report-cashier-select" id="reportCashierSelect">
@@ -689,7 +689,7 @@
       <label>Payment<select id="financeTransactionPayment"><option value="">All payments</option><option value="Cash">Cash</option><option value="GCash">GCash</option><option value="Others">Other banks / methods</option></select></label>
       <label>Order Type<select id="financeTransactionOrderType"><option value="">All order types</option><option value="Dine In">Dine In</option><option value="Take Away">Take Away</option><option value="Order Online">Order Online</option></select></label>
       <label>Cashier / Reference<input id="financeTransactionSearch" type="search" maxlength="120" autocomplete="off" placeholder="Search cashier or receipt…"/></label>
-      <div class="dm-transaction-filter-actions"><button id="financeTransactionApply" type="button" class="primary">Apply Filters</button><button id="financeTransactionReset" type="button" class="secondary">Clear Filters</button></div>
+      <div class="dm-transaction-filter-actions"><button id="financeTransactionReset" type="button" class="secondary">Clear Filters</button></div>
     </div>
     <div class="pos-finance-summary"><div><small>Transactions</small><strong id="financeTransactionCount">—</strong></div><div><small>Completed sales</small><strong id="financeTransactionTotal">—</strong></div></div>
     <div class="table-wrap"><table class="pos-finance-table"><thead><tr><th>Date</th><th>Reference</th><th>Branch</th><th>Cashier</th><th>Payment</th><th>Order type</th><th>Status</th><th>Amount</th></tr></thead><tbody id="financeTransactionsBody"><tr><td colspan="8">Select Transactions to load the ledger.</td></tr></tbody></table></div><nav id="financeTransactionPages" class="pos-finance-pagination"></nav>
@@ -838,32 +838,42 @@
         </div>
         <div class="card advanced-feature-wrapper">
           <p class="eyebrow">INVENTORY MANAGEMENT &amp; REPORTING</p>
-          <h3>More control for growing operations</h3>
-          <p class="muted advanced-feature-intro">Some Business modules are planned for a future release. Existing inventory tools continue to work as indicated below.</p>
-          <div class="advanced-feature-grid">
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">♧</span><div><h4>Purchase orders <small>Planned</small></h4><p>Plan supplier purchases, monitor deliveries, and keep vendor records.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">⇄</span><div><h4>Transfer orders <small>Business only</small></h4><p>Move ingredient stock between locations with an inventory audit record.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">▤</span><div><h4>Stock adjustments <small>Planned</small></h4><p>Document losses, damage, and manual stock corrections.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">☑</span><div><h4>Inventory counts <small>Planned</small></h4><p>Perform full or partial stocktakes with manual counting.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">◇</span><div><h4>Production <small>Planned</small></h4><p>Track ingredients converted into finished or prepared products.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">▧</span><div><h4>Inventory history <small>Available now</small></h4><p>Audit replenishment, transfer, and other recorded stock movements.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">₱</span><div><h4>Inventory valuation report <small>Planned</small></h4><p>Assess the estimated cost and value of ingredients on hand.</p></div></article>
-            <article class="advanced-feature"><span class="advanced-feature-icon" aria-hidden="true">▣</span><div><h4>Label printing <small>Planned</small></h4><p>Print ingredient and shelf labels for stock operations.</p></div></article>
+          <h3>Pro and Business: what is included</h3>
+          <p class="muted advanced-feature-intro">These capabilities are based on the existing POS and saved records. Business adds a dedicated analytics workspace and inter-location stock transfers.</p>
+          <div class="advanced-plan-comparison" id="advancedPlanComparison" aria-label="Pro and Business plan features">
+            <article class="advanced-tier-column">
+              <div class="advanced-tier-heading"><span>PRO PLAN</span><strong>Core operations</strong></div>
+              <ul>
+                <li>Sales reports, discounts and payment breakdown</li>
+                <li>Inventory list, stock monitoring and replenishment</li>
+                <li>Existing inventory movement audit</li>
+                <li>Standard dashboard with hourly and date-range trends</li>
+                <li>Transaction and expense ledgers</li>
+              </ul>
+            </article>
+            <article class="advanced-tier-column advanced-business-tier">
+              <div class="advanced-tier-heading"><span>BUSINESS PLAN</span><strong>Pro plus advanced operations</strong></div>
+              <ul>
+                <li>Everything included in Pro</li>
+                <li>Inter-location ingredient transfers with recorded movement history</li>
+                <li>Dedicated eight-section Advanced Analytics workspace</li>
+                <li>Branch sales comparison and 12-month trends</li>
+                <li>Sales vs expenses, menu mix and payment analysis</li>
+                <li>Customer records, cashier performance and operational alerts</li>
+              </ul>
+            </article>
           </div>
-<section id="advancedReferenceSection" class="advanced-reference-section" aria-label="Business reference analytics concept">
- <div class="advanced-reference-header"><div><p class="eyebrow">BUSINESS · DESIGN CONCEPT</p><h2>Advanced Analytics Reference Design</h2><p>The complete eight-section reference dashboard is included here for evaluation. Every figure in this concept is SAMPLE DATA; the live Dashboard above uses recorded POS sales.</p></div><span id="advancedReferencePlan" class="advanced-reference-plan">Business preview</span></div>
- <div id="advancedReferenceFrame" class="advanced-reference-frame is-locked">
-   <div id="advancedReferenceContent" class="advanced-reference-preview" aria-label="Reference dashboard sample preview"></div>
-   <div id="advancedReferenceScreen" class="advanced-reference-screen" aria-hidden="true"></div>
-   <div id="advancedReferenceLock" class="advanced-reference-gate" role="region" aria-label="Upgrade to view the full Business reference design">
-     <div class="advanced-reference-gate-card"><span class="advanced-reference-lock-icon" aria-hidden="true">◇</span><strong>Unlock the full Business analytics design</strong><p>See Financials, Store Performance, Sales &amp; Menu, Customers, Operations, Staff &amp; Labour, and Alerts. All values are sample previews for now.</p><button type="button" id="advancedReferenceUpgrade" class="primary">Upgrade to Business</button></div>
-   </div>
- </div>
-</section>
-          <div id="advancedBusinessActions" class="advanced-business-actions hidden">
-            <button type="button" class="primary" id="advancedOpenInventory">Open Inventory</button>
-            <button type="button" class="ghost" id="advancedOpenSales">Open Sales Report</button>
-          </div>
+          <p class="advanced-data-notice">Inventory is currently maintained as shared stock, not separate per-branch balances. Physical cash-count reconciliation, timekeeping, purchase-order approvals and stocktake adjustments are not yet recorded as dedicated workflows.</p>
+          <section id="advancedReferenceSection" class="advanced-reference-section" aria-label="Business advanced analytics workspace">
+            <div class="advanced-reference-header"><div><p class="eyebrow">BUSINESS · ADVANCED ANALYTICS</p><h2>Advanced Analytics</h2><p>Eight integrated analytical sections using saved franchise transactions, expense records and inventory movements.</p></div><span id="advancedReferencePlan" class="advanced-reference-plan">Business account</span></div>
+            <div id="advancedReferenceFrame" class="advanced-reference-frame is-locked">
+              <div id="advancedReferenceContent" class="advanced-reference-preview" aria-label="Advanced analytics with recorded POS data"></div>
+              <div id="advancedReferenceScreen" class="advanced-reference-screen" aria-hidden="true"></div>
+              <div id="advancedReferenceLock" class="advanced-reference-gate" role="region" aria-label="Advanced analytics requires Business">
+                <div class="advanced-reference-gate-card"><span class="advanced-reference-lock-icon" aria-hidden="true">◇</span><strong>Business analytics</strong><p>Upgrade to Business to access live financial, branch, menu, customer, cashier and operational analytics.</p><button type="button" id="advancedReferenceUpgrade" class="primary">Request Business Plan</button></div>
+              </div>
+            </div>
+          </section>
         </div>
       </section>
 
