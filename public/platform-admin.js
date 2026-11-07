@@ -84,6 +84,8 @@
  function renderFranchiseRequests(){
    const rows=franchiseSignupRequests;
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
+     const staging=x.stageStatus?'Prepared · no access':!x.emailVerifiedAt?'Awaiting verification':
+      '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
      const actions=x.status==='REJECTED'?'—':
       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button> '+
       '<button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>';
@@ -91,8 +93,8 @@
       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
       '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(x.emailVerifiedAt?'Verified':'Pending',x.emailVerifiedAt?'active':'unknown')+
       '</td><td>'+badge(x.status,x.status==='PENDING'?'unknown':x.status==='CONTACTED'?'active':'inactive')+
-      '</td><td>'+actions+'</td></tr>';
-   }).join('')||'<tr><td colspan="8">No franchise applications received.</td></tr>';
+      '</td><td>'+staging+'</td><td>'+actions+'</td></tr>';
+   }).join('')||'<tr><td colspan="9">No franchise applications received.</td></tr>';
  }
  async function reloadFranchiseRequests(){
    const data=await api('franchise-requests');
@@ -104,6 +106,24 @@
    try{await reloadFranchiseRequests()}catch(e){error('franchiseRequestsMessage',e.message)}
  });
  $('franchiseRequestsBody').addEventListener('click',async event=>{
+   const prepare=event.target.closest('button[data-request-prepare]');
+   if(prepare){
+     prepare.disabled=true;
+     try{
+       const template=await api('franchise-starter-template');
+       const counts=template.counts||{};
+       const message='Prepare a separate starter catalog with '+(counts.coffee||0)+' Coffee products, '+
+         (counts.nonCoffee||0)+' Non Coffee products, '+(counts.ingredients||0)+
+         ' ingredients, and zero opening stock? Product descriptions, prices and images are copied; no franchise transactions or stock are copied. No login will be created.';
+       if(!window.confirm(message))return;
+       await api('franchise-requests/'+prepare.dataset.requestPrepare+'/prepare',{
+         method:'POST',body:JSON.stringify({confirmation:'APPROVE STARTER CATALOG'})
+       });
+       await reloadFranchiseRequests();
+     }catch(e){error('franchiseRequestsMessage',e.message)}
+     finally{prepare.disabled=false}
+     return;
+   }
    const button=event.target.closest('button[data-request-status]');
    if(!button)return;
    const status=button.dataset.requestStatus;
