@@ -1,6 +1,6 @@
 # Franchise-level isolation and secure account activation
 
-**Status: implementation plan — NOT enabled in production.**
+**Status: staged implementation. Public request and email OTP verification are available; isolated starter-catalog preparation is available to Admin Control. Full public account activation remains disabled until live POS workspace isolation is complete.**
 Current public signup submits an Admin Control request only. Do not activate new accounts until the isolation tests below pass. Never clear shared production tables to initialize a new franchise.
 
 ## Existing boundaries and risks
@@ -10,6 +10,14 @@ Current public signup submits an Admin Control request only. Do not activate new
 - Inventory balances and many inventory movements are not yet franchise-scoped. `sales` has branch attribution, but must consistently be checked against the authenticated workspace.
 - `lib/franchise-starter-catalog.js` is a **read-only blueprint preview**, not a tenant-safe provisioning API.
 - Password reset uses `account-recovery` with Resend/SMTP support. New-account email verification requires an independent, audited token lifecycle.
+
+## Implemented safeguards (v1.5.98)
+
+- New self-service signup requests remain separate from `users`; no credentials are issued.
+- `lib/franchise-email-verification.js` supplies six-digit OTP verification (10-minute expiry, five-attempt budget, one-minute resend cooldown, hashed code, Resend/SMTP). Admin Control sees whether an email is verified.
+- `lib/franchise-tenant-staging.js` allows only an authenticated Admin Control operator to explicitly approve a starter catalog after email verification. Each application obtains a separate staging key and fresh product/ingredient/recipe/add-on IDs. Opening stock is constrained to zero. No existing products, stock, sales, users, payments or chat rows are updated.
+- `franchise_provisioning_stages.stage_status=PREPARED_NO_ACCESS` means **not** activated: the staged catalog is not yet connected to the live POS route.
+- CI regression tests cover OTP and isolated idempotent staging.
 
 ## Step 1 — Audit and snapshot
 
