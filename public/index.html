@@ -240,7 +240,7 @@
           <div id="planWidgetCustomizer" class="plan-widget-customizer hidden admin-only" aria-label="Dashboard widget preferences"></div>
           <div id="planWidgetError" role="status" class="plan-widget-info hidden admin-only"></div>
           <div id="planWidgetCards" class="plan-widget-grid" aria-live="polite">
-            <section class="card dashboard-insight-card dashboard-items-card" aria-labelledby="performanceTitle">
+            <section class="card dashboard-insight-card dashboard-items-card admin-only" aria-labelledby="performanceTitle">
             <div class="card-head">
               <div><p class="eyebrow">THIS MONTH · UNITS SOLD</p><h3 id="performanceTitle">Items Performance</h3></div>
               <span class="dashboard-mini-caption" id="performanceCountLabel">Up to 8 products</span>
@@ -385,6 +385,7 @@
                   <div id="transferPlanGate" class="inventory-plan-gate hidden" role="note">
                     <span class="plan-gate-label"><span aria-hidden="true">🔒</span> Business plan users only</span>
                     <button id="transferUpgradeButton" type="button" class="primary">Upgrade</button>
+                    <p id="transferUpgradeInformation" class="transfer-upgrade-information hidden" role="status" aria-live="polite"></p>
                   </div>
                 </div>
                 <svg class="inv-hero-illustration inv-transfer-illustration" viewBox="0 0 244 145" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of inventory boxes moving between two locations">
