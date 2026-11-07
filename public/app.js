@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.95-branch-all-real-analytics';
+  const VERSION = '1.5.96-gallery-cashier-widgets-onboarding';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -106,6 +106,7 @@
       loadCss('dmDashboardKpis20261107','/dashboard-kpi-chart-v20261107.css');
       loadCss('dmAccountControl20261107','/account-subscription-v20261107.css');
       loadCss('dmAdvancedLive20261108','/advanced-analytics-v20261108.css');
+      loadCss('dmProductGalleryWidgetDrag20261108','/pos-gallery-widget-drag-v20261108.css');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
