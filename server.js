@@ -1149,6 +1149,13 @@ async function dashboardActivity(user,params={}){
  if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
  const args=[],parts=[];
  if(branchId!=null){args.push(branchId);parts.push('branch_id=$'+args.length);}
+ else{
+  const workspace=await workspaceIdForUser(user.id);
+  if(!workspace)throw Object.assign(new Error('Franchise workspace not found.'),{status:403});
+  args.push(workspace);
+  parts.push('EXISTS (SELECT 1 FROM chat_workspace_branches wb WHERE wb.workspace_id=$'+
+    args.length+' AND wb.branch_id=sales.branch_id)');
+ }
  if(status!=='all'){args.push(status==='sold'?'Sold':'Deleted');parts.push('status=$'+args.length);}
  if(period!=='all'){
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -1219,14 +1226,18 @@ async function widgetSettings(user,plan,body){
 }
 
 async function dashboardData(params={},branchId=null,user=null){
+  const workspace=await workspaceIdForUser(user?.id);
+  if(!workspace)throw Object.assign(new Error('Franchise workspace not found.'),{status:403});
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const monthStart=today.slice(0,7)+'-01';
   const nextMonth=new Date(Date.UTC(Number(today.slice(0,4)),Number(today.slice(5,7)),1)).toISOString().slice(0,10);
   const dayAfter=addDays(today,1);
   const toUtc=day=>new Date(day+'T00:00:00+08:00').toISOString();
-  const scopedArgs=(from,to)=>branchId==null?['Sold',toUtc(from),toUtc(to)]:
-    ['Sold',toUtc(from),toUtc(to),Number(branchId)];
-  const branchClause=branchId==null?'':' AND s.branch_id=$4';
+  const scopeId=branchId==null?workspace:Number(branchId);
+  const scopedArgs=(from,to)=>['Sold',toUtc(from),toUtc(to),scopeId];
+  const branchClause=branchId==null?
+    ' AND EXISTS (SELECT 1 FROM chat_workspace_branches wb WHERE wb.workspace_id=$4 AND wb.branch_id=s.branch_id)':
+    ' AND s.branch_id=$4';
   // Dashboard cards need lightweight sums, not complete sale reports and product costing.
   const summarize=async(from,to)=>{
     const r=await db.query(
@@ -1238,7 +1249,7 @@ async function dashboardData(params={},branchId=null,user=null){
   };
   const [todayR,monthR,trendResult,inv,monthItemsR,activeR]=await Promise.all([
     summarize(today,dayAfter),summarize(monthStart,nextMonth),
-    branchSupport.buildTrend(db,params,branchId),getInventory(),
+    branchSupport.buildTrend(db,params,branchId,workspace),getInventory(),
     db.query('SELECT si.product_name_snapshot,si.is_add_on,si.is_package,p.category,'+
       'SUM(si.quantity) AS qty,SUM(si.line_total) AS amount FROM sale_items si '+
       'JOIN sales s ON s.id=si.sale_id LEFT JOIN products p ON p.id=si.product_id '+
@@ -1253,7 +1264,7 @@ async function dashboardData(params={},branchId=null,user=null){
   // Match the selected branch, date range, and Manila clock used by the total trend.
   const startUtc=new Date(trendResult.from+'T00:00:00+08:00').toISOString();
   const endUtc=new Date(addDays(trendResult.to,1)+'T00:00:00+08:00').toISOString();
-  const trendArgs=branchId==null?['Sold',startUtc,endUtc]:['Sold',startUtc,endUtc,Number(branchId)];
+  const trendArgs=['Sold',startUtc,endUtc,scopeId];
   const expensePromise=user?.role==='Admin'?
     posFinance.expenses(db,user,{start:trendResult.from,end:trendResult.to,
       ...(branchId==null?{}:{branchId})}).then(x=>x.grandTotal)
@@ -1263,11 +1274,11 @@ async function dashboardData(params={},branchId=null,user=null){
     db.query('SELECT s.id,s.sold_at,s.gross,s.actual,si.line_total,si.is_add_on,si.is_package,p.category '+
       'FROM sales s JOIN sale_items si ON si.sale_id=s.id LEFT JOIN products p ON p.id=si.product_id '+
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
-      (branchId==null?'':' AND s.branch_id=$4')+' ORDER BY s.sold_at,s.id,si.id',trendArgs),
+      branchClause+' ORDER BY s.sold_at,s.id,si.id',trendArgs),
     db.query('SELECT COALESCE(SUM(s.gross),0) AS gross,'+
       'COALESCE(SUM(s.discount_amount),0) AS discount FROM sales s '+
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
-      (branchId==null?'':' AND s.branch_id=$4'),trendArgs),
+      branchClause,trendArgs),
     expensePromise
   ]);
   const rangeTotals=rangeTotalsR.rows[0]||{};
@@ -1317,11 +1328,13 @@ async function dashboardData(params={},branchId=null,user=null){
   }
   // Compact recent activity, already scoped by the authorized dashboard branch.
   // Keep this query bounded; product/customer details are optional on historical sales.
-  const recentArgs=branchId==null?['Sold']:['Sold',Number(branchId)];
+  const recentArgs=['Sold',scopeId];
+  const recentClause=branchId==null?
+    ' AND EXISTS (SELECT 1 FROM chat_workspace_branches wb WHERE wb.workspace_id=$2 AND wb.branch_id=s.branch_id)':
+    ' AND s.branch_id=$2';
   const recentR=await db.query(
-    'SELECT id,reference,sold_at,cashier_name_snapshot,payment_mode,actual,order_type,customer_name,table_label FROM sales WHERE status=$1'+
-    (branchId==null?'':' AND branch_id=$2')+' ORDER BY sold_at DESC,id DESC LIMIT 8',
-    recentArgs
+    'SELECT s.id,s.reference,s.sold_at,s.cashier_name_snapshot,s.payment_mode,s.actual,s.order_type,s.customer_name,s.table_label '+
+    'FROM sales s WHERE s.status=$1'+recentClause+' ORDER BY s.sold_at DESC,s.id DESC LIMIT 8',recentArgs
   );
   const recentIds=recentR.rows.map(s=>Number(s.id));
   const itemsBySale=new Map();
