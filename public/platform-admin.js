@@ -2,7 +2,7 @@
 (()=>{
  const $=id=>document.getElementById(id);
  let accounts=[],summary={},page=1,search='',status='all',selected=null,officeName='Admin Control',mustChangeAdminPassword=false;
- let officeSubscription=null,billingFilter=null,platformChartData=[];
+ let officeSubscription=null,billingFilter=null,platformChartData=[],franchiseSignupRequests=[];
  const PAGE_SIZE=10,expandedOwners=new Set(),expandedBranches=new Set();
  const headerClock=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
  function updateAdminHeaderDate(){const el=$('adminHeaderDate');if(el)el.textContent=headerClock.format(new Date());}
@@ -75,12 +75,47 @@
    $('metricBranches').textContent=number(summary.branches);
    $('metricUsers').textContent=number(summary.users);
    $('metricActive').textContent=number(summary.activeOwners);
-   render();await reloadBilling();
+   render();await Promise.all([reloadBilling(),reloadFranchiseRequests()]);
   }catch(err){
    error('tableMessage',err.message);
    if(err.status===401)showLogin('Please sign in again.');
   }finally{button.disabled=false}
  }
+ function renderFranchiseRequests(){
+   const rows=franchiseSignupRequests;
+   $('franchiseRequestsBody').innerHTML=rows.map(x=>{
+     const actions=x.status==='REJECTED'?'—':
+      '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button> '+
+      '<button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>';
+     return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
+      '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
+      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(x.status,x.status==='PENDING'?'unknown':x.status==='CONTACTED'?'active':'inactive')+
+      '</td><td>'+actions+'</td></tr>';
+   }).join('')||'<tr><td colspan="7">No franchise applications received.</td></tr>';
+ }
+ async function reloadFranchiseRequests(){
+   const data=await api('franchise-requests');
+   franchiseSignupRequests=Array.isArray(data.requests)?data.requests:[];
+   renderFranchiseRequests();
+ }
+ $('refreshFranchiseRequests').addEventListener('click',async()=>{
+   error('franchiseRequestsMessage','');
+   try{await reloadFranchiseRequests()}catch(e){error('franchiseRequestsMessage',e.message)}
+ });
+ $('franchiseRequestsBody').addEventListener('click',async event=>{
+   const button=event.target.closest('button[data-request-status]');
+   if(!button)return;
+   const status=button.dataset.requestStatus;
+   if(status==='REJECTED'&&!window.confirm('Reject this franchise request? No POS account has been created.'))return;
+   button.disabled=true;
+   try{
+     await api('franchise-requests/'+button.dataset.requestId,{
+       method:'PUT',body:JSON.stringify({status})
+     });
+     await reloadFranchiseRequests();
+   }catch(e){error('franchiseRequestsMessage',e.message)}
+   finally{button.disabled=false}
+ });
  $('refreshAccounts').addEventListener('click',reload);
  const findOwner=ws=>accounts.find(x=>x.workspaceId===Number(ws));
  const findUser=(owner,uid)=>[...(owner.allBranchAdmins||[]),...owner.branches.flatMap(b=>b.users||[]),...owner.unassigned].find(u=>u.id===Number(uid));
