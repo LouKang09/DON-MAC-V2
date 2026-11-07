@@ -199,8 +199,9 @@
         esc(row.plan==='BUSINESS'?'Business':'Pro')+'</strong></td><td>'+
         esc(planDisplayDate(row.startDate))+'</td><td>'+esc(planDisplayDate(row.renewDate))+
         '</td><td class="plan-days-cell">'+(remaining==null?'—':num(remaining,0))+'</td><td>'+
-        subscriptionBadge(row.status)+'</td><td class="plan-remark-cell">'+
-        esc(row.remark||'Subscription record')+'</td></tr>';
+        subscriptionBadge(row.status)+'</td><td class="plan-remark-cell"><span class="plan-remark-pill" data-kind="'+
+        esc(String(row.remark||'Subscription record').toLowerCase().replace(/\s+/g,'-'))+'">'+
+        esc(row.remark||'Subscription record')+'</span></td></tr>';
     }).join('')||'<tr><td colspan="7">No subscription changes recorded yet.</td></tr>';
     $('subscriptionHistoryPagination').innerHTML='<span>Showing '+(history.length?start+1:0)+'–'+
       Math.min(start+SUBSCRIPTION_ROWS_PER_PAGE,history.length)+' of '+history.length+
