@@ -125,11 +125,25 @@
    header.appendChild($('refreshAccounts'));
   }
  }
+ function ensureDashboardRefresh(){
+  // Dashboard charts also deserve an immediate refresh even though they
+  // have no table and the global header control has been relocated.
+  if(portal==='pos')return;
+  const header=portal==='office'?
+   document.querySelector('#page-dashboard .panel-head'):
+   document.querySelector('#platformDashboard .section-header');
+  if(!header||header.querySelector('button.dm-refresh'))return;
+  header.classList.add('dm-refresh-heading');
+  header.appendChild(makeRefresh(portal==='office'?
+   ()=>$('officeRefresh')?.click():
+   ()=>window.donmacPlatformAdmin?.refreshAccounts?.()));
+ }
  function scan(){
   if(portal==='pos')mainPosSetup();
   else if(portal==='office')officeSetup();
   else adminSetup();
   iconizeExisting();
+  ensureDashboardRefresh();
   let target=portal==='pos'?'#app .view table':portal==='office'?'#officeApp .office-page table':'#platformApp .main-card table';
   document.querySelectorAll(target).forEach(addForTable);
  }
