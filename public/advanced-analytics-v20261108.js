@@ -18,7 +18,7 @@
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const date=x=>{const d=new Date(x);return Number.isNaN(d.getTime())?String(x||'—'):new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(d);};
  let subscription=null,model=null,section='dashboard',branch='all',days='30',busy=false,requestId=0,lastLoad=0,error='';
- const business=()=>subscription?.plan==='BUSINESS'&&subscription?.status==='PAID'&&subscription?.configured;
+ const business=()=>window.donmacAuthenticatedRole==='Admin'&&subscription?.plan==='BUSINESS'&&subscription?.status==='PAID'&&subscription?.configured;
  const empty=message=>'<div class="aa-empty">'+esc(message)+'</div>';
  const note=message=>'<p class="aa-data-note">'+esc(message)+'</p>';
  const title=(heading,description)=>'<div class="rd-section-title"><div><h3>'+esc(heading)+'</h3><p>'+esc(description)+'</p></div><span class="aa-recorded-label">POS RECORDS</span></div>';
