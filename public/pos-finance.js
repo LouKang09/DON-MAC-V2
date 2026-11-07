@@ -124,7 +124,6 @@
   state.transactions.page=1;
   load('transactions');
  };
- $('financeTransactionApply').onclick=applyTransactionFilters;
  // Text searches are debounced to avoid issuing one network call per keystroke.
  $('financeTransactionSearch').addEventListener('input',()=>{
   if(transactionSearchTimer!==null)clearTimeout(transactionSearchTimer);
