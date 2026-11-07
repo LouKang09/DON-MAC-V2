@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.77-layout-filters';
+  const VERSION = '1.5.78-coffee-workspaces';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -91,12 +91,13 @@
       loadCss('dashboardExperienceV1573','/dashboard-experience-v1573.css');
       loadCss('csvSalesImportV1572','/sales-csv-import-v1572.css');
       loadCss('dmUiRefinements20261107','/ui-refinements-v20261107.css');
+      loadCss('dmCoffeeWorkspaces20261107','/coffee-workspace-theme-v20261107.css?v=2');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
       await loadScript('/supply-franchise.js?v=1.5.79');
       await loadScript('/tenant-billing-ui.js?v=1');
-      await loadScript('/pos-finance.js');
+      await loadScript('/pos-finance.js?v=20261107c');
       await loadScript('/pos-quickpay-v1556.js');
       window.donmacSupply?.refreshNotices?.();
 
@@ -111,7 +112,7 @@
       await loadScript('/pos-refresh.js');
       await loadScript('/dashboard-v1512.js');
       await loadScript('/dashboard-compact-v1571.js');
-      await loadScript('/dashboard-experience-v1573.js');
+      await loadScript('/dashboard-experience-v1573.js?v=20261107c');
       await loadScript('/sales-csv-import-v1572.js');
       // Admin-only read-only preview; keep all current dashboard renderers unchanged.
       await loadScript('/premium-dashboard-feature-gallery-v1533.js');
