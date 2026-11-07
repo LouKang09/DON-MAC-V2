@@ -39,6 +39,8 @@
     '<p>'+esc(x.description||x.buttonName)+'</p>'+
     '<p><b>POS Button:</b> '+esc(x.buttonName)+' · '+money(x.price)+'</p>'+
     '<p class="dm-notif-times">'+time(x.startsAt)+' – '+time(x.endsAt)+'</p>'+
+    '<p><b>Supplies required per promotional sale:</b> '+(x.credits||[]).map(c=>
+      esc(c.name)+' × '+c.requiredPerSale+' (received '+c.purchased+')').join(' · ')+'</p>'+
     '<p data-promo-timer="'+esc(x.endsAt)+'" data-promo-start="'+esc(x.startsAt)+'"></p>'+
     '<p class="'+(eligible?'dm-promo-ready':'dm-promo-locked')+'">'+(eligible?
       'Eligible to sell · '+Number(x.remaining||0)+' supply-backed sales remaining':
@@ -65,6 +67,9 @@
    const response=await fetch('/api/office-promotions',{credentials:'same-origin',cache:'no-store'});
    if(!response.ok)throw Error('Promotions could not be loaded.');
    const r=await response.json();campaigns=r.campaigns||[];loaded=true;renderPromos();
+   if(tab==='promotions'&&modal.open){
+     localStorage.setItem('dm_seen_office_campaigns',campaigns.filter(c=>c.active).map(c=>c.id).join(','));
+   }
    const keys=campaigns.filter(x=>x.active&&Date.parse(x.endsAt)>Date.now()).map(x=>x.id).join(',');
    const prev=localStorage.getItem('dm_seen_office_campaigns');
    if(prev!==keys&&keys){
