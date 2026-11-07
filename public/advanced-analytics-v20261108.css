@@ -236,3 +236,80 @@
   #view-advanced.is-business .aa-report-controls{padding:10px!important}
   #view-advanced.is-business .dm-advanced-shell .rd-section-title{align-items:flex-start!important}
 }
+
+/* Interactive analytics: visible hover/focus response on actual POS records. */
+#view-advanced.is-business .dm-advanced-shell .rd-kpi,
+#view-advanced.is-business .dm-advanced-shell .rd-panel,
+#view-advanced.is-business .dm-advanced-shell .aa-rank-row,
+#view-advanced.is-business .dm-advanced-shell .aa-donut-legend > div,
+#view-advanced.is-business .dm-advanced-shell .rd-alert-list > div{
+  transition:background-color .14s ease,border-color .14s ease,
+    box-shadow .14s ease,transform .14s ease;
+}
+#view-advanced.is-business .dm-advanced-shell .rd-kpi:hover,
+#view-advanced.is-business .dm-advanced-shell .rd-kpi:focus-visible{
+  border-color:#70b795!important;
+  box-shadow:0 7px 20px rgba(6,72,39,.13)!important;
+  transform:translateY(-2px);outline:none;
+}
+#view-advanced.is-business .dm-advanced-shell .rd-panel:hover{
+  border-color:#b1d9c3!important;
+  box-shadow:0 5px 14px rgba(7,58,36,.06)!important;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-rank-row,
+#view-advanced.is-business .dm-advanced-shell .aa-donut-legend > div{
+  padding:7px 9px;margin:0 -9px;border-radius:9px;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-rank-row:hover,
+#view-advanced.is-business .dm-advanced-shell .aa-rank-row:focus-visible,
+#view-advanced.is-business .dm-advanced-shell .aa-donut-legend > div:hover,
+#view-advanced.is-business .dm-advanced-shell .aa-donut-legend > div:focus-visible{
+  background:#eaf6ed;outline:1px solid #9bd1b1;outline-offset:0;
+  transform:translateX(2px);
+}
+#view-advanced.is-business .dm-advanced-shell .aa-rank-row:hover .aa-progress span,
+#view-advanced.is-business .dm-advanced-shell .aa-rank-row:focus-visible .aa-progress span{
+  filter:brightness(1.14);box-shadow:0 0 0 1px rgba(7,58,36,.18);
+}
+#view-advanced.is-business .dm-advanced-shell .aa-table tbody tr{
+  transition:background-color .12s ease,box-shadow .12s ease;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-table tbody tr:hover,
+#view-advanced.is-business .dm-advanced-shell .aa-table tbody tr:focus-within{
+  background:#e9f6ed!important;box-shadow:inset 3px 0 #168552;
+}
+#view-advanced.is-business .dm-advanced-shell .rd-alert-list > div:hover,
+#view-advanced.is-business .dm-advanced-shell .rd-alert-list > div:focus-visible{
+  background:#f0f8f1;box-shadow:inset 3px 0 #1f8e56;outline:0;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-chart-dot{
+  cursor:crosshair;transition:r .12s ease,stroke-width .12s ease,filter .12s ease;
+  stroke:transparent;stroke-width:5px;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-chart-dot:hover,
+#view-advanced.is-business .dm-advanced-shell .aa-chart-dot:focus-visible{
+  r:7.5px;stroke:white;stroke-width:3px;
+  filter:drop-shadow(0 1px 4px rgba(9,60,29,.38));outline:0;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-donut{
+  transition:filter .16s ease,transform .16s ease;
+}
+#view-advanced.is-business .dm-advanced-shell .aa-donut:hover{
+  filter:saturate(1.13);transform:scale(1.025);
+}
+#view-advanced.is-business .dm-advanced-shell .rd-sidebar nav button:hover:not(.active){
+  background:#ebf5ed!important;color:#075d38!important;
+}
+.aa-floating-tooltip{
+  position:fixed;z-index:99999;max-width:min(310px,calc(100vw - 18px));
+  padding:9px 12px;border-radius:9px;
+  background:#173d2b;color:#fff;border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 8px 25px rgba(0,0,0,.21);
+  font-size:12px;line-height:1.45;font-weight:700;pointer-events:none;
+  overflow-wrap:anywhere;white-space:normal;
+}
+.aa-floating-tooltip[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){
+  #view-advanced.is-business .dm-advanced-shell *,
+  .aa-floating-tooltip{transition:none!important;animation:none!important}
+}
