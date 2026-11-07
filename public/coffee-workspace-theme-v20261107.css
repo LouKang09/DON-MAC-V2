@@ -1,162 +1,155 @@
-/* Don Mac workspaces: approved HD login-coffee art on every primary card.
-   The warm cream veil keeps tables, forms, text and buttons accessible. */
-:root {
-  --dm-coffee-card-art: url('/assets/login-coffee-pattern-approved-hd.png');
-  --dm-coffee-card-veil: linear-gradient(105deg,
-    rgba(255,253,249,.95) 0%,
-    rgba(255,251,245,.87) 46%,
-    rgba(255,251,245,.74) 100%);
+/* Don Mac coffee-workspace backdrop — the illustration belongs to the OUTER canvas,
+   never on individual tiles, panels, charts or tables. Preserve the normal white cards. */
+:root{
+  --dm-coffee-workspace-art:url('/assets/login-coffee-pattern-approved-hd.png');
 }
-#app .view .card,
-#app .view .summary-card,
-#app .view .catalog-panel,
-#app .view .order-panel,
-#app .view .panel,
-#app .view .users-list-panel,
-#app .view .users-detail-form,
-#app .view .inv-item-card,
-#app .view .dashboard-statistics-card,
-#app .view .dashboard-activity-grid > .card,
-#app .view .plan-widget-card,
-#platformApp .main-card,
-#platformApp .metric,
-#platformApp .platform-dashboard-kpis > div,
-#platformApp .platform-chart-card,
-#platformApp .subscription-history-preview,
-#officeApp .panel,
-#officeApp .stat,
-#officeApp .distribution-metrics > div,
-#officeApp .franchise-summary-card,
-#officeApp .office-add-product {
-  background-color:#fcf6ec!important;
-  background-image:var(--dm-coffee-card-veil),var(--dm-coffee-card-art)!important;
-  background-size:cover,cover!important;
-  background-position:center,center!important;
-  background-repeat:no-repeat,no-repeat!important;
-}
-/* Slightly more art on large dashboard tiles, without compromising legibility. */
-#view-dashboard .summary-card,
-#view-dashboard .dashboard-statistics-card,
-#view-dashboard .dashboard-category-card,
-#page-dashboard .distribution-metrics > div,
-#platformApp .platform-dashboard-kpis > div {
+#app .main,
+#platformApp .content,
+#officeApp .office-main{
+  background-color:#eee5d8!important;
   background-image:
-   linear-gradient(100deg,rgba(255,251,245,.92),rgba(255,251,245,.77)),
-   var(--dm-coffee-card-art)!important;
+    linear-gradient(rgba(249,247,242,.28),rgba(249,247,242,.28)),
+    var(--dm-coffee-workspace-art)!important;
+  background-position:center top,center top!important;
+  background-repeat:repeat,repeat!important;
+  background-size:auto,640px 640px!important;
 }
-/* Maintain opaque inputs, data tables and charts on patterned surfaces. */
-#app .view input:not([type="checkbox"]):not([type="radio"]),
-#app .view select,
-#app .view textarea,
-#officeApp .office-page input,
-#officeApp .office-page select,
-#officeApp .office-page textarea,
-#platformApp input,
-#platformApp select,
-#platformApp textarea {
-  background-color:rgba(255,255,255,.97);
+/* The dashboard previously painted an opaque cream background across the whole view,
+   hiding the new canvas. Make views transparent, not their constituent cards. */
+#app .main > .view,
+#app .main #view-dashboard{
+  background:transparent!important;
 }
-#app .view .table-wrap,
-#officeApp .office-page .table-scroll,
-#platformApp .table-scroll {
-  border-radius:10px;
+/* The green heading and dark navigation rails retain their original solid surfaces. */
+#app .main > .topbar,
+#platformApp .content > .topbar{
+  background-image:none!important;
 }
-#app .view table,
-#officeApp .office-page table,
-#platformApp table {
-  background:rgba(255,255,255,.77);
-}
-#app .view table thead,
-#officeApp .office-page table thead,
-#platformApp table thead {
-  background:rgba(245,249,245,.94);
-}
-/* The branch selector occupies its own green bar, matching the top header. */
-#view-dashboard #dashboardScope.dashboard-account-filter {
+/* A full-width, matching green branch bar with compact controls at the RIGHT end. */
+#view-dashboard #dashboardScope.dashboard-account-filter{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
-  gap:14px;
+  justify-content:flex-end!important;
   flex-wrap:wrap;
-  margin:0 0 15px!important;
+  gap:11px;
   padding:12px 17px!important;
+  margin:0 0 15px!important;
   border:1px solid #075d38!important;
   border-radius:15px!important;
   background:#075d38!important;
   box-shadow:0 5px 16px rgba(7,93,56,.14);
 }
-#view-dashboard #dashboardScope.dashboard-account-filter.hidden{display:none!important;}
-#view-dashboard #dashboardScope.dashboard-account-filter > label {
+#view-dashboard #dashboardScope.dashboard-account-filter.hidden{
+  display:none!important;
+}
+#view-dashboard #dashboardScope.dashboard-account-filter > label{
   display:inline-flex;
   align-items:center;
   flex:0 0 auto;
   margin:0!important;
-  color:white!important;
+  color:#fff!important;
   font-size:12px!important;
   font-weight:830!important;
   letter-spacing:.02em;
 }
-#view-dashboard #dashboardScope #dashboardBranchWrap {
+#view-dashboard #dashboardScope #dashboardBranchWrap{
   display:flex;
   align-items:center;
-  flex:1 1 220px;
-  width:auto;
-  max-width:420px;
-  min-width:170px!important;
+  flex:0 1 210px!important;
+  width:210px!important;
+  max-width:210px!important;
+  min-width:0!important;
   margin:0!important;
 }
-#view-dashboard #dashboardScope #dashboardBranch {
-  min-width:0;
+#view-dashboard #dashboardScope #dashboardBranch{
+  box-sizing:border-box!important;
+  min-width:0!important;
   min-height:40px;
-  width:100%;
+  max-width:100%!important;
+  width:100%!important;
   background:#fff!important;
   color:#075d38!important;
   border:1px solid #b2dcc3!important;
   border-radius:11px!important;
   font-size:12px;
   font-weight:730;
-  padding:9px 13px;
+  padding:9px 12px;
+  text-overflow:ellipsis;
 }
-#view-dashboard #dashboardScope #dashboardBranch:focus-visible {
+#view-dashboard #dashboardScope #dashboardBranch:focus-visible{
   outline:3px solid #97d9ad!important;
   outline-offset:2px;
 }
-/* Sales Statistic: permanently keep the refresh at left and day pill next to title. */
-#view-dashboard .dashboard-statistics-card .dm-sales-heading {
+/* Card header: text block on the LEFT, original green refresh button FAR RIGHT.
+   Day pill remains immediately next to Sales Statistic. */
+#view-dashboard .dashboard-statistics-card .dm-sales-heading{
+  display:flex!important;
   flex-direction:row!important;
-  justify-content:flex-start!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  gap:12px!important;
+  flex-wrap:nowrap!important;
 }
-#view-dashboard .dashboard-statistics-card .dm-sales-heading > #dashboardChartRefresh {
-  order:-1!important;margin:0!important;align-self:center;
+#view-dashboard .dashboard-statistics-card .dm-sales-heading > .dashboard-chart-heading{
+  order:0!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
 }
-#view-dashboard .dashboard-statistics-card .dm-sales-title-row {
-  display:flex;gap:9px;align-items:center;justify-content:flex-start;flex-wrap:wrap;
+#view-dashboard .dashboard-statistics-card .dm-sales-heading > #dashboardChartRefresh{
+  order:1!important;
+  flex:0 0 41px!important;
+  margin:0 0 0 auto!important;
+  align-self:center!important;
 }
-#view-dashboard .dashboard-statistics-card #dashboardRangePill {
-  margin:0!important;position:static!important;
+#view-dashboard .dashboard-statistics-card .dm-sales-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:9px;
+  flex-wrap:wrap;
 }
-/* Instant-search ledger: its manual reset remains a strong green action. */
-#view-transactions #financeTransactionReset {
+#view-dashboard .dashboard-statistics-card .dm-sales-title-row > #dashboardRangePill{
+  position:static!important;
+  margin:0!important;
+}
+/* Keep the already approved green Clear Filters action. */
+#view-transactions #financeTransactionReset{
   background:#075d38!important;
-  color:#fff!important;
   border:1px solid #075d38!important;
+  color:#fff!important;
   border-radius:10px!important;
-  box-shadow:none!important;
 }
-#view-transactions #financeTransactionReset:hover {
-  background:#05472b!important;border-color:#05472b!important;
+#view-transactions #financeTransactionReset:hover{
+  background:#05472b!important;
+  border-color:#05472b!important;
 }
-#view-transactions #financeTransactionReset:focus-visible {
-  outline:3px solid #88c9a2!important;outline-offset:2px;
+#view-transactions #financeTransactionReset:focus-visible{
+  outline:3px solid #88c9a2!important;
+  outline-offset:2px;
 }
 @media(max-width:660px){
   #view-dashboard #dashboardScope.dashboard-account-filter{
-    align-items:stretch;gap:8px;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:8px!important;
+    flex-wrap:wrap!important;
   }
   #view-dashboard #dashboardScope #dashboardBranchWrap{
-    max-width:none;min-width:0!important;flex-basis:100%;
+    flex:0 1 190px!important;
+    width:min(190px,55vw)!important;
+    max-width:190px!important;
+    min-width:0!important;
   }
   #view-dashboard .dashboard-statistics-card .dm-sales-heading{
-    align-items:flex-start!important;
+    align-items:center!important;
+  }
+  #view-dashboard .dashboard-statistics-card .dm-sales-heading > #dashboardChartRefresh{
+    flex-basis:38px!important;
+  }
+}
+@media print{
+  #app .main,#platformApp .content,#officeApp .office-main{
+    background:white!important;
+    background-image:none!important;
   }
 }
