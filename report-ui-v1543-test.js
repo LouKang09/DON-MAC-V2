@@ -20,6 +20,11 @@ assert(!html.includes('development-only subscription preview'));
 assert(html.includes('>Update Plan</button>'));
 assert(html.includes('Account Type: <strong id="accountPlanPill">'));
 assert(css.includes('.plan-history-table td.plan-days-cell'));
+assert(html.includes('<th>Remark</th>'));
+assert(html.includes('<option value="all">All</option>'));
+assert(core.includes('plan-remark-pill'));
+assert(read('lib/branch-support.js').includes('wb.workspace_id=$4'));
+assert(server.includes('AND wb.branch_id=s.branch_id'));
 assert(css.includes('#accountPlanPill'));
 assert(core.includes("api('/api/account/subscription/update-plan'"));
 assert(core.includes("Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()])"));
@@ -67,7 +72,7 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
    }
    if(sql.startsWith('INSERT INTO platform_account_plan_history')){
      state.history.push({plan:args[2],status:args[3],started_at:args[4],
-       renew_at:args[5],changed_at:args[6],actor:args[7]});return{rows:[]};
+       renew_at:args[5],changed_at:args[6],actor:args[7],remark:args[8]});return{rows:[]};
    }
    throw Error('Unexpected subscription SQL: '+sql);
   }
@@ -75,6 +80,16 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
  await platform.migrate(db);
  assert(migrations.some(sql=>sql.includes('platform_account_plan_history')));
  assert(migrations.some(sql=>sql.includes('platform_account_plan_requests')));
+ assert(migrations.some(sql=>sql.includes('ADD COLUMN IF NOT EXISTS remark')));
+ assert.equal(platform.historyRemark(null,{plan:'PRO',status:'PAID'}),'Initial subscription');
+ assert.equal(platform.historyRemark({plan:'PRO',status:'PAID'},{
+  plan:'BUSINESS',status:'PAID'}),'Upgrade');
+ assert.equal(platform.historyRemark({plan:'BUSINESS',status:'PAID'},{
+  plan:'PRO',status:'PAID'}),'Downgrade');
+ assert.equal(platform.historyRemark({plan:'PRO',status:'PAID',next_payment_date:'2026-11-01'},{
+  plan:'PRO',status:'PAID',nextPaymentDate:'2026-12-01'}),'Renewal');
+ assert.equal(platform.historyRemark({plan:'PRO',status:'PAID'},{
+  plan:'PRO',status:'ON_HOLD'}),'On hold');
  const owner={id:7,role:'Admin'},staff={id:8,role:'User'};
  assert.equal((await platform.workspaceAccess(db,owner.id)).allowed,true,
   'Existing unconfigured accounts must not be automatically locked');
@@ -88,10 +103,12 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
  assert.equal((await platform.workspaceAccess(db,owner.id)).allowed,false);
  assert.equal((await platform.accountSubscription(db,42)).pendingPlan,null);
  assert.equal(state.history.length,1);
+ assert.equal(state.history[0].remark,'Initial subscription');
  await platform.savePlan(db,42,{plan:'BUSINESS',status:'PAID',amount:'1199',
    nextPaymentDate:'2026-12-07'},'Admin Control');
  assert.equal((await platform.workspaceAccess(db,owner.id)).allowed,true);
  assert.equal(state.history.length,2);
+ assert.equal(state.history[1].remark,'Reactivated');
  await platform.savePlan(db,42,{plan:'BUSINESS',status:'PAID',amount:'1199',
    nextPaymentDate:'2026-12-07'},'Admin Control');
  assert.equal(state.history.length,2,'No duplicate history for an unchanged plan/status/date');
@@ -99,6 +116,7 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
  assert.equal(sub.plan,'BUSINESS');
  assert.equal(sub.status,'PAID');
  assert.equal(sub.history.length,2);
+ assert.equal(sub.history[0].remark,'Reactivated');
  assert.equal(sub.renewAt,'2026-12-07');
  console.log('Admin Control subscription history, plan requests and access checks passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
