@@ -31,16 +31,19 @@
  function reconcile(){
    reconcileScheduled=false;
    const choices=[...select.options].filter(o=>o.value&&o.value!=='all');
-   const available=choices.some(o=>o.value===select.value);
-   const before=select.value;
-   // The existing dashboard loader adds an All option; restrict the dashboard
-   // to the account's actual branches, never cross-account aggregate data.
-   if(choices.length&& !available)select.value=choices[0].value;
-   const all=select.querySelector('option[value="all"]');
-   if(all)all.remove();
+   // Keep All as a first-class filter. Backend totals are scoped to this franchise.
+   let all=select.querySelector('option[value="all"]');
+   if(!all){
+     all=document.createElement('option');
+     all.value='all';
+     select.insertBefore(all,select.firstChild);
+   }
+   all.textContent='All';
+   const available=[...select.options].some(o=>o.value===select.value);
+   if(!available)select.value='all';
    const admin=!wrap.classList.contains('hidden');
    scope.classList.toggle('hidden',!admin||!choices.length);
-   if(choices.length&&(lastBranch!==select.value||before!==select.value)){
+   if(choices.length&&lastBranch!==select.value){
      lastBranch=select.value;
      if(board.classList.contains('active'))$('applyTrend')?.click();
    }
