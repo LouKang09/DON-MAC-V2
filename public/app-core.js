@@ -187,7 +187,7 @@
       'Business features and reporting are available below.':
       'Pro includes Replenish; Transfer and advanced access require Business.';
     $('advancedUpgradeButton').classList.toggle('hidden',business);
-    $('advancedBusinessActions').classList.toggle('hidden',!business);
+    window.donmacAdvancedAnalytics?.setSubscription(sub);
     window.donmacPlanWidgets?.setSubscription(sub);
     const history=Array.isArray(sub.history)?sub.history:[],totalPages=Math.max(1,Math.ceil(history.length/SUBSCRIPTION_ROWS_PER_PAGE));
     subscriptionHistoryPage=Math.max(1,Math.min(totalPages,subscriptionHistoryPage));
@@ -246,8 +246,6 @@
   });
   $('transferUpgradeButton').addEventListener('click',openPlanUpgrade);
   $('advancedUpgradeButton').addEventListener('click',openPlanUpgrade);
-  $('advancedOpenInventory').addEventListener('click',()=>switchView('inventory'));
-  $('advancedOpenSales').addEventListener('click',()=>switchView('reports'));
   async function boot(){
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
@@ -295,6 +293,7 @@
     }
     if(view==='advanced'||view==='account'){
       renderDevSubscription();
+      if(view==='advanced')window.donmacAdvancedAnalytics?.open();
       if(view==='account')loadDevSubscription();
     }
     if(view==='reports'&&shouldLoadOnNavigation('reports',6000)){
@@ -1553,7 +1552,7 @@
   async function restoreBackup(name){return withActionLock(`restore-backup:${name}`,async()=>{if(!confirm(`Restore ${name}? This will replace the current SQLite database.`))return;if(!confirm('Final warning: a pre-restore backup will be created automatically. Continue with restore?'))return;try{await api(`/api/backups/${encodeURIComponent(name)}/restore`,{method:'POST',timeoutMs:60000});alert('Database restored. Please sign in again.');location.reload();}catch(err){toast(err.message);}});}
 
   function branchOptions(list,selected,includeAll=false){
-   return (includeAll?'<option value="all">All branches</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
+   return (includeAll?'<option value="all">ALL</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
   }
 
   async function loadBranches(){
