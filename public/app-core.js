@@ -258,13 +258,19 @@
     const branch=state.branches.find(b=>Number(b.id)===Number(branchId));
     // POS no longer displays branch selection; admins manage the branch from Dashboard.
     if(!branchId){$('posDailyCount').textContent='Today · no branch';return;}
-    try{const data=await api('/api/dashboard?branchId='+encodeURIComponent(branchId));if(!state.user)return;$('posDailyCount').textContent='Today · '+num(data.metrics.todayTransactions,0)+' orders';}
+    try{const data=await api('/api/pos/today-count?branchId='+encodeURIComponent(branchId));if(!state.user)return;$('posDailyCount').textContent='Today · '+num(data.count,0)+' orders';}
     catch(_){$('posDailyCount').textContent='Today · — orders';}
   }
   function updatePosDateTime(){
     const target=$('posDate');
     if(!target)return;
     target.textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date());
+  }
+  const viewLastAutoRefresh=Object.create(null);
+  function shouldLoadOnNavigation(view,minimumGap){
+    const now=Date.now();
+    if(now-(viewLastAutoRefresh[view]||0)<minimumGap)return false;
+    viewLastAutoRefresh[view]=now;return true;
   }
   function switchView(view){
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
@@ -276,7 +282,18 @@
     window.donmacChat?.onViewChange(view);
     if(view==='pos'){refreshPosDailyCount();requestAnimationFrame(syncCategoryRowNeighbors);}
     window.donmacPlanWidgets?.onViewChange(view);
-    if(view==='dashboard')loadDashboard();if(view==='inventory'){loadInventory();loadDevSubscription();}if(view==='advanced'||view==='account')renderDevSubscription();if(view==='reports'){loadReportCashiers();loadReport();}if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();if(view==='supply')window.donmacSupply?.open();if(view==='transactions'||view==='expenses')window.donmacFinance?.open(view);
+    if(view==='dashboard')loadDashboard();
+    if(view==='inventory'){
+      if(shouldLoadOnNavigation('inventory',7000))loadInventory();
+      loadDevSubscription();
+    }
+    if(view==='advanced'||view==='account'){
+      renderDevSubscription();
+      if(view==='account')loadDevSubscription();
+    }
+    if(view==='reports'&&shouldLoadOnNavigation('reports',6000)){
+      loadReportCashiers();loadReport();
+    }if(view==='catalog')loadAdminAll();if(view==='users')loadUsers();if(view==='logs')loadLogs();if(view==='supply')window.donmacSupply?.open();if(view==='transactions'||view==='expenses')window.donmacFinance?.open(view);
   }
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
   $('dashboardPrintReport').addEventListener('click',()=>{
@@ -425,14 +442,14 @@
   $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();if(!state.quote||state.checkoutBusy)return;state.checkoutBusy=true;const submit=$('paymentSubmit'),close=$('paymentClose');if(submit){submit.disabled=true;submit.textContent='Processing…';}if(close)close.disabled=true;const payload={...quotePayload(),branchId:state.user.role==='Admin'?state.posBranchId:state.user.branchId,clientRequestId:state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`),paymentMode:$('paymentMode').value,tender:Number($('cashTender').value||0),paymentReference:$('gcashReference').value.trim(),orderType:$('posOrderType').value,customerName:$('posCustomerName').value.trim(),tableLabel:$('posOrderType').value==='Dine In'?$('posTableLabel').value.trim():''};state.pendingSaleRequestId=payload.clientRequestId;try{const sale=await api('/api/sales',{method:'POST',body:payload,timeoutMs:30000});$('paymentDialog').close();$('receiptText').textContent=`${sale.reference} · ${sale.paymentMode} · ${peso(sale.actual)}${sale.change?` · Change ${peso(sale.change)}`:''}${sale.idempotent?' · Safe retry recovered':''}`;resetOrderState({render:true});$('receiptDialog').showModal();refreshPosDailyCount();try{await loadCatalog();}catch(refreshErr){console.error(refreshErr);toast('Sale recorded successfully. Catalog refresh will retry on the next action.');}}catch(err){toast(err.message);if(err.status===409)try{await loadCatalog();}catch(_){}}finally{state.checkoutBusy=false;if(submit){submit.disabled=false;submit.textContent='Confirm Payment';}if(close)close.disabled=false;}});$('receiptClose').onclick=()=>{$('receiptDialog').close();resetOrderState({render:true});$('searchBox')?.focus();};
 
   async function loadInventory(){
-    // Audit must load independently. A table/editor rendering error must never
-    // prevent the movement history from being fetched and shown.
+    // Fetch audit and stock together instead of waiting for the first table to render.
+    const auditTask=loadMovements();
     try{
       const response=await api('/api/inventory');
       state.inventory=Array.isArray(response.items)?response.items:[];
       try{renderInventory();}catch(renderError){console.error('Inventory view rendering:',renderError);toast('Ingredient list could not render: '+renderError.message);}
     }catch(err){toast('Could not load ingredients: '+err.message);}
-    finally{await loadMovements();}
+    finally{await auditTask;}
   }
   const inventoryUI={page:1,pageSize:10,group:"none",sort:"nameAsc",status:"all"};
   function inventoryDisplayName(item){
