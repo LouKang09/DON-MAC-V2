@@ -186,9 +186,9 @@
     ['Sales processed',peso(s.net),'Completed order value',a.map(x=>x.net)],
     ['Completed transactions',fmt(s.orders),'Cashier-processed orders',a.map(x=>x.orders)],
     ['Average order value',peso(s.avgTicket),'Net sales per order',a.map(x=>x.avgTicket)]])+
-   panel('Cashier performance',lines(d.cashiers,['Cashier','Completed orders','Net sales','Average sale'],x=>
-    '<tr><td><strong>'+esc(x.name)+'</strong></td><td>'+fmt(x.orders)+'</td><td>'+
-    peso(x.net)+'</td><td>'+peso(x.orders?x.net/x.orders:0)+'</td></tr>'));
+   panel('Cashier performance',lines(d.cashiers,['Cashier','Branch','Completed orders','Net sales','Average sale'],x=>
+    '<tr><td><strong>'+esc(x.name)+'</strong></td><td>'+esc(x.branch||'—')+'</td><td>'+fmt(x.orders)+
+    '</td><td>'+peso(x.net)+'</td><td>'+peso(x.orders?x.net/x.orders:0)+'</td></tr>'));
  }
  function alertRows(alerts){
   return alerts.length?'<div class="rd-alert-list">'+alerts.map(a=>
