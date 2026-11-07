@@ -45,7 +45,7 @@
  }
  function bindBranchOptions(select,branches,all=false){
   const previous=select.value;
-  select.innerHTML=(all?'<option value="">All branches</option>':'<option value="">Select branch</option>')+
+  select.innerHTML=(all?'<option value="">ALL</option>':'<option value="">Select branch</option>')+
    branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('');
   if([...select.options].some(o=>o.value===previous))select.value=previous;
   else if(!all&&branches.length===1)select.value=String(branches[0].id);
