@@ -18,6 +18,9 @@
       <button type="button" class="side-link" data-office-page="distribution"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 3v6h6M4.4 9a8.5 8.5 0 1 1 .5 7M12 7v5l3.5 2"/></svg></span><span class="side-text">Distribution History</span></button>
        <button type="button" class="side-link" data-office-page="franchisees"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2M3 4h2M19 4h2"/></svg></span><span class="side-text">Franchisee Profile</span></button>
       
+      <button type="button" class="side-link" data-office-page="promotions">
+<span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 7h16v5H4zM4 12v8h16v-8M12 7v13M7 6c-3-4 3-6 5 1M17 6c3-4-3-6-5 1"/></svg></span>
+<span class="side-text">Promotions</span></button>
       <button type="button" class="side-link" data-office-page="catalog"><span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4ZM3 7v10l9 4 9-4V7M12 11v10"/></svg></span><span class="side-text">Supply Catalog</span></button>
       <button type="button" class="side-link" data-office-page="billing" title="Subscription Billing">
  <span class="side-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span>
@@ -93,7 +96,32 @@
        <tbody id="tenantBillingHistory"><tr><td colspan="5">No transactions recorded.</td></tr></tbody></table></div>
       </section>
      </section>
-    <section class="office-page hidden" id="page-catalog"><div class="panel"><div class="panel-head"><div><h2>Head Office supply catalog</h2><p class="muted">Franchisee prices and units from the supplied Main Office list.</p></div></div><details class="office-add-product"><summary>+ Add New Supply Product</summary><form id="officeNewProductForm" class="new-supply-form"><label>Product name<input id="officeNewProductName" maxlength="120" required></label><label>Unit<input id="officeNewProductUom" maxlength="80" required></label><label>Sale price (₱)<input id="officeNewProductPrice" type="number" min="0.01" step="0.01" required></label><label>Unit cost (₱)<input id="officeNewProductCost" type="number" min="0" step="0.01" placeholder="Unknown"></label><label>Starting stock<input id="officeNewProductStock" type="number" min="0" step="1" value="0" required></label><button class="btn solid" id="officeNewProductSave" type="submit">Save New Product</button></form></details><p class="muted">Approval deducts supply stock. Unrecorded purchase costs are unknown and are not counted as zero.</p><div class="table-scroll"><table><thead><tr><th>Particulars</th><th>Unit</th><th>Price (₱)</th><th>Unit cost</th><th>Stock</th><th>Promo price</th><th>Promo</th><th></th></tr></thead><tbody id="officeCatalogBody"></tbody></table></div><nav class="pagination" id="officeCatalogPages"></nav></div></section>
+    <section class="office-page hidden" id="page-promotions">
+ <div class="panel"><div class="panel-head"><div><p class="eyebrow">MAIN OFFICE CAMPAIGNS</p><h2>Scheduled Promotions</h2>
+ <p class="muted">Create POS promotional buttons for active franchisees. The POS unlocks selling only after its required supplies are delivered.</p></div></div>
+ <form id="officeCampaignForm" class="office-campaign-form">
+  <div class="office-campaign-fields">
+   <label>Campaign title<input id="officeCampaignTitle" maxlength="120" required placeholder="e.g. Holiday Coffee Bundle"></label>
+   <label>POS button label<input id="officeCampaignButton" maxlength="80" required placeholder="e.g. Holiday Special"></label>
+   <label>POS selling price (₱)<input id="officeCampaignPrice" type="number" min="0.01" step="0.01" required></label>
+   <label>Starts (Philippine time)<input id="officeCampaignStarts" type="datetime-local" required></label>
+   <label>Ends (Philippine time)<input id="officeCampaignEnds" type="datetime-local" required></label>
+  </div>
+  <label>Description<textarea id="officeCampaignDescription" maxlength="900" rows="2" placeholder="What is included in this promotion?"></textarea></label>
+  <h3>Required supply ingredients per POS sale</h3>
+  <p class="muted">Choose each Main Office supply item and quantity required for one sale. A franchise must purchase and receive these items before the button can process checkout.</p>
+  <div id="officeCampaignSupplies" class="office-campaign-supplies">Loading supply products…</div>
+  <button id="officeCampaignCreate" type="submit" class="btn solid">Create &amp; Schedule Promotion</button>
+  <p id="officeCampaignFeedback" role="status"></p>
+ </form></div>
+ <div class="panel"><div class="panel-head"><h2>Scheduled / Live Promotions</h2>
+  <button id="officeCampaignRefresh" class="btn outline" type="button">Refresh</button></div>
+  <div class="table-scroll"><table class="office-campaign-table"><thead><tr><th>Campaign</th><th>POS button</th><th>Status</th><th>Period</th><th>Participants</th><th>Actions</th></tr></thead>
+  <tbody id="officeCampaignRows"><tr><td colspan="6">No promotions loaded.</td></tr></tbody></table></div>
+  <div id="officeCampaignParticipants" class="office-campaign-participants hidden"></div>
+ </div>
+</section>
+<section class="office-page hidden" id="page-catalog"><div class="panel"><div class="panel-head"><div><h2>Head Office supply catalog</h2><p class="muted">Franchisee prices and units from the supplied Main Office list.</p></div></div><details class="office-add-product"><summary>+ Add New Supply Product</summary><form id="officeNewProductForm" class="new-supply-form"><label>Product name<input id="officeNewProductName" maxlength="120" required></label><label>Unit<input id="officeNewProductUom" maxlength="80" required></label><label>Sale price (₱)<input id="officeNewProductPrice" type="number" min="0.01" step="0.01" required></label><label>Unit cost (₱)<input id="officeNewProductCost" type="number" min="0" step="0.01" placeholder="Unknown"></label><label>Starting stock<input id="officeNewProductStock" type="number" min="0" step="1" value="0" required></label><button class="btn solid" id="officeNewProductSave" type="submit">Save New Product</button></form></details><p class="muted">Approval deducts supply stock. Unrecorded purchase costs are unknown and are not counted as zero.</p><div class="table-scroll"><table><thead><tr><th>Particulars</th><th>Unit</th><th>Price (₱)</th><th>Unit cost</th><th>Stock</th><th>Promo price</th><th>Promo</th><th></th></tr></thead><tbody id="officeCatalogBody"></tbody></table></div><nav class="pagination" id="officeCatalogPages"></nav></div></section>
     <section class="office-page hidden" id="page-settings"><div class="panel narrow"><p class="eyebrow">PROCESSING SURCHARGE</p><h2>Urgent request fee</h2><p class="muted">The extra fee is charged in addition to the item total and displayed to franchise owners before they submit an urgent request. Standard requests have no surcharge.</p><form id="urgentFeeForm"><label>Additional urgent fee (₱)<input type="number" step="0.01" min="0" max="100000" required id="officeUrgentFee"/></label><button class="btn solid">Save urgent fee</button></form><p class="fine">Setting applies to future orders. Existing order totals are preserved.</p></div></section>
   <section class="office-page hidden" id="page-security"><div class="panel narrow"><p class="eyebrow">ACCOUNT SECURITY</p><h2>Change Main Office password</h2><p class="muted">The initial password is temporary. Create a new private password before using the portal.</p><form id="officePasswordForm"><label>Current password<input id="officeOldPassword" type="password" required autocomplete="current-password"/></label><label>New password (10 characters minimum)<input id="officeNewPassword" type="password" minlength="10" required autocomplete="new-password"/></label><label>Confirm new password<input id="officeConfirmPassword" type="password" minlength="10" required autocomplete="new-password"/></label><button type="submit" class="btn solid">Update password</button></form></div></section>
   </main>
@@ -120,4 +148,4 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=1.5.81" defer></script><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=1" defer></script></body></html>
+<script src="/supply-office.js?v=1.5.81" defer></script><script src="/office-campaign-ui-v20261108.js?v=1" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=1"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=1" defer></script></body></html>
