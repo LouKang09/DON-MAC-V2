@@ -158,11 +158,27 @@
   }
   let subscriptionHistoryPage=1;
   const SUBSCRIPTION_ROWS_PER_PAGE=10;
+  function renderAccountBranchPricing(sub){
+    const q=sub?.branchPricing;
+    if(!q)return;
+    $('accountBranchPricing').textContent=(q.plan==='PRO'?'Pro':'Business')+
+      ' · 1 branch included + '+q.extraBranches+' additional active '+
+      (q.extraBranches===1?'branch':'branches')+' at ₱'+q.extraBranchRate.toLocaleString('en-PH')+
+      ' each. Next renewal: ₱'+Number(q.nextRenewalAmount).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})+'.';
+    const downgrade=$('accountPlanSelect').value==='PRO'&&(q.branches||[]).filter(b=>b.active).length>3;
+    $('accountDowngradeBranches').classList.toggle('hidden',!downgrade);
+    if(!downgrade)return;
+    const prior=sub.pendingPlan?.keepBranchIds||[];
+    const kept=prior.length===3?prior:q.branches.filter(b=>b.active).slice(0,3).map(b=>b.id);
+    $('accountDowngradeBranchChoices').innerHTML=q.branches.filter(b=>b.active).map(b=>
+      '<label><input type="checkbox" value="'+b.id+'" '+(kept.includes(b.id)?'checked':'')+' />'+esc(b.name)+'</label>').join('');
+  }
   function renderDevSubscription(){
     const sub=state.subscription;if(!sub)return;
     const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
     $('accountPlanPill').textContent=(business?'Business':'Pro')+' Plan User';
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
+    renderAccountBranchPricing(sub);
     $('saveAccountPlan').disabled=!admin;
     $('accountPlanName').textContent=business?'Business':'Pro';
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
@@ -220,12 +236,16 @@
     try{state.subscription=await api('/api/account/subscription');renderDevSubscription();}
     catch(error){$('inventoryTransferTab').disabled=true;$('transferPlanGate').classList.remove('hidden');toast('Subscription: '+error.message);}
   }
+  $('accountPlanSelect').addEventListener('change',()=>renderAccountBranchPricing(state.subscription));
   async function requestPlanUpdate(plan){
     if(state.user?.role!=='Admin')return;
+    const visible=!$('accountDowngradeBranches').classList.contains('hidden');
+    const selected=visible?[...$('accountDowngradeBranchChoices').querySelectorAll('input:checked')].map(x=>Number(x.value)):[];
+    if(visible&&selected.length!==3){toast('Choose exactly 3 branches to keep active on Pro.');return;}
     return withActionLock('update-plan',async()=>{
       const button=$('saveAccountPlan');button.disabled=true;
       try{
-        const result=await api('/api/account/subscription/update-plan',{method:'POST',body:{plan}});
+        const result=await api('/api/account/subscription/update-plan',{method:'POST',body:{plan,keepBranchIds:selected}});
         state.subscription=result.subscription;subscriptionHistoryPage=1;renderDevSubscription();
         toast(result.message||'Plan update request sent to Admin Control.');
       }catch(error){renderDevSubscription();toast('Plan update failed: '+error.message);}
@@ -1633,7 +1653,7 @@
 
   async function loadBranches(){
    const d=await api('/api/branches');
-   state.branches=d.branches||[];
+   state.branches=d.branches||[];state.branchPricing=d.branchPricing||null;
    const active=state.branches.filter(x=>x.active);
    if(state.user.role==='Admin'){
      const selectedBranch=Number($('dashboardBranch').value||0);
@@ -1656,6 +1676,7 @@
    const previous=$('newUserBranch').value;
    $('newUserBranch').innerHTML=branchOptions(active,previous);
    if(state.user.role==='Admin')renderBranches();
+   renderBranchAllowance();
   }
 
 
@@ -1692,6 +1713,19 @@
       onPage(Math.max(1,Math.min(pages,current+(btn.dataset.pageNav==='next'?1:-1))));
     });
   }
+  function renderBranchAllowance(){
+    const e=state.branchPricing;if(!e||state.user?.role!=='Admin')return;
+    const blocked=e.plan==='PRO'&&!e.mayAdd;
+    const detail=e.plan==='PRO'
+      ?'Pro: '+e.totalBranches+'/3 branches · first included · ₱799 per extra active branch.'
+      :'Business: '+e.activeBranches+' active branches · first included · ₱899 per extra active branch.';
+    const msg=$('branchAllowanceNotice');
+    if(msg)msg.textContent=detail+(blocked?' Upgrade to Business to add more.':'')+
+      ' Next renewal total: ₱'+Number(e.nextRenewalAmount||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const btn=$('branchSaveButton'),editing=!!$('branchEditId').value;
+    if(btn){btn.disabled=blocked&&!editing;btn.title=btn.disabled?'Upgrade to Business to add more.':'';}
+    $('branchForm').classList.toggle('branch-limit-reached',blocked&&!editing);
+  }
   function renderBranches(){
     const branches=state.branches||[];
     const totalPages=Math.max(1,Math.ceil(branches.length/managementPageSize));
@@ -1704,12 +1738,12 @@
   }
 
   function clearBranchForm(){
-   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';
+   $('branchEditId').value='';$('branchName').value='';$('branchAddress').value='';for(const id of ['branchCity','branchProvince','branchPostalCode','branchPhone','branchDescription'])$(id).value='';$('branchCountry').value='Philippines';$('branchActive').checked=true;$('branchFormTitle').textContent='New Branch';renderBranchAllowance();
   }
 
   function editBranch(id){
    const b=state.branches.find(x=>x.id===id);if(!b)return;
-   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';$('branchName').focus();
+   $('branchEditId').value=id;$('branchName').value=b.name;$('branchAddress').value=b.address;for(const [id,key] of [['branchCity','city'],['branchProvince','province'],['branchPostalCode','postalCode'],['branchPhone','phone'],['branchDescription','description']])$(id).value=b[key]||'';$('branchCountry').value=b.country||'Philippines';$('branchActive').checked=!!b.active;$('branchFormTitle').textContent='Edit Branch';renderBranchAllowance();$('branchName').focus();
   }
 
   async function deleteBranch(id){
