@@ -175,6 +175,7 @@
       'Requested '+(sub.pendingPlan.plan==='BUSINESS'?'Business':'Pro')+' plan · awaiting Admin Control approval.':
       'Plan updates are reviewed by Admin Control. Only Admin Control changes payment status.';
     $('transferPlanGate').classList.toggle('hidden',business);
+    $('transferUpgradeInformation')?.classList.add('hidden');
     $('inventoryTransferTab').disabled=!business;
     $('inventoryTransferTab').title=business?'Transfer Inventory':'Request an approved Business plan in Account Settings.';
     const card=$('inventoryTransferTab').closest('.inv-operation-card');
@@ -232,6 +233,15 @@
     });
   }
   function openPlanUpgrade(){
+    if(state.user?.role!=='Admin'){
+      const message='Contact your Owner or Co-Owner to request an upgrade to the Business plan for Inventory Transfer.';
+      const info=$('transferUpgradeInformation');
+      if(info){info.textContent=message;info.classList.remove('hidden');}
+      toast(message);
+      return;
+    }
+    const info=$('transferUpgradeInformation');
+    if(info)info.classList.add('hidden');
     switchView('account');
     $('accountPlanSelect').value='BUSINESS';
     $('accountPlanSelect').focus();
@@ -834,7 +844,8 @@
     });
     $('inventoryTransferTab').addEventListener('click',()=>{
       if(state.subscription?.plan!=='BUSINESS'){
-        toast('Transfer Inventory requires an approved Business plan. Request an update through Account Settings.');
+        if(state.user?.role==='Admin')toast('Transfer Inventory requires an approved Business plan. Request an update through Account Settings.');
+        else openPlanUpgrade();
         return;
       }
       operation(openOperation==='transfer'?null:'transfer');
