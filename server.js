@@ -16,6 +16,7 @@ const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
 const advancedAnalytics = require('./lib/advanced-analytics');
 const franchiseRequests = require('./lib/public-franchise-requests');
+const franchiseEmailVerification = require('./lib/franchise-email-verification');
 const supplyChain = require('./lib/supply-chain');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
@@ -1840,7 +1841,7 @@ async function handleApi(req,res,url){
   if(SUPPLY_OFFICE_PORTAL && p!=='/api/health' && !p.startsWith('/api/supply/office/'))return json(res,404,{error:'Office portal only.'},safeHeaders());
   if(p.startsWith('/api/supply/office/'))return handleOfficeApi(req,res,p,method);
   if(maintenanceMode)return json(res,503,{error:'Database maintenance is in progress. Please retry in a moment.'},safeHeaders({'Retry-After':'2'}));
-  if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION,authFeatures:{emailOtpAvailable:accountRecovery.isConfigured(),publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true}},safeHeaders());
+  if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION,authFeatures:{emailOtpAvailable:accountRecovery.isConfigured(),publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true,franchiseEmailOtpAvailable:franchiseEmailVerification.configured()}},safeHeaders());
   if(method==='GET'&&p==='/api/health'){const probe=await db.query('SELECT 1 AS ok');return json(res,200,{ok:Number(probe.rows[0]?.ok||0)===1,app:'coffee-pos-web',version:APP_VERSION,engine:db.engine,time:nowIso(),uptimeSeconds:Math.round(process.uptime())},safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='POST'&&p==='/api/setup'){const status=await appStatus();if(!status.setupRequired)return json(res,409,{error:'Initial setup has already been completed.'},safeHeaders());const body=await readJson(req),username=String(body.username||'').trim(),password=String(body.password||'');if(username.length<2||password.length<8)return json(res,400,{error:'Use a username of at least 2 characters and a password of at least 8 characters.'},safeHeaders());const user=await createOrActivateUser({username,password,role:'Admin',active:true},null);await db.query('UPDATE chat_workspaces SET owner_user_id=$1 WHERE id IN (SELECT workspace_id FROM chat_memberships WHERE user_id=$1)',[user.id]);await logAction(user,'Web POS initial admin activated','Setup',null);return json(res,201,{ok:true,user},safeHeaders());}
   if(method==='POST'&&p==='/api/auth/login'){
@@ -1895,9 +1896,29 @@ async function handleApi(req,res,url){
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/register'){
-    // Only a request is created. No account, login, or shared data is provisioned.
+    // Only an application is created. No user, password or shared stock is activated.
     checkLoginRate(req,'public-franchise-request');
-    return json(res,202,await franchiseRequests.request(db,await readJson(req,4096)),
+    const body=await readJson(req,4096);
+    const applied=await franchiseRequests.request(db,body);
+    let verification={sent:false};
+    try{verification=await franchiseEmailVerification.requestCode(db,body.email);}
+    catch(err){verification.error=err.message;}
+    return json(res,202,{...applied,verificationRequired:true,
+      verificationSent:!!verification.sent,
+      message:applied.message+(verification.sent?' Check your email for the 6-digit verification code.':
+      ' Email verification remains pending. '+(verification.error||'You may request another code below.'))},
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/auth/register/verify/resend'){
+    checkLoginRate(req,'franchise-email-resend');
+    const body=await readJson(req,1024);
+    return json(res,200,await franchiseEmailVerification.requestCode(db,body.email),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/auth/register/verify'){
+    checkLoginRate(req,'franchise-email-verification');
+    const body=await readJson(req,1024);
+    return json(res,200,await franchiseEmailVerification.verify(db,body.email,body.code),
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
@@ -2107,7 +2128,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
