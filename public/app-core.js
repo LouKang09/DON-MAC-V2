@@ -1221,7 +1221,7 @@
 
   function activateAdminTab(tab){document.querySelectorAll('#adminTabs button').forEach(b=>b.classList.toggle('active',b.dataset.adminTab===tab));document.querySelectorAll('.admin-panel').forEach(p=>p.classList.toggle('active',p.id===`admin-${tab}`));if(tab==='recipes')loadRecipe();if(tab==='backups')loadBackups();}
   document.querySelectorAll('#adminTabs button').forEach(b=>b.onclick=()=>activateAdminTab(b.dataset.adminTab));
-  async function loadAdminAll(){if(state.user?.role!=='Admin')return;try{const selectedRecipe=$('recipeProduct').value,selectedPackage=$('compositionPackage').value;const [p,i,pr,pa]=await Promise.all([api('/api/admin/products'),api('/api/admin/ingredients'),api('/api/admin/promos'),api('/api/admin/packages')]);state.adminProducts=p.products;state.adminIngredients=i.ingredients;state.adminPromos=pr.promos;state.adminPackages=pa.packages;renderAdminProducts();renderAdminIngredients();renderAdminPromos();renderAdminPackages();fillAdminSelects(selectedRecipe,selectedPackage);}catch(err){toast(err.message);}}
+  async function loadAdminAll(){if(state.user?.role!=='Admin')return;try{const selectedRecipe=$('recipeProduct').value,selectedPackage=$('compositionPackage').value;const [p,i,pr,pa]=await Promise.all([api('/api/admin/products'),api('/api/admin/ingredients'),api('/api/admin/promos'),api('/api/admin/packages')]);state.adminProducts=p.products;renderProductDefaultGallery();state.adminIngredients=i.ingredients;state.adminPromos=pr.promos;state.adminPackages=pa.packages;renderAdminProducts();renderAdminIngredients();renderAdminPromos();renderAdminPackages();fillAdminSelects(selectedRecipe,selectedPackage);}catch(err){toast(err.message);}}
   function fillAdminSelects(selectedRecipe='',selectedPackage=''){const activeProducts=state.adminProducts.filter(x=>x.active),productOpts=activeProducts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('recipeProduct').innerHTML=productOpts;$('compositionPackage').innerHTML=state.adminPackages.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');if(selectedRecipe&&activeProducts.some(p=>String(p.id)===String(selectedRecipe)))$('recipeProduct').value=String(selectedRecipe);if(selectedPackage&&state.adminPackages.some(p=>String(p.id)===String(selectedPackage)))$('compositionPackage').value=String(selectedPackage);if(activeProducts.length)loadRecipe();else{state.recipeRows=[];renderRecipe();}if(state.adminPackages.length)loadComposition();else{state.compositionRows=[];renderComposition();}}
 
   const catalogPages={products:1,ingredients:1,promos:1,packages:1};
@@ -1260,12 +1260,69 @@
     $('productImageEmpty').classList.toggle('hidden',!!data);
     if(data)$('productImagePreview').src=data;else $('productImagePreview').removeAttribute('src');
   }
+  let defaultCoffeeImages=[];
+  const defaultGallery=$('productDefaultImagesGallery'),defaultToggle=$('productDefaultImagesToggle');
+  function hideProductDefaultGallery(){
+    defaultGallery.classList.add('hidden');
+    defaultToggle.setAttribute('aria-expanded','false');
+  }
+  function renderProductDefaultGallery(){
+    const all=new Map();
+    for(const product of state.adminProducts||[]){
+      if(!product.active||String(product.category||'').toLowerCase()!=='coffee')continue;
+      const data=product.imageData;
+      if(typeof data!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(data))continue;
+      if(!all.has(data))all.set(data,{data,name:product.name});
+    }
+    defaultCoffeeImages=[...all.values()];
+    defaultGallery.replaceChildren();
+    if(!defaultCoffeeImages.length){
+      const empty=document.createElement('p');
+      empty.className='product-default-empty';
+      empty.textContent='No existing coffee product images yet. Upload a photo to add one to the reusable gallery.';
+      defaultGallery.appendChild(empty);
+      return;
+    }
+    const fragment=document.createDocumentFragment();
+    defaultCoffeeImages.forEach(({data,name},index)=>{
+      const item=document.createElement('button');
+      item.type='button';item.className='product-default-image-option';
+      item.dataset.defaultImageIndex=String(index);
+      item.title='Use photo from '+name;
+      item.setAttribute('aria-label','Select coffee product image from '+name);
+      item.setAttribute('aria-pressed',String($('productImageData').value===data));
+      const picture=document.createElement('img');
+      picture.src=data;picture.alt='';picture.loading='lazy';picture.decoding='async';
+      const caption=document.createElement('span');
+      caption.textContent=name;
+      item.append(picture,caption);fragment.appendChild(item);
+    });
+    defaultGallery.appendChild(fragment);
+  }
+  defaultToggle.addEventListener('click',()=>{
+    const show=defaultGallery.classList.contains('hidden');
+    if(show)renderProductDefaultGallery();
+    defaultGallery.classList.toggle('hidden',!show);
+    defaultToggle.setAttribute('aria-expanded',String(show));
+  });
+  defaultGallery.addEventListener('click',event=>{
+    const button=event.target.closest('[data-default-image-index]');
+    if(!button)return;
+    const item=defaultCoffeeImages[Number(button.dataset.defaultImageIndex)];
+    if(!item)return;
+    ++imageProcessingToken;imageBusy=false;imageInvalid=false;
+    $('productImageFile').value='';
+    showProductPhoto(item.data);
+    productImageStatus('Existing coffee image selected. Click Save Product to apply.');
+    photoFormState();
+    hideProductDefaultGallery();
+  });
   function clearProductForm(){
     imageProcessingToken++;imageBusy=false;imageInvalid=false;
     $('productEditId').value='';$('productName').value='';$('productName').readOnly=false;
     $('productCategory').value='Coffee';$('productPrice').value='';$('productActive').checked=true;
     $('productFormTitle').textContent='New Product';$('productImageFile').value='';
-    showProductPhoto(null);productImageStatus('Select a photo, then save the product.');photoFormState();
+    showProductPhoto(null);hideProductDefaultGallery();productImageStatus('Select a photo, then save the product.');photoFormState();
   }
   function editProduct(id){
     const p=state.adminProducts.find(x=>x.id===id);if(!p)return;
@@ -1273,7 +1330,7 @@
     $('productEditId').value=id;$('productName').value=p.name;$('productName').readOnly=true;
     $('productCategory').value=p.category;$('productPrice').value=p.price;
     $('productActive').checked=p.active;$('productFormTitle').textContent=`Update ${p.name}`;
-    $('productImageFile').value='';showProductPhoto(p.imageData);
+    $('productImageFile').value='';showProductPhoto(p.imageData);hideProductDefaultGallery();
     productImageStatus(p.imageData?'Current photo loaded. Choose a replacement or remove it.':'No photo saved for this product yet.');
     photoFormState();
   }
