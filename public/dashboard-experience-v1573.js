@@ -8,7 +8,7 @@
  const summary=$('dashboardSummary');
  const scope=document.createElement('div');
  scope.id='dashboardScope';scope.className='dashboard-account-filter hidden admin-only';
- const label=document.createElement('label');label.htmlFor='dashboardBranch';label.textContent='Dashboard Branch';
+ const label=document.createElement('label');label.htmlFor='dashboardBranch';label.textContent='Select Branch';
  scope.appendChild(label);
  const wrap=$('dashboardBranchWrap');scope.appendChild(wrap);
  board.insertBefore(scope,summary);
@@ -31,7 +31,6 @@
  function reconcile(){
    reconcileScheduled=false;
    const choices=[...select.options].filter(o=>o.value&&o.value!=='all');
-   const multiple=choices.length>1;
    const available=choices.some(o=>o.value===select.value);
    const before=select.value;
    // The existing dashboard loader adds an All option; restrict the dashboard
@@ -40,7 +39,7 @@
    const all=select.querySelector('option[value="all"]');
    if(all)all.remove();
    const admin=!wrap.classList.contains('hidden');
-   scope.classList.toggle('hidden',!admin||!multiple);
+   scope.classList.toggle('hidden',!admin||!choices.length);
    if(choices.length&&(lastBranch!==select.value||before!==select.value)){
      lastBranch=select.value;
      if(board.classList.contains('active'))$('applyTrend')?.click();
