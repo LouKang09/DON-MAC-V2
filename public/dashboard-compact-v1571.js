@@ -9,6 +9,7 @@
  const pesos=n=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(n||0));
  const date=d=>{try{return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(d))}catch(_){return String(d||'').slice(0,20)}};
  let activityRequest=0,inventoryRequest=0,inventoryPage=1,activityPage=1,allInventory=[],inventoryLoadedAt=0;
+ let lastActivitySignature='',lastActivityBranch=null,activityLoaded=false;
  const pages=$('dashboardActivityPages')||(()=>{
   const nav=document.createElement('nav');nav.id='dashboardActivityPages';
   nav.className='dashboard-activity-pages';nav.setAttribute('aria-label','Recent transaction pages');
@@ -63,8 +64,8 @@
   const branch=$('dashboardBranch');
   if(branch&&branch.value&&branch.value!=='all')params.set('branchId',branch.value);
   const holder=$('dashboardRecentTransactions');
-  holder.innerHTML='<div class="dashboard-recent-empty">Loading transactions…</div>';
-  pages.replaceChildren();
+  // Retain existing rows and pagination during background refresh to prevent layout jumps.
+  holder.setAttribute('aria-busy','true');
   try{
    const res=await fetch('/api/dashboard/activity?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
    if(!res.ok)throw Error('Transactions unavailable (HTTP '+res.status+').');
@@ -72,6 +73,17 @@
    const records=Array.isArray(d.rows)?d.rows:[];
    activityPage=Number(d.page)||1;
    const totalPages=Math.max(1,Number(d.pages)||1);
+   const signature=JSON.stringify({status:status.value,period:period.value,
+      branch:params.get('branchId')||'all',page:activityPage,pages:totalPages,total:d.total,rows:records});
+   if(activityLoaded&&signature===lastActivitySignature){
+     holder.removeAttribute('aria-busy');return;
+   }
+   const oldScroll=holder.scrollTop,oldHorizontalScroll=holder.scrollLeft;
+   const expanded=new Set([...holder.querySelectorAll('button[data-activity-items][aria-expanded="true"]')]
+     .map(button=>button.closest('tr')?.querySelector('[data-sale-reference]')?.dataset.saleReference)
+     .filter(Boolean));
+   activityLoaded=true;
+   lastActivitySignature=signature;
    $('dashboardRecentScope').textContent=status.selectedOptions[0].textContent+' · '+period.selectedOptions[0].textContent+
     ' · '+(Number(d.total)||0)+' transaction(s)';
    pages.innerHTML='<span>Page '+activityPage+' of '+totalPages+'</span>'+
@@ -81,13 +93,17 @@
     activityPage=Math.max(1,Math.min(totalPages,activityPage+Number(button.dataset.activityPage)));
     refreshActivity();
    });
-   if(!records.length){holder.innerHTML='<div class="dashboard-recent-empty">No matching transactions.</div>';return;}
+   if(!records.length){
+     holder.innerHTML='<div class="dashboard-recent-empty">No matching transactions.</div>';
+     holder.removeAttribute('aria-busy');return;
+   }
    holder.innerHTML='<table class="dashboard-recent-table"><thead><tr>'+
     '<th>Receipt / Date</th><th>Customer / Type</th><th>Items</th><th>Payment</th>'+
     '<th>Status</th><th class="recent-amount">Total</th><th></th></tr></thead><tbody>'+
     records.map((row,index)=>{
      const list=Array.isArray(row.items)?row.items:[];
      const reference=String(row.reference||''),voided=row.status==='Deleted';
+     const isExpanded=expanded.has(reference);
      const breakdown='<div class="recent-items-breakdown"><strong>Purchased items · '+esc(reference)+'</strong>'+
       '<table><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Line total</th></tr></thead><tbody>'+
       list.map(item=>'<tr><td>'+esc(item.name||'Item')+'</td><td class="num">'+fmt(item.qty)+'</td>'+
@@ -95,16 +111,23 @@
       '</tbody></table></div>';
      return '<tr><td><strong>'+esc(reference)+'</strong><small>'+esc(date(row.soldAt))+'</small></td>'+
       '<td><b>'+esc(row.customerName||'Walk-in customer')+'</b><small>'+esc(row.orderType||'Take Away')+'</small></td>'+
-      '<td><button type="button" data-activity-items="'+index+'" aria-expanded="false">'+list.length+' items · View</button></td>'+
+      '<td><button type="button" data-activity-items="'+index+'" aria-expanded="'+String(isExpanded)+'">'+list.length+' items · '+(isExpanded?'Hide':'View')+'</button></td>'+
       '<td><span class="dashboard-paymode">'+esc(row.paymentMode||'—')+'</span></td>'+
       '<td><span class="dashboard-activity-status '+(voided?'voided':'sold')+'">'+(voided?'Voided / Cancelled':'Sale')+'</span></td>'+
       '<td class="recent-amount">'+pesos(row.amount)+'</td>'+
       '<td><button type="button" class="dashboard-view-sale" data-sale-reference="'+esc(reference)+'">View</button></td></tr>'+
-      '<tr class="activity-items-detail" data-activity-detail="'+index+'" hidden><td colspan="7">'+breakdown+'</td></tr>';
+      '<tr class="activity-items-detail" data-activity-detail="'+index+'" '+(isExpanded?'':'hidden')+'><td colspan="7">'+breakdown+'</td></tr>';
     }).join('')+'</tbody></table>';
+   holder.scrollTop=oldScroll;holder.scrollLeft=oldHorizontalScroll;
+   holder.removeAttribute('aria-busy');
   }catch(e){
-   if(seq!==activityRequest) return;
-   holder.innerHTML='<div class="dashboard-recent-empty">'+esc(e.message)+'</div>';
+   if(seq!==activityRequest)return;
+   if(!activityLoaded){
+     holder.innerHTML='<div class="dashboard-recent-empty">'+esc(e.message)+'</div>';
+   }else{
+     $('dashboardRecentScope').textContent='Could not refresh transactions · previous records retained';
+   }
+   holder.removeAttribute('aria-busy');
   }
  }
  $('dashboardRecentTransactions').addEventListener('click',event=>{
@@ -116,7 +139,14 @@
   tr.hidden=expanded;trigger.setAttribute('aria-expanded',String(!expanded));
   trigger.textContent=trigger.textContent.replace(expanded?'Hide':'View',expanded?'View':'Hide');
  });
- function refresh(){activityPage=1;refreshActivity();refreshInventory();}
+ function refresh(){
+  const branch=$('dashboardBranch');
+  const selectedBranch=branch&&branch.value&&branch.value!=='all'?branch.value:'all';
+  if(lastActivityBranch!==selectedBranch){
+    activityPage=1;lastActivityBranch=selectedBranch;lastActivitySignature='';
+  }
+  refreshActivity();refreshInventory();
+ }
  status.addEventListener('change',()=>{activityPage=1;refreshActivity()});
  period.addEventListener('change',()=>{activityPage=1;refreshActivity()});
  inventory.addEventListener('change',()=>{inventoryPage=1;renderInventory()});
