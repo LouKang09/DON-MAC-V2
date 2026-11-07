@@ -90,3 +90,10 @@
 @media(prefers-reduced-motion:reduce){
  #view-catalog .product-default-image-option,#view-dashboard .pw-custom-row[draggable]{transition:none!important}
 }
+
+#view-inventory .transfer-upgrade-information{
+  display:block;margin:9px 0 0;padding:11px 13px;max-width:380px;
+  background:#fff5e4;border:1px solid #e6bf78;border-radius:10px;
+  font-size:12px;line-height:1.55;font-weight:750;color:#654917;
+}
+#view-inventory .transfer-upgrade-information.hidden{display:none!important}
