@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.97-cashier-dashboard-chat-permissions';
+  const VERSION = '1.5.98-franchise-staging-otp';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
