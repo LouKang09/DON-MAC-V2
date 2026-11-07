@@ -13,7 +13,7 @@
  const idByCategory={rent:'financeRent',stocks:'financeStocks',salary:'financeSalary',
   transportation:'financeTransportation',electricity:'financeElectricity',ice:'financeIce',
   water:'financeWater',misc:'financeMisc'};
- const state={transactions:{page:1,branches:[],loading:false},expenses:{page:1,branches:[],loading:false}};
+ const state={transactions:{page:1,branches:[],loading:false,queued:false},expenses:{page:1,branches:[],loading:false}};
  const now=today();
  for(const id of ['financeTransactionEnd','financeExpenseEnd','financeExpenseDate'])$(id).value=now;
  for(const id of ['financeTransactionStart','financeExpenseStart'])$(id).value=now.slice(0,7)+'-01';
@@ -58,10 +58,19 @@
   $(id).querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>{state[kind].page+=Number(b.dataset.next);load(kind);}));
  }
  async function load(kind){
-  if(state[kind].loading)return;
+  if(state[kind].loading){
+   if(kind==='transactions')state.transactions.queued=true;
+   return;
+  }
   state[kind].loading=true;
+  const requestQuery=query(kind);
   try{
-   const data=await api('/api/finance/'+kind+'?'+query(kind));
+   const data=await api('/api/finance/'+kind+'?'+requestQuery);
+   // Do not overwrite results for newer search text or filter selections.
+   if(kind==='transactions'&&requestQuery!==query('transactions')){
+    state.transactions.queued=true;
+    return;
+   }
    state[kind].page=Math.min(Math.max(1,state[kind].page),Math.max(1,Math.ceil(Number(data.total||0)/10)));
    state[kind].branches=data.branches||[];
    if(kind==='transactions'){
@@ -99,13 +108,37 @@
   }catch(err){
    if(kind==='transactions')$('financeTransactionsBody').innerHTML='<tr><td colspan="8">'+esc(err.message)+'</td></tr>';
    else message(err.message,true);
-  }finally{state[kind].loading=false;}
+  }finally{
+   state[kind].loading=false;
+   if(kind==='transactions'&&state.transactions.queued){
+    state.transactions.queued=false;
+    load('transactions');
+   }
+  }
  }
  $('financeTransactionRefresh').onclick=()=>load('transactions');
  $('financeExpenseRefresh').onclick=()=>load('expenses');
- const applyTransactionFilters=()=>{state.transactions.page=1;load('transactions');};
+ let transactionSearchTimer=null;
+ const applyTransactionFilters=()=>{
+  if(transactionSearchTimer!==null){clearTimeout(transactionSearchTimer);transactionSearchTimer=null;}
+  state.transactions.page=1;
+  load('transactions');
+ };
  $('financeTransactionApply').onclick=applyTransactionFilters;
+ // Text searches are debounced to avoid issuing one network call per keystroke.
+ $('financeTransactionSearch').addEventListener('input',()=>{
+  if(transactionSearchTimer!==null)clearTimeout(transactionSearchTimer);
+  transactionSearchTimer=setTimeout(()=>{
+   transactionSearchTimer=null;
+   applyTransactionFilters();
+  },260);
+ });
+ for(const id of ['financeTransactionStart','financeTransactionEnd','financeTransactionBranch',
+  'financeTransactionStatus','financeTransactionPayment','financeTransactionOrderType']){
+  $(id).addEventListener('change',applyTransactionFilters);
+ }
  $('financeTransactionReset').onclick=()=>{
+  if(transactionSearchTimer!==null){clearTimeout(transactionSearchTimer);transactionSearchTimer=null;}
   $('financeTransactionStart').value=now.slice(0,7)+'-01';
   $('financeTransactionEnd').value=now;
   for(const id of ['financeTransactionBranch','financeTransactionStatus','financeTransactionPayment',
