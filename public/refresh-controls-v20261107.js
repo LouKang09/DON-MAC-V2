@@ -63,7 +63,9 @@
   if(panel.closest('#platformBilling'))return ()=>window.donmacPlatformAdmin?.refreshBilling?.();
   return ()=>window.donmacPlatformAdmin?.refreshAccounts?.();
  }
- function findHeading(panel){
+ function findHeading(panel,table){
+  const adjacent=table.closest('.table-wrap, .table-scroll, .tenant-billing-scroll')?.previousElementSibling;
+  if(adjacent?.matches('.section-header,.card-head,.panel-head'))return adjacent;
   const queries=[':scope > .card-head',':scope > .panel-head',':scope > .section-header',
    ':scope > .inv-toolbar',':scope > .supply-head',':scope > .chat-people-heading'];
   for(const q of queries){const head=panel.querySelector(q);if(head)return head;}
@@ -80,13 +82,18 @@
   if(panel.querySelector('button.dm-refresh'))return;
   const action=panelAction(panel),button=makeRefresh(action);
   button.dataset.dmTableRefresh='1';
-  let head=findHeading(panel);
+  let head=findHeading(panel,table);
   if(head){head.classList.add('dm-refresh-heading');head.appendChild(button);}
   else {
    const bar=document.createElement('div');bar.className='dm-refresh-toolbar';
    bar.appendChild(button);
    const scroll=table.closest('.table-wrap, .table-scroll, .tenant-billing-scroll')||table;
-   panel.insertBefore(bar,scroll);
+   // The table can be inside multiple wrappers; insert before the direct
+   // child container rather than calling insertBefore on an unrelated node.
+   let anchor=scroll;
+   while(anchor.parentElement&&anchor.parentElement!==panel)anchor=anchor.parentElement;
+   if(anchor.parentElement===panel)panel.insertBefore(bar,anchor);
+   else panel.appendChild(bar);
   }
  }
  function iconizeExisting(){
