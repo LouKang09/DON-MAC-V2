@@ -1777,6 +1777,8 @@
   function formatDateTime(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(d);}
   function formatDateTimeDetailed(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'medium'}).format(d);}
   async function loadLogs(){try{const d=await api('/api/system-logs?limit=500');$('logsList').innerHTML=d.logs.map(l=>`<div class="log-row"><div class="log-meta"><b>${esc(l.status||'LOG')}</b><span>${esc(l.actor||'')}</span><span>${esc(formatDateTime(l.createdAt))}</span>${l.remark?`<span>· ${esc(l.remark)}</span>`:''}</div><pre>${esc(l.activity)}</pre></div>`).join('')||'<div class="empty-state">No system logs.</div>';}catch(err){toast(err.message);}}
+  $('cashiersTableRefresh').onclick=loadUsers;
+  $('branchesTableRefresh').onclick=async()=>{try{await loadBranches();}catch(err){toast(err.message);}};
   $('refreshLogs').onclick=loadLogs;
 
   window.addEventListener('resize',()=>{if(state.dashboard)renderDashboard();});
