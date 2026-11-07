@@ -38,7 +38,7 @@
      all.value='all';
      select.insertBefore(all,select.firstChild);
    }
-   all.textContent='All';
+   if(all.textContent!=='All')all.textContent='All';
    const available=[...select.options].some(o=>o.value===select.value);
    if(!available)select.value='all';
    const admin=!wrap.classList.contains('hidden');
