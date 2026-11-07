@@ -37,6 +37,7 @@ assert(chatRules.includes("AND u.role=$4"), 'Cashier direct roster must list onl
 assert(chatRules.includes('await contact(db,scope,user,other)'), 'Reactions honor direct-message permissions');
 assert(chatUi.includes("window.donmacAuthenticatedRole!=='User'||c.role==='Admin'"), 'Chat UI limits cashier direct contacts');
 assert(widgets.includes("roleAllowed=window.donmacAuthenticatedRole==='Admin'"), 'Cashiers must not fetch admin analytics');
+assert(read('public/advanced-analytics-v20261108.js').includes("window.donmacAuthenticatedRole==='Admin'"), 'Cashiers must not fetch advanced analytics');
 assert(widgets.includes('hideRestrictedWidgets()'), 'Hide forbidden analytics without showing a 403');
 assert(widgets.includes('setRole,render,onViewChange'), 'Dashboard widget role must refresh on user change');
 assert(core.includes('window.donmacPlanWidgets?.setRole?.(state.user.role)'), 'Role must synchronize after login');
