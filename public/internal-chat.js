@@ -100,7 +100,9 @@
        (c.unread?'<span class="chat-person-unread">'+(c.unread>99?'99+':c.unread)+'</span>':'')+
        (c.lastMessage?'<small class="chat-last-date">'+esc(dateString(c.lastMessage.createdAt))+'</small>':'')+
        '</span><span class="chat-person-last">'+esc(c.lastMessage?.text||(c.isGroup?'Team conversation':c.role==='Admin'?'Owner':'Tap to start a conversation'))+'</span></button>'
-     ).join(''):'<div class="chat-empty">'+(query?'No matching team members.':'No other active members in your owner account yet.')+'</div>';
+     ).join(''):'<div class="chat-empty">'+(query?'No matching team members.':(window.donmacAuthenticatedRole==='User'?
+      'No direct Owner or Co-Owner contacts available. Use a group chat to reach fellow cashiers.':
+      'No other active members in your owner account yet.'))+'</div>';
  }
  async function refreshContacts(){
    if(!window.donmacChat?.authenticated)return;
@@ -109,7 +111,10 @@
      const groupItems=(data.groups||[]).map(g=>({...g,id:-Number(g.id),groupId:Number(g.id),isGroup:true,groupKind:g.kind,
         username:g.kind==='all'?'All':g.label,label:g.kind==='all'?'All':g.label,
         subtitle:g.kind==='all'?'All Branches · Group Chat':'Branch Group Chat'}));
-     state.contacts=[...groupItems,...(data.people||[])];updateUnread(data.unreadTotal||0);renderContacts();
+     const directContacts=(data.people||[]).filter(c=>
+       window.donmacAuthenticatedRole!=='User'||c.role==='Admin');
+     state.contacts=[...groupItems,...directContacts];
+     updateUnread(data.unreadTotal||0);renderContacts();
      if(state.selected&&contactById(state.selected))renderHeader();
      if(state.selected&&!contactById(state.selected)){
        state.selected=0;state.messages=[];renderHeader();renderMessages();
