@@ -167,14 +167,98 @@
    const el=$('planWidgetCustomizer');el.classList.toggle('hidden',!customizing);
    if(!customizing)return;
    const entries=ordered();
-   el.innerHTML='<div class="pw-custom-head"><strong>Customize Dashboard</strong><span>Show, hide, or change display order</span></div>'+
-    '<p id="planWidgetSaveState" class="pw-save-state" role="status">Changes save automatically to your franchise account.</p><div class="pw-custom-grid">'+entries.map((entry,i)=>
-      '<div class="pw-custom-row"><label><input type="checkbox" data-pw-visibility="'+esc(entry[0])+'" '+
+   el.innerHTML='<div class="pw-custom-head"><strong>Customize Dashboard</strong>'+
+    '<span>Drag a widget by its grip to reorder · changes save automatically</span></div>'+
+    '<p id="planWidgetSaveState" class="pw-save-state" role="status">Changes save automatically to your franchise account.</p>'+
+    '<div class="pw-custom-grid" role="list" aria-label="Reorder Dashboard widgets">'+entries.map(entry=>
+      '<div class="pw-custom-row" draggable="true" data-pw-sort-row="'+esc(entry[0])+'" role="listitem">'+
+      '<span class="pw-drag-grip" data-pw-drag-handle="'+esc(entry[0])+'" tabindex="0" role="button" '+
+        'aria-label="Drag '+esc(entry[1])+' to reorder; or press Alt plus arrow keys" title="Drag to change order">⠿</span>'+
+      '<label><input type="checkbox" data-pw-visibility="'+esc(entry[0])+'" '+
       (hiddenState[entry[0]]?'':'checked')+'/>'+
-      '<span>'+esc(entry[1])+'</span></label>'+
-      '<div><button type="button" data-pw-move="'+esc(entry[0])+'" data-direction="-1" '+(i===0?'disabled':'')+' aria-label="Move '+esc(entry[1])+' up">↑</button>'+
-      '<button type="button" data-pw-move="'+esc(entry[0])+'" data-direction="1" '+(i===entries.length-1?'disabled':'')+' aria-label="Move '+esc(entry[1])+' down">↓</button></div></div>').join('')+'</div>';
+      '<span>'+esc(entry[1])+'</span></label></div>').join('')+'</div>';
  }
+ function reorderWidget(source,target,after=false){
+   if(!source||!target||source===target)return;
+   const ids=ordered().map(x=>x[0]);
+   const from=ids.indexOf(source),to=ids.indexOf(target);
+   if(from<0||to<0)return;
+   ids.splice(from,1);
+   const targetIndex=ids.indexOf(target)+(after?1:0);
+   ids.splice(targetIndex,0,source);
+   orderState.ids=ids;saveSettings();redraw();
+ }
+ let draggingWidget=null,touchDrag=null;
+ const widgetCustomizer=$('planWidgetCustomizer');
+ function clearDragIndicators(){
+   widgetCustomizer.querySelectorAll('.pw-custom-row').forEach(x=>x.classList.remove('pw-drop-before','pw-drop-after','pw-dragging'));
+ }
+ function dragDestination(event){
+   const row=event.target.closest?.('[data-pw-sort-row]');
+   if(!row||!draggingWidget||row.dataset.pwSortRow===draggingWidget)return null;
+   const bounds=row.getBoundingClientRect();
+   return{row,after:event.clientY>bounds.top+bounds.height/2};
+ }
+ widgetCustomizer.addEventListener('dragstart',event=>{
+   const row=event.target.closest?.('[data-pw-sort-row]');
+   if(!row)return;
+   draggingWidget=row.dataset.pwSortRow;
+   event.dataTransfer?.setData('text/plain',draggingWidget);
+   if(event.dataTransfer)event.dataTransfer.effectAllowed='move';
+   row.classList.add('pw-dragging');
+ });
+ widgetCustomizer.addEventListener('dragover',event=>{
+   const target=dragDestination(event);
+   if(!target)return;
+   event.preventDefault();
+   if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+   clearDragIndicators();
+   target.row.classList.add(target.after?'pw-drop-after':'pw-drop-before');
+ });
+ widgetCustomizer.addEventListener('drop',event=>{
+   const target=dragDestination(event);
+   if(target){
+     event.preventDefault();
+     reorderWidget(draggingWidget,target.row.dataset.pwSortRow,target.after);
+   }
+   draggingWidget=null;clearDragIndicators();
+ });
+ widgetCustomizer.addEventListener('dragend',()=>{draggingWidget=null;clearDragIndicators()});
+ // Touchscreens do not reliably support native HTML drag/drop. Use a grip-only pointer fallback.
+ widgetCustomizer.addEventListener('pointerdown',event=>{
+   if(event.pointerType==='mouse'||!customizing)return;
+   const grip=event.target.closest?.('[data-pw-drag-handle]');
+   if(!grip)return;
+   touchDrag={source:grip.dataset.pwDragHandle,target:null,after:false};
+   grip.setPointerCapture?.(event.pointerId);
+ });
+ widgetCustomizer.addEventListener('pointermove',event=>{
+   if(!touchDrag||!customizing)return;
+   const row=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-pw-sort-row]');
+   clearDragIndicators();
+   if(!row||row.dataset.pwSortRow===touchDrag.source)return;
+   const bounds=row.getBoundingClientRect();
+   touchDrag.target=row.dataset.pwSortRow;
+   touchDrag.after=event.clientY>bounds.top+bounds.height/2;
+   row.classList.add(touchDrag.after?'pw-drop-after':'pw-drop-before');
+   event.preventDefault();
+ });
+ widgetCustomizer.addEventListener('pointerup',()=>{
+   if(!touchDrag)return;
+   const item=touchDrag;touchDrag=null;clearDragIndicators();
+   if(item.target)reorderWidget(item.source,item.target,item.after);
+ });
+ widgetCustomizer.addEventListener('pointercancel',()=>{touchDrag=null;clearDragIndicators()});
+ widgetCustomizer.addEventListener('keydown',event=>{
+   const handle=event.target.closest?.('[data-pw-drag-handle]');
+   if(!handle||!event.altKey||!['ArrowUp','ArrowDown'].includes(event.key))return;
+   event.preventDefault();
+   const ids=ordered().map(x=>x[0]),pos=ids.indexOf(handle.dataset.pwDragHandle);
+   const target=ids[pos+(event.key==='ArrowUp'?-1:1)];
+   if(target)reorderWidget(handle.dataset.pwDragHandle,target,event.key==='ArrowDown');
+   widgetCustomizer.querySelector('[data-pw-drag-handle="'+handle.dataset.pwDragHandle+'"]')?.focus();
+ });
+
  function redraw(){
   const data=analytics,plan=subscription?.plan;
   root.hidden=false;
@@ -244,14 +328,6 @@
  $('planWidgetCustomizer').addEventListener('change',event=>{
    const box=event.target.closest('input[data-pw-visibility]');if(!box)return;
    hiddenState[box.dataset.pwVisibility]=!box.checked;saveSettings();redraw();
- });
- $('planWidgetCustomizer').addEventListener('click',event=>{
-   const button=event.target.closest('button[data-pw-move]');if(!button||button.disabled)return;
-   const entries=ordered().map(x=>x[0]);
-   const current=entries.indexOf(button.dataset.pwMove),next=current+Number(button.dataset.direction);
-   if(current<0||next<0||next>=entries.length)return;
-   [entries[current],entries[next]]=[entries[next],entries[current]];
-   orderState.ids=entries;saveSettings();redraw();
  });
  $('planWidgetFeatureCards').addEventListener('click',event=>{
     const button=event.target.closest('button[data-transfer-view]');
