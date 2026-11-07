@@ -53,6 +53,16 @@ assert(html.includes('id="regVerifyCode"'));
 assert(html.includes('dashboard-items-card admin-only'), 'Cashier items performance stays hidden');
 assert(html.includes('id="transferUpgradeInformation"'));
 assert(core.includes('Contact your Owner or Co-Owner to request an upgrade'));
+assert(html.includes('id="branchAllowanceNotice"'));
+assert(html.includes('id="accountDowngradeBranches"'));
+assert(html.includes('id="accountDowngradeBranchChoices"'));
+assert(server.includes('BRANCH_INACTIVE'));
+assert(server.includes('branchPlans.allowNewBranch'));
+assert(server.includes('officePromotions.verifySale'));
+assert(server.includes('officePromotions.recordSale'));
+assert(read('public/supply-office.html').includes('page-promotions'));
+assert(read('public/notifications-campaigns-v20261108.js').includes('data-notif-tab="promotions"'));
+assert(read('lib/franchise-branch-plans.js').includes('PRO_MAX=3'));
 assert(read('lib/franchise-tenant-staging.js').includes('PREPARED_NO_ACCESS'));
 assert(read('lib/franchise-activation-readiness.js').includes('activationEnabled:false'));
 assert(read('lib/platform-admin-auth.js').includes("'/franchise-activation-readiness'"));
@@ -113,24 +123,37 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
      return{rows:state.plan?[state.plan]:[]};
    if(sql.startsWith('SELECT plan,started_at FROM platform_account_plan_history'))
      return{rows:state.history.length?[state.history[state.history.length-1]]:[]};
-   if(sql.startsWith('SELECT plan,amount,status,next_payment_date,updated_at FROM platform_account_plans')||
+   if(sql.startsWith('SELECT plan,amount,base_amount,status,next_payment_date,updated_at FROM platform_account_plans')||
+      sql.startsWith('SELECT plan,status,next_payment_date,updated_at,base_amount FROM platform_account_plans')||
+      sql.startsWith('SELECT plan,amount,base_amount,status,next_payment_date FROM platform_account_plans')||
+      sql.startsWith('SELECT plan,amount,status,next_payment_date,updated_at FROM platform_account_plans')||
       sql.startsWith('SELECT plan,status,next_payment_date,updated_at FROM platform_account_plans'))
      return{rows:state.plan?[state.plan]:[]};
-   if(sql.startsWith('SELECT requested_plan,requested_at FROM platform_account_plan_requests'))
+   if(sql.startsWith('SELECT requested_plan,requested_at,keep_branch_ids FROM platform_account_plan_requests')||
+      sql.startsWith('SELECT keep_branch_ids FROM platform_account_plan_requests')||
+      sql.startsWith('SELECT requested_plan,requested_at FROM platform_account_plan_requests'))
      return{rows:state.pending?[state.pending]:[]};
    if(sql.startsWith('SELECT plan,status,started_at,renew_at,changed_at,actor,remark FROM platform_account_plan_history'))
      return{rows:[...state.history].reverse()};
+   if(sql.startsWith('SELECT pg_advisory_xact_lock')||
+      sql.startsWith('UPDATE platform_account_plans SET base_amount=amount'))
+     return{rows:[]};
+   if(sql.startsWith('SELECT b.id,b.name,b.active FROM chat_workspace_branches'))
+     return{rows:[{id:1,name:'Main Branch',active:true}]};
+   if(sql.startsWith('UPDATE platform_account_plans SET amount=$1 WHERE workspace_id=$2')){
+     if(state.plan)state.plan.amount=args[0];return{rows:[]};
+   }
    if(sql.startsWith('SELECT p.status,p.plan FROM chat_memberships'))
      return{rows:state.plan?[state.plan]:[]};
    if(sql.startsWith('INSERT INTO platform_account_plan_requests')){
-     state.pending={requested_plan:args[1],requested_at:args[2]};return{rows:[]};
+     state.pending={requested_plan:args[1],requested_at:args[2],keep_branch_ids:args[4]};return{rows:[]};
    }
    if(sql.startsWith('DELETE FROM platform_account_plan_requests')){
      state.pending=null;return{rows:[]};
    }
    if(sql.startsWith('INSERT INTO platform_account_plans')){
      state.plan={plan:args[1],amount:args[2],status:args[3],next_payment_date:args[4],
-       updated_at:args[5]};return{rows:[]};
+       updated_at:args[5],base_amount:args[7]};return{rows:[]};
    }
    if(sql.startsWith('INSERT INTO platform_account_plan_history')){
      state.history.push({plan:args[2],status:args[3],started_at:args[4],
