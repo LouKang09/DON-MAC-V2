@@ -86,9 +86,6 @@
  #view-dashboard .dashboard-summary{grid-template-columns:1fr!important}
  #view-dashboard .dashboard-summary .summary-card{min-height:97px!important;padding:11px 13px!important}
  #view-dashboard .dashboard-summary .dash-gross-net{flex-basis:114px}
- #view-dashboard .dm-heat-head,#view-dashboard .dm-heat-row{
-  grid-template-columns:98px repeat(var(--dm-columns),minmax(29px,1fr));
- }
 }
 @media print{
  #view-dashboard .dashboard-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
