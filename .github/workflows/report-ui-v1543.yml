@@ -20,7 +20,12 @@ jobs:
           node --check public/app-core.js
           node --check public/app.js
           node --check lib/platform-accounts.js
+          node --check lib/franchise-email-verification.js
+          node --check lib/franchise-tenant-staging.js
+          node --check lib/public-franchise-requests.js
           node report-ui-v1541-test.js
           node report-ui-v1542-test.js
       - name: Exercise Admin Control plan requests, history and access restrictions
-        run: node report-ui-v1543-test.js
+        run: |
+          node report-ui-v1543-test.js
+          node scripts/franchise-onboarding-test.js
