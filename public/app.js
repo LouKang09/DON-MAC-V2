@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.78-coffee-workspaces';
+  const VERSION = '1.5.79-coffee-outer-canvas';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -91,7 +91,7 @@
       loadCss('dashboardExperienceV1573','/dashboard-experience-v1573.css');
       loadCss('csvSalesImportV1572','/sales-csv-import-v1572.css');
       loadCss('dmUiRefinements20261107','/ui-refinements-v20261107.css');
-      loadCss('dmCoffeeWorkspaces20261107','/coffee-workspace-theme-v20261107.css?v=2');
+      loadCss('dmCoffeeWorkspaces20261107','/coffee-workspace-theme-v20261107.css?v=3');
 
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
