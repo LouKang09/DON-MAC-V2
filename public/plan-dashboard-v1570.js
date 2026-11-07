@@ -190,16 +190,8 @@
   renderCustom();
  }
  function updateReference(){
-   const container=$('advancedReferenceContent'),frame=$('advancedReferenceFrame');
-   if(!container||!frame)return;
-   const business=subscription?.plan==='BUSINESS';
-   frame.classList.toggle('is-locked',!business);
-   $('advancedReferenceLock').hidden=business;
-   $('advancedReferencePlan').textContent=business?'Business · Full preview':'Pro · Upgrade to unlock';
-   if(window.DonmacReferenceDashboard?.renderInto){
-     if(!container.querySelector('[data-rd-root]'))window.DonmacReferenceDashboard.renderInto(container);
-   }else container.innerHTML='<p>The design preview is temporarily unavailable.</p>';
-   if(business)container.removeAttribute('inert');else container.setAttribute('inert','');
+   // Advanced uses its own scoped, server-backed renderer. Sample gallery stays independent.
+   window.donmacAdvancedAnalytics?.setSubscription(subscription);
  }
  async function fetchAnalytics(){
    if(!subscription||!roleAllowed||!prefsLoaded)return;
