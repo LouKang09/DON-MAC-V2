@@ -10,6 +10,8 @@
   ['customers','Customers','♧'],['operations','Operations','⚒'],
   ['staff','Staff & Labour','♙'],['alerts','Alerts','⚑']
  ];
+ const navSvg={"dashboard":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/><rect x=\"13.5\" y=\"3\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/><rect x=\"3\" y=\"13.5\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/><rect x=\"13.5\" y=\"13.5\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/></svg>","financials":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M15 9c-1-1.3-5-1.3-5 .7 0 2.2 4.9 1 4.9 3.7 0 2.2-4.1 2.3-5.3.8M12 6v12\"/></svg>","store":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 9 12 4l9 5-9 5-9-5Z\"/><path d=\"M4 13v7h16v-7M9 20v-5h6v5\"/></svg>","sales":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.8 20.5h16.4M6.2 16.5v-5M11.8 16.5v-9M17.4 16.5V4\"/><path d=\"M5.2 16.5h2M10.8 16.5h2M16.4 16.5h2\"/></svg>","customers":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M17.2 19.5v-1.8a3.6 3.6 0 0 0-3.6-3.6H8a3.6 3.6 0 0 0-3.6 3.6v1.8\"/><circle cx=\"10.8\" cy=\"7.5\" r=\"3.2\"/><path d=\"M20.5 19.5v-1.8a3.6 3.6 0 0 0-2.7-3.5M16.1 4.3a3.1 3.1 0 0 1 0 6\"/></svg>","operations":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m12 2.75 9 5.15-9 5.15-9-5.15 9-5.15Z\"/><path d=\"M3 7.9v8.3l9 5.1 9-5.1V7.9M12 13.05v8.25\"/></svg>","staff":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M17.2 19.5v-1.8a3.6 3.6 0 0 0-3.6-3.6H8a3.6 3.6 0 0 0-3.6 3.6v1.8\"/><circle cx=\"10.8\" cy=\"7.5\" r=\"3.2\"/><path d=\"M20.5 19.5v-1.8a3.6 3.6 0 0 0-2.7-3.5M16.1 4.3a3.1 3.1 0 0 1 0 6\"/></svg>","alerts":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3 2.5 20.5h19L12 3Z\"/><path d=\"M12 9v5M12 17.2h.01\"/></svg>"};
+ const navIcon=key=>navSvg[key]||navSvg.dashboard;
  const tones=['#138a62','#df9955','#3678b5','#8d67b2','#d36c64','#489eab','#a58c40','#637987'];
  const fmt=n=>Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:1});
  const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -207,16 +209,13 @@
    '</select></label><button type="button" data-aa-refresh aria-label="Refresh Advanced Analytics">↻ Refresh</button></div>';
   const notice=!d.complete?'<p class="aa-warning" role="status">High-volume record limit reached. The figures below reflect only the retrieved data; use the full reports for an exact uncapped total.</p>':'';
   const markup='<section class="rd-shell dm-advanced-shell" data-aa-root>'+
-   '<aside class="rd-sidebar"><div class="rd-brand"><div class="rd-brand-mark">✦</div><div><strong>Don Macchiatos</strong>'+
-   '<span>Business analytics</span></div></div><nav aria-label="Advanced sections">'+sections.map(s=>
+   '<aside class="rd-sidebar"><nav aria-label="Advanced sections">'+sections.map(s=>
     '<button type="button" data-aa-section="'+s[0]+'" class="'+(section===s[0]?'active':'')+'" aria-current="'+
-    (section===s[0]?'page':'false')+'"><span class="rd-nav-glyph">'+s[2]+'</span>'+esc(s[1])+'</button>').join('')+
-   '</nav><div class="rd-side-profile"><div class="rd-profile-avatar">DM</div><div><strong>Business plan</strong>'+
-   '<small>Franchise records</small></div></div></aside>'+
-   '<main class="rd-main"><div class="rd-main-heading"><div><h2>'+esc(label)+'</h2>'+
-   '<span class="rd-main-subtitle">Recorded transactions · '+esc(d.period.start)+' to '+esc(d.period.end)+
-   '</span></div><span class="aa-recorded-label">RECORDED DATA</span></div>'+
-   header+notice+'<div class="rd-body">'+(views[section]||views.dashboard)(d)+'</div>'+
+    (section===s[0]?'page':'false')+'"><span class="rd-nav-glyph">'+navIcon(s[0])+'</span>'+esc(s[1])+'</button>').join('')+
+   '</nav></aside>'+
+   '<main class="rd-main">'+header+
+   '<p class="aa-period-caption">Completed POS transactions · '+esc(d.period.start)+' to '+esc(d.period.end)+'</p>'+
+   notice+'<div class="rd-body">'+(views[section]||views.dashboard)(d)+'</div>'+
    '<div class="rd-bottom-note">Read-only analytical workspace. Reports reflect saved POS records and do not replace physical inventory counting or financial reconciliation.</div>'+
    '</main></section>';
   root.innerHTML=markup;
