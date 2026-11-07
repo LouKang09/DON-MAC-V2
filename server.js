@@ -1828,7 +1828,7 @@ async function handleApi(req,res,url){
   // POS tenant operations; all data is restricted to the signed-in franchise workspace.
   if(p==='/api/finance/expenses' || p==='/api/finance/transactions'){
     const q=new URL(req.url,'http://localhost').searchParams;
-    const params={page:q.get('page'),branchId:q.get('branchId'),start:q.get('start'),end:q.get('end')};
+    const params={page:q.get('page'),branchId:q.get('branchId'),start:q.get('start'),end:q.get('end'),status:q.get('status'),payment:q.get('payment'),orderType:q.get('orderType'),search:q.get('search')};
     if(method==='GET')return json(res,200,p.endsWith('/expenses')?
       await posFinance.expenses(db,user,params):await posFinance.transactions(db,user,params),safeHeaders({'Cache-Control':'no-store'}));
     if(method==='POST'&&p.endsWith('/expenses'))
