@@ -62,7 +62,7 @@
   }catch(_){}
  });
  remember.addEventListener('change',()=>{if(!remember.checked){try{localStorage.removeItem(KEY)}catch(_){}}});
- let features={emailOtpAvailable:false,publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true};
+ let features={emailOtpAvailable:false,publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true,franchiseEmailOtpAvailable:false};
  fetch('/api/status',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(d=>{
   if(d.authFeatures)features=d.authFeatures;
  }).catch(()=>{});
@@ -118,7 +118,40 @@
     email:$('regEmail').value.trim(),phone:$('regPhone').value.trim()
    });
    message('regMessage',result.message||'Account request received.');
+   if(result.verificationRequired){
+     $('authRegisterVerifyForm').classList.remove('hidden');
+     $('regVerifyCode').value='';
+     $('regVerifyCode').focus();
+   }
   }catch(e){message('regMessage',e.message,true);}
+  finally{btn.disabled=false;}
+ });
+ $('authRegisterVerifyForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const btn=$('regVerifySubmit');if(btn.disabled)return;
+  btn.disabled=true;
+  try{
+   const result=await post('/api/auth/register/verify',{
+     email:$('regEmail').value.trim(),code:$('regVerifyCode').value.trim()
+   });
+   message('regVerifyMessage',result.message||'Email confirmed.');
+   $('authRegisterVerifyForm').classList.add('hidden');
+  }catch(err){message('regVerifyMessage',err.message,true);}
+  finally{btn.disabled=false;}
+ });
+ let lastSignupResend=0;
+ $('regVerifyResend').addEventListener('click',async()=>{
+  const btn=$('regVerifyResend');
+  if(btn.disabled)return;
+  if(Date.now()-lastSignupResend<60000){
+   message('regVerifyMessage','Please allow one minute between verification emails.',true);return;
+  }
+  btn.disabled=true;
+  try{
+   const result=await post('/api/auth/register/verify/resend',{email:$('regEmail').value.trim()});
+   lastSignupResend=Date.now();
+   message('regVerifyMessage',result.message||'If the request is pending, a code will be delivered.');
+  }catch(err){message('regVerifyMessage',err.message,true);}
   finally{btn.disabled=false;}
  });
  const requestForm=$('authResetRequestForm'),verifyForm=$('authResetConfirmForm');
