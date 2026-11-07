@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.86-dashboard-kpis-charts';
+  const VERSION = '1.5.87-stable-activity-grouped-tiles';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
