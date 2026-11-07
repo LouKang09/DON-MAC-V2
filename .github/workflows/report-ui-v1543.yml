@@ -1,4 +1,4 @@
-name: Don Mac v1.5.43 subscription preview tests
+name: Don Mac subscription access and account plan tests
 on:
   push:
     branches:
@@ -19,8 +19,8 @@ jobs:
           node --check server.js
           node --check public/app-core.js
           node --check public/app.js
-          node --check lib/development-subscriptions.js
+          node --check lib/platform-accounts.js
           node report-ui-v1541-test.js
           node report-ui-v1542-test.js
-      - name: Exercise demo subscription switching and Pro transfer restrictions
+      - name: Exercise Admin Control plan requests, history and access restrictions
         run: node report-ui-v1543-test.js
