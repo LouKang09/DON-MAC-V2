@@ -174,7 +174,7 @@
           <span class="topbar-logo" aria-hidden="true"><img src="/donmac-logo-hires.svg" alt="" width="108" height="108" /></span>
           <div class="topbar-heading-copy"><p class="eyebrow" id="viewEyebrow"></p><h2 id="viewTitle">Welcome to Don Macchiatos POS</h2><span id="posDate" class="pos-header-date"></span></div>
         </div>
-        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine" hidden style="display:none">DATABASE</span><label class="account-plan-top-control" for="planSwitcher">Account Type: <select id="planSwitcher" aria-label="Account Type"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><button id="topbarProfileButton" type="button" class="topbar-profile" title="Open Account Settings" aria-label="Open Account Settings"><span class="topbar-avatar" id="topbarAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span><svg class="topbar-profile-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+        <div class="topbar-right"><button id="dashboardPrintReport" class="dashboard-print-report hidden" type="button" title="Open today's sales report for printing" aria-label="Print today's sales report"><span>Report</span><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M14 3.5v4.5h4M9 12h6M9 16h6"/></svg></button><span class="db-pill" id="dbEngine" hidden style="display:none">DATABASE</span><span class="account-plan-top-control" aria-label="Current account type">Account Type: <strong id="accountPlanPill">Pro Plan User</strong></span><span class="db-pill" id="appVersion">v1</span><span id="clock"></span><button id="topbarProfileButton" type="button" class="topbar-profile" title="Open Account Settings" aria-label="Open Account Settings"><span class="topbar-avatar" id="topbarAvatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.1" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="topbar-profile-text"><b id="topbarUsername">—</b><small id="topbarRole">—</small></span><svg class="topbar-profile-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
       </header>
 
       <section id="view-dashboard" class="view">
@@ -870,27 +870,26 @@
       <section id="view-account" class="view admin-only">
         <div class="card plan-settings-hero">
           <div class="plan-settings-heading">
-            <div><p class="eyebrow">ACCOUNT SETTINGS</p><h2>Subscription &amp; account type</h2><p class="muted">Preview the Pro and Business account experience before paid subscriptions launch.</p></div>
-            <span class="plan-demo-badge">DEVELOPMENT MODE</span>
+            <div><p class="eyebrow">ACCOUNT SETTINGS</p><h2>Subscription &amp; account type</h2><p class="muted">Manage your subscription and request plan updates through Admin Control.</p></div>
+            <span class="plan-payment-readonly" id="accountPaymentStatus">Status not configured</span>
           </div>
           <div class="plan-details-cards">
             <div><span>Subscribed plan</span><strong id="accountPlanName">Pro</strong></div>
             <div><span>Plan started</span><strong id="accountStartedAt">—</strong></div>
-            <div><span>Next due (simulated)</span><strong id="accountRenewAt">—</strong></div>
+            <div><span>Next payment date</span><strong id="accountRenewAt">—</strong></div>
             <div><span>Days remaining</span><strong id="accountRemaining">—</strong></div>
           </div>
-          <p class="plan-preview-disclaimer">This is a development-only subscription preview. No payment is collected, no invoices are issued, and the renewal dates are simulated.</p>
           <div class="plan-change-panel">
             <label>Account plan<select id="accountPlanSelect" aria-label="Account plan"><option value="PRO">Pro</option><option value="BUSINESS">Business</option></select></label>
-            <label>Demo payment status<select id="accountStatusSelect" aria-label="Demo subscription status"><option value="PAID">Paid</option><option value="ON_HOLD">On-hold</option><option value="UNPAID">Unpaid</option></select></label>
-            <button id="saveAccountPlan" class="primary" type="button">Apply Demo Plan</button>
+            <button id="saveAccountPlan" class="primary" type="button">Update Plan</button>
+            <p class="account-plan-request-message" id="accountPlanMessage" role="status"></p>
           </div>
         </div>
 
         <section id="tenantBilling" data-api-base="/api/billing" class="tenant-billing-section" aria-label="Actual tenant subscription billing">
-          <div class="tenant-billing-head"><div><span class="tenant-billing-label">REAL SUBSCRIPTION BILLING</span>
+          <div class="tenant-billing-head"><div><span class="tenant-billing-label">SUBSCRIPTION BILLING</span>
             <h2>Pay your Don Mac POS subscription</h2>
-            <p>Secure PayMongo checkout is available once the platform owner configures billing. This is separate from the demo plan preview above.</p></div>
+            <p>Pay securely when checkout is configured by Admin Control. Billing status is managed centrally.</p></div>
             <span id="tenantBillingGateway" class="tenant-gateway disabled">PayMongo not connected yet</span>
           </div>
           <div class="tenant-billing-values"><div><small>Assigned Plan</small><strong id="tenantBillingPlan">—</strong></div>
@@ -905,9 +904,9 @@
           <tbody id="tenantBillingHistory"><tr><td colspan="5" class="tenant-billing-empty">No transactions recorded.</td></tr></tbody></table></div>
         </section>
         <div class="card spaced plan-history-card">
-          <div class="card-head"><div><p class="eyebrow">PLAN CHANGE HISTORY</p><h3>Subscription history</h3></div><span class="muted">Demo entries, not billing transactions</span></div>
+          <div class="card-head"><div><p class="eyebrow">PLAN CHANGE HISTORY</p><h3>Subscription history</h3></div><span class="muted">Recorded account changes</span></div>
           <div class="table-wrap">
-            <table aria-label="Subscription history">
+            <table class="plan-history-table" aria-label="Subscription history">
               <thead><tr><th>Date</th><th>Plan</th><th>Start Date</th><th>Renew Date</th><th>Days Remaining</th><th>Status</th></tr></thead>
               <tbody id="subscriptionHistoryBody"><tr><td colspan="6" class="muted">Loading subscription history…</td></tr></tbody>
             </table>
