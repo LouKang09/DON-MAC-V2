@@ -98,14 +98,15 @@ $('officeLogout').onclick=async()=>{
 function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
- for(const section of ['dashboard','requests','distribution','franchisees','catalog','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({dashboard:'Distribution Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',catalog:'Supply catalog',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
+ for(const section of ['dashboard','requests','distribution','franchisees','catalog','promotions','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
+ $('officePageHeading').textContent=({dashboard:'Distribution Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
  $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
  if(name==='dashboard')loadDistributionDashboard();
  if(name==='distribution')loadDistributionHistory();
  if(name==='billing')window.donmacTenantBilling?.load(true);
  if(name==='catalog')loadCatalog();
+ if(name==='promotions')window.officeCampaignUI?.load();
  if(name==='settings')loadSettings();
 }
 document.querySelectorAll('[data-office-page]').forEach(b=>b.onclick=()=>selectPage(b.dataset.officePage));
