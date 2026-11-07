@@ -129,6 +129,8 @@
     $('app').classList.remove('hidden');
     document.querySelectorAll('.admin-only,.staff-hidden').forEach(x=>
       x.classList.toggle('hidden',state.user.role!=='Admin'));
+    document.querySelectorAll('.cashier-only').forEach(x=>
+      x.classList.toggle('hidden',state.user.role!=='User'));
     $('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();
     $('appVersion').textContent=state.status?.version||'FINAL';
     $('topbarUsername').textContent=state.user.username;
@@ -253,9 +255,9 @@
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
     try{state.user=(await api('/api/auth/me')).user;}
     catch(err){if(err.status===401||err.status===403){state.user=null;resetOrderState({render:false});showAuth(false);if(err.status===403)$('authHint').textContent=err.message;return;}throw err;}
-    resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView('pos');
+    resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView('pos');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
   $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
 
   async function refreshPosDailyCount(){
@@ -279,6 +281,7 @@
     viewLastAutoRefresh[view]=now;return true;
   }
   function switchView(view){
+    if(view==='pos'&&state.user?.role!=='User')view='dashboard';
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
     const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Report / Inventory Management'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
