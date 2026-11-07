@@ -119,7 +119,7 @@
   <option value="PAID">Paid</option><option value="ON_HOLD">On Hold</option><option value="UNPAID">Unpaid</option></select></label>
  <label>Next payment date<input id="subNextPaymentDate" type="date" autocomplete="off"></label>
  <p class="dialog-tip">Payment dates are entered manually. Existing subscriptions show no due date until one is recorded.</p>
- <p class="dialog-tip">This records a subscription manually; it does not initiate a charge or change POS access.</p>
+ <p class="dialog-tip">Only Admin Control can change payment status. Unpaid or On Hold disables POS sign-in until the account is marked Paid. Saving the record does not initiate a charge.</p>
  <div class="subscription-history-preview"><h3>Verified subscription payment history</h3><div id="subscriptionPaymentHistory">Choose a tenant to see previous payments.</div></div><p id="subscriptionError" class="notice error hidden" role="alert"></p>
  <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
  <button class="btn btn-main" type="submit" id="saveSubscription">Save record</button></div>
