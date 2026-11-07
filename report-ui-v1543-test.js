@@ -54,6 +54,8 @@ assert(html.includes('dashboard-items-card admin-only'), 'Cashier items performa
 assert(html.includes('id="transferUpgradeInformation"'));
 assert(core.includes('Contact your Owner or Co-Owner to request an upgrade'));
 assert(read('lib/franchise-tenant-staging.js').includes('PREPARED_NO_ACCESS'));
+assert(read('lib/franchise-activation-readiness.js').includes('activationEnabled:false'));
+assert(read('lib/platform-admin-auth.js').includes("'/franchise-activation-readiness'"));
 assert(read('lib/franchise-email-verification.js').includes('verification_attempts<5'));
 const widgetSource=read('public/plan-dashboard-v1570.js');
 assert(widgetSource.includes("addEventListener('dragstart'"));
