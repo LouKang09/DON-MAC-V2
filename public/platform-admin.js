@@ -84,7 +84,8 @@
  function renderFranchiseRequests(){
    const rows=franchiseSignupRequests;
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
-     const staging=x.stageStatus?'Prepared · no access':!x.emailVerifiedAt?'Awaiting verification':
+     const staging=x.stageStatus?'Prepared · no access':x.status==='REJECTED'?'Rejected':
+      !x.emailVerifiedAt?'Awaiting verification':
       '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
      const actions=x.status==='REJECTED'?'—':
       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button> '+
