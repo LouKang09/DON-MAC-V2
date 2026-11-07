@@ -22,22 +22,29 @@
  const empty=message=>'<div class="aa-empty">'+esc(message)+'</div>';
  const note=message=>'<p class="aa-data-note">'+esc(message)+'</p>';
  const title=(heading,description)=>'<div class="rd-section-title"><div><h3>'+esc(heading)+'</h3><p>'+esc(description)+'</p></div><span class="aa-recorded-label">POS RECORDS</span></div>';
- function sparkline(values,color=tones[0]){
+ function sparkline(values,color=tones[0],label='Recorded daily trend'){
+  if(!Array.isArray(values)||values.length<2)return '';
   const nums=values.map(Number),max=Math.max(1,...nums),w=184,h=52;
   const p=nums.map((n,i)=>(4+i*(w-8)/Math.max(1,nums.length-1)).toFixed(1)+','+
     (h-4-n/max*(h-8)).toFixed(1)).join(' ');
-  return '<svg class="rd-spark" viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><polyline points="'+p+
+  return '<svg class="rd-spark" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+
+    esc(label)+'"><polyline points="'+p+
     '" fill="none" stroke="'+color+'" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
  }
  function metric(label,value,caption,values,idx=0){
-  return '<article class="rd-kpi"><div class="rd-kpi-upper"><span>'+esc(label)+'</span><span aria-hidden="true">⋮</span></div>'+
+  const source=Array.isArray(values)&&values.length>1?' Daily values calculated from recorded entries.':'';
+  const tooltip=label+': '+value+'. '+caption+'.'+source;
+  return '<article class="rd-kpi aa-hoverable" tabindex="0" data-aa-tip="'+esc(tooltip)+'">'+
+    '<div class="rd-kpi-upper"><span>'+esc(label)+'</span></div>'+
     '<strong>'+esc(value)+'</strong><div class="aa-kpi-caption">'+esc(caption)+'</div>'+
-    sparkline(values||model.months.map(m=>m.net),tones[idx%tones.length])+'</article>';
+    sparkline(values,tones[idx%tones.length],label+' — daily POS records')+'</article>';
  }
- const kpis=list=>'<div class="rd-kpi-grid">'+list.map((x,i)=>metric(x[0],x[1],x[2],null,i)).join('')+'</div>';
- const panel=(name,content,extra='')=>'<article class="rd-panel '+extra+'"><div class="rd-panel-title">'+esc(name)+'</div>'+content+'</article>';
+ const kpis=list=>'<div class="rd-kpi-grid">'+
+   list.map((x,i)=>metric(x[0],x[1],x[2],x[3],i)).join('')+'</div>';
+ const panel=(name,content,extra='')=>'<article class="rd-panel aa-panel '+extra+'"><div class="rd-panel-title">'+esc(name)+'</div>'+content+'</article>';
  function comparisonChart(rows,series){
-  if(!rows.length)return empty('No recorded sales for the selected period.');
+  if(!rows.length||!rows.some(row=>series.some(item=>Number(row[item.key]||0)!==0)))
+    return empty('No recorded values for this comparison.');
   const width=900,height=260,l=67,r=18,t=15,b=40,plotW=width-l-r,plotH=height-t-b;
   const max=Math.max(1,...series.flatMap(s=>rows.map(x=>Number(x[s.key]||0))));
   const y=v=>t+plotH-(Number(v||0)/max)*plotH;
@@ -50,7 +57,8 @@
   const paths=series.map((s,j)=>{
     const color=tones[j%tones.length],points=rows.map((x,i)=>[xx(i),y(x[s.key]||0),Number(x[s.key]||0)]);
     const d=points.map((p,i)=>(i?'L':'M')+p[0].toFixed(2)+','+p[1].toFixed(2)).join(' ');
-    const dots=points.map((p,i)=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4.2" fill="'+color+'" tabindex="0">'+
+    const dots=points.map((p,i)=>'<circle class="aa-chart-dot" cx="'+p[0]+'" cy="'+p[1]+'" r="5.2" fill="'+color+
+      '" tabindex="0" data-aa-tip="'+esc((rows[i].month||rows[i].day)+' · '+s.name+': '+peso(p[2]))+'">'+
       '<title>'+esc(rows[i].month||rows[i].day)+' · '+esc(s.name)+': '+peso(p[2])+'</title></circle>').join('');
     return '<path d="'+d+'" stroke="'+color+'" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
   }).join('');
@@ -72,7 +80,9 @@
   const selected=rows.slice(0,max),highest=Math.max(1,...selected.map(valueFn));
   return '<div class="aa-ranking">'+selected.map((x,i)=>{
    const amount=valueFn(x),percentage=Math.max(0,Math.min(100,amount/highest*100));
-   return '<div class="aa-rank-row"><div><strong>'+esc(labelFn(x))+'</strong><span>'+esc(fmt(amount))+'</span></div>'+
+   const tip=labelFn(x)+': '+peso(amount);
+   return '<div class="aa-rank-row aa-hoverable" tabindex="0" data-aa-tip="'+esc(tip)+'"><div><strong>'+
+     esc(labelFn(x))+'</strong><span>'+peso(amount)+'</span></div>'+
      '<div class="aa-progress"><span style="width:'+percentage.toFixed(2)+'%;background:'+tones[i%tones.length]+'"></span></div></div>';
   }).join('')+'</div>';
  }
@@ -89,7 +99,8 @@
   return '<div class="aa-donut-layout"><div class="aa-donut" role="img" aria-label="'+
    esc(rows.map(x=>x.name+' '+percent(x[field],sum)).join(', '))+'" style="background:conic-gradient('+
    colors.join(',')+')"><div><strong>'+peso(sum)+'</strong><span>Net sales</span></div></div>'+
-   '<div class="aa-donut-legend">'+rows.map((x,i)=>'<div><i style="background:'+tones[i%tones.length]+'"></i>'+
+   '<div class="aa-donut-legend">'+rows.map((x,i)=>'<div class="aa-hoverable" tabindex="0" data-aa-tip="'+
+     esc(x.name+': '+peso(x[field])+' ('+percent(x[field],sum)+')')+'"><i style="background:'+tones[i%tones.length]+'"></i>'+
      '<span>'+esc(x.name)+'</span><strong>'+esc(percent(x[field],sum))+'</strong></div>').join('')+'</div></div>';
  }
  function dashboard(d){
