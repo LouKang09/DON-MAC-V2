@@ -90,10 +90,13 @@
    const scroll=table.closest('.table-wrap, .table-scroll, .tenant-billing-scroll')||table;
    // The table can be inside multiple wrappers; insert before the direct
    // child container rather than calling insertBefore on an unrelated node.
-   let anchor=scroll;
-   while(anchor.parentElement&&anchor.parentElement!==panel)anchor=anchor.parentElement;
-   if(anchor.parentElement===panel)panel.insertBefore(bar,anchor);
-   else panel.appendChild(bar);
+   if(scroll===panel)panel.insertBefore(bar,table);
+   else {
+    let anchor=scroll;
+    while(anchor.parentElement&&anchor.parentElement!==panel)anchor=anchor.parentElement;
+    if(anchor.parentElement===panel)panel.insertBefore(bar,anchor);
+    else panel.appendChild(bar);
+   }
   }
  }
  function iconizeExisting(){
