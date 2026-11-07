@@ -572,6 +572,7 @@ async function quoteOrder(conn,input){
 function makeReference(){const a=Array.from({length:3},()=>crypto.randomBytes(2).toString('hex').toUpperCase());return `REF#-${a.join('-')}`;}
 
 async function createSale(user,body){
+  if(user?.role!=='User')throw Object.assign(new Error('Only assigned Cashier accounts can process sales. Owners and Co-Owners have view-only access to sales records.'),{status:403,code:'CASHIER_ONLY_CHECKOUT'});
   const mode=String(body.paymentMode||'').trim();if(!['Cash','GCash'].includes(mode))throw Object.assign(new Error('Please choose Cash or GCash.'),{status:400});
   const branchId=await branchSupport.salesScope(db,user,body.branchId,true);
   const clientRequestId=String(body.clientRequestId||'').trim();
