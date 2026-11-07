@@ -143,6 +143,7 @@
     '" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(owner.ownerUsername)+'">'+expandChevron+'</button>'+
     '<div class="owner-identity"><strong>'+esc(owner.ownerUsername)+'</strong><small>'+esc(owner.ownerFullName||'Account Owner')+'</small>'+
     '<div class="owner-controls"><button class="link-btn" type="button" data-subscribe="'+owner.workspaceId+'">Manage subscription</button>'+
+    (owner.pendingPlan?'<span class="requested-plan-marker">Plan request: '+esc(owner.pendingPlan.plan)+'</span>':'')+
     (owner.ownerId?'<button class="link-btn" type="button" data-edit-user="'+owner.workspaceId+':'+owner.ownerId+'">Edit owner</button>':'')+
     '</div></div></div></td>'+
     '<td><span class="num">'+number(owner.branchCount)+'</span></td>'+
@@ -191,8 +192,9 @@
   if(!owner)return;
   billingFilter={kind:'FRANCHISE',id:String(owner.workspaceId),label:owner.ownerUsername};billingPage=1;reloadBilling();
   selected={kind:'subscription',owner};
-  $('subscriptionOwner').textContent=owner.ownerUsername+' · Workspace #'+owner.workspaceId;
-  $('subPlan').value=owner.subscription?.plan||'PRO';
+  $('subscriptionOwner').textContent=owner.ownerUsername+' · Workspace #'+owner.workspaceId+
+   (owner.pendingPlan?' · Requested '+owner.pendingPlan.plan+' plan (awaiting review)':'');
+  $('subPlan').value=owner.pendingPlan?.plan||owner.subscription?.plan||'PRO';
   $('subStatus').value=owner.subscription?.status||'UNPAID';
   $('subAmount').value=owner.subscription?.amount??'';
   $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||'';
