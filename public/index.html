@@ -195,7 +195,7 @@
                 <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
                 <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
                 <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
-                <label class="admin-only" id="dashboardBranchWrap">Branch<select id="dashboardBranch"><option value="all">All branches</option></select></label>
+                <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">All branches</option></select></span>
                 <button id="applyTrend" class="primary" type="button">Apply</button>
               </div>
             </div>
@@ -994,6 +994,6 @@
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.5.77"></script>
-  <script src="/app.js?v=1.5.82"></script>
+  <script src="/app.js?v=1.5.83"></script>
 </body>
 </html>
