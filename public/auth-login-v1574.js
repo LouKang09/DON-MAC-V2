@@ -62,7 +62,7 @@
   }catch(_){}
  });
  remember.addEventListener('change',()=>{if(!remember.checked){try{localStorage.removeItem(KEY)}catch(_){}}});
- let features={emailOtpAvailable:false,publicOwnerSignupAvailable:false};
+ let features={emailOtpAvailable:false,publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true};
  fetch('/api/status',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(d=>{
   if(d.authFeatures)features=d.authFeatures;
  }).catch(()=>{});
@@ -72,7 +72,7 @@
  });
  $('authSignupButton').addEventListener('click',()=>{
   show('register');
-  if(!features.publicOwnerSignupAvailable)message('regMessage','Self-service Owner registration is not active yet. Account isolation must be completed before new franchises can safely access the POS.',true);
+  if(!features.publicFranchiseRequestAvailable)message('regMessage','Franchise requests are temporarily unavailable. Contact Admin Control.',true);
  });
  document.querySelectorAll('[data-auth-back]').forEach(button=>button.addEventListener('click',()=>show('login')));
  document.querySelectorAll('[data-toggle-password]').forEach(button=>button.addEventListener('click',()=>{
@@ -112,15 +112,10 @@
   btn.disabled=true;
   try{
    if(!available&&!(await usernameAvailable()))throw new Error('Choose an available username.');
-   const value=$('regPassword').value,confirmation=$('regConfirmPassword').value;
-   if(value!==confirmation)throw new Error('The passwords do not match.');
-   if(value.length<10||!/[a-zA-Z]/.test(value)||!/[0-9]/.test(value))
-    throw new Error('Use at least 10 characters with letters and numbers.');
-   message('regMessage','Checking registration availability…');
+   message('regMessage','Submitting your franchise request…');
    const result=await post('/api/auth/register',{
     username:regUsername.value.trim(),fullName:$('regFullName').value.trim(),
-    email:$('regEmail').value.trim(),phone:$('regPhone').value.trim(),
-    password:value,confirmPassword:confirmation
+    email:$('regEmail').value.trim(),phone:$('regPhone').value.trim()
    });
    message('regMessage',result.message||'Account request received.');
   }catch(e){message('regMessage',e.message,true);}
