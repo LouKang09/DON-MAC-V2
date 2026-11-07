@@ -201,7 +201,7 @@
  const views={dashboard,financials,store,sales,customers,operations,staff,alerts};
  function showModel(){
   if(!model){root.innerHTML=empty(error||'Loading advanced analytics…');return;}
-  const d=model,label=sections.find(x=>x[0]===section)?.[1]||'Dashboard';
+  const d=model;
   const header='<div class="aa-report-controls"><label>Branch <select data-aa-branch><option value="all">ALL</option>'+
    d.branches.map(b=>'<option value="'+b.id+'" '+(String(b.id)===branch?'selected':'')+'>'+esc(b.name)+'</option>').join('')+
    '</select></label><label>Period <select data-aa-days>'+
