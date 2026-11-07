@@ -225,6 +225,7 @@
    notice+'<div class="rd-body">'+(views[section]||views.dashboard)(d)+'</div>'+
    '</main></section>';
   root.innerHTML=markup;
+  hideHoverTip();
  }
  async function load(force=false){
   if(!business())return;
@@ -265,6 +266,39 @@
     .then(r=>r.ok?r.json():null).then(setSubscription).catch(()=>{});
   }
  }
+ let hoverTip=null;
+ function hideHoverTip(){
+   if(hoverTip)hoverTip.hidden=true;
+ }
+ function showHoverTip(message,x,y){
+   if(!hoverTip){
+     hoverTip=document.createElement('div');
+     hoverTip.className='aa-floating-tooltip';
+     hoverTip.setAttribute('role','tooltip');
+     hoverTip.hidden=true;
+     document.body.appendChild(hoverTip);
+   }
+   hoverTip.textContent=message;
+   hoverTip.hidden=false;
+   const bound=hoverTip.getBoundingClientRect();
+   const viewportW=document.documentElement.clientWidth;
+   const viewportH=document.documentElement.clientHeight;
+   hoverTip.style.left=Math.max(8,Math.min(x+16,viewportW-bound.width-8))+'px';
+   hoverTip.style.top=Math.max(8,Math.min(y+16,viewportH-bound.height-8))+'px';
+ }
+ root.addEventListener('pointermove',event=>{
+   const target=event.target.closest?.('[data-aa-tip]');
+   if(!target){hideHoverTip();return;}
+   showHoverTip(target.getAttribute('data-aa-tip')||'',event.clientX,event.clientY);
+ });
+ root.addEventListener('pointerleave',hideHoverTip);
+ root.addEventListener('focusin',event=>{
+   const target=event.target.closest?.('[data-aa-tip]');
+   if(!target)return;
+   const rect=target.getBoundingClientRect();
+   showHoverTip(target.getAttribute('data-aa-tip')||'',rect.left+rect.width/2,rect.top+rect.height/2);
+ });
+ root.addEventListener('focusout',hideHoverTip);
  root.addEventListener('click',event=>{
   const action=event.target.closest('[data-aa-section],[data-aa-refresh]');
   if(!action||!business())return;
