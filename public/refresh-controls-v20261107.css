@@ -1,0 +1,91 @@
+/* One refresh control across Don Mac POS, Admin Control and Main Office.
+   The mask is vector-traced from the owner's attached icon. */
+button.dm-refresh, .office-app button.dm-refresh, #platformApp button.dm-refresh,
+.view button.dm-refresh, #tenantBilling button.dm-refresh {
+ appearance:none!important;
+ display:inline-flex!important;
+ justify-content:center!important;
+ align-items:center!important;
+ width:41px!important;
+ height:41px!important;
+ min-width:41px!important;
+ min-height:41px!important;
+ max-width:41px!important;
+ flex:0 0 41px!important;
+ padding:0!important;
+ margin:0!important;
+ border:1px solid #075d38!important;
+ border-radius:11px!important;
+ background:#075d38!important;
+ color:#ffffff!important;
+ box-shadow:0 2px 7px rgba(7,93,56,.15)!important;
+ font-size:0!important;
+ line-height:0!important;
+ text-indent:0!important;
+ text-decoration:none!important;
+ white-space:nowrap!important;
+ cursor:pointer!important;
+ vertical-align:middle!important;
+ transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease!important;
+ overflow:hidden!important;
+}
+button.dm-refresh::before, .office-app button.dm-refresh::before, #platformApp button.dm-refresh::before {
+ content:"";
+ width:23px;
+ height:23px;
+ display:block!important;
+ flex:0 0 23px;
+ background-color:#ffffff!important;
+ -webkit-mask-image:url('/assets/refresh-clockwise-v20261107.svg');
+ mask-image:url('/assets/refresh-clockwise-v20261107.svg');
+ -webkit-mask-repeat:no-repeat;
+ mask-repeat:no-repeat;
+ -webkit-mask-position:center;
+ mask-position:center;
+ -webkit-mask-size:contain;
+ mask-size:contain;
+}
+button.dm-refresh svg,button.dm-refresh img,button.dm-refresh span,button.dm-refresh i {
+ display:none!important;
+}
+button.dm-refresh:hover, .office-app button.dm-refresh:hover, #platformApp button.dm-refresh:hover {
+ background:#05472b!important;
+ border-color:#05472b!important;
+ box-shadow:0 3px 10px rgba(7,93,56,.25)!important;
+ transform:translateY(-1px);
+}
+button.dm-refresh:active {transform:translateY(0);}
+button.dm-refresh:focus-visible {
+ outline:3px solid #8ec9a8!important;
+ outline-offset:3px!important;
+}
+button.dm-refresh:disabled {opacity:.48!important;cursor:wait!important;transform:none!important;}
+.dm-refresh-heading {
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ flex-wrap:wrap;
+}
+.dm-refresh-heading>.dm-refresh {margin-left:auto!important;}
+.dm-refresh-toolbar {
+ display:flex;
+ align-items:center;
+ justify-content:flex-end;
+ gap:9px;
+ margin:0 0 12px;
+}
+#view-pos .catalog-tools #posSyncRefresh {
+ display:inline-flex;
+ margin-left:auto!important;
+}
+#view-pos .catalog-tools #posSyncRefresh[hidden] {display:none!important;}
+#platformApp .page-heading #refreshAccounts, .office-app .office-top #officeRefresh {
+ display:none!important;
+}
+@media(max-width:560px){
+ button.dm-refresh,.office-app button.dm-refresh,#platformApp button.dm-refresh,
+ .view button.dm-refresh,#tenantBilling button.dm-refresh {
+  width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;max-width:38px!important;flex-basis:38px!important;
+ }
+}
