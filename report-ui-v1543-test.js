@@ -56,7 +56,7 @@ assert(read('public/platform-admin.js').includes('requested-plan-marker'));
      return{rows:state.plan?[state.plan]:[]};
    if(sql.startsWith('SELECT requested_plan,requested_at FROM platform_account_plan_requests'))
      return{rows:state.pending?[state.pending]:[]};
-   if(sql.startsWith('SELECT plan,status,started_at,renew_at,changed_at,actor FROM platform_account_plan_history'))
+   if(sql.startsWith('SELECT plan,status,started_at,renew_at,changed_at,actor,remark FROM platform_account_plan_history'))
      return{rows:[...state.history].reverse()};
    if(sql.startsWith('SELECT p.status,p.plan FROM chat_memberships'))
      return{rows:state.plan?[state.plan]:[]};
