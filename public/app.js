@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.5.89-account-control-performance';
+  const VERSION = '1.5.90-preloaded-updates';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -36,12 +36,23 @@
     if (submit) submit.textContent = 'Sign In';
   }
 
+  // Start independent network downloads together, but execute scripts in their proven dependency order.
+  function preloadEnhancementScripts(){
+    for(const src of ["/supply-franchise.js?v=1.5.79","/tenant-billing-ui.js?v=1","/pos-finance.js?v=20261107c","/pos-quickpay-v1556.js","/mobile-nav-v1529.js","/live-refresh.js","/v15-safe.js","/v153-features.js","/v154-tuning.js","/v155-features.js","/v156-features.js","/pos-refresh.js","/dashboard-v1512.js","/dashboard-compact-v1571.js","/dashboard-experience-v1573.js?v=20261107c","/sales-csv-import-v1572.js","/premium-dashboard-feature-gallery-v1533.js","/reference-dashboard-preview-v1535.js","/plan-dashboard-v1570.js","/pos-categories-admin.js","/catalog-batch-v1544.js","/internal-chat.js","/refresh-controls-v20261107.js"]){
+      const link=document.createElement('link');
+      link.rel='preload';link.as='script';
+      link.href=src+(src.includes('?')?'&':'?')+'v='+encodeURIComponent(VERSION);
+      document.head.appendChild(link);
+    }
+  }
+
   async function startEnhancementsWhenAppIsReady() {
     if (enhancementsStarted) return;
     const app = document.getElementById('app');
     if (!isVisible(app)) return;
     enhancementsStarted = true;
     try {
+      preloadEnhancementScripts();
       loadCss('v15SafeCss', '/v15.css');
       loadCss('v153Css', '/v153.css');
       loadCss('v154Css', '/v154.css');
