@@ -1,0 +1,92 @@
+/* Coffee image reuse and drag-first dashboard customization. */
+#view-catalog .product-default-image-picker{margin:-2px 0 11px;display:grid;gap:10px;min-width:0}
+#view-catalog #productDefaultImagesToggle{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:max-content;max-width:100%;border:1px solid #8ac5a2;
+  background:#f1faf3;color:#075d38;padding:9px 13px;border-radius:9px;
+  font-weight:800;font-size:12px;cursor:pointer;
+}
+#view-catalog #productDefaultImagesToggle:hover,
+#view-catalog #productDefaultImagesToggle[aria-expanded="true"]{
+  background:#dff2e5;border-color:#338a60;
+}
+#view-catalog .product-default-images-gallery{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;
+  padding:11px;border:1px solid #cfe1d5;border-radius:11px;
+  background:#f7faf7;max-height:340px;overflow-y:auto;min-width:0;
+  scrollbar-gutter:stable;
+}
+#view-catalog .product-default-images-gallery.hidden{display:none!important}
+#view-catalog .product-default-image-option{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  min-width:0;padding:7px 6px;border:2px solid transparent;
+  border-radius:10px;background:white;color:#234b34;cursor:pointer;
+  box-shadow:0 1px 5px rgba(13,61,34,.08);
+  transition:background-color .13s ease,box-shadow .13s ease,border-color .13s ease;
+}
+#view-catalog .product-default-image-option img{
+  display:block;width:100%;aspect-ratio:1;object-fit:contain;
+  max-height:112px;border-radius:7px;background:#f8f9f7;
+}
+#view-catalog .product-default-image-option span{
+  font-size:11px;font-weight:720;text-align:center;line-height:1.3;
+  overflow-wrap:anywhere;max-width:100%;
+}
+#view-catalog .product-default-image-option:hover,
+#view-catalog .product-default-image-option:focus-visible{
+  border-color:#198754;background:#e9f7ed;
+  box-shadow:0 2px 10px rgba(13,91,48,.12);outline:none;
+}
+#view-catalog .product-default-image-option[aria-pressed="true"]{
+  border-color:#075d38;background:#e1f3e7;
+}
+#view-catalog .product-default-empty{
+  grid-column:1/-1;font-size:12px;line-height:1.5;color:#557361;
+  background:#fff;border-radius:8px;padding:15px;text-align:center;margin:0;
+}
+#view-dashboard .pw-custom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#view-dashboard .pw-custom-row[draggable]{
+  display:flex;align-items:center;justify-content:flex-start;
+  min-height:51px;gap:8px;padding:8px 12px;border:1px solid #cbded1;
+  background:white;border-radius:10px;
+  transition:border-color .13s ease,background-color .13s ease,box-shadow .13s ease;
+}
+#view-dashboard .pw-custom-row[draggable]:hover,
+#view-dashboard .pw-custom-row[draggable]:focus-within{
+  border-color:#75b992;background:#f5fbf6;
+}
+#view-dashboard .pw-custom-row.pw-dragging{opacity:.5;box-shadow:0 6px 19px rgba(7,66,33,.16)}
+#view-dashboard .pw-custom-row.pw-drop-before{
+  box-shadow:inset 0 4px 0 #12844d;background:#e9f6ee;
+}
+#view-dashboard .pw-custom-row.pw-drop-after{
+  box-shadow:inset 0 -4px 0 #12844d;background:#e9f6ee;
+}
+#view-dashboard .pw-custom-row .pw-drag-grip{
+  flex:0 0 29px;width:29px;height:34px;display:grid;place-items:center;
+  border:1px solid #d0e4d6;border-radius:7px;background:#f0f7f2;color:#377454;
+  font-size:23px;line-height:1;font-weight:900;cursor:grab;user-select:none;
+  touch-action:none;
+}
+#view-dashboard .pw-custom-row .pw-drag-grip:active{cursor:grabbing}
+#view-dashboard .pw-custom-row .pw-drag-grip:focus-visible{
+  outline:2px solid #198754;outline-offset:2px;background:#dff0e4;
+}
+#view-dashboard .pw-custom-row label{
+  flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:9px;
+  font-weight:710;font-size:12px;cursor:pointer;
+}
+#view-dashboard .pw-custom-row label span{overflow-wrap:anywhere}
+#view-dashboard .pw-custom-row input[type="checkbox"]{
+  flex:0 0 auto;accent-color:#075d38;
+}
+#view-dashboard .pw-custom-head span{font-size:12px;color:#607d68}
+@media(max-width:790px){
+ #view-dashboard .pw-custom-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+ #view-catalog .product-default-images-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+ #view-catalog .product-default-image-option,#view-dashboard .pw-custom-row[draggable]{transition:none!important}
+}
