@@ -80,9 +80,10 @@
       <section class="main-card franchise-request-section" id="franchiseRequestSection" aria-label="Franchise signup requests">
         <div class="section-header"><div><span class="eyebrow">FRANCHISE REQUESTS</span>
           <h2>New account applications</h2>
-          <p>Review self-service requests. These applications do not create login credentials or share catalog data. Activation requires a separate isolated workspace.</p>
+          <p>Review self-service requests and prepare independent starter catalogs. Live POS account activation remains locked until all franchise data is isolated.</p>
         </div><button id="refreshFranchiseRequests" class="btn btn-main" type="button">Refresh Requests</button></div>
         <p id="franchiseRequestsMessage" class="notice hidden" role="status"></p>
+        <div id="franchiseActivationReadiness" class="franchise-activation-status" role="status" aria-live="polite">Checking franchise data isolation…</div>
         <div class="table-scroll"><table class="owners-table franchise-requests-table" aria-label="New franchise account applications">
           <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Email</th><th>Status</th><th>Starter Catalog</th><th>Review</th></tr></thead>
           <tbody id="franchiseRequestsBody"><tr><td colspan="9">Loading applications…</td></tr></tbody>
