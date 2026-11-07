@@ -98,8 +98,10 @@
     b.title = 'Catalog or stock changed on another terminal. Click to safely reload the POS.';
     b.onclick = () => location.reload(); // Explicit user action only; never called by background sync.
     b.hidden = true;
-    const status = ensureStatus();
-    status.parentNode?.insertBefore(b, status.nextSibling);
+    // No refresh button in the Main POS topbar. Retain the explicit
+    // update-ready action beside the POS product search instead.
+    const catalogTools = document.querySelector('#view-pos .catalog-tools');
+    if(catalogTools)catalogTools.appendChild(b);
     return b;
   }
   function setPosUpdateReady(ready) {
