@@ -223,6 +223,7 @@
  }
  async function load(force=false){
   if(!business())return;
+  if(busy&&!force)return;
   if(!force&&model&&Date.now()-lastLoad<15000){showModel();return;}
   const token=++requestId;busy=true;
   if(!model)root.innerHTML='<div class="aa-loading">Loading recorded franchise analytics…</div>';
@@ -276,5 +277,8 @@
   model=null;lastLoad=0;load(true);
  });
  window.donmacAdvancedAnalytics={setSubscription,open,refresh:()=>{lastLoad=0;return load(true);}};
+ fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
+  .then(r=>r.ok?r.json():null).then(sub=>{if(sub)setSubscription(sub);})
+  .catch(()=>{});
  if($('view-advanced')?.classList.contains('active'))open();
 })();
