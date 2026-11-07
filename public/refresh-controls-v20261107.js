@@ -75,7 +75,7 @@
   if(table.closest('dialog, .overlay, .drawer, .hidden-print'))return;
   let panel=portal==='office'?table.closest('.office-page .panel, .office-page #tenantBilling'):
     portal==='admin'?table.closest('.main-card'):
-    table.closest('.view .card, .view .panel');
+    (table.closest('.view .card, .view .panel')||table.closest('.view .table-wrap, .view .table-scroll'));
   if(!panel)return;
   // One refresh per table container; reuse existing controls and event listeners.
   if(panel.querySelector(':scope > .dm-refresh-toolbar, :scope > .dm-refresh-heading > .dm-refresh'))return;
@@ -101,7 +101,8 @@
   for(const button of buttons){
    if(button.classList.contains('dm-refresh'))continue;
    const id=button.id||'',text=(button.textContent||'').trim();
-   if(MATCH.test(id)||/^refresh\b/i.test(text))iconize(button);
+   const accessible=(button.getAttribute('aria-label')||'')+' '+(button.getAttribute('title')||'');
+   if(MATCH.test(id)||/^refresh\b/i.test(text)||/^refresh\b/i.test(accessible.trim())||button.hasAttribute('data-refresh'))iconize(button);
   }
  }
  function mainPosSetup(){
