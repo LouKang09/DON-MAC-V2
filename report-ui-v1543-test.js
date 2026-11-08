@@ -61,6 +61,8 @@ assert(server.includes('branchPlans.allowNewBranch'));
 assert(server.includes('officePromotions.verifySale'));
 assert(server.includes('officePromotions.recordSale'));
 assert(read('public/supply-office.html').includes('page-promotions'));
+assert(server.includes("'/office-campaign-ui-v20261108.js'"),'Supply Office must serve the promotion UI script');
+assert(server.includes("'/office-campaign-v20261108.css'"),'Supply Office must serve the promotion stylesheet');
 assert(read('public/notifications-campaigns-v20261108.js').includes('data-notif-tab="promotions"'));
 assert(read('lib/franchise-branch-plans.js').includes('PRO_MAX=3'));
 assert(read('lib/franchise-tenant-staging.js').includes('PREPARED_NO_ACCESS'));
