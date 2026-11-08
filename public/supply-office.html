@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.5.80"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/><link rel="stylesheet" href="/tenant-billing.css?v=1"/><link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1"/><link rel="stylesheet" href="/coffee-workspace-theme-v20261107.css?v=3"/></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.6.02"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/><link rel="stylesheet" href="/tenant-billing.css?v=1"/><link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1"/><link rel="stylesheet" href="/coffee-workspace-theme-v20261107.css?v=3"/></head><body>
 <div id="officeLogin"><section id="authScreen" class="auth-screen" aria-label="Supply Chain sign in"><div class="auth-shell">
 <div class="auth-brand-panel"><img class="auth-brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="450" height="540" decoding="async"></div>
 <div class="auth-panel"><form id="officeLoginForm" class="auth-card">
@@ -104,9 +104,13 @@
    <label>Campaign title<input id="officeCampaignTitle" maxlength="120" required placeholder="e.g. Holiday Coffee Bundle"></label>
    <label>POS button label<input id="officeCampaignButton" maxlength="80" required placeholder="e.g. Holiday Special"></label>
    <label>POS selling price (₱)<input id="officeCampaignPrice" type="number" min="0.01" step="0.01" required></label>
-   <label>Starts (Philippine time)<input id="officeCampaignStarts" type="datetime-local" required></label>
-   <label>Ends (Philippine time)<input id="officeCampaignEnds" type="datetime-local" required></label>
+   <label>Start date (Philippine time)<input id="officeCampaignStartDate" type="date" required></label>
+   <label>Start time (Philippine time)<input id="officeCampaignStartTime" type="time" step="60" value="09:00" required></label>
+   <label>End date (Philippine time)<input id="officeCampaignEndDate" type="date" required></label>
+   <label>End time (Philippine time)<input id="officeCampaignEndTime" type="time" step="60" value="18:00" required></label>
   </div>
+  <label class="office-campaign-icon-field">Promotion icon (optional)<input id="officeCampaignIcon" type="file" accept="image/png,image/jpeg,image/webp"><small>PNG, JPEG or WebP · up to 2 MB. Automatically resized for franchise POS buttons.</small></label>
+  <div id="officeCampaignIconPreview" class="office-campaign-icon-preview hidden"><img id="officeCampaignIconImage" alt="Selected promotion icon preview" width="72" height="72"><button type="button" class="btn outline" id="officeCampaignClearIcon">Remove icon</button></div>
   <label>Description<textarea id="officeCampaignDescription" maxlength="900" rows="2" placeholder="What is included in this promotion?"></textarea></label>
   <h3>Required supply ingredients per POS sale</h3>
   <p class="muted">Choose each Main Office supply item and quantity required for one sale. A franchise must purchase and receive these items before the button can process checkout.</p>
@@ -148,4 +152,4 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=1.6.01" defer></script><script src="/office-campaign-ui-v20261108.js?v=2" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=1"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=1" defer></script></body></html>
+<script src="/supply-office.js?v=1.6.01" defer></script><script src="/office-campaign-ui-v20261108.js?v=3" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=2"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=1" defer></script></body></html>

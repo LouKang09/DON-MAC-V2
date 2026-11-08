@@ -17,3 +17,11 @@
 .office-campaign-participants table{width:100%;min-width:550px}
 .office-campaign-participants small{display:block;color:#708474;margin-top:4px}
 @media(max-width:780px){.office-campaign-fields,.office-campaign-supplies{grid-template-columns:1fr}}
+
+/* Optional thumbnail for scheduled campaigns and their POS button. */
+.office-campaign-icon-field small{font-weight:500;color:#6b8274;font-size:11px}
+.office-campaign-icon-field input[type=file]{width:100%;background:#f8fbf8}
+.office-campaign-icon-preview{display:flex;align-items:center;gap:12px}
+.office-campaign-icon-preview.hidden{display:none!important}
+.office-campaign-icon-preview img{width:72px;height:72px;object-fit:contain;background:#f5f8f5;border:1px solid #cddfd0;border-radius:10px}
+.office-campaign-row-icon{float:left;display:block;width:40px;height:40px;object-fit:contain;margin:0 10px 5px 0;border:1px solid #d7e6db;border-radius:7px;background:#f8faf8}

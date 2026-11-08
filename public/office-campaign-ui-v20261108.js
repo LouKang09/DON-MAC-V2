@@ -15,8 +15,57 @@ async function api(path,options={}){
 let campaigns=[],supplies=[],loading=false;
 function phTime(value){
  if(!value||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value))throw Error('Choose valid Philippine local start and end times.');
- return new Date(value+':00+08:00').toISOString();
+ const parsed=new Date(value+':00+08:00');
+ if(!Number.isFinite(parsed.getTime()))throw Error('Choose a valid Philippine date and time.');
+ return parsed.toISOString();
 }
+async function compressIcon(file){
+ if(!file)return '';
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>2*1024*1024)
+  throw Error('Choose a PNG, JPEG or WebP icon up to 2 MB.');
+ const url=URL.createObjectURL(file),img=new Image();
+ try{
+  await new Promise((resolve,reject)=>{
+   img.onload=resolve;img.onerror=()=>reject(Error('Unable to read the promotion icon.'));img.src=url;
+  });
+  if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth>8000||img.naturalHeight>8000)
+   throw Error('The promotion icon dimensions are too large.');
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('This browser cannot prepare an icon.');
+  const ratio=Math.min(128/img.naturalWidth,128/img.naturalHeight);
+  const w=Math.round(img.naturalWidth*ratio),h=Math.round(img.naturalHeight*ratio);
+  ctx.clearRect(0,0,128,128);ctx.drawImage(img,(128-w)/2,(128-h)/2,w,h);
+  let result=canvas.toDataURL('image/webp',0.82);
+  if(!/^data:image\/(webp|png|jpeg);base64,/.test(result)||result.length>85000){
+   canvas.width=96;canvas.height=96;
+   const small=canvas.getContext('2d'),r=Math.min(96/img.naturalWidth,96/img.naturalHeight);
+   const sw=Math.round(img.naturalWidth*r),sh=Math.round(img.naturalHeight*r);
+   small.drawImage(img,(96-sw)/2,(96-sh)/2,sw,sh);
+   result=canvas.toDataURL('image/webp',0.70);
+  }
+  if(result.length>85000)throw Error('The icon is too detailed to fit. Try a simpler image.');
+  return result;
+ }finally{URL.revokeObjectURL(url);}
+}
+let iconPreviewRevision=0;
+$('officeCampaignIcon').addEventListener('change',async()=>{
+ const ticket=++iconPreviewRevision,file=$('officeCampaignIcon').files[0];
+ const preview=$('officeCampaignIconPreview');
+ if(!file){preview.classList.add('hidden');$('officeCampaignIconImage').removeAttribute('src');return;}
+ try{
+  const encoded=await compressIcon(file);if(ticket!==iconPreviewRevision)return;
+  $('officeCampaignIconImage').src=encoded;preview.classList.remove('hidden');
+  $('officeCampaignFeedback').textContent='';
+ }catch(err){
+  if(ticket!==iconPreviewRevision)return;
+  $('officeCampaignIcon').value='';$('officeCampaignIconImage').removeAttribute('src');
+  preview.classList.add('hidden');$('officeCampaignFeedback').textContent=err.message;
+ }
+});
+$('officeCampaignClearIcon').addEventListener('click',()=>{
+ ++iconPreviewRevision;$('officeCampaignIcon').value='';
+ $('officeCampaignIconImage').removeAttribute('src');$('officeCampaignIconPreview').classList.add('hidden');
+});
 function timeRemaining(end){
  const left=Date.parse(end)-Date.now();
  if(left<=0)return'Ended';
@@ -40,7 +89,7 @@ function renderCampaigns(){
  $('officeCampaignRows').innerHTML=campaigns.map(c=>{
   const status=currentStatus(c),period=fmt(c.startsAt)+' → '+fmt(c.endsAt);
   const supply=(c.requirements||[]).map(x=>esc(x.name)+' × '+x.unitsPerSale).join(' · ');
-  return '<tr><td><strong>'+esc(c.title)+'</strong><small>'+esc(c.description)+'</small></td>'+
+  return '<tr><td>'+(c.iconData?'<img class="office-campaign-row-icon" src="'+esc(c.iconData)+'" alt="" loading="lazy">':'')+'<strong>'+esc(c.title)+'</strong><small>'+esc(c.description)+'</small></td>'+
    '<td><strong>'+esc(c.buttonName)+'</strong><small>'+money(c.price)+' · '+supply+'</small></td>'+
    '<td><span class="office-campaign-status" data-campaign-status="'+c.id+'">'+status+'</span>'+
    '<small data-campaign-countdown="'+esc(c.endsAt)+'">'+(status==='UPCOMING'?'Scheduled':timeRemaining(c.endsAt))+'</small></td>'+
@@ -75,9 +124,13 @@ $('officeCampaignForm').addEventListener('submit',async e=>{
  try{
   const data={title:$('officeCampaignTitle').value.trim(),buttonName:$('officeCampaignButton').value.trim(),
    description:$('officeCampaignDescription').value.trim(),price:$('officeCampaignPrice').value,
-   startsAt:phTime($('officeCampaignStarts').value),endsAt:phTime($('officeCampaignEnds').value),requirements};
+   startsAt:phTime($('officeCampaignStartDate').value+'T'+$('officeCampaignStartTime').value),
+   endsAt:phTime($('officeCampaignEndDate').value+'T'+$('officeCampaignEndTime').value),
+   iconData:await compressIcon($('officeCampaignIcon').files[0]),requirements};
   await api('promotions',{method:'POST',body:JSON.stringify(data)});
-  $('officeCampaignForm').reset();$('officeCampaignFeedback').textContent='Main Office promotion scheduled and published to active franchisees.';
+  $('officeCampaignForm').reset();++iconPreviewRevision;
+  $('officeCampaignIconImage').removeAttribute('src');$('officeCampaignIconPreview').classList.add('hidden');
+  $('officeCampaignFeedback').textContent='Main Office promotion scheduled and published to active franchisees.';
   await load();
  }catch(e){$('officeCampaignFeedback').textContent=e.message}
  finally{btn.disabled=false}

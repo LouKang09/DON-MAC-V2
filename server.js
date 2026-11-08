@@ -1833,7 +1833,7 @@ async function handleOfficeApi(req,res,p,method){
   if(method==='GET'&&p==='/api/supply/office/promotions')
     return json(res,200,{campaigns:await officePromotions.all(db)},safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/supply/office/promotions')
-    return json(res,201,await officePromotions.create(db,await readJson(req,12000),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+    return json(res,201,await officePromotions.create(db,await readJson(req,120000),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
   const promotion=p.match(/^\/api\/supply\/office\/promotions\/([0-9a-f-]{36})(?:\/(participants|deactivate))?$/i);
   if(promotion){
     if(method==='GET'&&promotion[2]==='participants')

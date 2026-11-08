@@ -643,3 +643,10 @@
   object-fit:contain;
   image-rendering:auto;
 }
+
+/* Compact centered OTP action in Forgot Password, without affecting Sign In. */
+#authScreen #authResetRequestForm #resetSend{
+  width:min(100%,190px);min-width:0;min-height:44px;
+  margin:6px auto 0;padding:10px 16px;
+  justify-self:center;align-self:center;font-size:15px;
+}

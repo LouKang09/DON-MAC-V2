@@ -97,3 +97,9 @@
   font-size:12px;line-height:1.55;font-weight:750;color:#654917;
 }
 #view-inventory .transfer-upgrade-information.hidden{display:none!important}
+
+/* Main Office uploaded promotion icon on the live franchise POS tile. */
+#view-pos .office-promo-button .office-promo-icon{
+ display:block;width:64px;height:64px;max-width:100%;object-fit:contain;
+ margin:4px auto 9px;border-radius:10px;
+}

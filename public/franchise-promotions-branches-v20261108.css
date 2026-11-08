@@ -35,3 +35,5 @@
 .dm-notif-promo button{background:#075d38;color:#fff;border:0;border-radius:8px;padding:9px 11px;cursor:pointer;font-weight:760}
 .dm-notif-empty{padding:25px;text-align:center;color:#658471}
 @media(max-width:560px){.branch-downgrade-list{grid-template-columns:1fr}.dm-notifications-card{padding:14px}}
+
+.dm-notif-promo-icon{float:left;width:52px;height:52px;object-fit:contain;margin:0 11px 7px 0;border-radius:10px;border:1px solid #dce9df;background:white}

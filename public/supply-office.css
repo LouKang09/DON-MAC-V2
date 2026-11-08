@@ -267,3 +267,10 @@
  #page-dashboard .distribution-top-row{grid-template-columns:minmax(85px,1fr) minmax(60px,1fr)}
  #page-dashboard .distribution-top-row strong{grid-column:2}
 }
+
+/* Keep the Add Supply Product disclosure as a compact control until expanded. */
+#page-catalog .office-add-product:not([open]){
+  display:inline-block;width:max-content;max-width:100%;
+  box-sizing:border-box;padding:10px 16px;
+}
+#page-catalog .office-add-product:not([open]) summary{white-space:normal;}

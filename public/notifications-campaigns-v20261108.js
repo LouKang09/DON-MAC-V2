@@ -34,7 +34,7 @@
   $('franchisePromoCount').textContent=relevant.length?'('+relevant.length+')':'';
   promotions.innerHTML=relevant.length?relevant.map(x=>{
    const started=Date.now()>=Date.parse(x.startsAt),eligible=x.eligible&&started;
-   return '<article class="dm-notif-promo"><div><strong>'+esc(x.title)+'</strong>'+
+   return '<article class="dm-notif-promo">'+(x.iconData?'<img class="dm-notif-promo-icon" src="'+esc(x.iconData)+'" alt="" loading="lazy">':'')+'<div><strong>'+esc(x.title)+'</strong>'+
     '<span class="dm-promo-pill">'+(started?'LIVE':'UPCOMING')+'</span></div>'+
     '<p>'+esc(x.description||x.buttonName)+'</p>'+
     '<p><b>POS Button:</b> '+esc(x.buttonName)+' · '+money(x.price)+'</p>'+
