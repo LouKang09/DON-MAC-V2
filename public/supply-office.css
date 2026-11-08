@@ -274,3 +274,16 @@
   box-sizing:border-box;padding:10px 16px;
 }
 #page-catalog .office-add-product:not([open]) summary{white-space:normal;}
+
+/* Keep the Supply Catalog promo checkbox to its intended compact square size. */
+#page-catalog th:nth-child(7),#page-catalog td:nth-child(7){
+ width:68px!important;min-width:68px;max-width:68px;text-align:center!important;
+}
+#page-catalog th:nth-child(6){width:125px}
+#page-catalog td:nth-child(7) input.office-promo-enabled[type=checkbox]{
+ display:inline-block!important;box-sizing:border-box!important;
+ width:18px!important;min-width:18px!important;max-width:18px!important;
+ height:18px!important;min-height:18px!important;max-height:18px!important;
+ flex:0 0 18px!important;margin:0 auto!important;padding:0!important;
+ vertical-align:middle;accent-color:#075d38;cursor:pointer;
+}

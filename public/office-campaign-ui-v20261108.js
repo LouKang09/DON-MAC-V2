@@ -12,7 +12,7 @@ async function api(path,options={}){
  if(!response.ok)throw Error(data.error||'Main Office request failed.');
  return data;
 }
-let campaigns=[],supplies=[],loading=false;
+let campaigns=[],supplies=[],loading=false,selectedIngredients=[];
 function phTime(value){
  if(!value||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value))throw Error('Choose valid Philippine local start and end times.');
  const parsed=new Date(value+':00+08:00');
@@ -78,13 +78,79 @@ function currentStatus(c){
  if(Date.now()>=Date.parse(c.endsAt))return'ENDED';
  return'LIVE';
 }
-function renderSupplies(){
- $('officeCampaignSupplies').innerHTML=supplies.filter(p=>p.active).map(p=>
- '<label class="office-campaign-ingredient"><span><input type="checkbox" data-campaign-supply="'+p.id+'"/>'+
- '<strong>'+esc(p.name)+'</strong><small>'+esc(p.uom)+'</small></span>'+
- '<span>Per sale <input type="number" min="1" max="10000" step="1" value="1" data-campaign-qty="'+p.id+'" aria-label="Units required of '+esc(p.name)+'"/></span></label>'
- ).join('')||'<p>No active Main Office supplies available.</p>';
+const quantity=value=>{
+ const n=Number(value);
+ if(!Number.isSafeInteger(n)||n<1||n>10000)throw Error('Ingredient quantity must be a whole number between 1 and 10,000.');
+ return n;
+};
+function ingredientDescription(){
+ const catalog=selectedIngredients.filter(x=>x.kind==='catalog');
+ const custom=selectedIngredients.filter(x=>x.kind==='custom');
+ const format=x=>x.name+' × '+x.qty+(x.uom?' '+x.uom:'');
+ return [catalog.length?'Main Office supplies: '+catalog.map(format).join(', '):'',
+  custom.length?'Additional ingredients (not stock-tracked): '+custom.map(format).join(', '):'']
+ .filter(Boolean).join(' | ');
 }
+function renderSupplies(){
+ const select=$('officeCampaignSupplySelect'),current=select.value;
+ const available=supplies.filter(p=>p.active&&!selectedIngredients.some(x=>x.kind==='catalog'&&Number(x.id)===Number(p.id)));
+ select.innerHTML='<option value="">'+(available.length?'Select a supply item':'No more available supply items')+'</option>'+
+  available.map(p=>'<option value="'+Number(p.id)+'">'+esc(p.name)+' · '+esc(p.uom)+'</option>').join('');
+ if(available.some(p=>String(p.id)===current))select.value=current;
+ $('officeCampaignSupplies').innerHTML=selectedIngredients.length?selectedIngredients.map((x,i)=>
+  '<div class="office-campaign-ingredient" role="listitem"><span class="office-campaign-ingredient-name">'+
+  '<strong>'+esc(x.name)+'</strong><small>'+(x.kind==='catalog'?'Supply Catalog · '+esc(x.uom):'Typed ingredient'+(x.uom?' · '+esc(x.uom):''))+'</small></span>'+
+  '<label class="office-campaign-line-quantity">Qty per sale<input type="number" data-ingredient-qty="'+i+'" min="1" max="10000" step="1" value="'+x.qty+'" aria-label="Quantity per sale for '+esc(x.name)+'"></label>'+
+  '<button type="button" class="btn outline office-campaign-remove" data-ingredient-remove="'+i+'" aria-label="Remove '+esc(x.name)+'">Remove</button></div>'
+ ).join(''):'<p class="muted">No ingredients selected yet.</p>';
+ const summary=ingredientDescription();
+ $('officeCampaignIngredientsSummary').textContent=summary||'Select or type the ingredients above.';
+ $('officeCampaignIngredientsSummary').classList.toggle('office-campaign-overlimit',summary.length>900);
+}
+function ingredientFeedback(message){$('officeCampaignFeedback').textContent=message;}
+$('officeCampaignAddSupply').addEventListener('click',()=>{
+ try{
+  const id=Number($('officeCampaignSupplySelect').value),p=supplies.find(x=>Number(x.id)===id&&x.active);
+  if(!p)throw Error('Select a supply from the list.');
+  if(selectedIngredients.filter(x=>x.kind==='catalog').length>=12)throw Error('You can select up to 12 catalog supplies.');
+  if(selectedIngredients.some(x=>x.kind==='catalog'&&Number(x.id)===id))throw Error('This supply has already been added.');
+  selectedIngredients.push({kind:'catalog',id:Number(p.id),name:String(p.name),uom:String(p.uom||''),qty:quantity($('officeCampaignSupplyQty').value)});
+  $('officeCampaignSupplyQty').value='1';ingredientFeedback('');renderSupplies();
+ }catch(err){ingredientFeedback(err.message);}
+});
+function addCustomIngredient(){
+ try{
+  const name=$('officeCampaignCustomName').value.trim().replace(/\s+/g,' ');
+  const uom=$('officeCampaignCustomUnit').value.trim().replace(/\s+/g,' ');
+  if(!name||name.length>80)throw Error('Enter a custom ingredient name (up to 80 characters).');
+  if(uom.length>24)throw Error('Custom units must be 24 characters or fewer.');
+  if(selectedIngredients.filter(x=>x.kind==='custom').length>=12)throw Error('You can add up to 12 custom ingredients.');
+  if(selectedIngredients.some(x=>x.name.toLocaleLowerCase()===name.toLocaleLowerCase()))
+   throw Error('This ingredient is already included.');
+  if(supplies.some(p=>p.active&&String(p.name).toLocaleLowerCase()===name.toLocaleLowerCase()))
+   throw Error('This ingredient is in the Supply Catalog. Please use the catalog picker.');
+  selectedIngredients.push({kind:'custom',name,uom,qty:quantity($('officeCampaignCustomQty').value)});
+  $('officeCampaignCustomName').value='';$('officeCampaignCustomUnit').value='';$('officeCampaignCustomQty').value='1';
+  ingredientFeedback('');renderSupplies();
+ }catch(err){ingredientFeedback(err.message);}
+}
+$('officeCampaignAddCustom').addEventListener('click',addCustomIngredient);
+$('officeCampaignCustomName').addEventListener('keydown',event=>{
+ if(event.key==='Enter'){event.preventDefault();addCustomIngredient();}
+});
+$('officeCampaignSupplies').addEventListener('click',event=>{
+ const remove=event.target.closest('[data-ingredient-remove]');
+ if(!remove)return;
+ selectedIngredients.splice(Number(remove.dataset.ingredientRemove),1);
+ ingredientFeedback('');renderSupplies();
+});
+$('officeCampaignSupplies').addEventListener('change',event=>{
+ const field=event.target.closest('[data-ingredient-qty]');
+ if(!field)return;
+ const index=Number(field.dataset.ingredientQty);
+ try{selectedIngredients[index].qty=quantity(field.value);ingredientFeedback('');renderSupplies();}
+ catch(err){ingredientFeedback(err.message);field.value=selectedIngredients[index].qty;}
+});
 function renderCampaigns(){
  $('officeCampaignRows').innerHTML=campaigns.map(c=>{
   const status=currentStatus(c),period=fmt(c.startsAt)+' → '+fmt(c.endsAt);
@@ -111,24 +177,29 @@ async function load(){
  try{
   const [c,p]=await Promise.all([api('promotions'),api('catalog')]);
   campaigns=c.campaigns||[];supplies=p.products||[];
+  selectedIngredients=selectedIngredients.map(item=>{
+   const fresh=item.kind==='catalog'?supplies.find(p=>Number(p.id)===Number(item.id)&&p.active):null;
+   return fresh?{...item,name:String(fresh.name),uom:String(fresh.uom||'')}:item;
+  });
   renderCampaigns();renderSupplies();
  }catch(e){$('officeCampaignFeedback').textContent=e.message;}
  finally{loading=false;}
 }
 $('officeCampaignForm').addEventListener('submit',async e=>{
  e.preventDefault();const btn=$('officeCampaignCreate');if(btn.disabled)return;
- const requirements=supplies.filter(p=>$('officeCampaignSupplies').querySelector('[data-campaign-supply="'+p.id+'"]')?.checked)
- .map(p=>({productId:p.id,unitsPerSale:Number($('officeCampaignSupplies').querySelector('[data-campaign-qty="'+p.id+'"]')?.value||0)}));
- if(!requirements.length){$('officeCampaignFeedback').textContent='Choose at least one required supply item.';return;}
+ const requirements=selectedIngredients.filter(x=>x.kind==='catalog').map(x=>({productId:x.id,unitsPerSale:x.qty}));
+ if(!requirements.length){ingredientFeedback('Select at least one Supply Catalog ingredient so franchise delivery eligibility can be verified. Typed items are descriptive only.');return;}
+ const description=ingredientDescription();
+ if(description.length>900){ingredientFeedback('The generated ingredient description is too long. Remove or shorten some ingredients.');return;}
  btn.disabled=true;
  try{
   const data={title:$('officeCampaignTitle').value.trim(),buttonName:$('officeCampaignButton').value.trim(),
-   description:$('officeCampaignDescription').value.trim(),price:$('officeCampaignPrice').value,
+   description,price:$('officeCampaignPrice').value,
    startsAt:phTime($('officeCampaignStartDate').value+'T'+$('officeCampaignStartTime').value),
    endsAt:phTime($('officeCampaignEndDate').value+'T'+$('officeCampaignEndTime').value),
    iconData:await compressIcon($('officeCampaignIcon').files[0]),requirements};
   await api('promotions',{method:'POST',body:JSON.stringify(data)});
-  $('officeCampaignForm').reset();++iconPreviewRevision;
+  $('officeCampaignForm').reset();selectedIngredients=[];renderSupplies();++iconPreviewRevision;
   $('officeCampaignIconImage').removeAttribute('src');$('officeCampaignIconPreview').classList.add('hidden');
   $('officeCampaignFeedback').textContent='Main Office promotion scheduled and published to active franchisees.';
   await load();

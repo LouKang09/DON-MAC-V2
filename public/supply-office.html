@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.6.02"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/><link rel="stylesheet" href="/tenant-billing.css?v=1"/><link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1"/><link rel="stylesheet" href="/coffee-workspace-theme-v20261107.css?v=3"/></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="stylesheet" href="/supply-office.css?v=1.6.03"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/><link rel="stylesheet" href="/tenant-billing.css?v=1"/><link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1"/><link rel="stylesheet" href="/coffee-workspace-theme-v20261107.css?v=3"/></head><body>
 <div id="officeLogin"><section id="authScreen" class="auth-screen" aria-label="Supply Chain sign in"><div class="auth-shell">
 <div class="auth-brand-panel"><img class="auth-brand-logo" src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="450" height="540" decoding="async"></div>
 <div class="auth-panel"><form id="officeLoginForm" class="auth-card">
@@ -111,10 +111,32 @@
   </div>
   <label class="office-campaign-icon-field">Promotion icon (optional)<input id="officeCampaignIcon" type="file" accept="image/png,image/jpeg,image/webp"><small>PNG, JPEG or WebP · up to 2 MB. Automatically resized for franchise POS buttons.</small></label>
   <div id="officeCampaignIconPreview" class="office-campaign-icon-preview hidden"><img id="officeCampaignIconImage" alt="Selected promotion icon preview" width="72" height="72"><button type="button" class="btn outline" id="officeCampaignClearIcon">Remove icon</button></div>
-  <label>Description<textarea id="officeCampaignDescription" maxlength="900" rows="2" placeholder="What is included in this promotion?"></textarea></label>
-  <h3>Required supply ingredients per POS sale</h3>
-  <p class="muted">Choose each Main Office supply item and quantity required for one sale. A franchise must purchase and receive these items before the button can process checkout.</p>
-  <div id="officeCampaignSupplies" class="office-campaign-supplies">Loading supply products…</div>
+  <section class="office-campaign-ingredient-composer" aria-labelledby="officeCampaignIngredientHeading">
+   <h3 id="officeCampaignIngredientHeading">Promotion ingredients</h3>
+   <p class="muted">Pick ingredients from Main Office supplies, or type an ingredient that is not listed. Your selections automatically create the promotion description.</p>
+   <div class="office-campaign-pickers">
+    <div class="office-campaign-picker">
+     <label for="officeCampaignSupplySelect">Select from Supply Catalog</label>
+     <div class="office-campaign-picker-controls">
+      <select id="officeCampaignSupplySelect" aria-label="Choose an available Main Office supply"><option value="">Loading supplies…</option></select>
+      <label class="office-campaign-quantity-label">Qty per sale<input id="officeCampaignSupplyQty" type="number" min="1" max="10000" step="1" value="1"></label>
+      <button id="officeCampaignAddSupply" type="button" class="btn solid">Add supply</button>
+     </div>
+    </div>
+    <div class="office-campaign-picker">
+     <label for="officeCampaignCustomName">Ingredient not in catalog</label>
+     <div class="office-campaign-picker-controls">
+      <input id="officeCampaignCustomName" type="text" maxlength="80" placeholder="Type ingredient name">
+      <label class="office-campaign-quantity-label">Qty per sale<input id="officeCampaignCustomQty" type="number" min="1" max="10000" step="1" value="1"></label>
+      <input id="officeCampaignCustomUnit" class="office-campaign-custom-unit" type="text" maxlength="24" placeholder="Unit (e.g. pcs)" aria-label="Custom ingredient unit">
+      <button id="officeCampaignAddCustom" type="button" class="btn outline">Add typed ingredient</button>
+     </div>
+    </div>
+   </div>
+   <div id="officeCampaignSupplies" class="office-campaign-supplies" role="list" aria-live="polite"><p class="muted">No ingredients selected yet.</p></div>
+   <div class="office-campaign-generated-description"><strong>Promotion description (automatic)</strong><p id="officeCampaignIngredientsSummary">Select or type the ingredients above.</p></div>
+   <p class="office-campaign-inventory-note">Catalog supplies are checked against delivery records before a franchise can sell this promotion. Typed ingredients appear in the description only and do not count toward stock eligibility. Select at least one catalog supply.</p>
+  </section>
   <button id="officeCampaignCreate" type="submit" class="btn solid">Create &amp; Schedule Promotion</button>
   <p id="officeCampaignFeedback" role="status"></p>
  </form></div>
@@ -152,4 +174,4 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=1.6.01" defer></script><script src="/office-campaign-ui-v20261108.js?v=3" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=2"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=1" defer></script></body></html>
+<script src="/supply-office.js?v=1.6.01" defer></script><script src="/office-campaign-ui-v20261108.js?v=4" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=1" defer></script></body></html>
