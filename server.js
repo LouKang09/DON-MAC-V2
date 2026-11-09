@@ -732,15 +732,18 @@ function reportParams(params){
 }
 async function periodSales(params){
   const {period,target,cashier,cashiers}=reportParams(params);
-  const r=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name
-    FROM sales s LEFT JOIN promos p ON p.id=s.promo_id ORDER BY s.sold_at ASC`);
+  const workspaceId=Number(params.workspaceId),cutoff=String(params.historyCutoff||'');
+  if(!Number.isSafeInteger(workspaceId)||workspaceId<1||!Number.isFinite(Date.parse(cutoff)))
+    throw Object.assign(new Error('Franchise reporting scope is unavailable.'),{status:403});
+  const args=[workspaceId,cutoff,...(params.branchId==null?[]:[Number(params.branchId)])];
+  const result=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name
+    FROM sales s LEFT JOIN promos p ON p.id=s.promo_id
+    WHERE EXISTS (SELECT 1 FROM chat_workspace_branches w WHERE w.workspace_id=$1 AND w.branch_id=s.branch_id)
+    AND s.sold_at >= $2`+(params.branchId==null?'':' AND s.branch_id=$3')+' ORDER BY s.sold_at ASC',args);
   const selected=new Set(cashiers);
-  const eligible=r.rows.filter(s=>
-    matchesPeriod(s.sold_at,period,target) &&
-    (!selected.size||selected.has(normalize(s.cashier_name_snapshot))) &&
-    (params.branchId==null||Number(s.branch_id)===Number(params.branchId))
-  );
-  return {period,target,cashier,cashiers,eligible,sold:eligible.filter(s=>s.status==='Sold')};
+  const eligible=result.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&
+    (!selected.size||selected.has(normalize(s.cashier_name_snapshot))));
+  return{period,target,cashier,cashiers,eligible,sold:eligible.filter(s=>s.status==='Sold')};
 }
 async function reportCashierChoices(branchId){
   // Only accounts with the Cashier (internal 'User') role belong here.
