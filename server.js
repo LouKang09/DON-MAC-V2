@@ -807,6 +807,8 @@ async function getSaleDetail(reference,user){
     WHERE s.reference=$1`,[ref]);
   const s=saleR.rows[0];
   if(!s)throw Object.assign(new Error('Transaction not found.'),{status:404});
+  if(!Number.isSafeInteger(Number(s.branch_id))||Number(s.branch_id)<1)
+    throw Object.assign(new Error('Transaction is not assigned to a franchise branch.'),{status:403});
   await ensureBranchInOwnerWorkspace(user,Number(s.branch_id));
   const history=await historicalSales.policy(db,user);
   if(Date.parse(s.sold_at)<Date.parse(history.cutoffUtc))
