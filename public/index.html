@@ -507,7 +507,7 @@
           </div>
           <p id="reportLoadingStatus" class="report-loading-status" role="status" aria-live="polite">Choose a reporting period to view results.</p>
         </div>
-        <div id="reportSummary" class="summary-grid report-metric-grid" aria-live="polite"></div>
+        <section class="historical-sales-export admin-only" style="display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:12px 0;padding:12px;background:#f1f8f3;border:1px solid #c9e0d0;border-radius:10px" aria-label="Historical sales download"><div style="flex:1 1 210px"><strong>Historical Sales Access</strong><p class="muted" style="font-size:12px;margin:4px 0">Download older sales as free Excel-compatible CSV; online historical viewing is limited by your plan.</p></div><label>Year<select id="historicalExportYear"></select></label><label>Branch<select id="historicalExportBranch"><option value="all">All branches</option></select></label><button type="button" id="historicalExportDownload" class="primary">Download CSV</button><p id="historicalExportStatus" role="status" style="font-size:11px;flex-basis:100%;margin:0">Select a year for a free CSV export.</p></section><div id="reportSummary" class="summary-grid report-metric-grid" aria-live="polite"></div>
         <div class="card spaced report-results-card"><div class="card-head"><h3>Product Summary</h3></div><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th><th class="num">Costing</th><th class="num">Net Sales</th></tr></thead><tbody id="reportProducts"></tbody></table></div><nav id="reportProductsPagination" class="report-pagination" data-report-section="products" aria-label="Product Summary pages"></nav></div>
         <div class="card spaced report-results-card"><div class="card-head"><h3>Promo Purchases</h3></div><div class="table-wrap"><table><thead><tr><th>Promo</th><th class="num">Qty</th><th class="num">Gross</th><th class="num">Adjusted</th><th class="num">Actual</th></tr></thead><tbody id="reportPromos"></tbody></table></div><nav id="reportPromosPagination" class="report-pagination" data-report-section="promos" aria-label="Promo Purchases pages"></nav></div>
         <div class="card spaced report-results-card"><div class="card-head"><h3>Ingredient Usage and Cost</h3><strong id="costingTotal"></strong></div><div id="costingList" class="costing-list"></div><nav id="reportIngredientsPagination" class="report-pagination" data-report-section="ingredients" aria-label="Ingredient Usage and Cost pages"></nav></div>
@@ -1016,6 +1016,6 @@
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.5.98"></script>
-  <script src="/app.js?v=1.6.01"></script>
+  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.01"></script>
 </body>
 </html>

@@ -23,6 +23,7 @@ const franchiseStaging = require('./lib/franchise-tenant-staging');
 const supplyChain = require('./lib/supply-chain');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
+const historicalSales = require('./lib/historical-sales-access');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -2063,6 +2064,11 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
+  if(method==='GET'&&p==='/api/historical-sales/policy')return json(res,200,await historicalSales.policy(db,user),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='GET'&&p==='/api/historical-sales/export.csv'){
+    const archive=await historicalSales.exportCsv(db,user,Object.fromEntries(url.searchParams));
+    return binary(res,200,archive.buffer,'text/csv; charset=utf-8',{'Content-Disposition':'attachment; filename="'+archive.filename+'"','Cache-Control':'no-store'});
+  }
   if(method==='GET'&&p==='/api/system-logs')return json(res,200,{logs:await listLogs(url.searchParams.get('limit'),user)},safeHeaders());
 
   const delSale=p.match(/^\/api\/sales\/(.+)\/delete$/);if(method==='POST'&&delSale){requireAdminRole(user);return json(res,200,await deleteSale(user,decodeURIComponent(delSale[1]),await readJson(req)),safeHeaders());}
