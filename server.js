@@ -807,6 +807,10 @@ async function getSaleDetail(reference,user){
     WHERE s.reference=$1`,[ref]);
   const s=saleR.rows[0];
   if(!s)throw Object.assign(new Error('Transaction not found.'),{status:404});
+  await ensureBranchInOwnerWorkspace(user,Number(s.branch_id));
+  const history=await historicalSales.policy(db,user);
+  if(Date.parse(s.sold_at)<Date.parse(history.cutoffUtc))
+    throw Object.assign(new Error('This sale is outside your online history. Download its year as a free CSV.'),{status:403,code:'HISTORICAL_SALES_ARCHIVED'});
   if(user?.role!=='Admin'&&Number(s.branch_id)!==Number(user?.branchId))throw Object.assign(new Error('This sale belongs to another branch.'),{status:403});
 
   const itemsR=await db.query(`SELECT id,product_id,add_on_id,package_id,product_name_snapshot,quantity,unit_price,line_total,is_add_on,is_package,exclude_from_costing
@@ -833,11 +837,16 @@ async function getSaleDetail(reference,user){
     FROM inventory_movements m
     JOIN ingredients i ON i.id=m.ingredient_id
     LEFT JOIN users u ON u.id=m.created_by
-    WHERE m.reference=$1 ORDER BY m.created_at,m.id`,[ref]);
+    WHERE m.reference=$1 AND EXISTS (SELECT 1 FROM chat_memberships cm
+      WHERE cm.user_id=m.created_by AND cm.workspace_id=$2)
+    ORDER BY m.created_at,m.id`,[ref,history.workspaceId]);
   const inventoryMovements=movementsR.rows.map(m=>({id:Number(m.id),type:m.movement_type,ingredient:m.display_name,uom:m.uom,quantityChange:Number(m.quantity_change),balanceAfter:m.balance_after==null?null:Number(m.balance_after),remarks:m.remarks,createdBy:m.created_by_username,createdAt:m.created_at}));
 
-  const logsR=await db.query(`SELECT id,activity,actor_name_snapshot,status,remark,created_at
-    FROM system_logs WHERE activity LIKE $1 ORDER BY created_at,id`,[`%${ref}%`]);
+  const logsR=await db.query(
+    'SELECT sl.id,sl.activity,sl.actor_name_snapshot,sl.status,sl.remark,sl.created_at '+
+    'FROM system_logs sl WHERE sl.activity LIKE $1 AND EXISTS ('+
+    'SELECT 1 FROM chat_memberships cm WHERE cm.user_id=sl.actor_user_id AND cm.workspace_id=$2) '+
+    'ORDER BY sl.created_at,sl.id',['%'+ref+'%',history.workspaceId]);
   const auditEvents=logsR.rows.map(l=>({id:Number(l.id),activity:l.activity,actor:l.actor_name_snapshot,status:l.status,remark:l.remark,createdAt:l.created_at}));
 
   return {
@@ -1194,6 +1203,7 @@ async function dashboardActivity(user,params={}){
     args.length+' AND wb.branch_id=sales.branch_id)');
  }
  if(status!=='all'){args.push(status==='sold'?'Sold':'Deleted');parts.push('status=$'+args.length);}
+ if(params.historyCutoff){args.push(params.historyCutoff);parts.push('sold_at >= $'+args.length);}
  if(period!=='all'){
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const back=period==='today'?0:period==='7days'?-6:-29;
@@ -1684,6 +1694,10 @@ async function deleteSale(user,reference,body){
   return db.transaction(async tx=>{
     const sR=await tx.query('SELECT * FROM sales WHERE reference=$1',[reference]),sale=sR.rows[0];
     if(!sale)throw Object.assign(new Error('Sale not found.'),{status:404});
+    const access=await historicalSales.policy(tx,user);
+    const belongs=await tx.query('SELECT 1 FROM chat_workspace_branches WHERE workspace_id=$1 AND branch_id=$2',[access.workspaceId,Number(sale.branch_id)]);
+    if(!belongs.rows.length)throw Object.assign(new Error('This sale belongs to another franchise.'),{status:403});
+    if(Date.parse(sale.sold_at)<Date.parse(access.cutoffUtc))throw Object.assign(new Error('Archived sales cannot be modified; export the year as CSV.'),{status:403});
     if(sale.status==='Deleted')throw Object.assign(new Error('Sale is already deleted.'),{status:409});
     let restoredIngredients=0,restoredQuantity=0,restoreNote='Stock not restored';
     if(body.restoreStock){
@@ -2044,7 +2058,7 @@ async function handleApi(req,res,url){
     return json(res,200,await widgetSettings(user,plan,method==='PUT'?await readJson(req,4096):null),
       safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='GET'&&p==='/api/dashboard/activity')return json(res,200,await dashboardActivity(user,Object.fromEntries(url.searchParams)),safeHeaders());
+  if(method==='GET'&&p==='/api/dashboard/activity'){const h=await historicalSales.policy(db,user);return json(res,200,await dashboardActivity(user,{...Object.fromEntries(url.searchParams),historyCutoff:h.cutoffUtc}),safeHeaders());}
   if(method==='GET'&&p==='/api/advanced/analytics'){
     return json(res,200,await advancedAnalytics.read(db,user,Object.fromEntries(url.searchParams)),
       safeHeaders({'Cache-Control':'no-store'}));
