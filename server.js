@@ -2000,7 +2000,7 @@ async function handleApi(req,res,url){
     const q=new URL(req.url,'http://localhost').searchParams;
     const params={page:q.get('page'),branchId:q.get('branchId'),start:q.get('start'),end:q.get('end'),status:q.get('status'),payment:q.get('payment'),orderType:q.get('orderType'),search:q.get('search')};
     if(method==='GET')return json(res,200,p.endsWith('/expenses')?
-      await posFinance.expenses(db,user,params):await posFinance.transactions(db,user,params),safeHeaders({'Cache-Control':'no-store'}));
+      await posFinance.expenses(db,user,params):await posFinance.transactions(db,user,{...params,historyCutoff:(await historicalSales.policy(db,user)).cutoffUtc}),safeHeaders({'Cache-Control':'no-store'}));
     if(method==='POST'&&p.endsWith('/expenses'))
       return json(res,200,await posFinance.saveExpense(db,user,await readJson(req)),safeHeaders());
     return json(res,405,{error:'Method not allowed.'},safeHeaders());
