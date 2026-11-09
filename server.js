@@ -732,9 +732,8 @@ function reportParams(params){
 }
 async function periodSales(params){
   const {period,target,cashier,cashiers}=reportParams(params);
-  const workspaceId=Number(params.workspaceId),cutoff=String(params.historyCutoff||'');
-  if(!Number.isSafeInteger(workspaceId)||workspaceId<1||!Number.isFinite(Date.parse(cutoff)))
-    throw Object.assign(new Error('Franchise reporting scope is unavailable.'),{status:403});
+  const access=await historicalSales.policy(db,params.user);
+  const workspaceId=access.workspaceId,cutoff=access.cutoffUtc;
   const args=[workspaceId,cutoff,...(params.branchId==null?[]:[Number(params.branchId)])];
   const result=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name
     FROM sales s LEFT JOIN promos p ON p.id=s.promo_id
@@ -745,15 +744,16 @@ async function periodSales(params){
     (!selected.size||selected.has(normalize(s.cashier_name_snapshot))));
   return{period,target,cashier,cashiers,eligible,sold:eligible.filter(s=>s.status==='Sold')};
 }
-async function reportCashierChoices(branchId){
-  // Only accounts with the Cashier (internal 'User') role belong here.
-  // Admin, Owner, and Co-Owner accounts never appear as options.
-  // Keep inactive Cashier accounts so old transaction reports remain filterable.
-  const scoped=branchId!=null;
-  const sql='SELECT username AS cashier FROM users WHERE role=$1 '+
-    (scoped?'AND branch_id=$2 ':'')+'ORDER BY LOWER(username),username';
-  const rows=(await db.query(sql,scoped?['User',Number(branchId)]:['User'])).rows;
-  return {cashiers:rows.map(row=>row.cashier)};
+async function reportCashierChoices(branchId,user){
+  const policy=await historicalSales.policy(db,user);
+  if(branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
+  const sql='SELECT DISTINCT u.username AS cashier FROM users u '+
+    'JOIN chat_memberships m ON m.user_id=u.id '+
+    'WHERE u.role=$1 AND m.workspace_id=$2 '+
+    (branchId==null?'':' AND u.branch_id=$3 ')+'ORDER BY cashier';
+  const args=branchId==null?['User',policy.workspaceId]:['User',policy.workspaceId,Number(branchId)];
+  const rows=(await db.query(sql,args)).rows;
+  return{cashiers:rows.map(x=>x.cashier)};
 }
 
 async function productUnitCosts(conn=db){const r=await conn.query(`SELECT p.id,p.name,COALESCE(SUM(COALESCE(pi.cost_contribution,0)),0) AS unit_cost FROM products p LEFT JOIN product_ingredients pi ON pi.product_id=p.id GROUP BY p.id,p.name`);return new Map(r.rows.map(x=>[Number(x.id),Number(x.unit_cost||0)]));}
@@ -1172,7 +1172,7 @@ function titleCase(s){return String(s||'').replace(/\b\w/g,c=>c.toUpperCase());}
 function reportFilename(report,kind='sales'){const safeDate=String(report.target||'report').replace(/[^0-9-]/g,'');return `${kind==='costing'?'Costing':'Sales'}_${titleCase(report.period)}_${safeDate}.pdf`;}
 async function salesPdf(params){const report=await salesReport(params);const shop=await getSetting('shop_name','Don Macchiatos');const title=`${shop} - ${titleCase(report.period)} Sales Report`;return{report,filename:reportFilename(report,'sales'),buffer:makePdf(salesReportLines(report,title),{title})};}
 async function costingPdf(params){const report=await costingReport(params);const shop=await getSetting('shop_name','Don Macchiatos');const title=`${shop} - ${titleCase(report.period)} Costing Report`;return{report,filename:reportFilename(report,'costing'),buffer:makePdf(costingReportLines(report,title),{title})};}
-async function emailSalesReport(user,body){const params={period:body.period,date:body.date,cashier:body.cashier,branchId:body.branchId};const {report,filename,buffer}=await salesPdf(params);const settings=await getSettings();let to=settings.defaultReportEmail;if(user.role==='Admin'&&String(body.to||'').trim())to=String(body.to).trim();if(!to)throw Object.assign(new Error('Configure a default report recipient first.'),{status:400});if(to.length>320||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Object.assign(new Error('Report recipient email is invalid.'),{status:400});if(!process.env.SMTP_USER||!process.env.SMTP_PASS)throw Object.assign(new Error('Email is not configured on the server. Set SMTP_USER and SMTP_PASS in the server environment.'),{status:503});const daily=report.period==='daily';const subject=daily?'Daily Report Notification':`${titleCase(report.period)} Report Notification`;const bodyText=daily?'Hello, attached are the daily reports.':`Hello, attached are the ${report.period} reports.`;try{await sendMail({host:process.env.SMTP_HOST||'smtp.gmail.com',port:Number(process.env.SMTP_PORT||465),user:process.env.SMTP_USER,pass:process.env.SMTP_PASS,from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text:bodyText,attachments:[{filename,contentType:'application/pdf',data:buffer}]});await logAction(user,`Report emailed: ${filename}`,'Email Sent',to);return{ok:true,to,filename};}catch(err){await logAction(user,`Report email failed: ${filename}`,'Email Failed',err.message);const e=new Error('Unable to send the report email. Please check the server internet/SMTP settings and try again.');e.status=502;e.details={reason:err.message};throw e;}}
+async function emailSalesReport(user,body){const params={period:body.period,date:body.date,cashier:body.cashier,branchId:body.branchId,user};const {report,filename,buffer}=await salesPdf(params);const settings=await getSettings();let to=settings.defaultReportEmail;if(user.role==='Admin'&&String(body.to||'').trim())to=String(body.to).trim();if(!to)throw Object.assign(new Error('Configure a default report recipient first.'),{status:400});if(to.length>320||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Object.assign(new Error('Report recipient email is invalid.'),{status:400});if(!process.env.SMTP_USER||!process.env.SMTP_PASS)throw Object.assign(new Error('Email is not configured on the server. Set SMTP_USER and SMTP_PASS in the server environment.'),{status:503});const daily=report.period==='daily';const subject=daily?'Daily Report Notification':`${titleCase(report.period)} Report Notification`;const bodyText=daily?'Hello, attached are the daily reports.':`Hello, attached are the ${report.period} reports.`;try{await sendMail({host:process.env.SMTP_HOST||'smtp.gmail.com',port:Number(process.env.SMTP_PORT||465),user:process.env.SMTP_USER,pass:process.env.SMTP_PASS,from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text:bodyText,attachments:[{filename,contentType:'application/pdf',data:buffer}]});await logAction(user,`Report emailed: ${filename}`,'Email Sent',to);return{ok:true,to,filename};}catch(err){await logAction(user,`Report email failed: ${filename}`,'Email Failed',err.message);const e=new Error('Unable to send the report email. Please check the server internet/SMTP settings and try again.');e.status=502;e.details={reason:err.message};throw e;}}
 
 /* Dashboard sales activity, branch scoped. Deleted covers void/cancel in legacy schema. */
 /* Dashboard activity is paged and branch-scoped; 5 sales per view. */
@@ -2053,19 +2053,19 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId,user),safeHeaders());}
   if(method==='GET'&&p==='/api/reports/cashiers'){
     const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
-    return json(res,200,await reportCashierChoices(branchId),safeHeaders());
+    return json(res,200,await reportCashierChoices(branchId,user),safeHeaders());
   }
-  if(method==='GET'&&p==='/api/reports/sales')return json(res,200,await salesReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
-  if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))}),safeHeaders());
+  if(method==='GET'&&p==='/api/reports/sales')return json(res,200,await salesReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user}),safeHeaders());
+  if(method==='GET'&&p==='/api/reports/costing')return json(res,200,await costingReport({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user}),safeHeaders());
   if(method==='GET'&&p==='/api/reports/sales/print'){
     // Dashboard staff action: daily PDF for the authenticated user's assigned branch.
     // Do not trust client-provided branch or date values for this shortcut.
     const ownBranch=await branchSupport.salesScope(db,user,null);
-    const d=await salesPdf({period:'daily',branchId:ownBranch});
+    const d=await salesPdf({period:'daily',branchId:ownBranch,user});
     return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`inline; filename="${d.filename}"`});
   }
-  if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
-  if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId'))});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
+  if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
+  if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
   if(method==='GET'&&p==='/api/historical-sales/policy')return json(res,200,await historicalSales.policy(db,user),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/historical-sales/export.csv'){
