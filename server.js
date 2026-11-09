@@ -867,7 +867,19 @@ async function costingReport(params){
   const ingredients=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));return {period:scope.period,target:scope.target,cashier:scope.cashier||null,totalCost:money(ingredients.reduce((a,x)=>a+x.totalCost,0)),ingredients};
 }
 
-async function listLogs(limit=300,user=null){const n=Math.max(1,Math.min(1000,Number(limit)||300));const restricted=user&&user.role!=='Admin';const sql=restricted?`SELECT id,activity,actor_name_snapshot,status,remark,created_at FROM system_logs WHERE actor_user_id=$1 ORDER BY created_at DESC LIMIT ${n}`:`SELECT id,activity,actor_name_snapshot,status,remark,created_at FROM system_logs ORDER BY created_at DESC LIMIT ${n}`;const r=await db.query(sql,restricted?[user.id]:[]);return r.rows.map(x=>({id:Number(x.id),activity:x.activity,actor:x.actor_name_snapshot,status:x.status,remark:x.remark,createdAt:x.created_at}));}
+async function listLogs(limit=300,user=null){
+ if(!user)throw Object.assign(new Error('Login required.'),{status:401});
+ const n=Math.max(1,Math.min(1000,Number(limit)||300));
+ const access=await historicalSales.policy(db,user);
+ const args=[access.workspaceId,...(user.role==='Admin'?[]:[Number(user.id)])];
+ const clause=user.role==='Admin'?'':' AND l.actor_user_id=$2';
+ const sql='SELECT l.id,l.activity,l.actor_name_snapshot,l.status,l.remark,l.created_at FROM system_logs l '+
+  'WHERE EXISTS (SELECT 1 FROM chat_memberships m WHERE m.workspace_id=$1 AND m.user_id=l.actor_user_id)'+
+  clause+' ORDER BY l.created_at DESC LIMIT '+n;
+ const r=await db.query(sql,args);
+ return r.rows.map(x=>({id:Number(x.id),activity:x.activity,actor:x.actor_name_snapshot,
+   status:x.status,remark:x.remark,createdAt:x.created_at}));
+}
 async function initialOwnerId(forUserId){
  const x=await db.query('SELECT w.owner_user_id FROM chat_workspaces w JOIN chat_memberships m ON m.workspace_id=w.id WHERE m.user_id=$1 LIMIT 1',[Number(forUserId)]);
  return Number(x.rows[0]?.owner_user_id||0);
@@ -1273,6 +1285,9 @@ async function widgetSettings(user,plan,body){
 }
 
 async function dashboardData(params={},branchId=null,user=null){
+  const history=await historicalSales.policy(db,user);
+  if(params.view==='custom'&&String(params.from||'')<history.cutoffDate)
+    throw Object.assign(new Error('This range is outside your online sales history. Download the older year as a free CSV.'),{status:403,code:'HISTORICAL_SALES_ARCHIVED'});
   const workspace=await workspaceIdForUser(user?.id);
   if(!workspace)throw Object.assign(new Error('Franchise workspace not found.'),{status:403});
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -1619,6 +1634,16 @@ async function restoreBackup(user,name){
   }
 }
 
+async function assertLegacyArchiveSafe(user){
+ requireAdminRole(user);
+ const h=await historicalSales.policy(db,user);
+ // The legacy JSON archive includes shared catalog tables; fail closed if
+ // any other workspace exists, rather than exporting another franchise's data.
+ const r=await db.query('SELECT COUNT(DISTINCT workspace_id) AS total,MIN(workspace_id) AS owner FROM chat_memberships');
+ const total=Number(r.rows[0]?.total||0),owner=Number(r.rows[0]?.owner||0);
+ if(total!==1||owner!==h.workspaceId)
+  throw Object.assign(new Error('Shared legacy archive is unavailable for multi-franchise data. Use the free workspace-scoped historical CSV export. A tenant-isolated backup migration is required.'),{status:409,code:'TENANT_ARCHIVE_NOT_ISOLATED'});
+}
 // Portable non-credential business data export, not an automated database
 // snapshot or a restorable native PostgreSQL dump. Admin-only and read-only.
 const DATA_EXPORT_TABLES=Object.freeze([
@@ -2167,6 +2192,7 @@ async function handleApi(req,res,url){
   if(method==='PUT'&&p==='/api/admin/settings')return json(res,200,await saveSettings(user,await readJson(req)),safeHeaders());
   if(p==='/api/backups/comparison'&&(method==='GET'||method==='POST')){
     requireAdminRole(user);
+    if(method==='POST')await assertLegacyArchiveSafe(user);
     const workspaceId=await workspaceIdForUser(user.id);
     if(!workspaceId)throw Object.assign(new Error('Owner workspace unavailable.'),{status:403});
     if(method==='GET'){
@@ -2197,6 +2223,7 @@ async function handleApi(req,res,url){
     }
   }
   if(method==='GET'&&p==='/api/backups/data-export'){
+    await assertLegacyArchiveSafe(user);
     const archive=await makePortableDataExport();
     return binary(res,200,archive.buffer,'application/json; charset=utf-8',
       {'Content-Disposition':'attachment; filename="'+archive.filename+'"','Cache-Control':'no-store'});
