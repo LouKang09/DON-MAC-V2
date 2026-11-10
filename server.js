@@ -25,6 +25,7 @@ const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
 const historicalSales = require('./lib/historical-sales-access');
 const branchIsolationPreflight=require('./lib/branch-isolation-preflight');
+const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -1615,7 +1616,7 @@ async function restoreBackup(user,name){
     for(const suffix of ['-wal','-shm'])try{fs.unlinkSync(dbPath+suffix);}catch(_){}
     try{fs.unlinkSync(dbPath);}catch(_){}
     fs.renameSync(incoming,dbPath);
-    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
+    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await migrateCashierProfiles();await db.query('DELETE FROM sessions');
     await logAction({id:null,username:user.username},`Database restored from: ${name}`,'Restored','Automatic pre-restore backup created; all web sessions cleared');
     return{ok:true,name,requiresRelogin:true};
   }catch(err){
@@ -2115,7 +2116,7 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
-  if(method==='GET'&&p==='/api/admin/isolation/preflight'){requireAdminRole(user);return json(res,200,await branchIsolationPreflight.inspect(db,user),safeHeaders({'Cache-Control':'no-store'}));}
+  if(method==='GET'&&p==='/api/admin/isolation/preflight'){requireAdminRole(user);return json(res,200,{...(await branchIsolationPreflight.inspect(db,user)),isolatedSchema:await branchIsolatedSchema.status(db)},safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='GET'&&p==='/api/historical-sales/policy')return json(res,200,await historicalSales.policy(db,user),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/historical-sales/export.csv'){
     const archive=await historicalSales.exportCsv(db,user,Object.fromEntries(url.searchParams));
@@ -2278,7 +2279,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
