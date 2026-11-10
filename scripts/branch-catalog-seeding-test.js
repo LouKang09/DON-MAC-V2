@@ -13,6 +13,7 @@ const base={
 assert.equal(seeder.validate(base),base);
 const blueprint=seeder.blueprint(base);
 assert.equal(blueprint.ingredients[0].openingStock,0);
+assert.equal(blueprint.products.length,base.products.length);
 assert.equal(blueprint.recipes[0].costContribution,8.75);
 assert.equal(blueprint.recipes[0].quantityRequired,0.25);
 assert.throws(()=>seeder.validate({...base,recipes:[{...base.recipes[0],sourceIngredientId:999}]}));
