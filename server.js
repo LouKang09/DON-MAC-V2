@@ -700,7 +700,10 @@ async function transfer(user,body){
     return {ok:true,activity};
   });
 }
-async function listInventoryMovements(limit=300){const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.reference,m.branch,m.received_by,m.delivered_by,m.remarks,m.created_at,i.display_name,i.uom,COALESCE(u.login_username,u.username) AS username FROM inventory_movements m JOIN ingredients i ON i.id=m.ingredient_id LEFT JOIN users u ON u.id=m.created_by ORDER BY m.created_at DESC,m.id DESC LIMIT ${n}`);return r.rows.map(x=>({id:Number(x.id),type:x.movement_type,ingredient:x.display_name,uom:x.uom,quantityChange:Number(x.quantity_change),balanceAfter:Number(x.balance_after),reference:x.reference,branch:x.branch,receivedBy:x.received_by,deliveredBy:x.delivered_by,remarks:x.remarks,createdBy:x.username,createdAt:x.created_at}));}
+async function listInventoryMovements(limit=300,user=null){
+  if(!user?.id)throw Object.assign(new Error('Authentication required.'),{status:401});
+  const workspaceId=await workspaceIdForUser(user.id);
+  if(!workspaceId)throw Object.assign(new Error('Franchise workspace not found.'),{status:403});const n=Math.max(1,Math.min(1000,Number(limit)||300));const r=await db.query(`SELECT m.id,m.movement_type,m.quantity_change,m.balance_after,m.reference,m.branch,m.received_by,m.delivered_by,m.remarks,m.created_at,i.display_name,i.uom,COALESCE(u.login_username,u.username) AS username FROM inventory_movements m JOIN ingredients i ON i.id=m.ingredient_id LEFT JOIN users u ON u.id=m.created_by WHERE EXISTS(SELECT 1 FROM chat_memberships cm WHERE cm.workspace_id=$1 AND cm.user_id=m.created_by) ORDER BY m.created_at DESC,m.id DESC LIMIT ${n}`,[workspaceId]);return r.rows.map(x=>({id:Number(x.id),type:x.movement_type,ingredient:x.display_name,uom:x.uom,quantityChange:Number(x.quantity_change),balanceAfter:Number(x.balance_after),reference:x.reference,branch:x.branch,receivedBy:x.received_by,deliveredBy:x.delivered_by,remarks:x.remarks,createdBy:x.username,createdAt:x.created_at}));}
 
 function manilaDateString(value){if(!value)return'';const raw=String(value);if(!/[zZ]|[+-]\d\d:\d\d$/.test(raw))return raw.slice(0,10);const d=new Date(raw);if(Number.isNaN(d.getTime()))return raw.slice(0,10);const parts=new Intl.DateTimeFormat('en-CA',{timeZone:MANILA_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${map.year}-${map.month}-${map.day}`;}
 function sundayOf(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d));dt.setUTCDate(dt.getUTCDate()-dt.getUTCDay());return dt.toISOString().slice(0,10);}
@@ -2058,11 +2061,14 @@ async function handleApi(req,res,url){
     const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',
       year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const after=addDays(today,1);
+    const workspaceId=await workspaceIdForUser(user.id);
+    if(!workspaceId)throw Object.assign(new Error('Franchise workspace not found.'),{status:403});
     const args=['Sold',new Date(today+'T00:00:00+08:00').toISOString(),
-      new Date(after+'T00:00:00+08:00').toISOString()];
+      new Date(after+'T00:00:00+08:00').toISOString(),workspaceId];
     if(branchId!=null)args.push(Number(branchId));
-    const rows=await db.query('SELECT COUNT(*) AS count FROM sales WHERE status=$1 AND sold_at >= $2 AND sold_at < $3'+
-      (branchId==null?'':' AND branch_id=$4'),args);
+    const rows=await db.query('SELECT COUNT(*) AS count FROM sales s WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3 '+
+      'AND EXISTS (SELECT 1 FROM chat_workspace_branches wb WHERE wb.workspace_id=$4 AND wb.branch_id=s.branch_id)'+
+      (branchId==null?'':' AND s.branch_id=$5'),args);
     return json(res,200,{count:Number(rows.rows[0]?.count||0)},safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(db,await workspaceIdForUser(user.id)),safeHeaders());
@@ -2072,7 +2078,7 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
   const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
   if(method==='GET'&&p==='/api/inventory')return json(res,200,{items:await getInventory()},safeHeaders());
-  if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'))},safeHeaders());
+  if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'),user)},safeHeaders());
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/branches'){
