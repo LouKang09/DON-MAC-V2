@@ -1,24 +1,40 @@
-# OTP and Resend: franchise isolation safeguards
+# Don Mac POS — Forgot Password OTP (account & branch scoped)
 
-## Configuration
-Main POS service requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL`, the latter set to a sender belonging to a **verified Resend domain**. Service variables being present does not guarantee message delivery. Never put API keys in code, endpoints or logs. Supply Office does not need the OTP sending key.
+## API and provider routing
+`public/auth-login-v1574.js` posts `{username,email}` to `POST /api/auth/forgot/request`.
+The backend in `lib/account-recovery.js` looks up the exact combination against
+`users`, validates `chat_memberships` and `chat_workspace_branches`, then
+submits an HTTPS request using `lib/resend-otp.js` to `https://api.resend.com/emails`.
+The destination is the account's registered `users.email`, not the username
+and not the Admin Control email. The sender is `RESEND_FROM_EMAIL` on the Main
+POS Railway service; the key is `RESEND_API_KEY`. Values remain secret.
 
-## Password reset
-- OTP identity is **user ID + workspace ID + normalized registered email fingerprint**; no tenant can reuse another tenant's code.
-- An ambiguous email address shared by multiple accounts does not pick a random user or tenant. Request the exact username.
-- Codes last 10 minutes, are single use, hashed and capped at five attempts.
-- A distributed per-user 60-second resend cooldown is enforced atomically in PostgreSQL. IP throttling is additionally enforced in-process (not a replacement for WAF/rate-limit gateway when scaling).
-- Moving an account to another franchise or updating its registered email invalidates the old code. Previously issued unscoped codes are not migrated.
-- Password reset never changes the user's assigned franchise or branch.
-
-## Franchise signup
-- Registration returns an opaque `applicationId` for newly submitted applications; OTP request and verification carry it back.
-- Hashed OTP data remains on `public_franchise_requests`, keyed by that **specific application ID**, not by a global shared email record.
-- Email-only compatibility is limited to a single unambiguous pending application; it cannot silently choose another franchise application.
-- The OTP confirms the applicant's email only. It **does not** grant owner login, subscribe, provision a workspace or activate a POS.
-- Resend is the preferred delivery transport, SMTP is used only if Resend is absent. Failures log provider category/status (not OTP, key, recipient email or raw response).
+## Rules
+- Reset requires the POS account username **and** its exact registered email
+  address. Gmail is accepted; other registered email providers also work.
+- The same address can belong to users in separate franchises because the
+  username and validated workspace/branch association identify the account.
+  Reused username/address combinations or missing/mismatched ownership fail
+  closed rather than selecting a random branch.
+- "User not found" responds to a mismatch or inaccessible account, never an
+  OTP success. Public failures are rate limited; consider a centralized rate
+  limiter or WAF before adding more horizontal replicas.
+- Admin/Co-Owner can be workspace-scoped without a branch. Cashiers must have
+  active branch membership in the same workspace.
+- Password OTPs bind user ID, workspace ID, branch ID, and normalized registered
+  email SHA-256 fingerprint. Expire after 10 minutes, 5 attempts, 60-second
+  DB-backed resend cooldown; reset invalidates sessions and used OTP.
+- An OTP created before this migration lacks the branch binding. It cannot be
+  confirmed; user must request a fresh code.
+- Only advance UI after the provider accepts the mail or an unexpired cooldown
+  applies from a prior request. Provider acceptance != inbox delivery.
+- Provider failure logs safe metadata: status, provider reason, workspace/scope,
+  never OTP, email, credentials, API response body.
+- Franchise signup OTP remains associated with the specific application ID and
+  cannot enable POS login until isolation and Admin Control approval.
 
 ## Verification
-Use GitHub Action **Don Mac OTP isolation checks** or `node scripts/otp-isolation-test.js`. Unit tests mock Resend delivery (never send real mail). Railway startup/health confirms the application is online, but **real delivery acceptance and inbox arrival require a controlled test to a known recipient**. Do not infer provider verification merely from variable names.
-
-The live POS still uses legacy catalog until franchise isolation cutover is separately verified.
+Run `node scripts/otp-isolation-test.js` (mock Resend), then use a real
+registered **test** account to send a single OTP and verify delivery via
+Resend's Logs and inbox (including Spam). Real delivery isn't proven by having
+the `RESEND_API_KEY` and `RESEND_FROM_EMAIL` variable names in Railway.
