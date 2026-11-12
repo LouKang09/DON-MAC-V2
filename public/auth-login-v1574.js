@@ -9,6 +9,7 @@
  const KEY='donmac_login_remembered_username';
  const pageIds={login:null,register:'authRegisterPanel',reset:'authResetPanel'};
  let page='login',checkSeq=0,available=false;
+ let pendingApplicationId=null;
  let otpCooldownUntil=0,otpTicker=null,sendingOtp=false;
  const OTP_RESEND_MS=60000;
  function message(id,text,isError=false){
@@ -117,6 +118,7 @@
     username:regUsername.value.trim(),fullName:$('regFullName').value.trim(),
     email:$('regEmail').value.trim(),phone:$('regPhone').value.trim()
    });
+   pendingApplicationId=result.applicationId||null;
    message('regMessage',result.message||'Account request received.');
    if(result.verificationRequired){
      $('authRegisterVerifyForm').classList.remove('hidden');
@@ -132,7 +134,7 @@
   btn.disabled=true;
   try{
    const result=await post('/api/auth/register/verify',{
-     email:$('regEmail').value.trim(),code:$('regVerifyCode').value.trim()
+     email:$('regEmail').value.trim(),code:$('regVerifyCode').value.trim(),applicationId:pendingApplicationId
    });
    message('regVerifyMessage',result.message||'Email confirmed.');
    $('authRegisterVerifyForm').classList.add('hidden');
@@ -148,7 +150,7 @@
   }
   btn.disabled=true;
   try{
-   const result=await post('/api/auth/register/verify/resend',{email:$('regEmail').value.trim()});
+   const result=await post('/api/auth/register/verify/resend',{email:$('regEmail').value.trim(),applicationId:pendingApplicationId});
    lastSignupResend=Date.now();
    message('regVerifyMessage',result.message||'If the request is pending, a code will be delivered.');
   }catch(err){message('regVerifyMessage',err.message,true);}

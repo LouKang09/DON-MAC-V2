@@ -1997,7 +1997,7 @@ async function handleApi(req,res,url){
     const body=await readJson(req,4096);
     const applied=await franchiseRequests.request(db,body);
     let verification={sent:false};
-    try{verification=await franchiseEmailVerification.requestCode(db,body.email);}
+    try{verification=await franchiseEmailVerification.requestCode(db,body.email,applied.applicationId||null);}
     catch(err){verification.error=err.message;}
     return json(res,202,{...applied,verificationRequired:true,
       verificationSent:!!verification.sent,
@@ -2008,13 +2008,13 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/register/verify/resend'){
     checkLoginRate(req,'franchise-email-resend');
     const body=await readJson(req,1024);
-    return json(res,200,await franchiseEmailVerification.requestCode(db,body.email),
+    return json(res,200,await franchiseEmailVerification.requestCode(db,body.email,body.applicationId||null),
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/register/verify'){
     checkLoginRate(req,'franchise-email-verification');
     const body=await readJson(req,1024);
-    return json(res,200,await franchiseEmailVerification.verify(db,body.email,body.code),
+    return json(res,200,await franchiseEmailVerification.verify(db,body.email,body.code,body.applicationId||null),
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
