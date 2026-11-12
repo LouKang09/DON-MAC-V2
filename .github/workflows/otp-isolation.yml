@@ -1,0 +1,23 @@
+name: Don Mac OTP isolation checks
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/account-recovery.js"
+      - "lib/franchise-email-verification.js"
+      - "lib/public-franchise-requests.js"
+      - "lib/resend-otp.js"
+      - "scripts/otp-isolation-test.js"
+      - ".github/workflows/otp-isolation.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/otp-isolation-test.js
+      - run: node scripts/branch-catalog-seeding-test.js
