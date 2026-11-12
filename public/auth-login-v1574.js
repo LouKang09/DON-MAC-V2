@@ -189,16 +189,18 @@
    renderOtpCountdown();
  }
  async function sendCode(){
-   const btn=$('resetSend'),identifier=$('resetIdentifier').value.trim();
-   if(!identifier){message('resetMessage','Enter a username or email.',true);return;}
+   const btn=$('resetSend'),username=$('resetIdentifier').value.trim(),email=$('resetEmail').value.trim().toLowerCase();
+   if(!username){message('resetMessage','Enter your POS account username.',true);return;}
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){message('resetMessage','Enter the registered Gmail/email address for this account.',true);return;}
    if(sendingOtp||secondsRemaining()>0)return;
    sendingOtp=true;
    btn.disabled=true;
    resend.disabled=true;
    try{
      message('resetMessage','Requesting your email code…');
-     const result=await post('/api/auth/forgot/request',{identifier});
-     message('resetMessage',result.message||'If the account has a registered email, you will receive an OTP.');
+     const result=await post('/api/auth/forgot/request',{username,email});
+     message('resetMessage',result.message||'Check the registered email address for your OTP.');
+     if(!result.sent&&!result.cooldown)throw new Error(result.message||'The email request was not accepted.');
      requestForm.classList.add('hidden');
      verifyForm.classList.remove('hidden');
      startOtpCooldown();
@@ -219,7 +221,7 @@
   btn.disabled=true;
   try{
    const result=await post('/api/auth/forgot/confirm',{
-    identifier:$('resetIdentifier').value.trim(),code:$('resetCode').value.trim(),
+    username:$('resetIdentifier').value.trim(),email:$('resetEmail').value.trim().toLowerCase(),code:$('resetCode').value.trim(),
     password:value,confirmPassword:confirm
    });
    verifyForm.reset();requestForm.reset();

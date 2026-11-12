@@ -1980,12 +1980,12 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/auth/forgot/request'){
     const body=await readJson(req,4096);
     const ip=String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'').split(',')[0].trim();
-    return json(res,200,await accountRecovery.request(db,body.identifier,ip),
+    return json(res,200,await accountRecovery.request(db,body.username,body.email,ip),
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/forgot/confirm'){
     const body=await readJson(req,4096);
-    const result=await accountRecovery.confirm(db,body.identifier,String(body.code||''),
+    const result=await accountRecovery.confirm(db,body.username,body.email,String(body.code||''),
       body.password,body.confirmPassword,hashPassword);
     if(!result.ok)return json(res,400,{error:'Invalid or expired code. Check your email and try again.'},safeHeaders({'Cache-Control':'no-store'}));
     return json(res,200,{ok:true,message:'Password updated. Sign in with your new password.'},

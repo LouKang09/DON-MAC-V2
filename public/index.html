@@ -83,9 +83,10 @@
       <section id="authResetPanel" class="auth-secondary-panel hidden" aria-label="Reset password">
         <button type="button" class="auth-back auth-back-top" data-auth-back aria-label="Back to Sign In"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M5 12h14"/></svg><span>Back to Sign In</span></button>
         <img src="/assets/login-coffee-beans-all-white-strokes-v1587.svg" class="auth-beans-icon" alt="" width="56" height="56">
-        <h2>Forgot Password?</h2><p class="auth-secondary-intro">Enter your username or email to request a six-digit email verification code.</p>
+        <h2>Forgot Password?</h2><p class="auth-secondary-intro">Enter your POS username and the registered Gmail or email address associated with your account. We'll verify your franchise and branch before sending the six-digit code.</p>
         <form id="authResetRequestForm" class="auth-secondary-form">
-          <label>Username or email<input id="resetIdentifier" required maxlength="180" autocomplete="username" placeholder="Username or registered email"></label>
+          <label>POS Account Username<input id="resetIdentifier" required maxlength="180" autocomplete="username" placeholder="Your POS login username"></label>
+          <label>Registered Gmail / Email<input id="resetEmail" required type="email" maxlength="180" autocomplete="email" placeholder="name@gmail.com"></label>
           <button id="resetSend" class="primary auth-submit" type="submit">Send Email OTP</button>
         </form>
         <form id="authResetConfirmForm" class="auth-secondary-form hidden">
@@ -1015,7 +1016,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.5.98"></script>
+  <script src="/auth-login-v1574.js?v=1.6.02"></script>
   <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.01"></script>
 </body>
 </html>
