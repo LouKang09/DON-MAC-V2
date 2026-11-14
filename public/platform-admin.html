@@ -80,13 +80,13 @@
       <section class="main-card franchise-request-section" id="franchiseRequestSection" aria-label="Franchise signup requests">
         <div class="section-header"><div><span class="eyebrow">FRANCHISE REQUESTS</span>
           <h2>New account applications</h2>
-          <p>Review self-service requests and prepare independent starter catalogs. Live POS account activation remains locked until all franchise data is isolated.</p>
+          <p>Review applications, verify email, and prepare separate starter catalogs. <strong>Mark Contacted records outreach only, not a signed contract or POS activation.</strong> New-account login remains locked until tenant isolation and security validation are complete.</p>
         </div><button id="refreshFranchiseRequests" class="btn btn-main" type="button">Refresh Requests</button></div>
         <p id="franchiseRequestsMessage" class="notice hidden" role="status"></p>
         <div id="franchiseActivationReadiness" class="franchise-activation-status" role="status" aria-live="polite">Checking franchise data isolation…</div>
         <div class="table-scroll"><table class="owners-table franchise-requests-table" aria-label="New franchise account applications">
-          <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Email</th><th>Status</th><th>Starter Catalog</th><th>Review</th></tr></thead>
-          <tbody id="franchiseRequestsBody"><tr><td colspan="9">Loading applications…</td></tr></tbody>
+          <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Email</th><th>Status</th><th>Starter Catalog</th><th>Account Access</th><th>Review Action</th></tr></thead>
+          <tbody id="franchiseRequestsBody"><tr><td colspan="10">Loading applications…</td></tr></tbody>
         </table></div>
       </section>
 
@@ -170,6 +170,6 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.11"></script>
+<script defer src="/platform-admin.js?v=1.0.12"></script>
 <script defer src="/refresh-controls-v20261107.js?v=1"></script>
 </body></html>
