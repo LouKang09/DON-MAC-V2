@@ -75,8 +75,8 @@ x=helpers.syncSaleCapacity();assert.equal(x.max,0,'Tenant-specific product recip
 
 assert.match(branch,/recipeStock:recipes\.map/);
 assert.match(branch,/ingredientId:number\(r\.ingredient_id\)/);
-assert.match(page,/\$('saleProduct'\)\.addEventListener\('change',syncSaleCapacity\)/);
-assert.match(page,/\$('saleQuantity'\)\.addEventListener\('input',syncSaleCapacity\)/);
+assert(page.includes("$('saleProduct').addEventListener('change',syncSaleCapacity)"));
+assert(page.includes("$('saleQuantity').addEventListener('input',syncSaleCapacity)"));
 assert.match(page,/if\(form\.id==='saleForm'\)syncSaleCapacity\(\);else submit\.disabled=false/);
 assert.match(page,/if\(e\.status===409\)await load\(\)/);
 assert.match(html,/id="saleStockWarning"/);
