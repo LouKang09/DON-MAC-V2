@@ -3,7 +3,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
-<link rel="stylesheet" href="/platform-admin.css?v=1.0.9">
+<link rel="stylesheet" href="/platform-admin.css?v=1.0.10">
 <link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1">
 <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85">
 <link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
@@ -80,10 +80,10 @@
       <section class="main-card franchise-request-section" id="franchiseRequestSection" aria-label="Franchise signup requests">
         <div class="section-header"><div><span class="eyebrow">FRANCHISE REQUESTS</span>
           <h2>New account applications</h2>
-          <p>Review applications, verify email, and prepare separate starter catalogs. <strong>Mark Contacted records outreach only, not a signed contract or POS activation.</strong> Production activation remains locked until tenant isolation and security validation pass. Admin Control can issue a restricted Phase 2 TEST login after email verification and starter catalog preparation.</p>
+          <p>Review applicant details, confirm email verification and assign the requested subscription plan. <strong>Marking a plan Paid activates that franchise's independent live POS.</strong> New accounts receive their own starter catalog and zero opening stock. Unpaid and On Hold accounts cannot access live checkout.</p>
         </div><button id="refreshFranchiseRequests" class="btn btn-main" type="button">Refresh Requests</button></div>
         <p id="franchiseRequestsMessage" class="notice hidden" role="status"></p>
-        <div id="franchiseActivationReadiness" class="franchise-activation-status" role="status" aria-live="polite">Checking franchise data isolation…</div>
+        <div class="franchise-activation-status is-ready" role="status"><strong>Franchise activation available</strong><p>Assign the applicant’s Pro or Business plan, payment amount and next payment date. When payment status is Paid, their live branch-isolated POS is enabled. Unpaid and On Hold remain blocked from live checkout.</p></div>
         <div class="table-scroll"><table class="owners-table franchise-requests-table" aria-label="New franchise account applications">
           <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Email</th><th>Status</th><th>Starter Catalog</th><th>Requested / Assigned Plan</th><th>Account Access</th><th>Review Action</th></tr></thead>
           <tbody id="franchiseRequestsBody"><tr><td colspan="11">Loading applications…</td></tr></tbody>
@@ -123,14 +123,14 @@
   </div>
 </div>
 <dialog id="phase2TestLoginDialog" class="editor" aria-labelledby="phase2TestCredentialsTitle">
-  <div class="dialog-heading"><div><span class="eyebrow">PHASE 2 TEST ACCOUNT</span>
-    <h2 id="phase2TestCredentialsTitle">One-time test login credentials</h2>
+  <div class="dialog-heading"><div><span class="eyebrow">FRANCHISE ACCOUNT</span>
+    <h2 id="phase2TestCredentialsTitle">One-time account login credentials</h2>
     <p>Copy and store these credentials now. The temporary password will not be displayed again.</p>
   </div></div>
   <label>Username<input id="phase2TestLoginUsername" readonly autocomplete="off"></label>
   <label>Temporary password<input id="phase2TestLoginPassword" readonly autocomplete="off"></label>
   <label>POS sign-in website<input id="phase2TestLoginUrl" readonly autocomplete="off"></label>
-  <p class="dialog-tip">This test account signs in at the regular POS address but opens a separate isolated test portal. Checkout, shared-data operations and real billing are disabled.</p>
+  <p class="dialog-tip">The new account can sign in with these credentials. Set its subscription to Paid in Admin Control to enable the live franchise POS. Until then, it can access only the onboarding workspace.</p>
   <p id="phase2TestCredentialHint" class="dialog-tip" role="status">Copy credentials before closing.</p>
   <div class="dialog-actions">
     <button id="phase2TestCredentialsCopy" class="btn btn-main" type="button">Copy Credentials</button>
@@ -185,6 +185,6 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.15"></script>
+<script defer src="/platform-admin.js?v=1.0.16"></script>
 <script defer src="/refresh-controls-v20261107.js?v=1"></script>
 </body></html>
