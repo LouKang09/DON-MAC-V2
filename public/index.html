@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
   <link rel="stylesheet" href="/users-management-refinement-v1569.css?v=1.5.69" />
   <link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02" />
+<link rel="stylesheet" href="/inventory-branch-select-v20261114.css?v=1" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -470,7 +471,7 @@
       </section>
     </div>
     <p id="transferBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><label>Transfer To<input id="transferBranch" maxlength="150" required placeholder="Branch / destination" /></label><label>Received By<input id="receivedBy" maxlength="150" required placeholder="Who will receive? e.g. Marlou" /></label><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Transfer Selected Items</button></form>
+  </div><div class="inv-transfer-branches"><label>Transfer From<select id="transferSourceBranch" required><option value="">Choose source branch</option></select></label><label>Transfer To<select id="transferBranch" required><option value="">Choose another branch</option></select></label><label>Received By (Branch)<select id="receivedBy" required><option value="">Choose receiving branch</option></select></label></div><p id="transferBranchHint" class="muted tiny" role="status">Only active branches owned by this franchise are available.</p><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Transfer Selected Items</button></form>
             </div>
           </section>
         </div>
@@ -1017,6 +1018,6 @@
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.6.02"></script>
-  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.01"></script>
+  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.03"></script>
 </body>
 </html>

@@ -916,6 +916,7 @@
         return;
       }
       operation(openOperation==='transfer'?null:'transfer');
+      if(openOperation==='transfer')loadTransferBranches().catch(err=>toast(err.message));
     });
     operation(null);
     initBatchEditors();
@@ -1053,7 +1054,22 @@
       batchFail('transfer','Business plan required to transfer stock.');
       return;
     }
-    const form=e.currentTarget;let items;try{items=batchPayload('transfer');batchFail('transfer','');}catch(err){batchFail('transfer',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/transfer',{method:'POST',body:{items,branch:$('transferBranch').value.trim(),receivedBy:$('receivedBy').value.trim(),remarks:$('transferRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' transferred successfully.');batchClear('transfer');await loadInventory();await loadCatalog();}catch(err){batchFail('transfer',err.message);}});});
+    const form=e.currentTarget;let items;try{
+      const source=Number($('transferSourceBranch').value),target=Number($('transferBranch').value),receiver=Number($('receivedBy').value);
+      if(!source||!target||!receiver)throw new Error('Choose the source, destination, and receiving branch.');
+      if(source===target)throw new Error('Choose another branch as the destination.');
+      if(receiver!==target)throw new Error('Receiving branch must match Transfer To.');
+      items=batchPayload('transfer');batchFail('transfer','');
+    }catch(err){batchFail('transfer',err.message);return;}
+    await withFormLock(form,async()=>{try{
+      await api('/api/inventory/transfer',{method:'POST',body:{items,
+       sourceBranchId:Number($('transferSourceBranch').value),
+       destinationBranchId:Number($('transferBranch').value),
+       receivedByBranchId:Number($('receivedBy').value),
+       remarks:$('transferRemarks').value.trim()}});
+      toast('Transfer recorded for '+$('transferBranch').selectedOptions[0].textContent+'.');
+      batchClear('transfer');await loadInventory();await loadCatalog();
+    }catch(err){batchFail('transfer',err.message);}});});
 
   const reportUI={request:0,debounce:null,pages:{products:1,promos:1,ingredients:1,transactions:1},ids:{
     products:'reportProductsPagination',promos:'reportPromosPagination',
@@ -1697,6 +1713,43 @@
   function branchOptions(list,selected,includeAll=false,allLabel='All branches'){
    return (includeAll?'<option value="all">'+esc(allLabel)+'</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
   }
+
+
+  let transferBranchRequest=0;
+  function blankTransferBranchSelect(select,label){
+    if(select)select.innerHTML='<option value="">'+esc(label)+'</option>';
+  }
+  async function loadTransferBranches(chosenSource=null){
+    const from=$('transferSourceBranch'),to=$('transferBranch'),receiver=$('receivedBy'),hint=$('transferBranchHint');
+    if(!from||!to||!receiver||!state.user)return;
+    const request=++transferBranchRequest;
+    const preferred=Number(chosenSource||from.value||state.posBranchId||state.user.branchId||0);
+    blankTransferBranchSelect(to,'Choose destination branch');
+    blankTransferBranchSelect(receiver,'Choose receiving branch');
+    if(hint)hint.textContent='Loading available branches for this franchise…';
+    try{
+      const data=await api('/api/inventory/transfer-branches'+(preferred?'?sourceBranchId='+encodeURIComponent(preferred):''));
+      if(request!==transferBranchRequest)return;
+      const sources=Array.isArray(data.branches)?data.branches:[],targets=Array.isArray(data.destinations)?data.destinations:[];
+      from.innerHTML=sources.length?branchOptions(sources,data.sourceBranchId):'<option value="">No available source branch</option>';
+      from.value=String(data.sourceBranchId||'');
+      to.innerHTML='<option value="">Choose destination branch</option>'+
+        targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
+      receiver.innerHTML='<option value="">Choose receiving branch</option>'+
+        targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
+      if(targets.length===1){to.value=String(targets[0].id);receiver.value=String(targets[0].id);}
+      if(hint)hint.textContent=targets.length?'Only other active branches belonging to this owner are shown.':
+        'No other active branch is available. Activate or add another branch to transfer.';
+    }catch(err){
+      if(request!==transferBranchRequest)return;
+      blankTransferBranchSelect(from,'Branches unavailable');
+      if(hint)hint.textContent='Cannot load branches: '+err.message;
+      throw err;
+    }
+  }
+  $('transferSourceBranch')?.addEventListener('change',e=>loadTransferBranches(Number(e.target.value)).catch(err=>toast(err.message)));
+  $('transferBranch')?.addEventListener('change',e=>{if($('receivedBy'))$('receivedBy').value=e.target.value;});
+  $('receivedBy')?.addEventListener('change',e=>{if($('transferBranch'))$('transferBranch').value=e.target.value;});
 
   async function loadBranches(){
    const d=await api('/api/branches');
