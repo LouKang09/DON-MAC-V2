@@ -38,7 +38,7 @@ def main():
             info('restore-verified',sales=counts['sales'],branchIngredients=counts['branch_ingredients'],tables=len(counts))
         finally:
             subprocess.run(['pg_ctl','-D',str(store),'-m','immediate','stop'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=45,check=False)
-        client=boto3.client('s3',endpoint_url=os.environ['BACKUP_ENDPOINT'],region_name=os.environ['BACKUP_REGION'],aws_access_key_id=os.environ['BACKUP_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['BACKUP_SECRET_ACCESS_KEY'],config=Config(s3={'addressing_style':'path'}))
+        client=boto3.client('s3',endpoint_url=os.environ['BACKUP_ENDPOINT'],region_name=os.environ['BACKUP_REGION'],aws_access_key_id=os.environ['BACKUP_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['BACKUP_SECRET_ACCESS_KEY'],config=Config(s3={'addressing_style':'virtual'}))
         bucket=os.environ['BACKUP_BUCKET'];key='verified-postgres/'+stamp+'.dump'
         client.upload_file(str(dump),bucket,key,ExtraArgs={'ContentType':'application/octet-stream','Metadata':{'sha256':sha}})
         fetched=pathlib.Path(folder)/'fetched.dump'
