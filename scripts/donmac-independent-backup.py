@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,sys,json,hashlib,tempfile,subprocess,pathlib,datetime,boto3
+import os,sys,json,hashlib,tempfile,subprocess,pathlib,datetime,time,boto3
 from botocore.config import Config
 TABLES=('users','chat_workspaces','chat_memberships','branches','chat_workspace_branches','products','ingredients','product_ingredients','sales','sale_items','branch_products','branch_ingredients','branch_recipes','starter_catalog_templates','branch_catalog_provisioning')
 VARS=('DATABASE_URL','BACKUP_ENDPOINT','BACKUP_BUCKET','BACKUP_REGION','BACKUP_ACCESS_KEY_ID','BACKUP_SECRET_ACCESS_KEY')
@@ -18,17 +18,21 @@ def main():
         store=pathlib.Path(folder)/'localpostgres'
         info('backup-start',timestamp=stamp)
         run(['pg_dump','-Fc','--no-owner','--no-acl','-f',str(dump),'-d',os.environ['DATABASE_URL']],'pg_dump')
+        info('archive-created',bytes=dump.stat().st_size)
         if dump.stat().st_size<1024:raise RuntimeError('Dump unexpectedly small')
         entries=run(['pg_restore','--list',str(dump)],'archive listing')
         missing=[x for x in TABLES if not any('TABLE public '+x+' ' in l for l in entries.splitlines())]
         if missing:raise RuntimeError('Missing tables: '+','.join(missing))
+        info('archive-toc-verified',tables=len(TABLES))
         sha=hashlib.sha256(dump.read_bytes()).hexdigest()
         run(['initdb','--auth=trust','-D',str(store)],'scratch initdb')
+        info('scratch-initialized')
         port='55432'
         try:
             run(['pg_ctl','-D',str(store),'-o',"-c listen_addresses='' -c unix_socket_directories='/tmp' -p "+port,'-w','start'],'scratch postgres start')
             run(['createdb','-h','/tmp','-p',port,'-U','postgres','restore_test'],'create restore test DB')
             run(['pg_restore','--single-transaction','--exit-on-error','--no-owner','--no-acl','-h','/tmp','-p',port,'-U','postgres','-d','restore_test',str(dump)],'full restore')
+            info('scratch-restored')
             counts={}
             for t in TABLES:
                 counts[t]=int(run(['psql','-h','/tmp','-p',port,'-U','postgres','-d','restore_test','-tA','-c','SELECT COUNT(*) FROM "'+t+'"'],'table integrity'))
@@ -47,6 +51,6 @@ def main():
         client.put_object(Bucket=bucket,Key=key+'.json',Body=json.dumps({'timestamp':stamp,'sha256':sha,'bytes':dump.stat().st_size,'restored':True,'tables':counts}).encode(),ContentType='application/json')
         info('independent-backup-verified',key=key,bytes=dump.stat().st_size,sha256=sha[:16])
 if __name__=='__main__':
-    try:main()
+    try:main();time.sleep(12)
     except Exception as err:
-        info('backup-failed',reason=str(err)[:270]);sys.exit(1)
+        info('backup-failed',reason=str(err)[:270]);time.sleep(18);sys.exit(1)
