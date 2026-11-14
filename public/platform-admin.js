@@ -90,7 +90,7 @@
      el.innerHTML='<strong>Direct activation: '+(result.activationEnabled?'Enabled':'Locked — isolation in progress')+'</strong>'+
        '<p>'+esc(result.message||'')+'</p>'+
        (blocked?'<p>'+blocked+' of '+Number(result.checkedTables||0)+' live data tables still require workspace scoping.</p>':'')+
-       '<small>Admin Control can prepare independent catalogs for verified applications, but preparation does not create a login.</small>';
+       '<small>Verified, prepared applications can create restricted test logins. Full-production activation remains locked until tenant isolation passes.</small>';
    }catch(e){el.textContent='Activation readiness could not be verified. Direct activation remains locked.';}
  }
  function renderFranchiseRequests(){
@@ -144,7 +144,7 @@
        const data=await api('franchise-requests/'+activate.dataset.requestTest+'/test-activate',{method:'POST',body:'{}'});
        $('phase2TestLoginUsername').value=data.username||'';
        $('phase2TestLoginPassword').value=data.password||'';
-       $('phase2TestLoginUrl').value=location.origin.replace(/admin\\./,'')+'/';
+       $('phase2TestLoginUrl').value='https://donmacpos.com/';
        $('phase2TestLoginDialog').showModal();
        await reloadFranchiseRequests();
      }catch(e){error('franchiseRequestsMessage',e.message)}
