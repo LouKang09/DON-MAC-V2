@@ -1,0 +1,27 @@
+name: Admin Control application access-state regression
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "public/platform-admin.js"
+      - "public/platform-admin.html"
+      - "public/platform-admin.css"
+      - "lib/public-franchise-requests.js"
+      - "lib/franchise-activation-readiness.js"
+      - "lib/franchise-tenant-staging.js"
+      - "scripts/franchise-application-access-status-test.js"
+      - ".github/workflows/franchise-application-access.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate Admin Control JavaScript
+        run: node --check public/platform-admin.js
+      - name: Verify application review and activation state
+        run: node scripts/franchise-application-access-status-test.js
