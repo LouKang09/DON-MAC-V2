@@ -531,16 +531,37 @@
   function renderPaymentFields(){const due=Number(state.quote?.actual||0),cash=$('paymentMode').value==='Cash';$('tenderWrap').classList.toggle('hidden',!cash);$('referenceWrap').classList.toggle('hidden',cash);if(cash&&!Number.isFinite(Number($('cashTender').value)))$('cashTender').value=due.toFixed(2);$('changePreview').textContent=cash?`Change: ${peso(Math.max(0,Number($('cashTender').value||0)-due))}`:'GCash payment: exact amount due';$('modalDue').textContent=peso(due);}
   $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();if(!state.quote||state.checkoutBusy)return;state.checkoutBusy=true;const submit=$('paymentSubmit'),close=$('paymentClose');if(submit){submit.disabled=true;submit.textContent='Processing…';}if(close)close.disabled=true;const payload={...quotePayload(),branchId:state.user.role==='Admin'?state.posBranchId:state.user.branchId,clientRequestId:state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`),paymentMode:$('paymentMode').value,tender:Number($('cashTender').value||0),paymentReference:$('gcashReference').value.trim(),orderType:$('posOrderType').value,customerName:$('posCustomerName').value.trim(),tableLabel:$('posOrderType').value==='Dine In'?$('posTableLabel').value.trim():''};state.pendingSaleRequestId=payload.clientRequestId;try{const sale=await api('/api/sales',{method:'POST',body:payload,timeoutMs:30000});$('paymentDialog').close();$('receiptText').textContent=`${sale.reference} · ${sale.paymentMode} · ${peso(sale.actual)}${sale.change?` · Change ${peso(sale.change)}`:''}${sale.idempotent?' · Safe retry recovered':''}`;resetOrderState({render:true});$('receiptDialog').showModal();refreshPosDailyCount();try{await loadCatalog();}catch(refreshErr){console.error(refreshErr);toast('Sale recorded successfully. Catalog refresh will retry on the next action.');}}catch(err){toast(err.message);if(err.status===409)try{await loadCatalog();}catch(_){}}finally{state.checkoutBusy=false;if(submit){submit.disabled=false;submit.textContent='Confirm Payment';}if(close)close.disabled=false;}});$('receiptClose').onclick=()=>{$('receiptDialog').close();resetOrderState({render:true});$('searchBox')?.focus();};
 
+  function selectedInventoryBranch(){
+    return Number($('inventoryBranch')?.value||state.posBranchId||state.user?.branchId||0);
+  }
   async function loadInventory(){
-    // Fetch audit and stock together instead of waiting for the first table to render.
-    const auditTask=loadMovements();
+    const branchId=selectedInventoryBranch();
+    if(!branchId){toast('Choose an active inventory branch first.');return;}
+    const auditTask=loadMovements(),incomingTask=loadIncomingSupplies();
     try{
-      const response=await api('/api/inventory');
+      const response=await api('/api/inventory?branchId='+encodeURIComponent(branchId));
+      if(selectedInventoryBranch()!==branchId)return;
       state.inventory=Array.isArray(response.items)?response.items:[];
       try{renderInventory();}catch(renderError){console.error('Inventory view rendering:',renderError);toast('Ingredient list could not render: '+renderError.message);}
-    }catch(err){toast('Could not load ingredients: '+err.message);}
-    finally{await auditTask;}
+    }catch(err){toast('Could not load branch ingredients: '+err.message);}
+    finally{await Promise.allSettled([auditTask,incomingTask]);}
   }
+  $('inventoryBranch')?.addEventListener('change',async e=>{
+    const id=Number(e.target.value);
+    if(!id)return;
+    state.posBranchId=id;
+    if($('replenishReceivingBranch'))$('replenishReceivingBranch').value=String(id);
+    batchClear('replenish');batchClear('transfer');
+    await Promise.allSettled([loadInventory(),loadTransferBranches(id)]);
+  });
+  $('replenishReceivingBranch')?.addEventListener('change',e=>{
+    const branchId=Number(e.target.value);
+    if(!branchId)return;
+    if($('inventoryBranch'))$('inventoryBranch').value=String(branchId);
+    state.posBranchId=branchId;
+    batchClear('replenish');batchClear('transfer');
+    loadInventory().catch(err=>toast(err.message));
+  });
   const inventoryUI={page:1,pageSize:10,group:"none",sort:"nameAsc",status:"all"};
   function inventoryDisplayName(item){
     const raw=String(item?.name||item?.code||'Unnamed Ingredient').trim();
@@ -1020,7 +1041,7 @@
   }
   async function loadMovements(){
     try{
-      const d=await api('/api/inventory/movements?limit=1000');
+      const d=await api('/api/inventory/movements?limit=1000&branchId='+encodeURIComponent(selectedInventoryBranch()));
       auditUI.groups=groupInventoryMovements(Array.isArray(d.items)?d.items:[]);
       renderMovements();
     }catch(err){
@@ -1720,41 +1741,52 @@
     if(select)select.innerHTML='<option value="">'+esc(label)+'</option>';
   }
   async function loadTransferBranches(chosenSource=null){
-    const from=$('transferSourceBranch'),to=$('transferBranch'),receiver=$('receivedBy'),hint=$('transferBranchHint');
-    if(!from||!to||!receiver||!state.user)return;
+    const from=$('transferSourceBranch'),to=$('transferBranch'),hint=$('transferBranchHint');
+    if(!from||!to||!state.user)return;
     const request=++transferBranchRequest;
-    const preferred=Number(chosenSource||from.value||state.posBranchId||state.user.branchId||0);
-    blankTransferBranchSelect(to,'Choose destination branch');
-    blankTransferBranchSelect(receiver,'Choose receiving branch');
-    if(hint)hint.textContent='Loading available branches for this franchise…';
+    const preferred=Number(chosenSource||$('inventoryBranch')?.value||state.posBranchId||state.user.branchId||0);
+    blankTransferBranchSelect(to,'Choose another branch');
+    if(hint)hint.textContent='Loading active branches in your franchise…';
     try{
       const data=await api('/api/inventory/transfer-branches'+(preferred?'?sourceBranchId='+encodeURIComponent(preferred):''));
       if(request!==transferBranchRequest)return;
       const sources=Array.isArray(data.branches)?data.branches:[],targets=Array.isArray(data.destinations)?data.destinations:[];
-      from.innerHTML=sources.length?branchOptions(sources,data.sourceBranchId):'<option value="">No available source branch</option>';
-      from.value=String(data.sourceBranchId||'');
+      const selected=sources.find(b=>Number(b.id)===Number(data.sourceBranchId));
+      from.innerHTML=selected?'<option value="'+Number(selected.id)+'">'+esc(selected.name)+'</option>':
+       '<option value="">No assigned source branch</option>';
+      from.disabled=true;
       to.innerHTML='<option value="">Choose destination branch</option>'+
-        targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
-      receiver.innerHTML='<option value="">Choose receiving branch</option>'+
-        targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
-      if(targets.length===1){to.value=String(targets[0].id);receiver.value=String(targets[0].id);}
-      if(hint)hint.textContent=targets.length?'Only this owner’s other active branches are shown. Until Phase 2 inventory cutover, transfers record an outgoing legacy movement; the receiving branch is not automatically credited.':
-        'No other active branch is available. Activate or add another branch to transfer.';
+       targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
+      if(targets.length===1)to.value=String(targets[0].id);
+      if(hint)hint.textContent=targets.length?
+       'Outgoing branch is fixed. Destination must be another active branch owned by your franchise. Destination staff will Accept or Reject the request.':
+       'No other active branch is available. Ask the owner to activate another branch.';
     }catch(err){
       if(request!==transferBranchRequest)return;
       blankTransferBranchSelect(from,'Branches unavailable');
-      if(hint)hint.textContent='Cannot load branches: '+err.message;
+      if(hint)hint.textContent='Could not load branches: '+err.message;
       throw err;
     }
   }
-  $('transferSourceBranch')?.addEventListener('change',e=>loadTransferBranches(Number(e.target.value)).catch(err=>toast(err.message)));
-  $('transferBranch')?.addEventListener('change',e=>{if($('receivedBy'))$('receivedBy').value=e.target.value;});
-  $('receivedBy')?.addEventListener('change',e=>{if($('transferBranch'))$('transferBranch').value=e.target.value;});
-
   async function loadBranches(){
    const d=await api('/api/branches');
    state.branches=d.branches||[];state.branchPricing=d.branchPricing||null;
    const active=state.branches.filter(x=>x.active);
+   const inventoryBranch=$('inventoryBranch'),receivingBranch=$('replenishReceivingBranch');
+   if(inventoryBranch){
+     const allowed=state.user.role==='Admin'?active:active.filter(b=>Number(b.id)===Number(state.user.branchId));
+     const candidate=Number(inventoryBranch.value||state.posBranchId||state.user.branchId||0);
+     const current=allowed.some(b=>Number(b.id)===candidate)?candidate:allowed[0]?.id||0;
+     inventoryBranch.innerHTML=branchOptions(allowed,current);
+     inventoryBranch.value=String(current);
+     inventoryBranch.disabled=state.user.role!=='Admin';
+     if(state.user.role==='Admin')state.posBranchId=current;
+     if(receivingBranch){
+       receivingBranch.innerHTML=branchOptions(allowed,current);
+       receivingBranch.value=String(current);
+       receivingBranch.disabled=state.user.role!=='Admin';
+     }
+   }
    if(state.user.role==='Admin'){
      const selectedBranch=Number($('dashboardBranch').value||0);
      if(active.some(x=>x.id===selectedBranch))state.posBranchId=selectedBranch;
