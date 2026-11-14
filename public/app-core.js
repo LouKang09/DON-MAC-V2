@@ -1858,7 +1858,7 @@
    const active=state.branches.filter(x=>x.active);
    const inventoryBranch=$('inventoryBranch'),receivingBranch=$('replenishReceivingBranch');
    if(inventoryBranch){
-     const allowed=state.user.role==='Admin'?active:active.filter(b=>Number(b.id)===Number(state.user.branchId));
+     const allowed=state.user.role==='Admin'?state.branches:state.branches.filter(b=>Number(b.id)===Number(state.user.branchId));
      const candidate=Number(inventoryBranch.value||state.posBranchId||state.user.branchId||0);
      const current=allowed.some(b=>Number(b.id)===candidate)?candidate:allowed[0]?.id||0;
      inventoryBranch.innerHTML=branchOptions(allowed,current);
@@ -1866,8 +1866,9 @@
      inventoryBranch.disabled=state.user.role!=='Admin';
      if(state.user.role==='Admin')state.posBranchId=current;
      if(receivingBranch){
-       receivingBranch.innerHTML=branchOptions(allowed,current);
-       receivingBranch.value=String(current);
+       const receivingChoices=allowed.filter(b=>b.active);
+       receivingBranch.innerHTML=branchOptions(receivingChoices,current);
+       receivingBranch.value=receivingChoices.some(b=>Number(b.id)===current)?String(current):'';
        receivingBranch.disabled=state.user.role!=='Admin';
      }
    }

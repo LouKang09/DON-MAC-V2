@@ -2089,7 +2089,8 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
   const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
   if(method==='GET'&&p==='/api/inventory'){
-    const selected=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'),true);
+    const selected=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
+    if(selected==null)throw Object.assign(new Error('Choose a branch to view inventory.'),{status:400});
     const workspace=await workspaceIdForUser(user.id);
     return json(res,200,{items:await branchCatalogRead.inventory(db,workspace,selected),branchId:selected,isolated:true},
       safeHeaders({'Cache-Control':'no-store'}));
