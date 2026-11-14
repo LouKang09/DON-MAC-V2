@@ -10,6 +10,7 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 - [x] Build branch-scoped incoming supply requests and Accept / Reject / Save Received Stock with transactional source deduction and destination credit.
 - [x] Provide account-scoped email OTP workflow and error handling.
 - [x] Add cashier-specific **View Transactions**, **View Expenses**, **Record/Edit Expenses** checkboxes; guard finance APIs and pin cashier finance data to their assigned branch. Owners/Co-Owners retain admin access.
+- [x] Enable **explicit Phase 2 TEST accounts** for reviewed, OTP-verified, staged applications. Admin Control issues a one-time password, a unique workspace, one independently seeded branch with zero stock, and an isolated test portal; login can be disabled immediately. Test-only stock replenishment, simulated checkout deduction, product price edits and private test-sales reports are supported. All normal checkout, global catalog editing, billing and exports remain blocked for test tenants. These tests do NOT replace real POS cross-franchise cutover testing.
 
 ## Must finish before Phase 2 can be called complete
 - [ ] **Checkout critical path**: switch all /api/catalog, /api/quote, /api/sales, product recipes, stock reservations/deductions, returns/reversals, and checkout stock-availability checks to the branch catalog in a single coordinated plan; confirm cash, GCash, addons, promos and packages do not mix legacy stock.
