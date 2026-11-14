@@ -70,7 +70,7 @@
      stock.lowFor(state.catalog,state.cart,x.kind,x.id);
    const available=x.kind==='addon'?!!$('promoSelect').value:x.available&&decision.ok;
    const low=!!(decision.low?.length||x.stockWarnings?.length);
-   const label=!x.available?'UNAVAILABLE · '+(x.availabilityMessage||'Recipe required'):
+   const label=x.kind!=='addon'&&!x.available?'UNAVAILABLE · '+(x.availabilityMessage||'Recipe required'):
      !decision.ok?'OUT OF STOCK · '+(decision.message||'Insufficient ingredients'):
      low?'LOW INGREDIENT STOCK':'Available';
    const warning=!available?'soldout':low?'low':'';
