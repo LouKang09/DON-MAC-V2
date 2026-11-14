@@ -15,12 +15,31 @@ const rows=[
  {id:appId2,email:'other@example.com',full_name:'Second Owner',status:'CONTACTED',email_verified_at:'2026-11-08T00:00:00Z',
   verification_hash:null,verification_expires_at:null,verification_sent_at:null,verification_attempts:0}
 ];
+// Model the verified, versioned starter-template snapshot used by current provisioning.
+const verifiedStarterTemplate={
+ version:2,
+ products:[
+  {sourceId:11,sku:'COFFEE-A',name:'Coffee A',category:'Coffee',price:89,imageData:null,active:true},
+  {sourceId:12,sku:'COLD-LATTE',name:'Cold Latte',category:'Non Coffee',price:110,imageData:null,active:true}
+ ],
+ ingredients:[{sourceId:99,code:'BEANS',name:'Coffee Beans',uom:'kg',threshold:2,active:true}],
+ recipes:[{sourceProductId:11,sourceIngredientId:99,quantityRequired:.01,costContribution:4}],
+ categories:[{name:'Coffee',iconData:null,sortOrder:1,builtin:true,active:true},
+             {name:'Non Coffee',iconData:null,sortOrder:2,builtin:true,active:true}],
+ categoryProducts:[{categoryName:'Coffee',sourceProductId:11},{categoryName:'Non Coffee',sourceProductId:12}],
+ addOns:[{sourceId:22,name:'Extra Pearl',price:10,excludeFromCosting:true,active:true}],
+ promos:[],packages:[],packageItems:[]
+};
 const stages=[],products=[],ingredients=[],recipes=[],addOns=[],writes=[],schema=[];
 const db={
  engine:'postgres',
  async exec(sql){schema.push(sql)},
  async transaction(fn){return fn(db)},
  async query(sql,p=[]){
+  if(sql.startsWith('SELECT id,source_workspace_id,source_branch_id,template_json,checksum_sha256 ')){
+    return{rows:[{id:1,source_workspace_id:100,source_branch_id:null,
+      template_json:JSON.stringify(verifiedStarterTemplate),checksum_sha256:null}]};
+  }
   if(sql.startsWith('SELECT id,email,full_name,status,email_verified_at'))return{rows:rows.filter(x=>x.email===p[0]&&['PENDING','CONTACTED'].includes(x.status)).slice(-1)};
   if(sql.startsWith('UPDATE public_franchise_requests SET verification_hash=')){
    const x=rows.find(a=>a.id===p[3]);
