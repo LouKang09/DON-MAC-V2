@@ -10,6 +10,7 @@ on:
       - "public/platform-admin.js"
       - "scripts/franchise-live-static-regression.js"
       - "scripts/franchise-live-postgres-test.js"
+      - "scripts/franchise-live-browser-test.js"
       - ".github/workflows/franchise-live-cutover.yml"
 jobs:
   test:
@@ -48,7 +49,9 @@ jobs:
           node --check lib/franchise-live-router.js
       - name: Validate fail-closed legacy routing and production feature wiring
         run: node scripts/franchise-live-static-regression.js
-      - name: Install PostgreSQL driver
-        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Install PostgreSQL and DOM test dependencies
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
       - name: Real PostgreSQL cross-franchise checkout and concurrency
         run: node scripts/franchise-live-postgres-test.js
+      - name: Browser checkout and stock warning smoke
+        run: node scripts/franchise-live-browser-test.js
