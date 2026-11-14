@@ -2104,9 +2104,17 @@ async function handleApi(req,res,url){
       result.report=await franchiseTestOperations.report(db,user.id);
       return json(res,200,result,safeHeaders({'Cache-Control':'no-store'}));
     }
-    if(method==='POST'&&p==='/api/phase2-test/stock')
-      return json(res,200,await franchiseTestOperations.replenish(db,user.id,await readJson(req,4096)),
-        safeHeaders({'Cache-Control':'no-store'}));
+    if(method==='POST'&&p==='/api/phase2-test/stock'){
+      const body=await readJson(req,4096);
+      return json(res,201,await branchDirectStock.record(db,user,{
+        items:[{ingredientId:body.ingredientId,qty:body.quantity}],
+        clientRequestId:body.clientRequestId,
+        entryType:body.entryType,
+        receivingBranchId:phase2Test.branchId,
+        sourceLabel:body.sourceLabel||'Opening Inventory',
+        remarks:body.remarks||''
+      }),safeHeaders({'Cache-Control':'no-store'}));
+    }
     if(method==='POST'&&p==='/api/phase2-test/sale')
       return json(res,201,await franchiseTestOperations.simulatedSale(db,user.id,await readJson(req,4096)),
         safeHeaders({'Cache-Control':'no-store'}));
