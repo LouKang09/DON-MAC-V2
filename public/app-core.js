@@ -1153,27 +1153,30 @@
   $('transferForm').addEventListener('submit',async e=>{
     e.preventDefault();
     if(state.subscription?.plan!=='BUSINESS'){
-      batchFail('transfer','Business plan required to transfer stock.');
-      return;
+      batchFail('transfer','Business plan required to transfer stock.');return;
     }
-    const form=e.currentTarget;let items;try{
-      const source=Number($('transferSourceBranch').value),target=Number($('transferBranch').value),receiver=Number($('receivedBy').value);
-      if(!source||!target||!receiver)throw new Error('Choose the source, destination, and receiving branch.');
-      if(source===target)throw new Error('Choose another branch as the destination.');
-      if(receiver!==target)throw new Error('Receiving branch must match Transfer To.');
+    const form=e.currentTarget;let items;
+    try{
+      const from=Number($('transferSourceBranch').value),to=Number($('transferBranch').value);
+      if(!from||!to)throw new Error('Choose the destination branch.');
+      if(from!==selectedInventoryBranch())throw new Error('Transfer From must match the active inventory branch.');
+      if(from===to)throw new Error('Destination must be another branch.');
       items=batchPayload('transfer');batchFail('transfer','');
     }catch(err){batchFail('transfer',err.message);return;}
-    await withFormLock(form,async()=>{try{
-      await api('/api/inventory/transfer',{method:'POST',body:{items,
-       sourceBranchId:Number($('transferSourceBranch').value),
-       destinationBranchId:Number($('transferBranch').value),
-       receivedByBranchId:Number($('receivedBy').value),
-       remarks:$('transferRemarks').value.trim()}});
-      toast('Outgoing transfer recorded. Destination stock credit will follow branch inventory cutover.');
-      batchClear('transfer');await loadInventory();await loadCatalog();
-    }catch(err){batchFail('transfer',err.message);}});});
+    await withFormLock(form,async()=>{
+      try{
+        const result=await api('/api/inventory/transfer',{method:'POST',body:{
+          items,sourceBranchId:selectedInventoryBranch(),destinationBranchId:Number($('transferBranch').value),
+          expectedDeliverer:$('transferExpectedDeliverer').value.trim(),
+          remarks:$('transferRemarks').value.trim()}});
+        toast('Transfer request #'+result.id+' sent to the receiving branch for approval.');
+        batchClear('transfer');$('transferExpectedDeliverer').value='';$('transferRemarks').value='';
+        await loadIncomingSupplies();
+      }catch(err){batchFail('transfer',err.message);}
+    });
+  });
 
-  const reportUI={request:0,debounce:null,pages:{products:1,promos:1,ingredients:1,transactions:1},ids:{
+    const reportUI={request:0,debounce:null,pages:{products:1,promos:1,ingredients:1,transactions:1},ids:{
     products:'reportProductsPagination',promos:'reportPromosPagination',
     ingredients:'reportIngredientsPagination',transactions:'reportTransactionsPagination'
   }};
