@@ -6,9 +6,9 @@ const db={async query(sql,args=[]){
   if(sql.includes('wb.branch_id=$2'))return{rows:args[0]===10&&args[1]===101?[{id:101,name:'Main',opening_stock:5,template_id:1}]:[]};
   return{rows:args[0]===10?[{branch_id:101,name:'Main',opening_stock:5,template_id:1}]:[]};
  }
- if(sql.includes('COUNT(*) AS n FROM branch_'))return{rows:[{n:10}]};
  if(sql.includes('MIN(stock_qty)'))return{rows:[{n:10,min_stock:5,max_stock:5}]};
  if(sql.includes('SELECT COUNT(*) AS n FROM branch_recipes r'))return{rows:[{n:0}]};
+ if(sql.includes('COUNT(*) AS n FROM branch_'))return{rows:[{n:10}]};
  if(sql.includes('FROM branch_products')||sql.includes('FROM branch_ingredients')||sql.includes('FROM branch_recipes'))return{rows:[]};
  throw Error('Unexpected query '+sql);
 }};

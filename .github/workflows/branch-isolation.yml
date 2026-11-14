@@ -1,0 +1,29 @@
+name: Don Mac branch isolation checks
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "server.js"
+      - "lib/branch-*.js"
+      - "lib/legacy-catalog-guard.js"
+      - "scripts/*isolation*.js"
+      - "scripts/*tenant*.js"
+      - "scripts/legacy-catalog-guard-test.js"
+      - ".github/workflows/branch-isolation.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/branch-isolated-schema-test.js
+      - run: node scripts/branch-catalog-seeding-test.js
+      - run: node scripts/tenant-branch-access-test.js
+      - run: node scripts/branch-isolation-audit-test.js
+      - run: node scripts/branch-isolation-read-scope-test.js
+      - run: node scripts/branch-catalog-read-test.js
+      - run: node scripts/legacy-catalog-guard-test.js
