@@ -29,6 +29,7 @@ const branchIsolationAudit=require('./lib/branch-isolation-audit');
 const legacyCatalogGuard=require('./lib/legacy-catalog-guard');
 const branchCatalogRead=require('./lib/branch-catalog-read');
 const inventoryTransferBranches=require('./lib/inventory-transfer-branches');
+const branchIncomingSupply=require('./lib/branch-incoming-supply');
 const marlouTestStockReset=require('./lib/marlou-test-stock-reset');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
@@ -1624,7 +1625,7 @@ async function restoreBackup(user,name){
     for(const suffix of ['-wal','-shm'])try{fs.unlinkSync(dbPath+suffix);}catch(_){}
     try{fs.unlinkSync(dbPath);}catch(_){}
     fs.renameSync(incoming,dbPath);
-    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
+    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
     await logAction({id:null,username:user.username},`Database restored from: ${name}`,'Restored','Automatic pre-restore backup created; all web sessions cleared');
     return{ok:true,name,requiresRelogin:true};
   }catch(err){
@@ -2087,15 +2088,35 @@ async function handleApi(req,res,url){
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id)),safeHeaders());
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
   const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
-  if(method==='GET'&&p==='/api/inventory')return json(res,200,{items:await getInventory()},safeHeaders());
-  if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'),user)},safeHeaders());
-  if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
+  if(method==='GET'&&p==='/api/inventory'){
+    const selected=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'),true);
+    const workspace=await workspaceIdForUser(user.id);
+    return json(res,200,{items:await branchCatalogRead.inventory(db,workspace,selected),branchId:selected,isolated:true},
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='GET'&&p==='/api/inventory/movements')
+    return json(res,200,{items:await branchIncomingSupply.movements(db,user,url.searchParams.get('branchId'),url.searchParams.get('limit'))},
+      safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='GET'&&p==='/api/inventory/incoming')
+    return json(res,200,await branchIncomingSupply.list(db,user,url.searchParams.get('branchId')),
+      safeHeaders({'Cache-Control':'no-store'}));
+  const incomingMatch=p.match(/^\/api\/inventory\/incoming\/(\d+)\/(accept|reject|receive)$/);
+  if(method==='POST'&&incomingMatch)
+    return json(res,200,await branchIncomingSupply.process(db,user,Number(incomingMatch[1]),incomingMatch[2],await readJson(req)),
+      safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/inventory/replenish')
+    return json(res,201,await branchIncomingSupply.create(db,user,await readJson(req),'SUPPLIER'),
+      safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/inventory/transfer-branches'){
     await requireBusinessPlan(user);
     return json(res,200,await inventoryTransferBranches.list(db,user,url.searchParams.get('sourceBranchId')),
       safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
+  if(method==='POST'&&p==='/api/inventory/transfer'){
+    await requireBusinessPlan(user);
+    return json(res,201,await branchIncomingSupply.create(db,user,await readJson(req),'TRANSFER'),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/branches'){
     const branches=await accessibleBranches(user);
     const ws=await workspaceIdForUser(user.id);
@@ -2297,7 +2318,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
