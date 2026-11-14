@@ -93,7 +93,7 @@ async function run(){
  assert(page.includes('id="replenishEntryType"'));
  assert(page.includes('id="regVerifyPassword"'));
  assert(page.includes('id="regVerifyConfirmPassword"'));
- assert(admin.includes("Self-registered · pending review"));
+ assert(admin.includes("Live POS active"));
  assert(!account.includes("INSERT INTO sales"));
  console.log('PASS direct stock: initial zero-only, supplier, branch isolation, atomic rollback, idempotency and secure signup source constraints');
 }
