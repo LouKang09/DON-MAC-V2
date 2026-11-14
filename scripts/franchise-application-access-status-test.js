@@ -13,7 +13,7 @@ assert.match(html,/<th>Requested \/ Assigned Plan<\/th><th>Account Access<\/th><
 assert.match(html,/colspan="11">Loading applications/);
 assert.match(html,/Mark Contacted records outreach only/);
 assert.match(html,/platform-admin\.js\?v=1\.0\.14/);
-assert.match(html,/platform-admin\.css\?v=1\.0\.8/);
+assert.match(html,/platform-admin\.css\?v=1\.0\.9/);
 assert.match(css,/\.application-access-note\{/);
 
 assert.match(app,/x\.status==='CONTACTED'\?'Contacted · reviewed'/);
