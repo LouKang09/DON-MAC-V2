@@ -22,11 +22,14 @@ if (!source.includes('Delivered By is required. Enter who will deliver the stock
     "if(!deliveredBy)throw Object.assign(new Error('Delivered By is required. Enter who will deliver the stock.'),{status:400});\n  if(!remarks)throw Object.assign(new Error('Remarks are required. Add delivery details such as the contact name or phone number.'),{status:400});\n  if(deliveredBy.length>150)throw Object.assign(new Error('Delivered By must be at most 150 characters.'),{status:400});\n  if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});"
   );
 }
+// For legacy deployments, apply the old transfer remark validation patch. For
+// the new branch-verified transfer handler, the validation is in server.js.
 if (!source.includes('Remarks are required. Add the expected delivery time and delivery person.')) {
-  source = source.replace(
-    "if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});\n  if(branch.length>150||receivedBy.length>150)throw Object.assign(new Error('Transfer To and Received By must be at most 150 characters.'),{status:400});\n  if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});",
-    "if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});\n  if(!remarks)throw Object.assign(new Error('Remarks are required. Add the expected delivery time and delivery person.'),{status:400});\n  if(branch.length>150||receivedBy.length>150)throw Object.assign(new Error('Transfer To and Received By must be at most 150 characters.'),{status:400});\n  if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});"
-  );
+  const old = "if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});\\n  if(branch.length>150||receivedBy.length>150)throw Object.assign(new Error('Transfer To and Received By must be at most 150 characters.'),{status:400});\\n  if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});";
+  if(source.includes(old)){
+    source = source.replace(old,
+      "if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});\\n  if(!remarks)throw Object.assign(new Error('Remarks are required. Add the expected delivery time and delivery person.'),{status:400});\\n  if(branch.length>150||receivedBy.length>150)throw Object.assign(new Error('Transfer To and Received By must be at most 150 characters.'),{status:400});\\n  if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});");
+  }
 }
 
 if (!source.includes('Delivered By is required. Enter who will deliver the stock.') ||

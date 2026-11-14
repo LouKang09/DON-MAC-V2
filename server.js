@@ -684,6 +684,7 @@ async function transfer(user,body){
   await requireBusinessPlan(user);
   validateMovementItems(body.items);
   const remarks=String(body.remarks||'').trim();
+  if(!remarks)throw Object.assign(new Error('Remarks are required. Add the expected delivery time and delivery person.'),{status:400});
   if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});
   const movementReference='TRF-'+crypto.randomUUID().toUpperCase();
   const movementTime=nowIso();
