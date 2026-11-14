@@ -1,0 +1,8 @@
+/* Availability warnings are visible for newly created catalog products and packages. */
+#catalogGrid .product-card.low-warning:not(:disabled){border-color:#d8b35b;background:#fffdf5}
+#catalogGrid .product-card .unavailable.warning{color:#8e611b;font-weight:800}
+#catalogGrid .product-card:disabled .unavailable{opacity:1;color:#9b312a;font-weight:850}
+#catalogGrid .availability-hover:focus-within .product-card:disabled{outline:2px solid #ab4a3f;outline-offset:1px}
+#orderList .pos-stock-limit-hint{color:#a3452d;font-weight:800;font-size:10px;line-height:1.5;margin-top:5px;white-space:normal}
+#orderList .qty-control button:disabled{cursor:not-allowed;opacity:.32;filter:grayscale(1);background:#e9e9e9}
+#orderList .qty-control button:disabled:hover{transform:none;box-shadow:none}

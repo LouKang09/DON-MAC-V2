@@ -1,0 +1,34 @@
+name: POS new-product stock availability
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "public/pos-stock-limit-v20261114.js"
+      - "public/pos-stock-limit-v20261114.css"
+      - "public/app-core.js"
+      - "public/app.js"
+      - "public/index.html"
+      - "server.js"
+      - "lib/marlou-checkout-stock-bridge.js"
+      - "scripts/pos-stock-limit-test.js"
+      - "scripts/pos-new-product-catalog-api-test.js"
+      - ".github/workflows/pos-stock-limit.yml"
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Check server, client and stock planner syntax
+        run: |
+          node --check server.js
+          node --check public/app.js
+          node --check public/app-core.js
+          node --check public/pos-stock-limit-v20261114.js
+          node --check lib/marlou-checkout-stock-bridge.js
+      - name: Test newly-added product availability, aggregate cart limits and branch quotes
+        run: node scripts/pos-stock-limit-test.js
+      - name: Verify catalog zero/low stock and quote preflight
+        run: node scripts/pos-new-product-catalog-api-test.js

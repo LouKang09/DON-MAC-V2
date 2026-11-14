@@ -449,15 +449,36 @@ async function requireBusinessPlan(user){
   });
 }
 
-async function getCatalog(conn=db,workspaceId=0) {
+async function getCatalog(conn=db,workspaceId=0,branchId=0) {
   const productsR=await conn.query(`SELECT id,sku,name,category,price,image_data,active FROM products WHERE active=$1 ORDER BY category,name`,[true]);
   const addR=await conn.query(`SELECT id,name,price,exclude_from_costing,active FROM add_ons WHERE active=$1 ORDER BY name`,[true]);
   const promoR=await conn.query(`SELECT id,name,inclusion_label,promo_price,food_limit,coffee_limit,active FROM promos WHERE active=$1 ORDER BY id`,[true]);
   const packageR=await conn.query(`SELECT id,name,price,active FROM packages WHERE active=$1 ORDER BY id`,[true]);
   const recR=await conn.query(`SELECT pi.product_id,pi.ingredient_id,pi.quantity_required,i.code,i.display_name,i.uom,i.stock_qty,i.low_stock_threshold,i.active FROM product_ingredients pi JOIN ingredients i ON i.id=pi.ingredient_id`);
+  // For the original Marlou09 POS, a successful checkout must have sufficient
+  // stock in BOTH the legacy sale engine and its branch-specific inventory.
+  // Use the smaller balance on product cards, including freshly added recipes.
+  let recipeRows=recR.rows;
+  if(workspaceId&&branchId&&await marlouCheckoutStockBridge.originalWorkspace(conn,workspaceId)){
+    const ownership=await conn.query('SELECT 1 FROM chat_workspace_branches WHERE workspace_id=$1 AND branch_id=$2',
+      [Number(workspaceId),Number(branchId)]);
+    if(ownership.rows.length!==1)throw Object.assign(new Error('This branch does not belong to the franchise.'),{status:403});
+    const branches=await conn.query('SELECT code,uom,stock_qty,low_stock_threshold,active FROM branch_ingredients '+
+      'WHERE workspace_id=$1 AND branch_id=$2',[Number(workspaceId),Number(branchId)]);
+    const byCode=new Map(branches.rows.map(row=>[normalize(row.code),row]));
+    recipeRows=recR.rows.map(r=>{
+      const own=byCode.get(normalize(r.code));
+      if(!own||normalize(own.uom)!==normalize(r.uom))
+        return{...r,stock_qty:0,active:false,branch_stock_missing:true};
+      return{...r,stock_qty:Math.min(Number(r.stock_qty),Number(own.stock_qty)),
+        low_stock_threshold:Math.max(Number(r.low_stock_threshold||0),Number(own.low_stock_threshold||0)),
+        active:bool(r.active)&&bool(own.active)};
+    });
+  }
+
   const packItemsR=await conn.query(`SELECT pi.package_id,pi.product_id,pi.quantity,p.name AS product_name,p.active AS product_active FROM package_items pi JOIN products p ON p.id=pi.product_id ORDER BY pi.package_id,p.name`);
   const recipeByProduct=new Map();
-  for(const r of recR.rows){const pid=Number(r.product_id);if(!recipeByProduct.has(pid))recipeByProduct.set(pid,[]);recipeByProduct.get(pid).push(r);}
+  for(const r of recipeRows){const pid=Number(r.product_id);if(!recipeByProduct.has(pid))recipeByProduct.set(pid,[]);recipeByProduct.get(pid).push(r);}
   const productMap=new Map(productsR.rows.map(p=>[Number(p.id),p]));
   const products=productsR.rows.map(p=>{
     const rec=recipeByProduct.get(Number(p.id))||[];
@@ -472,7 +493,12 @@ async function getCatalog(conn=db,workspaceId=0) {
     const available=recipeConfigured&&issues.length===0;
     const availabilityStatus=!recipeConfigured?'recipe_required':issues.length?'insufficient_stock':'available';
     const availabilityMessage=!recipeConfigured?'Recipe required: add at least one ingredient before selling this product.':issues.length?'One or more recipe ingredients are unavailable or below the required quantity.':warnings.length?'Available, but one or more ingredients are low in stock.':'Available';
-    return {id:Number(p.id),sku:p.sku,name:p.name,category:p.category,price:Number(p.price),imageData:p.image_data||null,available,recipeConfigured,availabilityStatus,availabilityMessage,availabilityDetails:issues,stockWarnings:warnings};
+    // Full active recipe snapshot lets the cashier UI reject excess combined
+    // cart quantities before payment. Never expose a recipe from another workspace.
+    const recipeStock=rec.map(r=>({ingredientId:Number(r.ingredient_id),code:r.code,name:r.display_name,
+      uom:String(r.uom||'').toUpperCase(),required:Number(r.quantity_required),
+      current:Number(r.stock_qty),threshold:Number(r.low_stock_threshold||0),active:bool(r.active)}));
+    return {id:Number(p.id),sku:p.sku,name:p.name,category:p.category,price:Number(p.price),imageData:p.image_data||null,available,recipeConfigured,availabilityStatus,availabilityMessage,availabilityDetails:issues,stockWarnings:warnings,recipeStock};
   });
   const itemsByPackage=new Map();
   for(const r of packItemsR.rows){const id=Number(r.package_id);if(!itemsByPackage.has(id))itemsByPackage.set(id,[]);itemsByPackage.get(id).push({productId:Number(r.product_id),name:r.product_name,qty:Number(r.quantity),active:bool(r.product_active)});}
@@ -495,7 +521,9 @@ async function getCatalog(conn=db,workspaceId=0) {
     const available=sellable&&activeComponents&&ingredientIssues.length===0;
     const availabilityStatus=!contents.length?'composition_required':componentIssues.some(x=>x.status==='recipe_required')?'recipe_required':!activeComponents?'component_unavailable':ingredientIssues.length?'insufficient_stock':'available';
     const availabilityMessage=!contents.length?'Package composition required.':componentIssues.some(x=>x.status==='recipe_required')?'A package component needs ingredients/recipe setup.':!activeComponents?'A package component is unavailable.':ingredientIssues.length?'One or more package ingredients are unavailable or below the required quantity.':warnings.length?'Available, but one or more ingredients are low in stock.':'Available';
-    return {id:Number(p.id),name:p.name,price:Number(p.price),itemCount:contents.length,sellable,available,contents,availabilityStatus,availabilityMessage,availabilityDetails:[...componentIssues,...ingredientIssues],stockWarnings:warnings};
+    return {id:Number(p.id),name:p.name,price:Number(p.price),itemCount:contents.length,sellable,available,contents,availabilityStatus,availabilityMessage,availabilityDetails:[...componentIssues,...ingredientIssues],stockWarnings:warnings,
+      recipeStock:[...req.values()].map(x=>({ingredientId:x.ingredientId,code:x.code,name:x.name,uom:x.uom,
+        required:x.need,current:x.stock,threshold:x.threshold,active:x.active}))};
   });
   return {
     products,
@@ -518,7 +546,7 @@ function validateCartInput(items){
   }
 }
 
-async function quoteOrder(conn,input,workspaceId=0){
+async function quoteOrder(conn,input,workspaceId=0,branchId=0){
   const items=input.items||[];validateCartInput(items);
   const productLines=items.filter(x=>x.kind==='product');
   const addonLines=items.filter(x=>x.kind==='addon');
@@ -596,6 +624,9 @@ async function quoteOrder(conn,input,workspaceId=0){
   }
   const shortages=[...requirements.values()].filter(r=>!r.active||r.stock+1e-9<r.needed).map(r=>({...r,shortage:Math.max(0,r.needed-r.stock)}));
   if(shortages.length){const e=new Error('Insufficient ingredient stock.');e.status=409;e.details={shortages};throw e;}
+  // Early branch-specific quote guard. Checkout repeats the same check under
+  // its transaction and locks, so concurrent cashiers cannot oversell.
+  if(branchId)await marlouCheckoutStockBridge.previewSale(conn,{workspaceId,branchId,requirements:[...requirements.values()]});
   let promo=null,senior=null,adjustment=0,discountAmount=0,actual=gross,remark=null,seniorDetails=null;
   if(input.promoId){
     if(input.senior?.enabled)throw Object.assign(new Error('Unable to add Senior Citizen discount with an existing promo.'),{status:400});
@@ -637,7 +668,7 @@ async function createSale(user,body){
     if(customerName.length>120||tableLabel.length>80)throw Object.assign(new Error('Customer name or table label is too long.'),{status:400});
     const workspace=await workspaceIdForUser(user.id);
     if((body.items||[]).some(x=>x.kind==='officePromo'))await officePromotions.lockForSale(tx,workspace,body.items);
-    const quote=await quoteOrder(tx,body,workspace);let tender=quote.actual,change=0,paymentReference=null;
+    const quote=await quoteOrder(tx,body,workspace,branchId);let tender=quote.actual,change=0,paymentReference=null;
     if(mode==='Cash'){tender=money(Number(body.tender||0));if(!Number.isFinite(tender)||tender<quote.actual||tender>MAX_MONEY)throw Object.assign(new Error('Cash tender must cover the amount due and stay within the supported amount range.'),{status:400});change=money(tender-quote.actual);}else{paymentReference=String(body.paymentReference||'').trim();if(!paymentReference||paymentReference.length>150)throw Object.assign(new Error('Enter a GCash reference up to 150 characters.'),{status:400});}
     let reference=null;for(let tries=0;tries<8;tries++){const candidate=makeReference();const exists=await tx.query('SELECT id FROM sales WHERE reference=$1',[candidate]);if(!exists.rows.length){reference=candidate;break;}}if(!reference)throw new Error('Unable to generate a unique sale reference.');
     const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id,branch_id,order_type,customer_name,table_label) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null,branchId,orderType,customerName||null,tableLabel||null]);
@@ -2129,10 +2160,12 @@ async function handleApi(req,res,url){
       (branchId==null?'':' AND s.branch_id=$5'),args);
     return json(res,200,{count:Number(rows.rows[0]?.count||0)},safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(db,await workspaceIdForUser(user.id)),safeHeaders());
+  if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(db,await workspaceIdForUser(user.id),
+    user.role==='User'?Number(user.branchId||0):0),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/office-promotions')
     return json(res,200,{campaigns:await officePromotions.forWorkspace(db,await workspaceIdForUser(user.id))},safeHeaders({'Cache-Control':'no-store'}));
-  if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id)),safeHeaders());
+  if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id),
+    user.role==='User'?Number(user.branchId||0):0),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
   const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
   if(method==='GET'&&p==='/api/inventory'){
