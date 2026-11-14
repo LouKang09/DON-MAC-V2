@@ -297,11 +297,11 @@
   async function boot(){
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
-    try{state.user=(await api('/api/auth/me')).user;}
+    try{state.user=(await api('/api/auth/me')).user;if(state.user?.testMode){location.replace('/phase2-test.html');return;}}
     catch(err){if(err.status===401||err.status===403){state.user=null;resetOrderState({render:false});showAuth(false);if(err.status===403)$('authHint').textContent=err.message;return;}throw err;}
     resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;if(state.user?.testMode){$('authPassword').value='';location.assign('/phase2-test.html');return;}resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
   $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
 
   async function refreshPosDailyCount(){
