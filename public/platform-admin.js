@@ -98,13 +98,13 @@
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
      const verified=!!x.emailVerifiedAt,prepared=!!x.stageStatus,rejected=x.status==='REJECTED',
        testEnabled=Number(x.testUserId)>0;
-     const staging=rejected?'—':prepared?
+     const staging=testEnabled?badge('Starter catalog ready','active')+'<small class="application-access-note">Seeded into an independent zero-stock branch.</small>':rejected?'—':prepared?
        badge('Prepared','active')+'<small class="application-access-note">Independent starter catalog; zero starting inventory.</small>':
        !verified?'Awaiting email verification':
        '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
-     const reviewLabel=x.status==='CONTACTED'?'Contacted · reviewed':x.status;
+     const reviewLabel=testEnabled&&x.status==='PENDING'?'Self-registered · pending review':x.status==='CONTACTED'?'Contacted · reviewed':x.status;
      const access=testEnabled?
-       badge(x.testActive?'Test login enabled':'Test login disabled',x.testActive?'active':'inactive')+'<small class="application-access-note">Phase 2 isolated workspace '+esc(x.testWorkspaceId)+'. Read-only test portal; checkout and shared Admin functions blocked.</small>':
+       badge(x.testActive?'Test login enabled':'Test login disabled',x.testActive?'active':'inactive')+'<small class="application-access-note">Isolated onboarding workspace '+esc(x.testWorkspaceId)+'. Test stock and simulated checkout are available; legacy shared Admin routes are blocked.</small>':
        rejected?badge('Not eligible','inactive'):
        prepared?
        badge('Activation pending','unknown')+'<small class="application-access-note">You can now create a controlled Phase 2 test login. Full production activation remains locked.</small>':
@@ -112,7 +112,7 @@
        badge('Not activated','unknown')+'<small class="application-access-note">Applicant must verify email first.</small>':
        badge('Not activated','unknown')+'<small class="application-access-note">Prepare starter catalog, then create test account.</small>';
      const actions=rejected?'—':
-       (x.status==='CONTACTED'?'Reviewed':
+       (testEnabled?'Self-registered':x.status==='CONTACTED'?'Reviewed':
        '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted (review only)</button>')+
        (testEnabled?
          ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+'" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable test login':'Re-enable test login')+'</button>':

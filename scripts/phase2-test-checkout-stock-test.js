@@ -80,6 +80,6 @@ assert(page.includes("$('saleQuantity').addEventListener('input',syncSaleCapacit
 assert.match(page,/if\(form\.id==='saleForm'\)syncSaleCapacity\(\);else submit\.disabled=false/);
 assert.match(page,/if\(e\.status===409\)await load\(\)/);
 assert.match(html,/id="saleStockWarning"/);
-assert.match(html,/phase2-test\.js\?v=3/);
+assert.match(html,/phase2-test\.js\?v=4/);
 assert.match(css,/\.sale-stock-warning\.danger/);
 console.log('PASS: Phase 2 new-product low-stock warning, quantity cap, no-recipe disabled, sold-out submit locked, cross-account stock reset.');

@@ -131,13 +131,25 @@
  $('authRegisterVerifyForm').addEventListener('submit',async event=>{
   event.preventDefault();
   const btn=$('regVerifySubmit');if(btn.disabled)return;
+  const password=$('regVerifyPassword').value,confirmPassword=$('regVerifyConfirmPassword').value;
+  if(password.length<10||password.length>128||!/[A-Za-z]/.test(password)||!/[0-9]/.test(password)){
+   message('regVerifyMessage','Use 10–128 characters with at least one letter and one number.',true);return;
+  }
+  if(password!==confirmPassword){
+   message('regVerifyMessage','Passwords do not match.',true);return;
+  }
   btn.disabled=true;
   try{
    const result=await post('/api/auth/register/verify',{
-     email:$('regEmail').value.trim(),code:$('regVerifyCode').value.trim(),applicationId:pendingApplicationId
+     email:$('regEmail').value.trim(),code:$('regVerifyCode').value.trim(),
+     applicationId:pendingApplicationId,password,confirmPassword
    });
-   message('regVerifyMessage',result.message||'Email confirmed.');
+   $('regVerifyCode').value='';$('regVerifyPassword').value='';$('regVerifyConfirmPassword').value='';
    $('authRegisterVerifyForm').classList.add('hidden');
+   show('login');
+   $('authUsername').value=result.username||regUsername.value.trim();
+   $('authPassword').value='';
+   message('authHelpMessage',result.message||'Account created. Sign in using your chosen password.');
   }catch(err){message('regVerifyMessage',err.message,true);}
   finally{btn.disabled=false;}
  });

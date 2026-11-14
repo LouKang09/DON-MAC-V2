@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="/cashier-access-20261114.css?v=1" />
   <link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02" />
 <link rel="stylesheet" href="/inventory-branch-select-v20261114.css?v=2" />
-<link rel="stylesheet" href="/incoming-supply-v20261114.css?v=1" />
+<link rel="stylesheet" href="/incoming-supply-v20261114.css?v=2" />
   <link rel="stylesheet" href="/pos-stock-limit-v20261114.css?v=1" />
 </head>
 <body>
@@ -72,14 +72,17 @@
           <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
           <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address"></label>
           <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
-          <p class="auth-field-status">No password is requested until a separate franchise workspace is approved.</p>
+          <p class="auth-field-status">After your email OTP is verified, your chosen password will create an isolated starter workspace with zero stock. Full production POS access remains subject to activation checks.</p>
           <button id="regSubmit" type="submit" class="primary auth-submit">Submit Request</button>
         </form>
         <p id="regMessage" class="auth-secondary-message" role="status"></p>
         <form id="authRegisterVerifyForm" class="auth-secondary-form hidden" aria-label="Verify franchise request email">
-          <p class="auth-secondary-intro">Verify your email address before Admin Control reviews the application.</p>
+          <p class="auth-secondary-intro">Verify your email and choose your password to create your isolated starter account. Unverified OTPs cannot activate login.</p>
           <label>6-digit email code<input id="regVerifyCode" inputmode="numeric" autocomplete="one-time-code" required minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="000000" /></label>
-          <button id="regVerifySubmit" type="submit" class="primary auth-submit">Verify Email</button>
+          <label>Create Password<span class="auth-field-input"><input id="regVerifyPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="At least 10 characters, including a letter and number"><button type="button" class="auth-eye" data-toggle-password="regVerifyPassword">Show</button></span></label>
+          <label>Confirm Password<span class="auth-field-input"><input id="regVerifyConfirmPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Re-enter your password"><button type="button" class="auth-eye" data-toggle-password="regVerifyConfirmPassword">Show</button></span></label>
+          <p class="auth-field-status">Your password is saved securely only when the OTP is correct. You can then sign in to your separate, zero-stock onboarding workspace.</p>
+          <button id="regVerifySubmit" type="submit" class="primary auth-submit">Verify OTP &amp; Create Account</button>
           <button id="regVerifyResend" type="button" class="auth-text-action">Resend verification code</button>
           <p id="regVerifyMessage" class="auth-secondary-message" role="status"></p>
         </form>
@@ -361,8 +364,13 @@
           </section>
           <section class="card inv-stock-operations" aria-label="Inventory stock actions">
             <section id="incomingSupplyPanel" class="inv-incoming-panel" aria-label="Incoming supply requests">
- <div class="inv-incoming-header"><div><p class="eyebrow">INCOMING SUPPLY</p><h3>Accept, Reject &amp; Receive</h3><p class="muted tiny">Review requested ingredients, their origin, the requester, and expected deliverer. Credit stock only after saving receipt.</p></div><button id="incomingSupplyRefresh" type="button" class="ghost">Refresh Requests</button></div>
- <div id="incomingSupplyList" class="inv-incoming-list" aria-live="polite"><p class="muted tiny">Loading incoming supply requests…</p></div>
+ <div class="inv-incoming-header"><div><p class="eyebrow">INCOMING SUPPLY</p><h3>Supply Requests &amp; Receiving</h3><p class="muted tiny">One row per request. Accept or reject branch transfers; expand a row to view ingredients and delivery details. Direct opening/supplier stock is posted separately.</p></div><button id="incomingSupplyRefresh" type="button" class="ghost">Refresh Requests</button></div>
+ <div class="inv-incoming-toolbar">
+  <label class="inv-incoming-search"><span class="inv-sr-only">Search supply requests</span><input type="search" id="incomingSupplySearch" placeholder="Search request, ingredient, requester…" autocomplete="off"></label>
+  <label><span class="inv-sr-only">Filter request status</span><select id="incomingSupplyFilter"><option value="all">All statuses</option><option value="PENDING">Pending</option><option value="ACCEPTED">Accepted</option><option value="COMPLETED">Completed</option><option value="REJECTED">Rejected</option></select></label>
+</div>
+<div id="incomingSupplyList" class="inv-incoming-list" aria-live="polite"><p class="muted tiny">Loading incoming supply requests…</p></div>
+<div class="inv-incoming-footer"><span id="incomingSupplyCount" aria-live="polite"></span><div id="incomingSupplyPages" class="inv-incoming-pages"></div></div>
 </section>
 <div class="inv-operation-cards" role="group" aria-label="Stock operation options">
               <article class="inv-operation-card inv-operation-replenish">
@@ -415,7 +423,8 @@
               </article>
             </div>
             <div class="inv-operations-body">
-              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><div class="inv-incoming-fields"><label>Receiving Branch<select id="replenishReceivingBranch" required><option value="">Choose receiving branch</option></select></label><label>Supplier / From<input id="supplySourceLabel" maxlength="150" required placeholder="Supplier or source of incoming supplies" /></label><label>Expected Deliverer<input id="replenishExpectedDeliverer" maxlength="150" placeholder="Who is expected to deliver?" /></label></div><div class="inv-batch-editor" data-batch-kind="replenish">
+              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><div class="inv-incoming-fields"><label>Stock Entry Type<select id="replenishEntryType"><option value="INITIAL_STOCK">Initial Stock (opening balance)</option><option value="DIRECT_REPLENISH" selected>Supplier Replenishment</option></select></label><label>Receiving Branch<select id="replenishReceivingBranch" required><option value="">Choose receiving branch</option></select></label><label>Supplier / Source<input id="supplySourceLabel" maxlength="150" required placeholder="e.g. Opening inventory / Supplier name" /></label></div>
+<p id="replenishEntryHint" class="inv-direct-stock-tip">Add stock directly to the selected branch. No Accept/Reject is required for opening inventory or external suppliers. Transfers between branches still require acceptance and confirmed receipt.</p><div class="inv-batch-editor" data-batch-kind="replenish">
     <div class="inv-batch-heading">
       <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
       <span id="replenishSelectionCount" class="inv-batch-count">0 ingredients</span>
@@ -446,7 +455,7 @@
       </section>
     </div>
     <p id="replenishBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" placeholder="Expected arrival / delivery details"></textarea></label><button class="primary" type="submit">Request Incoming Supplies</button></form>
+  </div><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" placeholder="Stock entry notes"></textarea></label><button id="replenishSaveButton" class="primary" type="submit">Add Stock Directly</button></form>
               <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><div class="inv-transfer-branches"><label>Transfer From<select id="transferSourceBranch" disabled aria-label="Outgoing branch, assigned automatically"><option value="">Current branch</option></select></label><label>Transfer To<select id="transferBranch" required><option value="">Choose another branch</option></select></label><label>Expected Deliverer<input id="transferExpectedDeliverer" maxlength="150" placeholder="Who will deliver?" /></label></div><p id="transferBranchHint" class="muted tiny" role="status">Outgoing branch is fixed to your current inventory branch. Only the owner\u0027s other active branches appear in Transfer To.</p><div class="inv-batch-editor" data-batch-kind="transfer">
     <div class="inv-batch-heading">
       <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
@@ -1031,7 +1040,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.6.02"></script>
-  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.06"></script>
+  <script src="/auth-login-v1574.js?v=1.6.07"></script>
+  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.08"></script>
 </body>
 </html>
