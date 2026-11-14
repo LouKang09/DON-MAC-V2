@@ -30,6 +30,7 @@ const legacyCatalogGuard=require('./lib/legacy-catalog-guard');
 const branchCatalogRead=require('./lib/branch-catalog-read');
 const inventoryTransferBranches=require('./lib/inventory-transfer-branches');
 const branchIncomingSupply=require('./lib/branch-incoming-supply');
+const cashierAccess=require('./lib/cashier-access');
 const marlouTestStockReset=require('./lib/marlou-test-stock-reset');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
@@ -984,7 +985,9 @@ async function listUsers(actor){
     'FROM users u JOIN chat_memberships m ON m.user_id=u.id '+
     'JOIN chat_workspaces w ON w.id=m.workspace_id LEFT JOIN branches b ON b.id=u.branch_id '+
     'WHERE m.workspace_id=$1 ORDER BY u.id',[workspaceId]);
+  const grants=await cashierAccess.forWorkspace(db,workspaceId);
   return r.rows.map(u=>({id:Number(u.id),username:u.login_name,fullName:u.full_name||'',email:u.email||'',phone:u.phone||'',photoData:u.profile_photo||null,
+    accessPermissions:u.role==='Admin'?[...cashierAccess.KEYS]:(grants.get(Number(u.id))||[]),
     role:u.role,roleLabel:Number(u.id)===Number(u.owner_user_id)?'Owner/Admin':u.role==='Admin'?'Co-Owner/Admin':'Cashier',
     isOwner:Number(u.id)===Number(u.owner_user_id),active:bool(u.active),
     branchId:u.branch_id==null?null:Number(u.branch_id),branchName:u.branch_name||null,
@@ -1024,6 +1027,7 @@ async function createOrActivateUser(body,actor=null){
     await internalChat.assignNewUser(db,actor?.id||null,Number(old.id));
     const actualWs=await workspaceIdForUser(Number(old.id));
     await db.query('UPDATE users SET owner_scope_id=$1 WHERE id=$2',[actualWs,Number(old.id)]);
+    if(actor)await cashierAccess.set(db,actor,Number(old.id),role==='User'?(body.accessPermissions||[]):[]);
     return{id:Number(old.id),username,role,active};
   }
   // Keep the pre-existing globally unique physical username key for foreign
@@ -1038,6 +1042,7 @@ async function createOrActivateUser(body,actor=null){
   await internalChat.assignNewUser(db,actor?.id||null,Number(row.rows[0].id));
   const actualWs=await workspaceIdForUser(Number(row.rows[0].id));
   await db.query('UPDATE users SET owner_scope_id=$1 WHERE id=$2',[actualWs,Number(row.rows[0].id)]);
+  if(actor)await cashierAccess.set(db,actor,Number(row.rows[0].id),role==='User'?(body.accessPermissions||[]):[]);
   return{id:Number(row.rows[0].id),username,role,active};
 }
 
@@ -1089,6 +1094,8 @@ async function updateUserAccount(actor,id,body){
   else await db.query('UPDATE users SET role=$1,active=$2,branch_id=$3,full_name=$4,email=$5,phone=$6,profile_photo=$7 WHERE id=$8',
     [role,active,branchId,profile.fullName,profile.email,profile.phone,photoData,Number(id)]);
   if(!active||(password&&Number(id)!==actor.id))await db.query('DELETE FROM sessions WHERE user_id=$1',[Number(id)]);
+  if(body.accessPermissions!==undefined||role!=='User')
+    await cashierAccess.set(db,actor,Number(id),role==='User'?(body.accessPermissions||[]):[]);
   await logAction(actor,'Web user updated: '+target.login_name,'User Updated',role+' / '+(active?'Active':'Inactive'));
   return{ok:true};
 }
@@ -1625,7 +1632,7 @@ async function restoreBackup(user,name){
     for(const suffix of ['-wal','-shm'])try{fs.unlinkSync(dbPath+suffix);}catch(_){}
     try{fs.unlinkSync(dbPath);}catch(_){}
     fs.renameSync(incoming,dbPath);
-    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
+    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
     await logAction({id:null,username:user.username},`Database restored from: ${name}`,'Restored','Automatic pre-restore backup created; all web sessions cleared');
     return{ok:true,name,requiresRelogin:true};
   }catch(err){
@@ -1973,7 +1980,8 @@ async function handleApi(req,res,url){
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
     const owner=await initialOwnerId(u.id);
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
-      branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner}},
+      branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
+      accessPermissions:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='GET'&&p==='/api/auth/username-available'){
@@ -2033,7 +2041,7 @@ async function handleApi(req,res,url){
     if(!access.allowed)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
-    return json(res,200,{user},safeHeaders());
+    return json(res,200,{user:{...user,accessPermissions:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
   await legacyCatalogGuard.preventSharedCatalogLeak(db,user,p);
@@ -2319,7 +2327,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
