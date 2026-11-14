@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Don Mac · Phase 2 Test Workspace</title><link rel="stylesheet" href="/phase2-test.css?v=1"></head>
+<body><main class="shell">
+ <header class="header"><div><p class="eyebrow">DON MACCHIATOS · CONTROLLED PHASE 2</p>
+  <h1>Isolated test workspace</h1><p class="sub">Live authentication and real branch isolation, with unsafe legacy operations blocked.</p></div>
+  <div class="header-actions"><button type="button" id="refresh">Refresh data</button><button type="button" id="logout" class="outline">Log out</button></div></header>
+ <div id="message" class="notice" role="status">Verifying signed-in account…</div>
+ <section class="overview" aria-label="Test environment">
+  <div class="metric"><small>Workspace</small><strong id="ws">—</strong></div>
+  <div class="metric"><small>Isolated branch</small><strong id="branch">—</strong></div>
+  <div class="metric"><small>Products</small><strong id="productCount">—</strong></div>
+  <div class="metric"><small>Ingredient types</small><strong id="ingredientCount">—</strong></div>
+  <div class="metric"><small>Opening inventory</small><strong id="stockCount">—</strong></div>
+ </section>
+ <section class="card"><h2>What you can verify here</h2><p>Inspect only this franchise's product definitions, recipes, categories, and ingredient balances. Create another test account in Admin Control to compare workspace IDs and confirm that both accounts remain separate. Data shown here comes from the isolated <code>branch_*</code> catalog.</p>
+ <div class="actions"><button type="button" id="checkLegacy">Test shared-catalog access denial</button><span id="accessCheck" aria-live="polite"></span></div></section>
+ <div class="columns"><section class="card"><h2>Branch product catalog</h2><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Recipe / Availability</th></tr></thead><tbody id="products"><tr><td colspan="4">Loading…</td></tr></tbody></table></div></section>
+ <section class="card"><h2>Branch ingredient balances</h2><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>Unit</th><th>On hand</th></tr></thead><tbody id="ingredients"><tr><td colspan="3">Loading…</td></tr></tbody></table></div></section></div>
+ <p class="foot">TEST ENVIRONMENT ONLY · No real sales, payments, stock adjustments or global Admin CRUD is available in this portal. Full POS access will be enabled only after branch-scoped checkout and reporting passes validation.</p>
+</main><script defer src="/phase2-test.js?v=1"></script></body></html>
