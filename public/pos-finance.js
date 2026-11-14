@@ -14,6 +14,12 @@
   transportation:'financeTransportation',electricity:'financeElectricity',ice:'financeIce',
   water:'financeWater',misc:'financeMisc'};
  const state={transactions:{page:1,branches:[],loading:false,queued:false},expenses:{page:1,branches:[],loading:false}};
+ function canManageExpenses(){return window.donmacFinanceAccess?.manageExpenses===true;}
+ function applyFinanceAccess(){
+   const canManage=canManageExpenses();
+   $('financeExpenseForm')?.classList.toggle('hidden',!canManage);
+   $('financeExpenseForm')?.toggleAttribute('aria-hidden',!canManage);
+ }
  const now=today();
  for(const id of ['financeTransactionEnd','financeExpenseEnd','financeExpenseDate'])$(id).value=now;
  for(const id of ['financeTransactionStart','financeExpenseStart'])$(id).value=now.slice(0,7)+'-01';
@@ -92,7 +98,7 @@
      const total=categories.reduce((sum,k)=>sum+Number(r[k]||0),0);
      return'<tr><td>'+esc(r.date)+'</td><td>'+esc(r.branch)+'</td>'+
       categories.map(k=>'<td>'+peso(r[k])+'</td>').join('')+'<td><strong>'+peso(total)+'</strong></td>'+
-      '<td>'+esc(r.note||'—')+'</td><td><button type="button" class="finance-edit" data-edit-expense="'+esc(r.id)+'">Edit</button></td></tr>';
+      '<td>'+esc(r.note||'—')+'</td><td>'+(canManageExpenses()?'<button type="button" class="finance-edit" data-edit-expense="'+esc(r.id)+'">Edit</button>':'View only')+'</td></tr>';
     }).join('')||'<tr><td colspan="13">No expense records for the selected range.</td></tr>';
     const byId=new Map((data.rows||[]).map(x=>[x.id,x]));
     $('financeExpensesBody').querySelectorAll('[data-edit-expense]').forEach(b=>b.addEventListener('click',()=>{
@@ -150,6 +156,7 @@
  $('financeExpenseApply').onclick=()=>{state.expenses.page=1;load('expenses');};
  $('financeExpenseForm').addEventListener('submit',async e=>{
   e.preventDefault();
+  if(!canManageExpenses()){message('Your Owner has not granted permission to record or edit expenses.',true);return;}
   const btn=$('financeExpenseSave');btn.disabled=true;message('Saving expenses…');
   try{
    const body={date:$('financeExpenseDate').value,branchId:$('financeExpenseBranch').value,
@@ -161,5 +168,5 @@
   }catch(err){message(err.message,true);}
   finally{btn.disabled=false;}
  });
- window.donmacFinance={open(view){if(view==='transactions'||view==='expenses')load(view);}};
+ window.donmacFinance={open(view){applyFinanceAccess();if(view==='transactions'||view==='expenses')load(view);}};
 })();
