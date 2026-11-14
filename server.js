@@ -28,6 +28,7 @@ const branchIsolationPreflight=require('./lib/branch-isolation-preflight');
 const branchIsolationAudit=require('./lib/branch-isolation-audit');
 const legacyCatalogGuard=require('./lib/legacy-catalog-guard');
 const branchCatalogRead=require('./lib/branch-catalog-read');
+const inventoryTransferBranches=require('./lib/inventory-transfer-branches');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 
@@ -681,13 +682,14 @@ async function transfer(user,body){
   // API requests from Pro accounts cannot bypass the disabled button.
   await requireBusinessPlan(user);
   validateMovementItems(body.items);
-  const branch=String(body.branch||'').trim(),receivedBy=String(body.receivedBy||'').trim(),remarks=String(body.remarks||'').trim();
-  if(!branch||!receivedBy)throw Object.assign(new Error('Transfer To and Received By are required.'),{status:400});
-  if(branch.length>150||receivedBy.length>150)throw Object.assign(new Error('Transfer To and Received By must be at most 150 characters.'),{status:400});
+  const remarks=String(body.remarks||'').trim();
   if(remarks.length>500)throw Object.assign(new Error('Remarks must be at most 500 characters.'),{status:400});
   const movementReference='TRF-'+crypto.randomUUID().toUpperCase();
   const movementTime=nowIso();
   return db.transaction(async tx=>{
+    // Match both branches to the signed-in workspace; do not trust labels or IDs from the browser.
+    const selection=await inventoryTransferBranches.validate(tx,user,body);
+    const branch=selection.destinationBranchName,receivedBy=selection.receivingBranchName;
     const details=[];
     for(const x of body.items){
       const lock=tx.engine==='postgres'?' FOR UPDATE':'';
@@ -700,7 +702,7 @@ async function transfer(user,body){
       await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,reference,branch,received_by,remarks,created_by,created_at) VALUES ($1,'TRANSFER',$2,$3,$4,$5,$6,$7,$8,$9)`,[Number(ing.id),-qty,balance,movementReference,branch,receivedBy,remarks||null,user.id,movementTime]);
       details.push(`- ${ing.display_name}: (${qty}) ${String(ing.uom||'').toUpperCase()}`);
     }
-    const activity=`Cashier: ${user.username}\nTransfer To: (${branch})\nReceived By: (${receivedBy})\n\nItems Transferred:\n${details.join('\n')}`;
+    const activity=`Cashier: ${user.username}\nTransfer From: (${selection.sourceBranchName})\nTransfer To: (${branch})\nReceiving Branch: (${receivedBy})\n\nItems Transferred:\n${details.join('\n')}`;
     await logAction(user,activity,'Transferred stock',remarks||null,tx);
     return {ok:true,activity};
   });
@@ -2086,6 +2088,11 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/inventory')return json(res,200,{items:await getInventory()},safeHeaders());
   if(method==='GET'&&p==='/api/inventory/movements')return json(res,200,{items:await listInventoryMovements(url.searchParams.get('limit'),user)},safeHeaders());
   if(method==='POST'&&p==='/api/inventory/replenish')return json(res,201,await replenish(user,await readJson(req)),safeHeaders());
+  if(method==='GET'&&p==='/api/inventory/transfer-branches'){
+    await requireBusinessPlan(user);
+    return json(res,200,await inventoryTransferBranches.list(db,user,url.searchParams.get('sourceBranchId')),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='POST'&&p==='/api/inventory/transfer')return json(res,201,await transfer(user,await readJson(req)),safeHeaders());
   if(method==='GET'&&p==='/api/branches'){
     const branches=await accessibleBranches(user);
