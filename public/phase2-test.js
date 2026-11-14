@@ -88,19 +88,35 @@
    $('message').textContent='Authenticated as '+me.user.username+'. Workspace '+data.workspaceId+' is isolated. All simulated sales are test-only.';
   }catch(e){$('message').textContent=e.message;if(e.status===401)location.replace('/');}
  }
+ let stockRequestId=null;
+ const newStockRequestId=()=>globalThis.crypto?.randomUUID?.();
+ $('stockEntryType').addEventListener('change',()=>{
+   stockRequestId=null;
+   $('stockSourceLabel').value=$('stockEntryType').value==='INITIAL_STOCK'?'Opening Inventory':'External Supplier';
+ });
+ for(const id of ['stockIngredient','stockQuantity','stockSourceLabel']){
+   $(id).addEventListener('change',()=>{stockRequestId=null});
+ }
  const operation=async(form,endpoint,method,payload)=>{
    const submit=form.querySelector('button[type="submit"]');submit.disabled=true;
    $('operationMessage').textContent='Running isolated test operation…';
    try{
      const response=await api(endpoint,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-     $('operationMessage').textContent=response.testOnly?'Test-only operation saved. No real sale or payment was created.':'Test stock updated in the isolated branch.';
+     $('operationMessage').textContent=response.message||
+       (response.testOnly?'Test-only operation saved. No real payment was created.':'Stock updated in the isolated branch.');
+     if(form.id==='stockForm')stockRequestId=null;
      await load();
    }catch(e){$('operationMessage').textContent='Not saved: '+e.message;if(e.status===409)await load();}
    finally{if(form.id==='saleForm')syncSaleCapacity();else submit.disabled=false}
  };
  $('stockForm').addEventListener('submit',e=>{
-   e.preventDefault();operation(e.currentTarget,'/api/phase2-test/stock','POST',{
-     ingredientId:Number($('stockIngredient').value),quantity:Number($('stockQuantity').value)});
+   e.preventDefault();
+   stockRequestId=stockRequestId||newStockRequestId();
+   if(!stockRequestId){$('operationMessage').textContent='Secure stock request ID unavailable. Refresh and retry.';return;}
+   operation(e.currentTarget,'/api/phase2-test/stock','POST',{
+     ingredientId:Number($('stockIngredient').value),quantity:Number($('stockQuantity').value),
+     clientRequestId:stockRequestId,entryType:$('stockEntryType').value,
+     sourceLabel:$('stockSourceLabel').value.trim()});
  });
  $('saleProduct').addEventListener('change',syncSaleCapacity);
  $('saleQuantity').addEventListener('input',syncSaleCapacity);
