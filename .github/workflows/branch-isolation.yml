@@ -13,6 +13,8 @@ on:
       - "lib/marlou-test-stock-reset.js"
       - "lib/branch-incoming-supply.js"
       - "scripts/branch-incoming-supply-test.js"
+      - "scripts/franchise-onboarding-test.js"
+      - "scripts/otp-isolation-test.js"
       - "scripts/*isolation*.js"
       - "scripts/*tenant*.js"
       - "scripts/legacy-catalog-guard-test.js"
@@ -38,3 +40,5 @@ jobs:
       - run: node scripts/marlou-test-stock-reset-test.js
       - run: node scripts/cashier-access-finance-test.js
       - run: node scripts/branch-incoming-supply-test.js
+      - run: node scripts/franchise-onboarding-test.js
+      - run: node scripts/otp-isolation-test.js
