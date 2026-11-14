@@ -23,7 +23,8 @@
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
   <link rel="stylesheet" href="/users-management-refinement-v1569.css?v=1.5.69" />
   <link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02" />
-<link rel="stylesheet" href="/inventory-branch-select-v20261114.css?v=1" />
+<link rel="stylesheet" href="/inventory-branch-select-v20261114.css?v=2" />
+<link rel="stylesheet" href="/incoming-supply-v20261114.css?v=1" />
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -301,7 +302,7 @@
           <section class="card inv-main-card" aria-label="Ingredient inventory">
             <div class="inv-toolbar">
               <button id="inventoryNewIngredient" type="button" class="primary inv-new-button admin-only" aria-label="Add a new ingredient"><span aria-hidden="true">＋</span> New</button>
-              <div class="inv-toolbar-right">
+              <div class="inv-toolbar-right"><label id="inventoryBranchWrap" class="inv-inventory-branch"><span>Inventory Branch</span><select id="inventoryBranch" aria-label="Choose inventory branch"><option value="">Loading branches…</option></select></label>
                 <label class="inv-search-control" aria-label="Search ingredients">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="19" height="19" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 5 5"/></svg>
                   <input id="inventorySearch" type="search" autocomplete="off" placeholder="Search ingredients…" aria-label="Search ingredients"/>
@@ -357,7 +358,11 @@
             </div>
           </section>
           <section class="card inv-stock-operations" aria-label="Inventory stock actions">
-            <div class="inv-operation-cards" role="group" aria-label="Stock operation options">
+            <section id="incomingSupplyPanel" class="inv-incoming-panel" aria-label="Incoming supply requests">
+ <div class="inv-incoming-header"><div><p class="eyebrow">INCOMING SUPPLY</p><h3>Accept, Reject &amp; Receive</h3><p class="muted tiny">Review requested ingredients, their origin, the requester, and expected deliverer. Credit stock only after saving receipt.</p></div><button id="incomingSupplyRefresh" type="button" class="ghost">Refresh Requests</button></div>
+ <div id="incomingSupplyList" class="inv-incoming-list" aria-live="polite"><p class="muted tiny">Loading incoming supply requests…</p></div>
+</section>
+<div class="inv-operation-cards" role="group" aria-label="Stock operation options">
               <article class="inv-operation-card inv-operation-replenish">
                 <div class="inv-operation-main">
                   <div class="inv-operation-top"><svg viewBox="0 0 28 28" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" aria-hidden="true"><path d="m14 2 11 6v12l-11 6L3 20V8L14 2Z"/><path d="m3 8 11 6 11-6M14 14v12M8.5 5 19 11"/></svg>
@@ -439,7 +444,7 @@
       </section>
     </div>
     <p id="replenishBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><label>Delivered By<input id="deliveredBy" maxlength="150" required placeholder="Who will deliver? e.g. Marlou" /></label><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" required placeholder="Product was delivered by Marlou, phone: 09XXXXXXXXX"></textarea></label><button class="primary" type="submit">Replenish Selected Items</button></form>
+  </div><div class="inv-incoming-fields"><label>Receiving Branch<select id="replenishReceivingBranch" required><option value="">Choose receiving branch</option></select></label><label>Supplier / From<input id="supplySourceLabel" maxlength="150" required placeholder="Supplier or source of incoming supplies" /></label><label>Expected Deliverer<input id="replenishExpectedDeliverer" maxlength="150" placeholder="Who is expected to deliver?" /></label></div><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" placeholder="Expected arrival / delivery details"></textarea></label><button class="primary" type="submit">Request Incoming Supplies</button></form>
               <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><div class="inv-batch-editor" data-batch-kind="transfer">
     <div class="inv-batch-heading">
       <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
@@ -471,7 +476,7 @@
       </section>
     </div>
     <p id="transferBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><div class="inv-transfer-branches"><label>Transfer From<select id="transferSourceBranch" required><option value="">Choose source branch</option></select></label><label>Transfer To<select id="transferBranch" required><option value="">Choose another branch</option></select></label><label>Received By (Branch)<select id="receivedBy" required><option value="">Choose receiving branch</option></select></label></div><p id="transferBranchHint" class="muted tiny" role="status">Only active branches owned by this franchise are available. Receiving branch stock is not credited until inventory isolation cutover.</p><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Transfer Selected Items</button></form>
+  </div><div class="inv-transfer-branches"><label>Transfer From<select id="transferSourceBranch" disabled aria-label="Outgoing branch, assigned automatically"><option value="">Current branch</option></select></label><label>Transfer To<select id="transferBranch" required><option value="">Choose another branch</option></select></label><label>Expected Deliverer<input id="transferExpectedDeliverer" maxlength="150" placeholder="Who will deliver?" /></label></div><p id="transferBranchHint" class="muted tiny" role="status">Outgoing branch is fixed to your current inventory branch. Only the owner\u0027s other active branches appear in Transfer To.</p><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Submit Transfer Request</button></form>
             </div>
           </section>
         </div>
@@ -1018,6 +1023,6 @@
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.6.02"></script>
-  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.03"></script>
+  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.04"></script>
 </body>
 </html>
