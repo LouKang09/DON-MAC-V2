@@ -34,6 +34,7 @@ const cashierAccess=require('./lib/cashier-access');
 const marlouTestStockReset=require('./lib/marlou-test-stock-reset');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
+const franchiseTestAccess=require('./lib/franchise-test-access');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -1979,9 +1980,11 @@ async function handleApi(req,res,url){
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
     const owner=await initialOwnerId(u.id);
+    const testAccount=await franchiseTestAccess.account(db,u.id);
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
-      accessPermissions:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
+      testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
+      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='GET'&&p==='/api/auth/username-available'){
@@ -2041,9 +2044,21 @@ async function handleApi(req,res,url){
     if(!access.allowed)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
-    return json(res,200,{user:{...user,accessPermissions:await cashierAccess.forUser(db,user)}},safeHeaders());
+    const testAccount=await franchiseTestAccess.account(db,user.id);
+    return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
+      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
+  // Temporary test owners may authenticate but must never access live legacy data.
+  // This is an exhaustive allowlist before every normal POS, billing, chat or Admin route.
+  const phase2Test=await franchiseTestAccess.account(db,user.id);
+  if(phase2Test){
+    if(method==='GET'&&p==='/api/phase2-test/overview')
+      return json(res,200,await franchiseTestAccess.overview(db,user.id,url.searchParams.get('branchId')),
+        safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,403,{error:'Phase 2 test account: this operation is not activated. Use the isolated test portal. Live checkout and shared Admin APIs are blocked.',
+      code:'PHASE2_TEST_RESTRICTED',testPortal:'/phase2-test.html'},safeHeaders({'Cache-Control':'no-store'}));
+  }
   await legacyCatalogGuard.preventSharedCatalogLeak(db,user,p);
   // POS tenant operations; all data is restricted to the signed-in franchise workspace.
   if(p==='/api/finance/expenses' || p==='/api/finance/transactions'){
@@ -2327,7 +2342,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
