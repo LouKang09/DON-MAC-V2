@@ -28,6 +28,13 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 - [x] **Security denial button — user-confirmed 2026-11-14**: **Test shared-catalog access denial** returned `PASS · shared catalog blocked (403)` for an isolated Phase 2 test account. This verifies denial of `/api/catalog` from the test portal; it does not validate every production endpoint.
 - [ ] **Production checkout code verification (not a request to repeat user testing)**: reconcile the regular cash/GCash/add-on/promo/package checkout and reporting implementations with isolated `branch_*` data. The portal's simulated test sales are stored separately from live POS sales.
 
+## Phase 2 isolated test workspace stock enforcement (2026-11-14)
+- [x] **Implemented**: Test-only simulated checkout now computes the maximum whole-number product quantity from the isolated `branch_recipes` and `branch_ingredients` snapshots. Quantity input auto-clamps to the available stock limit (maximum 25 per test simulation).
+- [x] **Implemented**: When any required ingredient is exhausted or inactive, the simulated-checkout button and quantity input disable; the product selection and warning display show `OUT OF STOCK`, specific ingredient balances, and recipe-required status. Low-stock warnings appear before the final unit.
+- [x] **Implemented**: Successful simulated sale reloads stock and re-applies the disabled state; a 409 race also reloads availability, and the submit button is not inadvertently re-enabled in cleanup.
+- [x] **Automated**: branch-catalog-read test and Phase 2 test checkout quantity regression passed.
+- [ ] **Live account acceptance**: Verify the disabled button/quantity in a real Phase 2 test workspace such as SarahG after the last usable ingredient is sold. This is separate from already-accepted franchise isolation tests.
+
 ## New-product POS stock availability correction (2026-11-14)
 - [x] **Implemented**: Newly added and existing recipe products now provide complete ingredient stock/recipe data to the POS cart planner, including shared ingredient use across multiple product lines and packages. Product cards and plus buttons disable before adding quantities beyond stock; out-of-stock and low-stock warnings show ingredient details.
 - [x] **Server-side quote preflight**: The original Marlou09 workspace checks both legacy checkout stock and its actual branch stock before payment, with transactional checkout deductions unchanged. Final checkout continues to enforce stock safety.
