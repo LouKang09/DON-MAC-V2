@@ -413,7 +413,7 @@
               </article>
             </div>
             <div class="inv-operations-body">
-              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><div class="inv-batch-editor" data-batch-kind="replenish">
+              <form id="replenishForm" class="card form-card hidden"><p class="eyebrow">SUPPLY</p><h3>Replenish</h3><div class="inv-incoming-fields"><label>Receiving Branch<select id="replenishReceivingBranch" required><option value="">Choose receiving branch</option></select></label><label>Supplier / From<input id="supplySourceLabel" maxlength="150" required placeholder="Supplier or source of incoming supplies" /></label><label>Expected Deliverer<input id="replenishExpectedDeliverer" maxlength="150" placeholder="Who is expected to deliver?" /></label></div><div class="inv-batch-editor" data-batch-kind="replenish">
     <div class="inv-batch-heading">
       <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
       <span id="replenishSelectionCount" class="inv-batch-count">0 ingredients</span>
@@ -444,8 +444,8 @@
       </section>
     </div>
     <p id="replenishBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><div class="inv-incoming-fields"><label>Receiving Branch<select id="replenishReceivingBranch" required><option value="">Choose receiving branch</option></select></label><label>Supplier / From<input id="supplySourceLabel" maxlength="150" required placeholder="Supplier or source of incoming supplies" /></label><label>Expected Deliverer<input id="replenishExpectedDeliverer" maxlength="150" placeholder="Who is expected to deliver?" /></label></div><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" placeholder="Expected arrival / delivery details"></textarea></label><button class="primary" type="submit">Request Incoming Supplies</button></form>
-              <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><div class="inv-batch-editor" data-batch-kind="transfer">
+  </div><label>Remarks<textarea id="replenishRemarks" rows="2" maxlength="500" placeholder="Expected arrival / delivery details"></textarea></label><button class="primary" type="submit">Request Incoming Supplies</button></form>
+              <form id="transferForm" class="card form-card hidden"><p class="eyebrow">BRANCH MOVEMENT</p><h3>Transfer</h3><div class="inv-transfer-branches"><label>Transfer From<select id="transferSourceBranch" disabled aria-label="Outgoing branch, assigned automatically"><option value="">Current branch</option></select></label><label>Transfer To<select id="transferBranch" required><option value="">Choose another branch</option></select></label><label>Expected Deliverer<input id="transferExpectedDeliverer" maxlength="150" placeholder="Who will deliver?" /></label></div><p id="transferBranchHint" class="muted tiny" role="status">Outgoing branch is fixed to your current inventory branch. Only the owner\u0027s other active branches appear in Transfer To.</p><div class="inv-batch-editor" data-batch-kind="transfer">
     <div class="inv-batch-heading">
       <div><strong>Choose ingredients</strong><p>Select several or drag them into the editor. Tap <b>Add</b> on mobile.</p></div>
       <span id="transferSelectionCount" class="inv-batch-count">0 ingredients</span>
@@ -476,7 +476,7 @@
       </section>
     </div>
     <p id="transferBatchError" class="inv-batch-error" role="alert" hidden></p>
-  </div><div class="inv-transfer-branches"><label>Transfer From<select id="transferSourceBranch" disabled aria-label="Outgoing branch, assigned automatically"><option value="">Current branch</option></select></label><label>Transfer To<select id="transferBranch" required><option value="">Choose another branch</option></select></label><label>Expected Deliverer<input id="transferExpectedDeliverer" maxlength="150" placeholder="Who will deliver?" /></label></div><p id="transferBranchHint" class="muted tiny" role="status">Outgoing branch is fixed to your current inventory branch. Only the owner\u0027s other active branches appear in Transfer To.</p><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Submit Transfer Request</button></form>
+  </div><label>Remarks<textarea id="transferRemarks" rows="2" maxlength="500" required placeholder="Product will be delivered by 2 PM by Marlou"></textarea></label><button class="primary" type="submit">Submit Transfer Request</button></form>
             </div>
           </section>
         </div>
