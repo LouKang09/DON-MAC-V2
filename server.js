@@ -26,6 +26,7 @@ const archiveComparison = require('./lib/archive-comparison');
 const historicalSales = require('./lib/historical-sales-access');
 const branchIsolationPreflight=require('./lib/branch-isolation-preflight');
 const branchIsolationAudit=require('./lib/branch-isolation-audit');
+const legacyCatalogGuard=require('./lib/legacy-catalog-guard');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 
@@ -2029,6 +2030,7 @@ async function handleApi(req,res,url){
     return json(res,200,{user},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
+  await legacyCatalogGuard.preventSharedCatalogLeak(db,user,p);
   // POS tenant operations; all data is restricted to the signed-in franchise workspace.
   if(p==='/api/finance/expenses' || p==='/api/finance/transactions'){
     const q=new URL(req.url,'http://localhost').searchParams;
