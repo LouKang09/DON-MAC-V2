@@ -1067,7 +1067,7 @@
        destinationBranchId:Number($('transferBranch').value),
        receivedByBranchId:Number($('receivedBy').value),
        remarks:$('transferRemarks').value.trim()}});
-      toast('Transfer recorded for '+$('transferBranch').selectedOptions[0].textContent+'.');
+      toast('Outgoing transfer recorded. Destination stock credit will follow branch inventory cutover.');
       batchClear('transfer');await loadInventory();await loadCatalog();
     }catch(err){batchFail('transfer',err.message);}});});
 
@@ -1738,7 +1738,7 @@
       receiver.innerHTML='<option value="">Choose receiving branch</option>'+
         targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
       if(targets.length===1){to.value=String(targets[0].id);receiver.value=String(targets[0].id);}
-      if(hint)hint.textContent=targets.length?'Only other active branches belonging to this owner are shown.':
+      if(hint)hint.textContent=targets.length?'Only this owner’s other active branches are shown. Until Phase 2 inventory cutover, transfers record an outgoing legacy movement; the receiving branch is not automatically credited.':
         'No other active branch is available. Activate or add another branch to transfer.';
     }catch(err){
       if(request!==transferBranchRequest)return;

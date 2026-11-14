@@ -6,6 +6,8 @@ on:
       - "server.js"
       - "lib/branch-*.js"
       - "lib/legacy-catalog-guard.js"
+      - "lib/inventory-transfer-branches.js"
+      - "lib/marlou-test-stock-reset.js"
       - "scripts/*isolation*.js"
       - "scripts/*tenant*.js"
       - "scripts/legacy-catalog-guard-test.js"
@@ -27,3 +29,5 @@ jobs:
       - run: node scripts/branch-isolation-read-scope-test.js
       - run: node scripts/branch-catalog-read-test.js
       - run: node scripts/legacy-catalog-guard-test.js
+      - run: node scripts/inventory-transfer-branches-test.js
+      - run: node scripts/marlou-test-stock-reset-test.js
