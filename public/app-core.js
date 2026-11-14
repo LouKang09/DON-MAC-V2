@@ -1039,6 +1039,68 @@
       '<span>Page '+auditUI.page+' of '+pages+'</span>'+
       '<button type="button" data-audit-page="'+(auditUI.page+1)+'" '+(auditUI.page===pages?'disabled':'')+' aria-label="Next audit page">›</button>';
   }
+
+  let incomingRequestSequence=0;
+  async function loadIncomingSupplies(){
+    const list=$('incomingSupplyList');
+    if(!list||!state.user)return;
+    const branchId=selectedInventoryBranch(),seq=++incomingRequestSequence;
+    if(!branchId){list.innerHTML='<p class="inv-incoming-empty">Choose an inventory branch.</p>';return;}
+    try{
+      const response=await api('/api/inventory/incoming?branchId='+encodeURIComponent(branchId));
+      if(seq!==incomingRequestSequence||selectedInventoryBranch()!==branchId)return;
+      const requests=response.requests||[];
+      if(!requests.length){
+        list.innerHTML='<p class="inv-incoming-empty">No incoming or outgoing supply requests for this branch yet.</p>';
+        return;
+      }
+      list.innerHTML=requests.map(x=>{
+        const title=(x.kind==='TRANSFER'?'Branch Transfer':'Supplier Replenishment')+' #'+Number(x.id);
+        const names=(x.items||[]).map(i=>'<div><span>'+esc(i.name)+'</span><strong>'+num(i.qty)+' '+esc(i.uom)+'</strong></div>').join('');
+        let actions='';
+        if(x.canRespond)actions='<div class="inv-incoming-actions">'+
+          '<button type="button" class="primary" data-incoming-action="accept" data-incoming-id="'+Number(x.id)+'">Accept</button>'+
+          '<button type="button" class="inv-reject" data-incoming-action="reject" data-incoming-id="'+Number(x.id)+'">Reject</button></div>';
+        if(x.canReceive)actions='<div class="inv-incoming-actions"><label>Delivered By (required)'+
+          '<input data-incoming-delivered="'+Number(x.id)+'" maxlength="150" placeholder="Who actually delivered?"></label>'+
+          '<button class="primary" type="button" data-incoming-action="receive" data-incoming-id="'+Number(x.id)+'">Save Received Stock</button></div>';
+        return '<article class="inv-incoming-entry"><div class="inv-incoming-title"><span>'+esc(title)+'</span><span class="inv-incoming-status">'+esc(x.status)+'</span></div>'+
+          '<p><b>'+esc(x.inbound?'Incoming from':'Outgoing to')+':</b> '+esc(x.inbound?x.source:x.destinationBranchName)+'</p>'+
+          '<p><b>Requested by:</b> '+esc(x.requestedBy||'Unknown')+'</p>'+
+          '<p><b>Expected deliverer:</b> '+esc(x.expectedDeliverer||'Not specified')+'</p>'+
+          '<p><b>Requested:</b> '+esc(x.requestedAt?formatDateTime(x.requestedAt):'—')+'</p>'+
+          '<div class="inv-incoming-items" aria-label="Requested ingredient quantities">'+names+'</div>'+
+          (x.remarks?'<p><b>Notes:</b> '+esc(x.remarks)+'</p>':'')+
+          (x.status==='ACCEPTED'&&!x.inbound?'<p>Accepted; waiting for destination to confirm receipt.</p>':'')+
+          actions+'</article>';
+      }).join('');
+    }catch(err){
+      if(seq!==incomingRequestSequence)return;
+      list.innerHTML='<p class="inv-incoming-empty">Unable to load incoming requests: '+esc(err.message)+'</p>';
+    }
+  }
+  $('incomingSupplyRefresh')?.addEventListener('click',()=>loadIncomingSupplies());
+  $('incomingSupplyList')?.addEventListener('click',async event=>{
+    const button=event.target.closest('button[data-incoming-action]');
+    if(!button||button.disabled)return;
+    const requestId=Number(button.dataset.incomingId),action=button.dataset.incomingAction;
+    if(!requestId||!['accept','reject','receive'].includes(action))return;
+    if(action==='reject'&&!confirm('Reject incoming supply #'+requestId+'? No stock will be changed.'))return;
+    const deliveredBy=action==='receive'?
+      $('incomingSupplyList').querySelector('input[data-incoming-delivered="'+requestId+'"]')?.value.trim():'';
+    if(action==='receive'&&!deliveredBy){toast('Enter who delivered the incoming supplies.');return;}
+    await withActionLock('incoming:'+requestId,async()=>{
+      button.disabled=true;
+      try{
+        const result=await api('/api/inventory/incoming/'+requestId+'/'+action,{
+          method:'POST',body:action==='receive'?{deliveredBy}:{}
+        });
+        toast(result.message||'Incoming supply #'+requestId+' updated: '+result.status);
+        await loadInventory();
+      }catch(err){toast(err.message);button.disabled=false;}
+    });
+  });
+
   async function loadMovements(){
     try{
       const d=await api('/api/inventory/movements?limit=1000&branchId='+encodeURIComponent(selectedInventoryBranch()));
