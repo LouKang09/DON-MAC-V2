@@ -472,7 +472,12 @@ async function getCatalog(conn=db,workspaceId=0) {
     const available=recipeConfigured&&issues.length===0;
     const availabilityStatus=!recipeConfigured?'recipe_required':issues.length?'insufficient_stock':'available';
     const availabilityMessage=!recipeConfigured?'Recipe required: add at least one ingredient before selling this product.':issues.length?'One or more recipe ingredients are unavailable or below the required quantity.':warnings.length?'Available, but one or more ingredients are low in stock.':'Available';
-    return {id:Number(p.id),sku:p.sku,name:p.name,category:p.category,price:Number(p.price),imageData:p.image_data||null,available,recipeConfigured,availabilityStatus,availabilityMessage,availabilityDetails:issues,stockWarnings:warnings};
+    // Full active recipe snapshot lets the cashier UI reject excess combined
+    // cart quantities before payment. Never expose a recipe from another workspace.
+    const recipeStock=rec.map(r=>({ingredientId:Number(r.ingredient_id),code:r.code,name:r.display_name,
+      uom:String(r.uom||'').toUpperCase(),required:Number(r.quantity_required),
+      current:Number(r.stock_qty),threshold:Number(r.low_stock_threshold||0),active:bool(r.active)}));
+    return {id:Number(p.id),sku:p.sku,name:p.name,category:p.category,price:Number(p.price),imageData:p.image_data||null,available,recipeConfigured,availabilityStatus,availabilityMessage,availabilityDetails:issues,stockWarnings:warnings,recipeStock};
   });
   const itemsByPackage=new Map();
   for(const r of packItemsR.rows){const id=Number(r.package_id);if(!itemsByPackage.has(id))itemsByPackage.set(id,[]);itemsByPackage.get(id).push({productId:Number(r.product_id),name:r.product_name,qty:Number(r.quantity),active:bool(r.product_active)});}
@@ -495,7 +500,9 @@ async function getCatalog(conn=db,workspaceId=0) {
     const available=sellable&&activeComponents&&ingredientIssues.length===0;
     const availabilityStatus=!contents.length?'composition_required':componentIssues.some(x=>x.status==='recipe_required')?'recipe_required':!activeComponents?'component_unavailable':ingredientIssues.length?'insufficient_stock':'available';
     const availabilityMessage=!contents.length?'Package composition required.':componentIssues.some(x=>x.status==='recipe_required')?'A package component needs ingredients/recipe setup.':!activeComponents?'A package component is unavailable.':ingredientIssues.length?'One or more package ingredients are unavailable or below the required quantity.':warnings.length?'Available, but one or more ingredients are low in stock.':'Available';
-    return {id:Number(p.id),name:p.name,price:Number(p.price),itemCount:contents.length,sellable,available,contents,availabilityStatus,availabilityMessage,availabilityDetails:[...componentIssues,...ingredientIssues],stockWarnings:warnings};
+    return {id:Number(p.id),name:p.name,price:Number(p.price),itemCount:contents.length,sellable,available,contents,availabilityStatus,availabilityMessage,availabilityDetails:[...componentIssues,...ingredientIssues],stockWarnings:warnings,
+      recipeStock:[...req.values()].map(x=>({ingredientId:x.ingredientId,code:x.code,name:x.name,uom:x.uom,
+        required:x.need,current:x.stock,threshold:x.threshold,active:x.active}))};
   });
   return {
     products,
