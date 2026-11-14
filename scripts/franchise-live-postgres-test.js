@@ -1,0 +1,185 @@
+'use strict';
+const assert=require('node:assert/strict');
+const crypto=require('node:crypto');
+const {Pool}=require('pg');
+const isolatedSchema=require('../lib/branch-isolated-schema');
+const liveScope=require('../lib/franchise-live-scope');
+const liveCatalog=require('../lib/franchise-live-catalog');
+const liveSales=require('../lib/franchise-live-sales');
+const expenses=require('../lib/franchise-live-expenses');
+const pool=new Pool({connectionString:process.env.PG_TEST_URL,max:8});
+const schema='franchise_live_'+crypto.randomBytes(5).toString('hex');
+async function client(){
+ const conn=await pool.connect();
+ try{await conn.query('SET search_path TO '+schema);return conn}
+ catch(e){conn.release();throw e}
+}
+const db={engine:'postgres',
+ async query(sql,params=[]){const c=await client();try{return await c.query(sql,params)}finally{c.release()}},
+ async exec(sql){const c=await client();try{return await c.query(sql)}finally{c.release()}},
+ async transaction(work){
+  const c=await client();
+  try{
+   await c.query('BEGIN');
+   await c.query('SET LOCAL search_path TO '+schema);
+   const tx={engine:'postgres',query:(sql,p=[])=>c.query(sql,p),exec:sql=>c.query(sql)};
+   const result=await work(tx);await c.query('COMMIT');return result;
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});throw e}
+  finally{c.release()}
+ }};
+const ownerA={id:1,username:'ownerA',role:'Admin'},ownerB={id:2,username:'ownerB',role:'Admin'},
+ cashierA={id:3,username:'cashierA',role:'User'},cashierB={id:4,username:'cashierB',role:'User'};
+let productA,productB,ingredientA,ingredientB,ctxA,ctxB,ctxCashierA,ctxCashierB;
+async function setup(){
+ await pool.query('CREATE SCHEMA '+schema);
+ await db.exec('CREATE TABLE users(id BIGINT PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
+  'password_hash TEXT,role TEXT NOT NULL,active BOOLEAN NOT NULL,branch_id BIGINT,'+
+  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT)');
+ await db.exec('CREATE TABLE branches(id BIGINT PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL)');
+ await db.exec('CREATE TABLE chat_workspaces(id BIGINT PRIMARY KEY,owner_user_id BIGINT NOT NULL REFERENCES users(id))');
+ await db.exec('CREATE TABLE chat_memberships(user_id BIGINT REFERENCES users(id),workspace_id BIGINT REFERENCES chat_workspaces(id),PRIMARY KEY(user_id,workspace_id))');
+ await db.exec('CREATE TABLE chat_workspace_branches(workspace_id BIGINT REFERENCES chat_workspaces(id),branch_id BIGINT REFERENCES branches(id),PRIMARY KEY(workspace_id,branch_id))');
+ await db.exec('CREATE TABLE franchise_test_accounts(request_id TEXT PRIMARY KEY,user_id BIGINT,workspace_id BIGINT,branch_id BIGINT,created_at TEXT,created_by TEXT)');
+ await db.exec('CREATE TABLE platform_account_plans(workspace_id BIGINT PRIMARY KEY,status TEXT,plan TEXT)');
+ await db.exec('CREATE TABLE branch_catalog_provisioning(workspace_id BIGINT NOT NULL,branch_id BIGINT NOT NULL,PRIMARY KEY(workspace_id,branch_id))');
+ await db.query("INSERT INTO users(id,username,login_username,role,active,branch_id,full_name) VALUES"+
+  "(1,'ownerA','ownerA','Admin',TRUE,NULL,'A Owner'),"+
+  "(2,'ownerB','ownerB','Admin',TRUE,NULL,'B Owner'),"+
+  "(3,'cashierA','cashierA','User',TRUE,101,'A Cashier'),"+
+  "(4,'cashierB','cashierB','User',TRUE,201,'B Cashier')");
+ await db.query("INSERT INTO branches VALUES(101,'Cebu A',TRUE),(201,'Cebu B',TRUE)");
+ await db.query('INSERT INTO chat_workspaces VALUES(10,1),(20,2)');
+ await db.query('INSERT INTO chat_memberships VALUES(1,10),(2,20),(3,10),(4,20)');
+ await db.query('INSERT INTO chat_workspace_branches VALUES(10,101),(20,201)');
+ await db.query('INSERT INTO branch_catalog_provisioning VALUES(10,101),(20,201)');
+ await db.query("INSERT INTO franchise_test_accounts VALUES('11111111-1111-4111-8111-111111111111',1,10,101,now(),'OTP'),"+
+  "('22222222-2222-4222-8222-222222222222',2,20,201,now(),'OTP')");
+ await db.query("INSERT INTO platform_account_plans VALUES(10,'UNPAID','BUSINESS'),(20,'PAID','PRO')");
+ for(const stmt of isolatedSchema.statements('postgres'))await db.exec(stmt);
+ await liveSales.migrate(db);await expenses.migrate(db);
+ await db.query("INSERT INTO branch_categories(workspace_id,branch_id,name,active) VALUES(10,101,'Coffee',TRUE),(20,201,'Coffee',TRUE)");
+ // Both franchises deliberately choose identical names; the rows must stay separate.
+ const product=await db.query("INSERT INTO branch_products(workspace_id,branch_id,sku,name,category,price,active) VALUES"+
+  "(10,101,'A-LATTE','test1','Coffee',99,TRUE),(20,201,'B-LATTE','test1','Coffee',77,TRUE) RETURNING id,workspace_id");
+ productA=Number(product.rows.find(x=>Number(x.workspace_id)===10).id);
+ productB=Number(product.rows.find(x=>Number(x.workspace_id)===20).id);
+ const ingredients=await db.query("INSERT INTO branch_ingredients(workspace_id,branch_id,code,display_name,uom,stock_qty,low_stock_threshold,unit_cost,active) VALUES"+
+  "(10,101,'A-BEANS','Beans','KG',0.25,0.1,20,TRUE),"+
+  "(20,201,'B-BEANS','Beans','KG',0.25,0.1,25,TRUE) RETURNING id,workspace_id");
+ ingredientA=Number(ingredients.rows.find(x=>Number(x.workspace_id)===10).id);
+ ingredientB=Number(ingredients.rows.find(x=>Number(x.workspace_id)===20).id);
+ await db.query('INSERT INTO branch_recipes(workspace_id,branch_id,product_id,ingredient_id,quantity_required,cost_contribution) '+
+  'VALUES(10,101,$1,$2,0.1,2),(20,201,$3,$4,0.1,2.5)',
+  [productA,ingredientA,productB,ingredientB]);
+}
+async function stock(ws,branch,iid){
+ const r=await db.query('SELECT stock_qty FROM branch_ingredients WHERE workspace_id=$1 AND branch_id=$2 AND id=$3',
+  [ws,branch,iid]);return Number(r.rows[0]?.stock_qty);
+}
+const uuid=()=>crypto.randomUUID();
+async function checkout(cashier,idempotencyKey,quantity=1){
+ return liveSales.sale(db,cashier,{clientRequestId:idempotencyKey,branchId:cashier.branchId,
+  items:[{kind:'product',id:cashier.workspaceId===10?productA:productB,qty:quantity}],
+  paymentMode:'Cash',tender:300,orderType:'Take Away',customerName:'Live test'});
+}
+async function run(){
+ await setup();
+ assert.equal((await liveScope.candidate(db,1)).liveEnabled,false,
+  'Unpaid application must not enter production POS');
+ assert.equal(await liveScope.active(db,ownerA),null);
+ await db.query("UPDATE platform_account_plans SET status='PAID' WHERE workspace_id=10");
+ ctxA=await liveScope.active(db,ownerA);ctxB=await liveScope.active(db,ownerB);
+ ctxCashierA=await liveScope.active(db,cashierA);ctxCashierB=await liveScope.active(db,cashierB);
+ assert.equal(ctxA.workspaceId,10);assert.equal(ctxB.workspaceId,20);
+ assert.equal(ctxCashierA.branchId,101);assert.equal(ctxCashierB.branchId,201);
+ await assert.rejects(liveScope.branch(db,ctxCashierA,201),{status:403});
+ await assert.rejects(liveScope.branch(db,ctxA,201),{status:403});
+ await assert.rejects(liveScope.requireCashier(ctxA),{status:403});
+ let c=await liveCatalog.catalog(db,ctxCashierA,101);
+ assert.equal(c.products.length,1);assert.equal(c.products[0].name,'test1');
+ assert.equal(c.products[0].id,productA);
+ assert.equal(c.products[0].recipeStock[0].current,.25);
+ assert.equal(c.liveCheckoutUsesLegacyTables,false);
+ const other=await liveCatalog.catalog(db,ctxCashierB,201);
+ assert.equal(other.products.length,1);assert.equal(other.products[0].id,productB);
+ assert.notEqual(other.products[0].price,c.products[0].price);
+ const changed=await liveCatalog.saveProduct(db,ctxA,101,productA,{name:'test1',category:'Coffee',price:109,active:true});
+ assert.equal(changed.id,productA);
+ c=await liveCatalog.catalog(db,ctxCashierA,101);
+ assert.equal(c.products[0].price,109);
+ assert.equal((await liveCatalog.catalog(db,ctxCashierB,201)).products[0].price,77);
+ await assert.rejects(liveCatalog.saveProduct(db,ctxA,201,productB,{name:'Hacked',category:'Coffee',price:1}),{status:403});
+ const added=await liveCatalog.saveProduct(db,ctxA,101,0,{name:'private new product',category:'Coffee',price:10});
+ assert(added.id>0);
+ assert.equal((await liveCatalog.catalog(db,ctxB,201)).products.length,1,
+  'New product never appears in another franchise');
+ const newIng=await liveCatalog.saveIngredient(db,ctxA,101,0,{name:'Private Syrup',uom:'ML',lowStockThreshold:1,unitCost:0.5});
+ assert(newIng.id>0);
+ await liveCatalog.saveRecipe(db,ctxA,101,added.id,{items:[{ingredientId:newIng.id,quantity:1,cost:0.5}]});
+ const recipe=await liveCatalog.recipe(db,ctxA,101,added.id);
+ assert.equal(recipe.items[0].ingredientId,newIng.id);
+ await assert.rejects(liveCatalog.saveRecipe(db,ctxA,101,added.id,{items:[{ingredientId:ingredientB,quantity:1}]}),{status:403});
+ assert.equal((await liveCatalog.catalog(db,ctxA,101)).products.find(x=>x.id===added.id).available,false,
+  'New product with zero stock is automatically disabled');
+ const q=await liveSales.quote(db,ctxCashierA,{branchId:101,items:[{kind:'product',id:productA,qty:2}]});
+ assert.equal(q.gross,218);assert.equal(q.actual,218);
+ await assert.rejects(liveSales.quote(db,ctxCashierA,{branchId:101,
+  items:[{kind:'product',id:productB,qty:1}]}),{status:409});
+ const first=await checkout(ctxCashierA,uuid(),1);
+ assert.equal(first.ok,true);assert.match(first.reference,/^BR-[A-F0-9]{18}$/);
+ assert.equal(await stock(10,101,ingredientA),.15);
+ assert.equal(await stock(20,201,ingredientB),.25);
+ const rekey=uuid();const second=await checkout(ctxCashierA,rekey,1);
+ assert.equal(await stock(10,101,ingredientA),.05);
+ const replay=await checkout(ctxCashierA,rekey,1);
+ assert.equal(replay.idempotent,true);
+ assert.equal(replay.reference,second.reference);
+ assert.equal(await stock(10,101,ingredientA),.05);
+ await assert.rejects(checkout(ctxCashierA,rekey,2),{status:409});
+ const salesA=await liveSales.transactions(db,ctxA,{branchId:101}),salesB=await liveSales.transactions(db,ctxB,{branchId:201});
+ assert.equal(salesA.total,2);assert.equal(salesB.total,0);
+ const detail=await liveSales.detail(db,ctxCashierA,first.reference);
+ assert.equal(detail.items[0].name,'test1');
+ await assert.rejects(liveSales.detail(db,ctxCashierB,first.reference),{status:404});
+ const reportA=await liveSales.report(db,ctxA,{branchId:101,range:'week'});
+ const reportB=await liveSales.report(db,ctxB,{branchId:201,range:'week'});
+ assert.equal(reportA.transactionCount,2);
+ assert.equal(reportB.transactionCount,0);
+ await expenses.add(db,ctxA,{branchId:101,category:'Supplies',amount:12,notes:'Owner A'});
+ assert.equal((await expenses.list(db,ctxA,101)).rows.length,1);
+ assert.equal((await expenses.list(db,ctxB,201)).rows.length,0);
+ // Remaining .05 units: two concurrent 0.1 requests cannot both succeed.
+ // Replenish to 0.15 units and test atomic update lock in two DB transactions.
+ await db.query('UPDATE branch_ingredients SET stock_qty=0.15 WHERE id=$1 AND workspace_id=10 AND branch_id=101',[ingredientA]);
+ const attempts=await Promise.allSettled([checkout(ctxCashierA,uuid()),checkout(ctxCashierA,uuid())]);
+ assert.equal(attempts.filter(x=>x.status==='fulfilled').length,1);
+ assert.equal(attempts.filter(x=>x.status==='rejected'&&x.reason.status===409).length,1);
+ assert.equal(await stock(10,101,ingredientA),.05);
+ const afterCount=await liveSales.transactions(db,ctxA,{branchId:101});
+ assert.equal(afterCount.total,3);
+ const move=(await db.query("SELECT COUNT(*)::integer AS count FROM branch_inventory_movements WHERE workspace_id=10 AND branch_id=101 AND movement_type='LIVE_SALE'")).rows[0];
+ assert.equal(move.count,3);
+ const voidResult=await liveSales.voidSale(db,ctxA,second.reference,{restoreStock:true});
+ assert.equal(voidResult.stockRestored,true);
+ assert.equal(await stock(10,101,ingredientA),.15);
+ assert.equal(await stock(20,201,ingredientB),.25);
+ assert.equal((await liveSales.report(db,ctxA,{branchId:101,range:'week'})).transactionCount,2);
+ await assert.rejects(liveSales.voidSale(db,ctxB,first.reference,{restoreStock:true}),{status:404});
+ const employee=await liveScope.createCashier(db,ctxA,{username:'newbranchcashier',
+  password:'NewPassword123',fullName:'Another Cashier',branchId:101});
+ assert.equal(employee.branchId,101);
+ assert.equal((await liveScope.candidate(db,employee.id)).workspaceId,10);
+ assert.equal((await liveScope.active(db,{id:employee.id,role:'User'})).cashier,true);
+ await assert.rejects(liveScope.createCashier(db,ctxA,{username:'otherbranchcashier',
+  password:'NewPassword123',fullName:'Foreign',branchId:201}),{status:403});
+ const otherSale=await checkout(ctxCashierB,uuid());
+ assert.equal(otherSale.ok,true);
+ assert.equal(await stock(20,201,ingredientB),.15);
+ assert.equal((await liveSales.transactions(db,ctxB,{branchId:201})).total,1);
+ assert.equal((await liveSales.transactions(db,ctxA,{branchId:101})).total,3);
+ console.log('PASS PostgreSQL: actual branch-isolated sale, price/recipe edits, cashier account, concurrent oversell protection, refunds and per-franchise reports.');
+}
+run().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{
+ await pool.query('DROP SCHEMA IF EXISTS '+schema+' CASCADE').catch(()=>{});
+ await pool.end();
+});
