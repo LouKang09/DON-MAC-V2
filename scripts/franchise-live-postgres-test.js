@@ -47,6 +47,7 @@ async function setup(){
   "(2,'ownerB','ownerB','Admin',TRUE,NULL,'B Owner'),"+
   "(3,'cashierA','cashierA','User',TRUE,101,'A Cashier'),"+
   "(4,'cashierB','cashierB','User',TRUE,201,'B Cashier')");
+ await db.query("SELECT setval(pg_get_serial_sequence('users','id'),(SELECT MAX(id) FROM users))");
  await db.query("INSERT INTO branches VALUES(101,'Cebu A',TRUE),(201,'Cebu B',TRUE)");
  await db.query('INSERT INTO chat_workspaces VALUES(10,1),(20,2)');
  await db.query('INSERT INTO chat_memberships VALUES(1,10),(2,20),(3,10),(4,20)');
