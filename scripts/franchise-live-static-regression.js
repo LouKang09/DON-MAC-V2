@@ -40,7 +40,7 @@ assert(!/\bFROM sales\b|\bFROM products\b|\bFROM ingredients\b|\bINSERT INTO sal
 assert(!/\bFROM products\b|\bUPDATE products\b|\bFROM ingredients\b/.test(catalog));
 assert.match(router,/SCOPED_OPERATION_UNAVAILABLE/);
 assert.match(router,/franchise-live-sales/);
-assert.match(admin,/Live POS enabled/);
+assert.match(admin,/Live POS active/);
 assert.match(html,/id="checkoutButton"/);
 assert.match(html,/id="cashierForm"/);
 assert.match(html,/id="recipeRows"/);

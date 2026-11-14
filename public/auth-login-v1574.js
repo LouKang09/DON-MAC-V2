@@ -107,6 +107,30 @@
  }
  regUsername.addEventListener('blur',usernameAvailable);
  regUsername.addEventListener('input',()=>{++checkSeq;available=false;message('regUsernameStatus','Check username availability before submitting.');});
+ const signupPlanDetails={
+  PRO:{title:'Pro Plan',badge:'UP TO 3 BRANCHES',
+   summary:'Ideal for smaller businesses starting with one branch and growing to three.',
+   features:['1 included branch','Up to 2 additional branches','₱799 per extra branch at renewal','Replenishment and POS reporting']},
+  BUSINESS:{title:'Business Plan',badge:'MULTI-BRANCH',
+   summary:'For businesses managing multiple branches, with replenishment and branch-to-branch transfers.',
+   features:['1 included branch','No Pro three-branch limit','₱899 per extra branch at renewal','Branch transfer management']}
+ };
+ const requestedPlan=$('regRequestedPlan');
+ function updateSignupPlanPreview(){
+  const config=signupPlanDetails[requestedPlan.value];
+  $('regPlanTitle').textContent=config?.title||'Select a plan to compare benefits';
+  $('regPlanTag').textContent=config?.badge||'PLAN OPTIONS';
+  $('regPlanSummary').textContent=config?.summary||
+    'Choose a subscription above to view the included branches, additional branch fees, and management features.';
+  $('regPlanFeatures').replaceChildren();
+  if(config)for(const label of config.features){
+   const item=document.createElement('span');item.className='auth-plan-feature';item.textContent=label;
+   $('regPlanFeatures').appendChild(item);
+  }
+  $('regPlanDescription').classList.toggle('selected',!!config);
+ }
+ requestedPlan.addEventListener('change',updateSignupPlanPreview);
+ updateSignupPlanPreview();
  $('authRegisterForm').addEventListener('submit',async event=>{
   event.preventDefault();
   const btn=$('regSubmit');if(btn.disabled)return;

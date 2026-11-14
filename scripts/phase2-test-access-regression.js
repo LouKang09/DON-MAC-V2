@@ -49,7 +49,7 @@ const read=p=>fs.readFileSync(p,'utf8');
  assert.match(source,/SELECT id FROM users WHERE LOWER\(username\)/);
  assert.match(source,/crypto\.randomBytes\(18\)/);
  assert.match(platform,/franchise-requests.*test-activate/);
- assert.match(admin,/Create Phase 2 Test Account/);
+ assert.match(admin,/Create Account/);
  assert.match(html,/phase2TestLoginDialog/);
  assert.match(html,/Copy Credentials/);
  assert.match(app,/location\.assign\('\/phase2-test\.html'\)/);

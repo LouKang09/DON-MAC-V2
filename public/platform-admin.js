@@ -75,69 +75,61 @@
    $('metricBranches').textContent=number(summary.branches);
    $('metricUsers').textContent=number(summary.users);
    $('metricActive').textContent=number(summary.activeOwners);
-   render();await Promise.all([reloadBilling(),reloadFranchiseRequests(),reloadFranchiseActivationReadiness()]);
+   render();await Promise.all([reloadBilling(),reloadFranchiseRequests()]);
   }catch(err){
    error('tableMessage',err.message);
    if(err.status===401)showLogin('Please sign in again.');
   }finally{button.disabled=false}
  }
- async function reloadFranchiseActivationReadiness(){
-   const el=$('franchiseActivationReadiness');if(!el)return;
-   try{
-     const result=await api('franchise-activation-readiness');
-     const blocked=Number(result.missingCount||0);
-     el.classList.toggle('is-ready',!!result.activationEnabled);
-     el.innerHTML='<strong>Direct activation: '+(result.activationEnabled?'Enabled':'Locked — isolation in progress')+'</strong>'+
-       '<p>'+esc(result.message||'')+'</p>'+
-       (blocked?'<p>'+blocked+' of '+Number(result.checkedTables||0)+' live data tables still require workspace scoping.</p>':'')+
-       '<small>Verified, prepared applications can create restricted test logins. Full-production activation remains locked until tenant isolation passes.</small>';
-   }catch(e){el.textContent='Activation readiness could not be verified. Direct activation remains locked.';}
- }
  function renderFranchiseRequests(){
    const rows=franchiseSignupRequests;
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
-     const verified=!!x.emailVerifiedAt,prepared=!!x.stageStatus,rejected=x.status==='REJECTED',
-       testEnabled=Number(x.testUserId)>0;
-     const staging=testEnabled?badge('Starter catalog ready','active')+'<small class="application-access-note">Seeded into an independent zero-stock branch.</small>':rejected?'—':prepared?
-       badge('Prepared','active')+'<small class="application-access-note">Independent starter catalog; zero starting inventory.</small>':
-       !verified?'Awaiting email verification':
-       '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
-     const reviewLabel=testEnabled&&x.status==='PENDING'?'Self-registered · pending review':x.status==='CONTACTED'?'Contacted · reviewed':x.status;
-     const paid=String(x.assignedStatus||'')==='PAID';
-     const access=testEnabled?
-       badge(!x.testActive?'Login disabled':paid?'Live POS enabled':'Isolated onboarding enabled',
-         x.testActive?'active':'inactive')+
-       '<small class="application-access-note">Workspace '+esc(x.testWorkspaceId)+
-       (paid?' · Production branch-scoped checkout and reporting activated. Legacy global APIs remain blocked.':
-         ' · Opening stock and simulated checkout available until Admin Control marks the subscription Paid.')+
-       '</small>':
-       rejected?badge('Not eligible','inactive'):
-       prepared?
-       badge('Activation pending','unknown')+'<small class="application-access-note">You can now create a controlled Phase 2 test login. Full production activation remains locked.</small>':
-       !verified?
-       badge('Not activated','unknown')+'<small class="application-access-note">Applicant must verify email first.</small>':
-       badge('Not activated','unknown')+'<small class="application-access-note">Prepare starter catalog, then create test account.</small>';
+     const verified=!!x.emailVerifiedAt,created=Number(x.testUserId)>0,
+       rejected=x.status==='REJECTED',prepared=!!x.stageStatus;
+     const paid=x.assignedStatus==='PAID',held=x.assignedStatus==='ON_HOLD';
+     const ready=created&&x.testActive&&paid;
+     const catalogStatus=created?
+       badge('Catalog initialized','active')+'<small class="application-access-note">Opening inventory starts at zero and can be replenished directly.</small>':
+       prepared?badge('Starter catalog prepared','active'):
+       verified?'Pending account creation':'Awaiting verification';
+     const accountStatus=created?
+       badge(!x.testActive?'Login disabled':paid?'Live POS active':held?'On Hold':'Awaiting payment',
+        ready?'active':(!x.testActive||held)?'inactive':'unknown')+
+       '<small class="application-access-note">'+
+       (ready?'Own live checkout, inventory, sales and reports enabled.':
+        held?'Admin Control has placed this account on hold.':
+        !x.testActive?'Account login is disabled.':
+        'Assign and mark the subscription Paid to activate real checkout.')+'</small>':
+       rejected?badge('Declined','inactive'):
+       verified?badge('Not yet created','unknown'):
+       badge('Email verification required','unknown');
      const requested=String(x.requestedPlan||'').toUpperCase();
      const assigned=String(x.assignedPlan||'').toUpperCase();
-     const validRequested=['PRO','BUSINESS'].includes(requested);
-     const planDisplay=(validRequested?badge('Requested: '+(requested==='PRO'?'Pro':'Business'),'unknown'):
-       '<span class="application-plan-empty">No plan preference recorded</span>')+
-       (assigned?'<small class="application-access-note">Assigned: '+esc(assigned==='PRO'?'Pro':'Business')+' · '+esc(x.assignedStatus||'NOT CONFIGURED')+'</small>':
-       '<small class="application-access-note">Awaiting Admin Control assignment</small>')+
-       (testEnabled?'<button type="button" class="link-btn application-plan-button" data-request-plan="'+esc(x.id)+'">'+(assigned?'Manage Plan':'Assign Plan')+'</button>':'');
-     const actions=rejected?'—':
-       (testEnabled?'Self-registered':x.status==='CONTACTED'?'Reviewed':
-       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted (review only)</button>')+
-       (testEnabled?
-         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+'" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable login':'Re-enable login')+'</button>':
-         prepared&&verified&&x.status==='CONTACTED'?
-         ' <button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Phase 2 Test Account</button>':'')+
-       (testEnabled?'':' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>');
+     const chosen=['PRO','BUSINESS'].includes(requested);
+     const planDisplay=(chosen?badge('Requested: '+(requested==='PRO'?'Pro':'Business'),'unknown'):
+       '<span class="application-plan-empty">Plan not selected</span>')+
+       (assigned?'<small class="application-access-note">Assigned: '+esc(assigned==='PRO'?'Pro':'Business')+
+        ' · '+esc(x.assignedStatus||'UNPAID')+'</small>':
+        '<small class="application-access-note">Awaiting plan assignment</small>')+
+       (created?'<button type="button" class="link-btn application-plan-button" data-request-plan="'+esc(x.id)+
+        '">'+(assigned?'Manage Plan':'Assign Plan')+'</button>':'');
+     const action=rejected?'Declined':
+       created?'Account created'+
+         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+
+         '" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable login':'Enable login')+'</button>':
+       !verified?'Awaiting OTP':
+       prepared&&x.status==='CONTACTED'?
+         '<button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Account</button>':
+       x.status==='CONTACTED'?
+         '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare Starter Catalog</button>':
+       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button>'+
+         ' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Decline</button>';
      return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
-      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(verified?'Verified':'Pending',verified?'active':'unknown')+
-      '</td><td>'+badge(reviewLabel,rejected?'inactive':'unknown')+
-      '</td><td>'+staging+'</td><td>'+planDisplay+'</td><td>'+access+'</td><td>'+actions+'</td></tr>';
+      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+
+       badge(verified?'Verified':'Pending',verified?'active':'unknown')+
+      '</td><td>'+badge(x.status,rejected?'inactive':'unknown')+
+      '</td><td>'+catalogStatus+'</td><td>'+planDisplay+'</td><td>'+accountStatus+'</td><td>'+action+'</td></tr>';
    }).join('')||'<tr><td colspan="11">No franchise applications received.</td></tr>';
  }
  async function reloadFranchiseRequests(){
@@ -164,7 +156,7 @@
    }
    const activate=event.target.closest('button[data-request-test]');
    if(activate){
-     if(!window.confirm('Create a real, isolated Phase 2 TEST login with a unique workspace, one branch and zero opening stock? It will have read-only catalog and inventory access. Checkout, global catalog editing, exports and financial operations remain blocked. Credentials will be shown once.'))return;
+     if(!window.confirm('Create a franchise account for this verified applicant? Its independent starter catalog begins with zero stock. Admin Control must assign a Paid subscription before real checkout is enabled. One-time credentials will be shown once.'))return;
      activate.disabled=true;
      try{
        const data=await api('franchise-requests/'+activate.dataset.requestTest+'/test-activate',{method:'POST',body:'{}'});
@@ -212,7 +204,7 @@
    const button=event.target.closest('button[data-request-status]');
    if(!button)return;
    const status=button.dataset.requestStatus;
-   if(status==='REJECTED'&&!window.confirm('Reject this franchise request? No POS account has been created.'))return;
+   if(status==='REJECTED'&&!window.confirm('Decline this unactivated franchise application?'))return;
    button.disabled=true;
    try{
      await api('franchise-requests/'+button.dataset.requestId,{

@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/users-management-v1547.css?v=1.5.47" />
   <link rel="stylesheet" href="/users-management-refinement-v1569.css?v=1.5.69" />
 <link rel="stylesheet" href="/cashier-access-20261114.css?v=1" />
-  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02" />
+  <link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.03" />
 <link rel="stylesheet" href="/inventory-branch-select-v20261114.css?v=2" />
 <link rel="stylesheet" href="/incoming-supply-v20261114.css?v=2" />
   <link rel="stylesheet" href="/pos-stock-limit-v20261114.css?v=1" />
@@ -72,9 +72,25 @@
           <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
           <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address"></label>
           <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
-          <label>Desired Subscription Plan<select id="regRequestedPlan" required><option value="">Choose your plan</option><option value="PRO">Pro — up to 3 branches</option><option value="BUSINESS">Business — multi-branch features</option></select></label>
+          <div class="auth-signup-plan">
+            <label for="regRequestedPlan" class="auth-plan-label">Choose your preferred subscription plan</label>
+            <div class="auth-plan-select-wrap">
+              <span class="auth-plan-select-icon" aria-hidden="true">✦</span>
+              <select id="regRequestedPlan" class="auth-plan-select" required aria-describedby="regPlanDescription">
+                <option value="" selected disabled>Select Pro or Business</option>
+                <option value="PRO">Pro Plan · Growing business</option>
+                <option value="BUSINESS">Business Plan · Multi-branch management</option>
+              </select>
+              <span class="auth-plan-chevron" aria-hidden="true">⌄</span>
+            </div>
+            <div id="regPlanDescription" class="auth-plan-preview" aria-live="polite">
+              <div class="auth-plan-preview-heading"><strong id="regPlanTitle">Select a plan to compare benefits</strong><span id="regPlanTag" class="auth-plan-tag">PLAN OPTIONS</span></div>
+              <p id="regPlanSummary">Choose a subscription above to view the included branches, additional branch fees, and management features.</p>
+              <div id="regPlanFeatures" class="auth-plan-feature-list"></div>
+            </div>
+          </div>
           <p class="auth-field-status">This is a plan request, not an automatic charge or activation. Admin Control will confirm your plan, subscription amount and payment status.</p>
-          <p class="auth-field-status">After your email OTP is verified, your chosen password will create an isolated starter workspace with zero stock. Full production POS access remains subject to activation checks.</p>
+          <p class="auth-field-status">After email OTP verification, your chosen password creates your own franchise account and zero-stock starter inventory. Once Admin Control assigns a Paid subscription, the live POS is available.</p>
           <button id="regSubmit" type="submit" class="primary auth-submit">Submit Request</button>
         </form>
         <p id="regMessage" class="auth-secondary-message" role="status"></p>
@@ -1042,7 +1058,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.6.09"></script>
+  <script src="/auth-login-v1574.js?v=1.6.10"></script>
   <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.10"></script>
 </body>
 </html>
