@@ -5,6 +5,7 @@ on:
     paths:
       - "server.js"
       - "lib/franchise-test-access.js"
+      - "lib/franchise-test-operations.js"
       - "lib/platform-admin-auth.js"
       - "lib/public-franchise-requests.js"
       - "public/platform-admin.js"
@@ -12,6 +13,7 @@ on:
       - "public/app-core.js"
       - "public/phase2-test.*"
       - "scripts/phase2-test-access-regression.js"
+      - "scripts/phase2-test-operations-test.js"
       - ".github/workflows/phase2-test-access.yml"
 jobs:
   regression:
@@ -26,6 +28,7 @@ jobs:
         run: |
           node --check server.js
           node --check lib/franchise-test-access.js
+          node --check lib/franchise-test-operations.js
           node --check lib/platform-admin-auth.js
           node --check lib/public-franchise-requests.js
           node --check public/platform-admin.js
@@ -33,3 +36,5 @@ jobs:
           node --check public/phase2-test.js
       - name: Verify Phase 2 test-account tenant restrictions
         run: node scripts/phase2-test-access-regression.js
+      - name: Verify cross-tenant stock, checkout simulation and reporting
+        run: node scripts/phase2-test-operations-test.js
