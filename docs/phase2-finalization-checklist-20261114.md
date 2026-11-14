@@ -14,7 +14,7 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 
 ## User acceptance — isolated test portal (2026-11-14)
 - [x] **User-confirmed**: test franchise ingredients, product pricing, simulated checkout and corresponding stock deductions behave independently in the Phase 2 test portal. This is a manual acceptance report, not independently observed live transaction logs.
-- [ ] **Security denial button**: confirm **Test shared-catalog access denial** returns `403 Forbidden` for an isolated test account (not yet explicitly reported).
+- [x] **Security denial button — user-confirmed 2026-11-14**: **Test shared-catalog access denial** returned `PASS · shared catalog blocked (403)` for an isolated Phase 2 test account. This verifies denial of `/api/catalog` from the test portal; it does not validate every production endpoint.
 - [ ] **Production checkout cutover**: independently verify the full real cash/GCash/add-on/promo/package checkout and reports operate on branch-scoped data. The portal's simulated test sales are stored separately from live POS sales.
 
 ## Must finish before Phase 2 can be called complete
