@@ -116,7 +116,8 @@
    message('regMessage','Submitting your franchise request…');
    const result=await post('/api/auth/register',{
     username:regUsername.value.trim(),fullName:$('regFullName').value.trim(),
-    email:$('regEmail').value.trim(),phone:$('regPhone').value.trim()
+    email:$('regEmail').value.trim(),phone:$('regPhone').value.trim(),
+    requestedPlan:$('regRequestedPlan').value
    });
    pendingApplicationId=result.applicationId||null;
    message('regMessage',result.message||'Account request received.');
