@@ -12,18 +12,22 @@ const staging=read('lib/franchise-tenant-staging.js');
 assert.match(html,/<th>Account Access<\/th><th>Review Action<\/th>/);
 assert.match(html,/colspan="10">Loading applications/);
 assert.match(html,/Mark Contacted records outreach only/);
-assert.match(html,/platform-admin\.js\?v=1\.0\.12/);
+assert.match(html,/platform-admin\.js\?v=1\.0\.13/);
 assert.match(html,/platform-admin\.css\?v=1\.0\.8/);
 assert.match(css,/\.application-access-note\{/);
 
-assert.match(app,/x\.status==='CONTACTED'\?'Contacted · review only'/);
+assert.match(app,/x\.status==='CONTACTED'\?'Contacted · reviewed'/);
 assert.match(app,/Mark Contacted \(review only\)/);
-assert.match(app,/Mark Contacted does not grant POS login/);
+assert.match(app,/Create Phase 2 Test Account/);
 assert.match(app,/Activation pending/);
-assert.match(app,/POS login remains locked until Phase 2 tenant isolation/);
-assert.match(app,/Applicant must verify email before starter catalog preparation/);
-assert.match(app,/Prepare starter catalog next/);
+assert.match(app,/Full production activation remains locked/);
+assert.match(app,/Applicant must verify email first/);
+assert.match(app,/Prepare starter catalog, then create test account/);
 assert.match(app,/x\.stageStatus/);
+assert.match(app,/data-request-access/);
+assert.match(app,/Disable test login/);
+assert.match(html,/phase2TestLoginDialog/);
+assert.match(html,/Copy Credentials/);
 assert.match(app,/No franchise applications received/);
 
 // Application review must never silently activate a new franchise account.
