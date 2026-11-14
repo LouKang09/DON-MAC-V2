@@ -27,6 +27,7 @@ const historicalSales = require('./lib/historical-sales-access');
 const branchIsolationPreflight=require('./lib/branch-isolation-preflight');
 const branchIsolationAudit=require('./lib/branch-isolation-audit');
 const legacyCatalogGuard=require('./lib/legacy-catalog-guard');
+const branchCatalogRead=require('./lib/branch-catalog-read');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 
@@ -2120,6 +2121,8 @@ async function handleApi(req,res,url){
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='POST'&&p==='/api/reports/email'){const body=await readJson(req);body.branchId=await branchSupport.salesScope(db,user,body.branchId);return json(res,200,await emailSalesReport(user,body),safeHeaders());}
+  if(method==='GET'&&p==='/api/isolation/catalog'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));if(branchId==null)throw Object.assign(new Error('Choose one branch to view its catalog.'),{status:400});return json(res,200,await branchCatalogRead.catalog(db,await workspaceIdForUser(user.id),branchId),safeHeaders({'Cache-Control':'no-store'}));}
+  if(method==='GET'&&p==='/api/isolation/inventory'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));if(branchId==null)throw Object.assign(new Error('Choose one branch to view its stock.'),{status:400});return json(res,200,{items:await branchCatalogRead.inventory(db,await workspaceIdForUser(user.id),branchId)},safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='GET'&&p==='/api/admin/isolation/catalog-audit'){requireAdminRole(user);return json(res,200,await branchIsolationAudit.audit(db,user),safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='GET'&&p==='/api/admin/isolation/catalog-preview'){requireAdminRole(user);return json(res,200,await branchIsolationAudit.preview(db,user,url.searchParams.get('branchId')),safeHeaders({'Cache-Control':'no-store'}));}
   if(method==='GET'&&p==='/api/admin/isolation/preflight'){requireAdminRole(user);return json(res,200,{...(await branchIsolationPreflight.inspect(db,user)),isolatedSchema:await branchIsolatedSchema.status(db)},safeHeaders({'Cache-Control':'no-store'}));}
