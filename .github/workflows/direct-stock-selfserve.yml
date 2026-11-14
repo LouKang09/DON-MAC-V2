@@ -1,0 +1,44 @@
+name: Incoming supply and OTP self-service onboarding
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/branch-direct-stock.js"
+      - "lib/branch-incoming-supply.js"
+      - "lib/franchise-email-verification.js"
+      - "lib/franchise-test-access.js"
+      - "server.js"
+      - "public/app-core.js"
+      - "public/index.html"
+      - "public/auth-login-v1574.js"
+      - "public/platform-admin.js"
+      - "scripts/direct-stock-selfserve-test.js"
+      - ".github/workflows/direct-stock-selfserve.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Validate changed source
+        run: |
+          node --check server.js
+          node --check lib/branch-direct-stock.js
+          node --check lib/branch-incoming-supply.js
+          node --check lib/franchise-email-verification.js
+          node --check lib/franchise-test-access.js
+          node --check public/app-core.js
+          node --check public/auth-login-v1574.js
+          node --check public/platform-admin.js
+          node --check public/phase2-test.js
+      - name: Test direct stock and signup invariants
+        run: node scripts/direct-stock-selfserve-test.js
+      - name: Test legacy incoming transfers, OTP and isolated Phase 2 tenants
+        run: |
+          node scripts/branch-incoming-supply-test.js
+          node scripts/franchise-onboarding-test.js
+          node scripts/phase2-test-access-regression.js
+          node scripts/otp-isolation-test.js
+          node scripts/phase2-test-checkout-stock-test.js
