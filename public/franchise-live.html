@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Don Macchiatos · Live Franchise POS</title>
+<link rel="stylesheet" href="/franchise-live.css?v=1"></head>
+<body>
+<div class="live-app">
+  <aside class="live-sidebar" aria-label="Live franchise navigation">
+    <div class="brand"><span class="brand-icon">DM</span><div><strong>Don Macchiatos</strong><small>FRANCHISE · LIVE POS</small></div></div>
+    <nav id="liveNav">
+      <button class="nav-btn selected" data-view="overview">◫ <span>Overview</span></button>
+      <button class="nav-btn" data-view="pos" data-cashier-only>▣ <span>Point of Sale</span></button>
+      <button class="nav-btn" data-view="transactions">▤ <span>Transactions</span></button>
+      <button class="nav-btn" data-view="inventory" data-admin-only>◈ <span>Inventory</span></button>
+      <button class="nav-btn" data-view="catalog" data-admin-only>▦ <span>Catalog & Recipes</span></button>
+      <button class="nav-btn" data-view="reports" data-admin-only>▥ <span>Reports</span></button>
+      <button class="nav-btn" data-view="expenses" data-admin-only>▧ <span>Expenses</span></button>
+      <button class="nav-btn" data-view="team" data-admin-only>♙ <span>Cashiers & Access</span></button>
+    </nav>
+    <div class="nav-foot">Independent workspace<br><strong id="sidebarWorkspace">—</strong><button id="logout" class="logout-btn">Log out</button></div>
+  </aside>
+  <main class="live-main">
+    <header class="live-topbar">
+      <div class="top-left"><button id="menuToggle" class="mobile-menu" aria-label="Toggle navigation">☰</button>
+        <div class="breadcrumb">DON MACCHIATOS / <strong id="activeSection">Overview</strong></div></div>
+      <div class="top-right"><span class="live-pill"><span class="pulse"></span> LIVE · ISOLATED</span>
+        <select id="branchSelect" aria-label="Select branch" title="Choose active branch"></select>
+        <span class="user-chip" id="userChip">Loading…</span>
+        <button id="refreshAll" class="round-action" title="Refresh branch data">↻</button></div>
+    </header>
+    <div class="content">
+      <div id="notice" class="message" role="status">Authenticating and verifying franchise ownership…</div>
+      <section class="view active" id="view-overview">
+        <div class="section-heading"><div><p class="eyebrow">FRANCHISE WORKSPACE</p><h1>Business overview</h1><p>Real sales and inventory exclusively for this branch.</p></div><span class="section-tag" id="planTag">—</span></div>
+        <div class="stats">
+          <article class="stat"><span>Completed live sales</span><strong id="statOrders">0</strong><small>Branch total</small></article>
+          <article class="stat"><span>Gross revenue</span><strong id="statRevenue">₱0.00</strong><small>Branch total</small></article>
+          <article class="stat"><span>Ingredient types</span><strong id="statIngredients">0</strong><small>Branch inventory</small></article>
+          <article class="stat"><span>Low or out of stock</span><strong id="statLow">0</strong><small>Requires replenishment</small></article>
+        </div>
+        <div class="panel"><h2>Active franchise</h2>
+          <p>This is a real production workspace with its own product catalog, ingredients, receipts, inventory movements and financial reports. Completed checkouts are not simulations. Your activity does not use other franchises' legacy sales tables.</p>
+          <p id="overviewRoleNote" class="subnote"></p>
+        </div>
+      </section>
+      <section class="view" id="view-pos">
+        <div class="section-heading"><div><p class="eyebrow">CASHIER CHECKOUT</p><h1>Point of Sale</h1><p>Every item is checked against this branch’s own ingredient balances.</p></div><button class="ghost" id="posRefresh">Refresh products</button></div>
+        <div class="pos-layout">
+          <div class="panel product-picker"><div class="picker-top"><input id="productSearch" placeholder="Search products…" aria-label="Search products">
+            <select id="productCategory" aria-label="Product category"><option value="">All categories</option></select></div>
+            <div id="productGrid" class="product-grid"></div>
+          </div>
+          <div class="panel order-panel"><h2>Current order</h2><div id="cartRows" class="cart-list"><p class="empty">Choose a product to start a sale.</p></div>
+            <div class="order-fields">
+              <label>Order type<select id="orderType"><option>Dine In</option><option selected>Take Away</option><option>Order Online</option></select></label>
+              <label>Customer<input id="customerName" maxlength="120" placeholder="Optional customer name"></label>
+              <label>Table / Unit<input id="tableLabel" maxlength="80" placeholder="Optional"></label>
+              <label>Promotion<select id="promoSelect"><option value="">No POS promo</option></select></label>
+              <label class="check-label"><input id="seniorEnabled" type="checkbox"> Senior Citizen discount</label>
+              <div id="seniorDetails" class="hidden"><label>Senior name<input id="seniorName" maxlength="150"></label><label>Senior ID<input id="seniorId" inputmode="numeric" maxlength="12"></label></div>
+              <label>Payment method<select id="paymentMode"><option>Cash</option><option>GCash</option><option>Maya</option><option>Maribank</option><option>GoTyme</option><option>BPI</option><option>Others</option></select></label>
+              <label id="tenderField">Cash tender (₱)<input id="cashTender" type="number" min="0" step="0.01"></label>
+              <label id="referenceField" class="hidden">Payment reference<input id="paymentReference" maxlength="180" placeholder="Enter verified payment reference"></label>
+            </div>
+            <div class="order-totals"><div>Gross <strong id="grossTotal">₱0.00</strong></div><div>Discount / adjustment <strong id="discountTotal">₱0.00</strong></div><div class="grand">Amount due <strong id="amountDue">₱0.00</strong></div><div>Change <strong id="changeTotal">₱0.00</strong></div></div>
+            <p id="stockMessage" class="inline-warning" role="status"></p>
+            <button id="checkoutButton" class="primary wide" disabled>Complete checkout</button>
+            <button id="clearCart" class="ghost wide" type="button">Clear order</button>
+          </div>
+        </div>
+      </section>
+      <section class="view" id="view-transactions">
+        <div class="section-heading"><div><p class="eyebrow">REAL SALES LEDGER</p><h1>Transactions</h1><p>Actual cash and noncash receipts for the selected branch.</p></div><button id="salesRefresh" class="ghost">Refresh</button></div>
+        <div class="panel table-scroll"><table><thead><tr><th>Reference</th><th>Time</th><th>Cashier</th><th>Payment</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="salesBody"></tbody></table><div class="pagination"><button id="salesPrev">Previous</button><span id="salesPageLabel">Page 1</span><button id="salesNext">Next</button></div></div>
+      </section>
+      <section class="view" id="view-inventory">
+        <div class="section-heading"><div><p class="eyebrow">BRANCH-INDEPENDENT STOCK</p><h1>Inventory & receiving</h1><p>Opening stock and external supplier replenishment post directly to this branch.</p></div><button class="ghost" id="inventoryRefresh">Refresh</button></div>
+        <div class="two-col"><form id="stockForm" class="panel form-panel"><h2>Enter stock</h2>
+          <label>Entry type<select id="stockType"><option value="INITIAL_STOCK">Initial Stock (zero opening balance)</option><option value="DIRECT_REPLENISH">Supplier Replenishment</option></select></label>
+          <label>Ingredient<select id="stockIngredient" required></select></label>
+          <label>Quantity<input id="stockQuantity" type="number" min=".000001" max="999999" step=".000001" value="5" required></label>
+          <label>Supplier / Source<input id="stockSource" maxlength="150" value="Opening Inventory" required></label>
+          <label>Remarks<textarea id="stockNotes" maxlength="500" rows="2" placeholder="Optional delivery details"></textarea></label>
+          <p class="subnote">No acceptance is needed for initial or supplier stock. Interbranch transfers use the separate approval workflow.</p>
+          <button class="primary" type="submit">Save branch stock</button></form>
+          <div class="panel"><h2>Branch ingredient balances</h2><div class="table-scroll"><table><thead><tr><th>Ingredient</th><th>Stock</th><th>Low threshold</th><th>Status</th></tr></thead><tbody id="inventoryBody"></tbody></table></div></div></div>
+      </section>
+      <section class="view" id="view-catalog">
+        <div class="section-heading"><div><p class="eyebrow">BRANCH CATALOG</p><h1>Products, ingredients & costing</h1><p>All definitions and recipes stay within your franchise and branch.</p></div><button id="catalogRefresh" class="ghost">Refresh</button></div>
+        <div class="two-col">
+          <form class="panel form-panel" id="productForm"><h2 id="productFormTitle">Add product</h2><input type="hidden" id="productEditId">
+            <label>Product name<input id="productName" required maxlength="150"></label>
+            <label>Category<select id="productCategoryEdit"><option>Coffee</option><option>Non Coffee</option><option>Food</option></select></label>
+            <label>Price (₱)<input id="productPrice" type="number" min="0" step=".01" required></label>
+            <label class="check-label"><input type="checkbox" id="productActive" checked> Active product</label>
+            <div class="form-actions"><button class="primary" type="submit">Save product</button><button class="ghost" id="clearProduct" type="button">Clear</button></div>
+          </form>
+          <form class="panel form-panel" id="ingredientForm"><h2 id="ingredientFormTitle">Add ingredient</h2><input type="hidden" id="ingredientEditId">
+            <label>Name<input id="ingredientName" required maxlength="150"></label>
+            <label>Unit<input id="ingredientUom" required maxlength="40" placeholder="kg / gram / pcs"></label>
+            <label>Low-stock warning<input id="ingredientLow" type="number" step=".000001" min="0" value="0"></label>
+            <label>Unit cost (₱)<input id="ingredientCost" type="number" step=".0001" min="0" value="0"></label>
+            <label class="check-label"><input id="ingredientActive" type="checkbox" checked> Active ingredient</label>
+            <div class="form-actions"><button type="submit" class="primary">Save ingredient</button><button id="clearIngredient" class="ghost" type="button">Clear</button></div>
+          </form>
+        </div>
+        <div class="two-col">
+          <div class="panel"><h2>Products</h2><div class="table-scroll"><table><thead><tr><th>Product</th><th>Price</th><th>Status</th><th>Recipe</th></tr></thead><tbody id="manageProductsBody"></tbody></table></div></div>
+          <div class="panel"><h2>Ingredients</h2><div class="table-scroll"><table><thead><tr><th>Name / Unit</th><th>On hand</th><th>Unit Cost</th><th>Edit</th></tr></thead><tbody id="manageIngredientsBody"></tbody></table></div></div>
+        </div>
+        <div class="panel"><h2 id="recipeTitle">Recipe & costing</h2><p>Select a product's Recipe button, then choose its ingredients and quantity required per unit.</p>
+          <input id="recipeProductId" type="hidden"><div id="recipeRows" class="recipe-rows"></div>
+          <div class="form-actions"><button id="addRecipeRow" type="button" class="ghost">Add ingredient to recipe</button><button id="saveRecipe" class="primary" type="button" disabled>Save recipe</button></div></div>
+      </section>
+      <section class="view" id="view-reports"><div class="section-heading"><div><p class="eyebrow">FRANCHISE REPORTING</p><h1>Sales & cost reports</h1><p>Real receipts and immutable costing snapshots for this branch.</p></div><select id="reportRange"><option value="day">Today (UTC)</option><option value="week">Last 7 days</option><option value="month" selected>This month</option><option value="year">This year</option></select></div>
+        <div class="stats report-stats"><article class="stat"><span>Transactions</span><strong id="reportCount">0</strong></article><article class="stat"><span>Sales</span><strong id="reportSales">₱0.00</strong></article><article class="stat"><span>Expenses</span><strong id="reportExpenses">₱0.00</strong></article><article class="stat"><span>After expenses</span><strong id="reportNet">₱0.00</strong></article></div>
+        <div class="two-col"><div class="panel"><h2>Payment methods</h2><div class="table-scroll"><table><thead><tr><th>Method</th><th>Count</th><th>Amount</th></tr></thead><tbody id="reportPayments"></tbody></table></div></div><div class="panel"><h2>Product performance</h2><div class="table-scroll"><table><thead><tr><th>Product</th><th>Qty</th><th>Gross</th><th>Cost</th></tr></thead><tbody id="reportProducts"></tbody></table></div></div></div>
+      </section>
+      <section class="view" id="view-expenses"><div class="section-heading"><div><p class="eyebrow">BRANCH FINANCE</p><h1>Expenses</h1><p>Only entries from this franchise branch are visible.</p></div></div>
+        <form id="expenseForm" class="panel expense-form"><label>Category<input id="expenseCategory" maxlength="80" placeholder="Utilities / Supplies" required></label><label>Amount (₱)<input id="expenseAmount" type="number" step=".01" min=".01" required></label><label>Notes<input id="expenseNotes" maxlength="500"></label><button class="primary" type="submit">Record expense</button></form>
+        <div class="panel table-scroll"><table><thead><tr><th>Date</th><th>Category</th><th>Notes</th><th>Amount</th></tr></thead><tbody id="expensesBody"></tbody></table></div>
+      </section>
+      <section class="view" id="view-team"><div class="section-heading"><div><p class="eyebrow">ACCOUNT ACCESS</p><h1>Cashier accounts</h1><p>Only cashiers may process live sales. Each is restricted to their assigned branch.</p></div></div>
+        <form id="cashierForm" class="panel expense-form"><label>Username<input id="cashierUsername" maxlength="80" required></label><label>Full name<input id="cashierName" maxlength="120" required></label><label>Temporary password<input id="cashierPassword" type="password" autocomplete="new-password" minlength="10" required></label><label>Branch<select id="cashierBranch"></select></label><button class="primary" type="submit">Create cashier</button></form>
+        <div class="panel table-scroll"><table><thead><tr><th>Username</th><th>Name</th><th>Branch</th><th>Status</th></tr></thead><tbody id="cashiersBody"></tbody></table></div>
+      </section>
+    </div>
+  </main>
+</div>
+<dialog id="receiptDialog"><div class="dialog-head"><h2>Live receipt</h2><button id="receiptClose" type="button" class="ghost">Close</button></div><div id="receiptContent"></div></dialog>
+<script defer src="/franchise-live.js?v=1"></script>
+</body></html>
