@@ -6,6 +6,9 @@ on:
       - "server.js"
       - "lib/branch-*.js"
       - "lib/legacy-catalog-guard.js"
+      - "lib/cashier-access.js"
+      - "lib/pos-finance.js"
+      - "scripts/cashier-access-finance-test.js"
       - "lib/inventory-transfer-branches.js"
       - "lib/marlou-test-stock-reset.js"
       - "lib/branch-incoming-supply.js"
@@ -33,4 +36,5 @@ jobs:
       - run: node scripts/legacy-catalog-guard-test.js
       - run: node scripts/inventory-transfer-branches-test.js
       - run: node scripts/marlou-test-stock-reset-test.js
+      - run: node scripts/cashier-access-finance-test.js
       - run: node scripts/branch-incoming-supply-test.js
