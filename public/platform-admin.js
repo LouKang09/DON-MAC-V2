@@ -120,6 +120,8 @@
        !verified?'Awaiting OTP':
        prepared&&x.status==='CONTACTED'?
          '<button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Account</button>':
+       x.status==='CONTACTED'?
+         '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare Starter Catalog</button>':
        '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button>'+
          ' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Decline</button>';
      return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
