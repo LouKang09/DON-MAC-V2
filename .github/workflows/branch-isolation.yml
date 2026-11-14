@@ -8,6 +8,8 @@ on:
       - "lib/legacy-catalog-guard.js"
       - "lib/inventory-transfer-branches.js"
       - "lib/marlou-test-stock-reset.js"
+      - "lib/branch-incoming-supply.js"
+      - "scripts/branch-incoming-supply-test.js"
       - "scripts/*isolation*.js"
       - "scripts/*tenant*.js"
       - "scripts/legacy-catalog-guard-test.js"
@@ -31,3 +33,4 @@ jobs:
       - run: node scripts/legacy-catalog-guard-test.js
       - run: node scripts/inventory-transfer-branches-test.js
       - run: node scripts/marlou-test-stock-reset-test.js
+      - run: node scripts/branch-incoming-supply-test.js
