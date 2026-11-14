@@ -32,6 +32,7 @@ const inventoryTransferBranches=require('./lib/inventory-transfer-branches');
 const branchIncomingSupply=require('./lib/branch-incoming-supply');
 const cashierAccess=require('./lib/cashier-access');
 const marlouTestStockReset=require('./lib/marlou-test-stock-reset');
+const marlouCheckoutStockBridge=require('./lib/marlou-checkout-stock-bridge');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 const franchiseTestAccess=require('./lib/franchise-test-access');
@@ -649,6 +650,11 @@ async function createSale(user,body){
     }
     const locked=new Map();if(tx.engine==='postgres'&&quote.requirements.length){const ids=quote.requirements.map(r=>r.ingredientId).sort((a,b)=>a-b);const lr=await tx.query(`SELECT id,stock_qty FROM ingredients WHERE id IN (${placeholders(1,ids.length)}) ORDER BY id FOR UPDATE`,ids);for(const row of lr.rows)locked.set(Number(row.id),Number(row.stock_qty));}
     for(const req of quote.requirements){let current;if(locked.has(req.ingredientId))current=locked.get(req.ingredientId);else{const cr=await tx.query('SELECT stock_qty FROM ingredients WHERE id=$1',[req.ingredientId]);current=Number(cr.rows[0]?.stock_qty??0);}if(current+1e-9<req.needed)throw Object.assign(new Error(`Insufficient stock for ${req.name}.`),{status:409});const balance=current-req.needed;await tx.query('UPDATE ingredients SET stock_qty=$1,updated_at=$2 WHERE id=$3',[balance,nowIso(),req.ingredientId]);await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,reference,remarks,created_by,created_at) VALUES ($1,'SALE',$2,$3,$4,$5,$6,$7)`,[req.ingredientId,-req.needed,balance,reference,`Sale ${reference}`,user.id,nowIso()]);}
+    // The live Inventory screen reads branch_ingredients, while this legacy checkout
+    // still deducts ingredients. Mirror the ORIGINAL Marlou09 workspace's stock in
+    // the same transaction, with scoped movements for reversal/reconciliation.
+    await marlouCheckoutStockBridge.applySale(tx,{workspaceId:workspace,branchId,
+      requirements:quote.requirements,reference,actorId:user.id});
     await logAction(user,`Sale completed: ${reference}`,'Sold',quote.remark,tx);return {reference,paymentMode:mode,tender,change,orderType,customerName,tableLabel,...quote};
   });
 }
@@ -1742,7 +1748,10 @@ async function saveRetentionPreview(user,input){
 async function deleteSale(user,reference,body){
   if(typeof body.restoreStock!=='boolean')throw Object.assign(new Error('Specify whether stock should be restored.'),{status:400});
   return db.transaction(async tx=>{
-    const sR=await tx.query('SELECT * FROM sales WHERE reference=$1',[reference]),sale=sR.rows[0];
+    // Lock the original receipt to prevent concurrent delete requests from
+    // restoring inventory twice (SQLite serializes writes separately).
+    const sR=await tx.query('SELECT * FROM sales WHERE reference=$1'+
+      (tx.engine==='postgres'?' FOR UPDATE':''),[reference]),sale=sR.rows[0];
     if(!sale)throw Object.assign(new Error('Sale not found.'),{status:404});
     const access=await historicalSales.policy(tx,user);
     const belongs=await tx.query('SELECT 1 FROM chat_workspace_branches WHERE workspace_id=$1 AND branch_id=$2',[access.workspaceId,Number(sale.branch_id)]);
@@ -1761,7 +1770,9 @@ async function deleteSale(user,reference,body){
         await tx.query(`INSERT INTO inventory_movements (ingredient_id,movement_type,quantity_change,balance_after,reference,remarks,created_by,created_at) VALUES ($1,'SALE_REVERSAL',$2,$3,$4,$5,$6,$7)`,[iid,deducted,balance,reference,'Stock restored from original sale deduction',user.id,nowIso()]);
         restoredIngredients++;restoredQuantity+=deducted;
       }
-      restoreNote=restoredIngredients?`Stock restored from original sale movements (${restoredIngredients} ingredient(s))`:'No original web stock deduction was found; stock left unchanged';
+      const branchRestored=await marlouCheckoutStockBridge.restoreSale(tx,{
+        workspaceId:access.workspaceId,branchId:Number(sale.branch_id),reference,actorId:user.id});
+      restoreNote=restoredIngredients?`Stock restored from original sale movements (${restoredIngredients} ingredient(s)); isolated branch items: ${branchRestored.items}`:'No original web stock deduction was found; stock left unchanged';
     }
     await tx.query('UPDATE sales SET status=$1,deleted_at=$2,deleted_by=$3 WHERE id=$4',['Deleted',nowIso(),user.id,Number(sale.id)]);
     await logAction(user,`Sale deleted: ${reference}`,'Deleted',restoreNote,tx);

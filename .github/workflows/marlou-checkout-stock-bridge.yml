@@ -1,0 +1,46 @@
+name: Marlou checkout branch stock reconciliation
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/marlou-checkout-stock-bridge.js"
+      - "server.js"
+      - "scripts/marlou-checkout-stock-bridge-test.js"
+      - "scripts/marlou-checkout-stock-postgres-integration-test.js"
+      - ".github/workflows/marlou-checkout-stock-bridge.yml"
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: stock_bridge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d stock_bridge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PG_TEST_URL: postgres://test:test@localhost:5432/stock_bridge
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install PostgreSQL test driver
+        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Validate production server and stock bridge
+        run: |
+          node --check server.js
+          node --check lib/marlou-checkout-stock-bridge.js
+      - name: Verify scoped checkout, stock, rollback and reversal behavior
+        run: node scripts/marlou-checkout-stock-bridge-test.js
+      - name: Verify real PostgreSQL rollback, reversal and concurrency
+        run: node scripts/marlou-checkout-stock-postgres-integration-test.js
