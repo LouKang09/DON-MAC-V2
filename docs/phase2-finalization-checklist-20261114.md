@@ -12,6 +12,11 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 - [x] Add cashier-specific **View Transactions**, **View Expenses**, **Record/Edit Expenses** checkboxes; guard finance APIs and pin cashier finance data to their assigned branch. Owners/Co-Owners retain admin access.
 - [x] Enable **explicit Phase 2 TEST accounts** for reviewed, OTP-verified, staged applications. Admin Control issues a one-time password, a unique workspace, one independently seeded branch with zero stock, and an isolated test portal; login can be disabled immediately. Test-only stock replenishment, simulated checkout deduction, product price edits and private test-sales reports are supported. All normal checkout, global catalog editing, billing and exports remain blocked for test tenants. These tests do NOT replace real POS cross-franchise cutover testing.
 
+## User acceptance — isolated test portal (2026-11-14)
+- [x] **User-confirmed**: test franchise ingredients, product pricing, simulated checkout and corresponding stock deductions behave independently in the Phase 2 test portal. This is a manual acceptance report, not independently observed live transaction logs.
+- [ ] **Security denial button**: confirm **Test shared-catalog access denial** returns `403 Forbidden` for an isolated test account (not yet explicitly reported).
+- [ ] **Production checkout cutover**: independently verify the full real cash/GCash/add-on/promo/package checkout and reports operate on branch-scoped data. The portal's simulated test sales are stored separately from live POS sales.
+
 ## Must finish before Phase 2 can be called complete
 - [ ] **Checkout critical path**: switch all /api/catalog, /api/quote, /api/sales, product recipes, stock reservations/deductions, returns/reversals, and checkout stock-availability checks to the branch catalog in a single coordinated plan; confirm cash, GCash, addons, promos and packages do not mix legacy stock.
 - [ ] **Admin CRUD and costing**: isolate every product/ingredient edit, image/category edit, recipe & unit-cost update, promos, packages, cost reports, replenish and transfer audit views per workspace+branch; avoid global writes.
