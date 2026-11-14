@@ -96,18 +96,30 @@
  function renderFranchiseRequests(){
    const rows=franchiseSignupRequests;
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
-     const staging=x.stageStatus?'Prepared · no access':x.status==='REJECTED'?'Rejected':
-      !x.emailVerifiedAt?'Awaiting verification':
-      '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
-     const actions=x.status==='REJECTED'?'—':
-      '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button> '+
-      '<button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>';
+     const verified=!!x.emailVerifiedAt,prepared=!!x.stageStatus,rejected=x.status==='REJECTED';
+     const staging=rejected?'—':prepared?
+       badge('Prepared','active')+'<small class="application-access-note">Independent starter catalog staged; no existing stock, sales, or login copied.</small>':
+       !verified?'Awaiting email verification':
+       '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
+     // Contacted is only an outreach/review state. It is not a contract or activation.
+     const reviewLabel=x.status==='CONTACTED'?'Contacted · review only':x.status;
+     const access=rejected?
+       badge('Not eligible','inactive')+'<small class="application-access-note">Application rejected. No account was created.</small>':
+       prepared?
+       badge('Activation pending','unknown')+'<small class="application-access-note">Catalog ready; POS login remains locked until Phase 2 tenant isolation is completed and approved.</small>':
+       !verified?
+       badge('Not activated','unknown')+'<small class="application-access-note">Applicant must verify email before starter catalog preparation.</small>':
+       badge('Not activated','unknown')+'<small class="application-access-note">Prepare starter catalog next. Mark Contacted does not grant POS login.</small>';
+     const actions=rejected?'—':
+       (x.status==='CONTACTED'?'Reviewed':
+       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'" title="Records applicant outreach only; does not activate login">Mark Contacted (review only)</button>')+
+       ' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>';
      return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
-      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(x.emailVerifiedAt?'Verified':'Pending',x.emailVerifiedAt?'active':'unknown')+
-      '</td><td>'+badge(x.status,x.status==='PENDING'?'unknown':x.status==='CONTACTED'?'active':'inactive')+
-      '</td><td>'+staging+'</td><td>'+actions+'</td></tr>';
-   }).join('')||'<tr><td colspan="9">No franchise applications received.</td></tr>';
+      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(verified?'Verified':'Pending',verified?'active':'unknown')+
+      '</td><td>'+badge(reviewLabel,rejected?'inactive':'unknown')+
+      '</td><td>'+staging+'</td><td>'+access+'</td><td>'+actions+'</td></tr>';
+   }).join('')||'<tr><td colspan="10">No franchise applications received.</td></tr>';
  }
  async function reloadFranchiseRequests(){
    const data=await api('franchise-requests');
