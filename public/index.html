@@ -72,14 +72,17 @@
           <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
           <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address"></label>
           <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
-          <p class="auth-field-status">No password is requested until a separate franchise workspace is approved.</p>
+          <p class="auth-field-status">After your email OTP is verified, your chosen password will create an isolated starter workspace with zero stock. Full production POS access remains subject to activation checks.</p>
           <button id="regSubmit" type="submit" class="primary auth-submit">Submit Request</button>
         </form>
         <p id="regMessage" class="auth-secondary-message" role="status"></p>
         <form id="authRegisterVerifyForm" class="auth-secondary-form hidden" aria-label="Verify franchise request email">
-          <p class="auth-secondary-intro">Verify your email address before Admin Control reviews the application.</p>
+          <p class="auth-secondary-intro">Verify your email and choose your password to create your isolated starter account. Unverified OTPs cannot activate login.</p>
           <label>6-digit email code<input id="regVerifyCode" inputmode="numeric" autocomplete="one-time-code" required minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="000000" /></label>
-          <button id="regVerifySubmit" type="submit" class="primary auth-submit">Verify Email</button>
+          <label>Create Password<span class="auth-field-input"><input id="regVerifyPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="At least 10 characters, including a letter and number"><button type="button" class="auth-eye" data-toggle-password="regVerifyPassword">Show</button></span></label>
+          <label>Confirm Password<span class="auth-field-input"><input id="regVerifyConfirmPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Re-enter your password"><button type="button" class="auth-eye" data-toggle-password="regVerifyConfirmPassword">Show</button></span></label>
+          <p class="auth-field-status">Your password is saved securely only when the OTP is correct. You can then sign in to your separate, zero-stock onboarding workspace.</p>
+          <button id="regVerifySubmit" type="submit" class="primary auth-submit">Verify OTP &amp; Create Account</button>
           <button id="regVerifyResend" type="button" class="auth-text-action">Resend verification code</button>
           <p id="regVerifyMessage" class="auth-secondary-message" role="status"></p>
         </form>
@@ -1037,7 +1040,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.6.02"></script>
+  <script src="/auth-login-v1574.js?v=1.6.07"></script>
   <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.06"></script>
 </body>
 </html>
