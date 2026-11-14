@@ -210,7 +210,7 @@
   $('statRevenue').textContent=money(data.revenue);
  }
  async function receipt(reference){
-  const data=await get('transactions/'+encodeURIComponent(reference));
+  const data=await get('transactions/'+encodeURIComponent(reference)+selection());
   $('receiptContent').innerHTML='<div class="receipt-meta">Receipt: <strong>'+escape(data.reference)+
    '</strong><br>Cashier: '+escape(data.cashier)+'<br>Time: '+escape(new Date(data.soldAt).toLocaleString('en-PH'))+
    '<br>Payment: '+escape(data.paymentMode)+(data.paymentReference?' · '+escape(data.paymentReference):'')+
@@ -363,7 +363,7 @@
   $('receiptContent').addEventListener('click',async e=>{
    const b=e.target.closest('[data-void]');if(!b)return;
    if(!confirm('Void this real receipt and restore its ingredient stock?'))return;
-   try{await post('transactions/'+b.dataset.void+'/void',{restoreStock:true});
+   try{await post('transactions/'+b.dataset.void+'/void',{restoreStock:true,branchId:state.branchId});
     $('receiptDialog').close();notice('Receipt voided and isolated stock restored.');
     await refreshAll();
    }catch(err){notice(err.message,true)}
