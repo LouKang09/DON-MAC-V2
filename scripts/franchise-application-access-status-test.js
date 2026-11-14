@@ -12,7 +12,7 @@ const staging=read('lib/franchise-tenant-staging.js');
 assert.match(html,/<th>Requested \/ Assigned Plan<\/th><th>Account Access<\/th><th>Review Action<\/th>/);
 assert.match(html,/colspan="11">Loading applications/);
 assert.match(html,/Mark Contacted records outreach only/);
-assert.match(html,/platform-admin\.js\?v=1\.0\.14/);
+assert.match(html,/platform-admin\.js\?v=1\.0\.15/);
 assert.match(html,/platform-admin\.css\?v=1\.0\.9/);
 assert.match(css,/\.application-access-note\{/);
 
@@ -25,7 +25,7 @@ assert.match(app,/Applicant must verify email first/);
 assert.match(app,/Prepare starter catalog, then create test account/);
 assert.match(app,/x\.stageStatus/);
 assert.match(app,/data-request-access/);
-assert.match(app,/Disable test login/);
+assert.match(app,/Disable login/);
 assert.match(html,/phase2TestLoginDialog/);
 assert.match(html,/Copy Credentials/);
 assert.match(app,/No franchise applications received/);
