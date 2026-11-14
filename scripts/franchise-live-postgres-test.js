@@ -32,7 +32,7 @@ const ownerA={id:1,username:'ownerA',role:'Admin'},ownerB={id:2,username:'ownerB
 let productA,productB,ingredientA,ingredientB,ctxA,ctxB,ctxCashierA,ctxCashierB;
 async function setup(){
  await pool.query('CREATE SCHEMA '+schema);
- await db.exec('CREATE TABLE users(id BIGINT PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
+ await db.exec('CREATE TABLE users(id BIGSERIAL PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
   'password_hash TEXT,role TEXT NOT NULL,active BOOLEAN NOT NULL,branch_id BIGINT,'+
   'created_at TEXT,full_name TEXT,owner_scope_id BIGINT)');
  await db.exec('CREATE TABLE branches(id BIGINT PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL)');
