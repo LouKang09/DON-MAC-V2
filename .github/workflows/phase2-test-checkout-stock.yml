@@ -1,0 +1,27 @@
+name: Phase 2 test checkout stock quantity guard
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/branch-catalog-read.js"
+      - "public/phase2-test.js"
+      - "public/phase2-test.html"
+      - "public/phase2-test.css"
+      - "scripts/phase2-test-checkout-stock-test.js"
+      - ".github/workflows/phase2-test-checkout-stock.yml"
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Validate test portal and isolated catalog syntax
+        run: |
+          node --check lib/branch-catalog-read.js
+          node --check public/phase2-test.js
+      - name: Verify isolated catalog and test portal stock checks
+        run: |
+          node scripts/branch-catalog-read-test.js
+          node scripts/phase2-test-checkout-stock-test.js
