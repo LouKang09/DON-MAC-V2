@@ -14,6 +14,7 @@ on:
       - "public/platform-admin.js"
       - "scripts/direct-stock-selfserve-test.js"
       - "scripts/signup-otp-selfservice-test.js"
+      - "scripts/phase2-test-checkout-stock-test.js"
       - "scripts/franchise-onboarding-test.js"
       - "public/phase2-test.js"
       - "public/phase2-test.html"
