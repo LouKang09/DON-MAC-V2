@@ -94,7 +94,7 @@ async function run(){
  assert.equal(ctxCashierA.branchId,101);assert.equal(ctxCashierB.branchId,201);
  await assert.rejects(liveScope.branch(db,ctxCashierA,201),{status:403});
  await assert.rejects(liveScope.branch(db,ctxA,201),{status:403});
- await assert.rejects(liveScope.requireCashier(ctxA),{status:403});
+ assert.throws(()=>liveScope.requireCashier(ctxA),{status:403});
  let c=await liveCatalog.catalog(db,ctxCashierA,101);
  assert.equal(c.products.length,1);assert.equal(c.products[0].name,'test1');
  assert.equal(c.products[0].id,productA);
