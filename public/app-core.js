@@ -134,6 +134,17 @@
       x.classList.toggle('hidden',state.user.role!=='Admin'));
     document.querySelectorAll('.cashier-only').forEach(x=>
       x.classList.toggle('hidden',state.user.role!=='User'));
+    const userGrants=Array.isArray(state.user.accessPermissions)?state.user.accessPermissions:[];
+    const isAdmin=state.user.role==='Admin';
+    document.querySelectorAll('.nav-finance .nav[data-access-key]').forEach(link=>{
+      link.classList.toggle('hidden',!isAdmin&&!userGrants.includes(link.dataset.accessKey));
+    });
+    const hasFinanceAccess=isAdmin||userGrants.includes('transactions.view')||
+       userGrants.includes('expenses.view');
+    document.querySelector('.nav-finance')?.classList.toggle('hidden',!hasFinanceAccess);
+    window.donmacFinanceAccess={viewTransactions:isAdmin||userGrants.includes('transactions.view'),
+      viewExpenses:isAdmin||userGrants.includes('expenses.view'),
+      manageExpenses:isAdmin||userGrants.includes('expenses.manage')};
     $('dbEngine').textContent=(state.status?.engine||'database').toUpperCase();
     $('appVersion').textContent=state.status?.version||'FINAL';
     $('topbarUsername').textContent=state.user.username;
@@ -315,6 +326,10 @@
   }
   function switchView(view){
     if(view==='pos'&&state.user?.role!=='User')view='dashboard';
+    if(state.user?.role==='User'&&['transactions','expenses'].includes(view)){
+      const required=view==='transactions'?'transactions.view':'expenses.view';
+      if(!(state.user.accessPermissions||[]).includes(required))view='pos';
+    }
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
     const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Report / Inventory Management'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
@@ -1970,8 +1985,39 @@
    });
   }
 
+  const CASHIER_ACCESS=['transactions.view','expenses.view','expenses.manage'];
+  function selectedCashierGrants(){
+    const selected=CASHIER_ACCESS.filter(key=>$('cashierAccessControls')?.
+      querySelector('input[data-cashier-grant="'+key+'"]')?.checked);
+    if(selected.includes('expenses.manage')&&!selected.includes('expenses.view'))selected.push('expenses.view');
+    return selected;
+  }
+  function setCashierGrants(grants=[]){
+    const enabled=new Set(grants);
+    for(const input of document.querySelectorAll('#cashierAccessControls [data-cashier-grant]')){
+      input.checked=enabled.has(input.dataset.cashierGrant);
+    }
+    syncCashierGrantControls();
+  }
+  function syncCashierGrantControls(){
+    const cashier=$('newRole').value==='User';
+    $('cashierAccessControls')?.classList.toggle('hidden',!cashier);
+    const manage=$('cashierAccessControls')?.querySelector('[data-cashier-grant="expenses.manage"]');
+    const view=$('cashierAccessControls')?.querySelector('[data-cashier-grant="expenses.view"]');
+    if(view&&manage){
+      if(manage.checked)view.checked=true;
+      view.disabled=manage.checked;
+    }
+  }
+  $('cashierAccessControls')?.addEventListener('change',event=>{
+    if(event.target?.dataset.cashierGrant==='expenses.view'&&!event.target.checked){
+      const manage=$('cashierAccessControls')?.querySelector('[data-cashier-grant="expenses.manage"]');
+      if(manage)manage.checked=false;
+    }
+    syncCashierGrantControls();
+  });
   function toggleUserBranch(){
-   const show=$('newRole').value==='User';$('newUserBranchWrap').classList.toggle('hidden',!show);$('newUserBranch').required=show;
+   const show=$('newRole').value==='User';$('newUserBranchWrap').classList.toggle('hidden',!show);$('newUserBranch').required=show;syncCashierGrantControls();
   }
 
   async function deleteUser(id){
@@ -2082,7 +2128,7 @@
     $('newUsername').readOnly=false;$('newPassword').required=true;$('newPassword').type='password';
     $('toggleCashierPassword').setAttribute('aria-label','Show cashier password');
     $('newRole').disabled=false;$('newRole').options[1].text='Co-Owner';$('newRole').value='User';
-    $('newUserActive').disabled=false;$('newUserActive').checked=true;toggleUserBranch();
+    $('newUserActive').disabled=false;$('newUserActive').checked=true;setCashierGrants([]);toggleUserBranch();
   }
   function editUser(id,users){
     const u=users.find(x=>x.id===id);if(!u)return;
@@ -2094,7 +2140,7 @@
     $('newRole').options[1].text=u.isOwner?'Owner/Admin (fixed)':'Co-Owner/Admin';
     $('newUserBranch').value=String(u.branchId||'');
     $('newUserActive').checked=!!u.active;$('newUserActive').disabled=!!u.isOwner;
-    toggleUserBranch();
+    setCashierGrants(u.accessPermissions||[]);toggleUserBranch();
   }
   $('toggleCashierPassword').onclick=()=>{
     const input=$('newPassword');
@@ -2113,7 +2159,7 @@
         photoData:$('cashierPhotoData').value||null,
         phone:$('newUserPhone').value.trim(),role:$('newRole').value,
         branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,
-        active:$('newUserActive').checked};
+        active:$('newUserActive').checked,accessPermissions:$('newRole').value==='User'?selectedCashierGrants():[]};
       try{
         if(id)await api(`/api/users/${id}`,{method:'PUT',body});
         else await api('/api/users',{method:'POST',body});
