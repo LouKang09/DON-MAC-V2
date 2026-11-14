@@ -546,7 +546,7 @@ function validateCartInput(items){
   }
 }
 
-async function quoteOrder(conn,input,workspaceId=0){
+async function quoteOrder(conn,input,workspaceId=0,branchId=0){
   const items=input.items||[];validateCartInput(items);
   const productLines=items.filter(x=>x.kind==='product');
   const addonLines=items.filter(x=>x.kind==='addon');
@@ -624,6 +624,9 @@ async function quoteOrder(conn,input,workspaceId=0){
   }
   const shortages=[...requirements.values()].filter(r=>!r.active||r.stock+1e-9<r.needed).map(r=>({...r,shortage:Math.max(0,r.needed-r.stock)}));
   if(shortages.length){const e=new Error('Insufficient ingredient stock.');e.status=409;e.details={shortages};throw e;}
+  // Early branch-specific quote guard. Checkout repeats the same check under
+  // its transaction and locks, so concurrent cashiers cannot oversell.
+  if(branchId)await marlouCheckoutStockBridge.previewSale(conn,{workspaceId,branchId,requirements:[...requirements.values()]});
   let promo=null,senior=null,adjustment=0,discountAmount=0,actual=gross,remark=null,seniorDetails=null;
   if(input.promoId){
     if(input.senior?.enabled)throw Object.assign(new Error('Unable to add Senior Citizen discount with an existing promo.'),{status:400});
@@ -665,7 +668,7 @@ async function createSale(user,body){
     if(customerName.length>120||tableLabel.length>80)throw Object.assign(new Error('Customer name or table label is too long.'),{status:400});
     const workspace=await workspaceIdForUser(user.id);
     if((body.items||[]).some(x=>x.kind==='officePromo'))await officePromotions.lockForSale(tx,workspace,body.items);
-    const quote=await quoteOrder(tx,body,workspace);let tender=quote.actual,change=0,paymentReference=null;
+    const quote=await quoteOrder(tx,body,workspace,branchId);let tender=quote.actual,change=0,paymentReference=null;
     if(mode==='Cash'){tender=money(Number(body.tender||0));if(!Number.isFinite(tender)||tender<quote.actual||tender>MAX_MONEY)throw Object.assign(new Error('Cash tender must cover the amount due and stay within the supported amount range.'),{status:400});change=money(tender-quote.actual);}else{paymentReference=String(body.paymentReference||'').trim();if(!paymentReference||paymentReference.length>150)throw Object.assign(new Error('Enter a GCash reference up to 150 characters.'),{status:400});}
     let reference=null;for(let tries=0;tries<8;tries++){const candidate=makeReference();const exists=await tx.query('SELECT id FROM sales WHERE reference=$1',[candidate]);if(!exists.rows.length){reference=candidate;break;}}if(!reference)throw new Error('Unable to generate a unique sale reference.');
     const saleR=await tx.query(`INSERT INTO sales (reference,cashier_user_id,cashier_name_snapshot,payment_mode,payment_reference,tender,change_amount,status,remark,senior_details,discount_amount,gross,adjustment,actual,promo_id,sold_at,client_request_id,branch_id,order_type,customer_name,table_label) VALUES ($1,$2,$3,$4,$5,$6,$7,'Sold',$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,[reference,user.id,user.username,mode,paymentReference,tender,change,quote.remark,quote.seniorDetails,quote.discountAmount,quote.gross,quote.adjustment,quote.actual,quote.promo?.id||null,nowIso(),clientRequestId||null,branchId,orderType,customerName||null,tableLabel||null]);
@@ -2161,7 +2164,8 @@ async function handleApi(req,res,url){
     user.role==='User'?Number(user.branchId||0):0),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/office-promotions')
     return json(res,200,{campaigns:await officePromotions.forWorkspace(db,await workspaceIdForUser(user.id))},safeHeaders({'Cache-Control':'no-store'}));
-  if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id)),safeHeaders());
+  if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id),
+    user.role==='User'?Number(user.branchId||0):0),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/sales')return json(res,201,await createSale(user,await readJson(req)),safeHeaders());
   const saleDetail=p.match(/^\/api\/sales\/([^/]+)$/);if(method==='GET'&&saleDetail)return json(res,200,await getSaleDetail(decodeURIComponent(saleDetail[1]),user),safeHeaders());
   if(method==='GET'&&p==='/api/inventory'){
