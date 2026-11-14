@@ -1130,7 +1130,26 @@
     renderMovements();
   });
   $('refreshMovements').onclick=loadMovements;
-  $('replenishForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;let items;try{items=batchPayload('replenish');batchFail('replenish','');}catch(err){batchFail('replenish',err.message);return;}await withFormLock(form,async()=>{try{await api('/api/inventory/replenish',{method:'POST',body:{items,deliveredBy:$('deliveredBy').value.trim(),remarks:$('replenishRemarks').value.trim()}});toast(items.length+' ingredient'+(items.length===1?'':'s')+' replenished successfully.');batchClear('replenish');await loadInventory();await loadCatalog();}catch(err){batchFail('replenish',err.message);}});});
+  $('replenishForm').addEventListener('submit',async e=>{
+    e.preventDefault();const form=e.currentTarget;let items;
+    try{
+      if(!$('supplySourceLabel').value.trim())throw new Error('Enter the incoming supplier or source.');
+      if(Number($('replenishReceivingBranch').value)!==selectedInventoryBranch())
+        throw new Error('Select the receiving branch before choosing its ingredients.');
+      items=batchPayload('replenish');batchFail('replenish','');
+    }catch(err){batchFail('replenish',err.message);return;}
+    await withFormLock(form,async()=>{
+      try{
+        const result=await api('/api/inventory/replenish',{method:'POST',body:{
+          items,sourceBranchId:selectedInventoryBranch(),receivingBranchId:Number($('replenishReceivingBranch').value),
+          sourceLabel:$('supplySourceLabel').value.trim(),expectedDeliverer:$('replenishExpectedDeliverer').value.trim(),
+          remarks:$('replenishRemarks').value.trim()}});
+        toast('Incoming supply request #'+result.id+' submitted for approval.');
+        batchClear('replenish');$('supplySourceLabel').value='';$('replenishExpectedDeliverer').value='';
+        $('replenishRemarks').value='';await loadIncomingSupplies();
+      }catch(err){batchFail('replenish',err.message);}
+    });
+  });
   $('transferForm').addEventListener('submit',async e=>{
     e.preventDefault();
     if(state.subscription?.plan!=='BUSINESS'){
