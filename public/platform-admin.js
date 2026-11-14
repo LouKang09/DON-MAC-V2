@@ -103,8 +103,14 @@
        !verified?'Awaiting email verification':
        '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
      const reviewLabel=testEnabled&&x.status==='PENDING'?'Self-registered · pending review':x.status==='CONTACTED'?'Contacted · reviewed':x.status;
+     const paid=String(x.assignedStatus||'')==='PAID';
      const access=testEnabled?
-       badge(x.testActive?'Test login enabled':'Test login disabled',x.testActive?'active':'inactive')+'<small class="application-access-note">Isolated onboarding workspace '+esc(x.testWorkspaceId)+'. Test stock and simulated checkout are available; legacy shared Admin routes are blocked.</small>':
+       badge(!x.testActive?'Login disabled':paid?'Live POS enabled':'Isolated onboarding enabled',
+         x.testActive?'active':'inactive')+
+       '<small class="application-access-note">Workspace '+esc(x.testWorkspaceId)+
+       (paid?' · Production branch-scoped checkout and reporting activated. Legacy global APIs remain blocked.':
+         ' · Opening stock and simulated checkout available until Admin Control marks the subscription Paid.')+
+       '</small>':
        rejected?badge('Not eligible','inactive'):
        prepared?
        badge('Activation pending','unknown')+'<small class="application-access-note">You can now create a controlled Phase 2 test login. Full production activation remains locked.</small>':
@@ -123,7 +129,7 @@
        (testEnabled?'Self-registered':x.status==='CONTACTED'?'Reviewed':
        '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted (review only)</button>')+
        (testEnabled?
-         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+'" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable test login':'Re-enable test login')+'</button>':
+         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+'" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable login':'Re-enable login')+'</button>':
          prepared&&verified&&x.status==='CONTACTED'?
          ' <button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Phase 2 Test Account</button>':'')+
        (testEnabled?'':' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>');
@@ -174,7 +180,7 @@
    const access=event.target.closest('button[data-request-access]');
    if(access){
      const enabled=access.dataset.requestAccess==='true';
-     if(!window.confirm(enabled?'Re-enable this restricted Phase 2 test login?':'Disable this test login immediately and revoke its active sessions?'))return;
+     if(!window.confirm(enabled?'Re-enable this franchise login?':'Disable this franchise login immediately and revoke its active sessions?'))return;
      access.disabled=true;
      try{
        await api('franchise-requests/'+access.dataset.requestId+'/test-access',{
