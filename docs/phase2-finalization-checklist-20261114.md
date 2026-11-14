@@ -28,6 +28,13 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 - [x] **Security denial button — user-confirmed 2026-11-14**: **Test shared-catalog access denial** returned `PASS · shared catalog blocked (403)` for an isolated Phase 2 test account. This verifies denial of `/api/catalog` from the test portal; it does not validate every production endpoint.
 - [ ] **Production checkout code verification (not a request to repeat user testing)**: reconcile the regular cash/GCash/add-on/promo/package checkout and reporting implementations with isolated `branch_*` data. The portal's simulated test sales are stored separately from live POS sales.
 
+## New-product POS stock availability correction (2026-11-14)
+- [x] **Implemented**: Newly added and existing recipe products now provide complete ingredient stock/recipe data to the POS cart planner, including shared ingredient use across multiple product lines and packages. Product cards and plus buttons disable before adding quantities beyond stock; out-of-stock and low-stock warnings show ingredient details.
+- [x] **Server-side quote preflight**: The original Marlou09 workspace checks both legacy checkout stock and its actual branch stock before payment, with transactional checkout deductions unchanged. Final checkout continues to enforce stock safety.
+- [x] **Automatic cross-terminal UI refresh**: POS availability updates every 10 seconds while visible and on focus, plus immediately after successful checkout, without discarding the current cart.
+- [x] **Automated regression**: zero/low stock, new recipes, shared/cart aggregate quantities, package ingredient overlaps, cross-franchise client state, branch source consistency, and quote guard.
+- [ ] **Live UI acceptance**: Test a newly created product with insufficient inventory in the actual POS; verify disabled product button, accurate hover warning, disabled quantity +, and automatic refresh after a different cashier completes the last-item sale. Do not mark this live acceptance complete solely from CI.
+
 ## Must finish before Phase 2 can be called complete
 - [ ] **Checkout critical path**: switch all /api/catalog, /api/quote, /api/sales, product recipes, stock reservations/deductions, returns/reversals, and checkout stock-availability checks to the branch catalog in a single coordinated plan; confirm cash, GCash, addons, promos and packages do not mix legacy stock.
 - [ ] **Admin CRUD and costing**: isolate every product/ingredient edit, image/category edit, recipe & unit-cost update, promos, packages, cost reports, replenish and transfer audit views per workspace+branch; avoid global writes.
