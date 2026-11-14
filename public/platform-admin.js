@@ -111,6 +111,14 @@
        !verified?
        badge('Not activated','unknown')+'<small class="application-access-note">Applicant must verify email first.</small>':
        badge('Not activated','unknown')+'<small class="application-access-note">Prepare starter catalog, then create test account.</small>';
+     const requested=String(x.requestedPlan||'').toUpperCase();
+     const assigned=String(x.assignedPlan||'').toUpperCase();
+     const validRequested=['PRO','BUSINESS'].includes(requested);
+     const planDisplay=(validRequested?badge('Requested: '+(requested==='PRO'?'Pro':'Business'),'unknown'):
+       '<span class="application-plan-empty">No plan preference recorded</span>')+
+       (assigned?'<small class="application-access-note">Assigned: '+esc(assigned==='PRO'?'Pro':'Business')+' · '+esc(x.assignedStatus||'NOT CONFIGURED')+'</small>':
+       '<small class="application-access-note">Awaiting Admin Control assignment</small>')+
+       (testEnabled?'<button type="button" class="link-btn application-plan-button" data-request-plan="'+esc(x.id)+'">'+(assigned?'Manage Plan':'Assign Plan')+'</button>':'');
      const actions=rejected?'—':
        (testEnabled?'Self-registered':x.status==='CONTACTED'?'Reviewed':
        '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted (review only)</button>')+
@@ -123,8 +131,8 @@
       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
       '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(verified?'Verified':'Pending',verified?'active':'unknown')+
       '</td><td>'+badge(reviewLabel,rejected?'inactive':'unknown')+
-      '</td><td>'+staging+'</td><td>'+access+'</td><td>'+actions+'</td></tr>';
-   }).join('')||'<tr><td colspan="10">No franchise applications received.</td></tr>';
+      '</td><td>'+staging+'</td><td>'+planDisplay+'</td><td>'+access+'</td><td>'+actions+'</td></tr>';
+   }).join('')||'<tr><td colspan="11">No franchise applications received.</td></tr>';
  }
  async function reloadFranchiseRequests(){
    const data=await api('franchise-requests');
@@ -136,6 +144,18 @@
    try{await reloadFranchiseRequests()}catch(e){error('franchiseRequestsMessage',e.message)}
  });
  $('franchiseRequestsBody').addEventListener('click',async event=>{
+   const planButton=event.target.closest('button[data-request-plan]');
+   if(planButton){
+     const application=franchiseSignupRequests.find(x=>x.id===planButton.dataset.requestPlan);
+     const owner=accounts.find(x=>Number(x.workspaceId)===Number(application?.testWorkspaceId));
+     if(!owner){error('franchiseRequestsMessage','Reload accounts before assigning a subscription.');return;}
+     openPlan(owner);
+     if(!owner.subscription&&['PRO','BUSINESS'].includes(application?.requestedPlan)){
+       $('subPlan').value=application.requestedPlan;
+       updateSubscriptionBranchQuote();
+     }
+     return;
+   }
    const activate=event.target.closest('button[data-request-test]');
    if(activate){
      if(!window.confirm('Create a real, isolated Phase 2 TEST login with a unique workspace, one branch and zero opening stock? It will have read-only catalog and inventory access. Checkout, global catalog editing, exports and financial operations remain blocked. Credentials will be shown once.'))return;
