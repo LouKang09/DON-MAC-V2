@@ -23,7 +23,7 @@ assert.match(client,/location\.replace\('\/franchise-live\.html'\)/);
 assert.match(scope,/FROM chat_memberships m JOIN franchise_test_accounts t/);
 assert.match(scope,/subscriptionStatus:/);
 assert.match(scope,/liveEnabled:x\.subscription_status==='PAID'/);
-assert.match(scope,/JOIN chat_workspace_branches/); // require scoped owner branch
+assert.match(scope,/FROM chat_workspace_branches w/); // require scoped owner branch
 assert.match(scope,/context\.cashier&&id!==context\.branchId/);
 assert.match(scope,/Only a cashier can process live transactions/);
 assert.match(catalog,/FROM branch_products WHERE workspace_id=\$1 AND branch_id=\$2/);
