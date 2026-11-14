@@ -14,6 +14,8 @@ on:
       - "public/index.html"
       - "public/auth-login-v1574.*"
       - "scripts/franchise-application-access-status-test.js"
+      - "scripts/phase2-test-access-regression.js"
+      - "scripts/direct-stock-selfserve-test.js"
       - "scripts/franchise-plan-request-test.js"
       - "scripts/retire-demo-accounts-postgres-test.js"
       - ".github/workflows/admin-live-onboarding.yml"
@@ -55,6 +57,8 @@ jobs:
           node scripts/franchise-application-access-status-test.js
           node scripts/franchise-plan-request-test.js
           node scripts/signup-otp-selfservice-test.js
+          node scripts/phase2-test-access-regression.js
+          node scripts/direct-stock-selfserve-test.js
       - name: Install PostgreSQL driver
         run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
       - name: Guarded demo retirement and username reuse on PostgreSQL
