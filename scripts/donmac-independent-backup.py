@@ -31,7 +31,7 @@ def main():
         port='55432'
         try:
             info('scratch-starting')
-            run(['pg_ctl','-D',str(store),'-o','-p '+port+' -k /tmp -c listen_addresses=127.0.0.1','-w','start'],'scratch postgres start')
+            run(['pg_ctl','-D',str(store),'-l',str(pathlib.Path(folder)/'scratch-postgres.log'),'-o','-p '+port+' -k /tmp -c listen_addresses=127.0.0.1','-w','start'],'scratch postgres start')
             info('scratch-started')
             run(['createdb','-h','/tmp','-p',port,'-U','postgres','restore_test'],'create restore test DB')
             run(['pg_restore','--single-transaction','--exit-on-error','--no-owner','--no-acl','-h','/tmp','-p',port,'-U','postgres','-d','restore_test',str(dump)],'full restore')
