@@ -449,15 +449,36 @@ async function requireBusinessPlan(user){
   });
 }
 
-async function getCatalog(conn=db,workspaceId=0) {
+async function getCatalog(conn=db,workspaceId=0,branchId=0) {
   const productsR=await conn.query(`SELECT id,sku,name,category,price,image_data,active FROM products WHERE active=$1 ORDER BY category,name`,[true]);
   const addR=await conn.query(`SELECT id,name,price,exclude_from_costing,active FROM add_ons WHERE active=$1 ORDER BY name`,[true]);
   const promoR=await conn.query(`SELECT id,name,inclusion_label,promo_price,food_limit,coffee_limit,active FROM promos WHERE active=$1 ORDER BY id`,[true]);
   const packageR=await conn.query(`SELECT id,name,price,active FROM packages WHERE active=$1 ORDER BY id`,[true]);
   const recR=await conn.query(`SELECT pi.product_id,pi.ingredient_id,pi.quantity_required,i.code,i.display_name,i.uom,i.stock_qty,i.low_stock_threshold,i.active FROM product_ingredients pi JOIN ingredients i ON i.id=pi.ingredient_id`);
+  // For the original Marlou09 POS, a successful checkout must have sufficient
+  // stock in BOTH the legacy sale engine and its branch-specific inventory.
+  // Use the smaller balance on product cards, including freshly added recipes.
+  let recipeRows=recR.rows;
+  if(workspaceId&&branchId&&await marlouCheckoutStockBridge.originalWorkspace(conn,workspaceId)){
+    const ownership=await conn.query('SELECT 1 FROM chat_workspace_branches WHERE workspace_id=$1 AND branch_id=$2',
+      [Number(workspaceId),Number(branchId)]);
+    if(ownership.rows.length!==1)throw Object.assign(new Error('This branch does not belong to the franchise.'),{status:403});
+    const branches=await conn.query('SELECT code,uom,stock_qty,low_stock_threshold,active FROM branch_ingredients '+
+      'WHERE workspace_id=$1 AND branch_id=$2',[Number(workspaceId),Number(branchId)]);
+    const byCode=new Map(branches.rows.map(row=>[normalize(row.code),row]));
+    recipeRows=recR.rows.map(r=>{
+      const own=byCode.get(normalize(r.code));
+      if(!own||normalize(own.uom)!==normalize(r.uom))
+        return{...r,stock_qty:0,active:false,branch_stock_missing:true};
+      return{...r,stock_qty:Math.min(Number(r.stock_qty),Number(own.stock_qty)),
+        low_stock_threshold:Math.max(Number(r.low_stock_threshold||0),Number(own.low_stock_threshold||0)),
+        active:bool(r.active)&&bool(own.active)};
+    });
+  }
+
   const packItemsR=await conn.query(`SELECT pi.package_id,pi.product_id,pi.quantity,p.name AS product_name,p.active AS product_active FROM package_items pi JOIN products p ON p.id=pi.product_id ORDER BY pi.package_id,p.name`);
   const recipeByProduct=new Map();
-  for(const r of recR.rows){const pid=Number(r.product_id);if(!recipeByProduct.has(pid))recipeByProduct.set(pid,[]);recipeByProduct.get(pid).push(r);}
+  for(const r of recipeRows){const pid=Number(r.product_id);if(!recipeByProduct.has(pid))recipeByProduct.set(pid,[]);recipeByProduct.get(pid).push(r);}
   const productMap=new Map(productsR.rows.map(p=>[Number(p.id),p]));
   const products=productsR.rows.map(p=>{
     const rec=recipeByProduct.get(Number(p.id))||[];
@@ -2136,7 +2157,8 @@ async function handleApi(req,res,url){
       (branchId==null?'':' AND s.branch_id=$5'),args);
     return json(res,200,{count:Number(rows.rows[0]?.count||0)},safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(db,await workspaceIdForUser(user.id)),safeHeaders());
+  if(method==='GET'&&p==='/api/catalog')return json(res,200,await getCatalog(db,await workspaceIdForUser(user.id),
+    user.role==='User'?Number(user.branchId||0):0),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/office-promotions')
     return json(res,200,{campaigns:await officePromotions.forWorkspace(db,await workspaceIdForUser(user.id))},safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/quote')return json(res,200,await quoteOrder(db,await readJson(req),await workspaceIdForUser(user.id)),safeHeaders());
