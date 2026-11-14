@@ -96,7 +96,7 @@
      $('operationMessage').textContent=response.testOnly?'Test-only operation saved. No real sale or payment was created.':'Test stock updated in the isolated branch.';
      await load();
    }catch(e){$('operationMessage').textContent='Not saved: '+e.message;if(e.status===409)await load();}
-   finally{submit.disabled=false}
+   finally{if(form.id==='saleForm')syncSaleCapacity();else submit.disabled=false}
  };
  $('stockForm').addEventListener('submit',e=>{
    e.preventDefault();operation(e.currentTarget,'/api/phase2-test/stock','POST',{
