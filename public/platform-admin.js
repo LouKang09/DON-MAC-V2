@@ -104,7 +104,7 @@
        '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
      const reviewLabel=x.status==='CONTACTED'?'Contacted · reviewed':x.status;
      const access=testEnabled?
-       badge('Test login enabled','active')+'<small class="application-access-note">Phase 2 isolated workspace '+esc(x.testWorkspaceId)+'. Read-only test portal; checkout and shared Admin functions blocked.</small>':
+       badge(x.testActive?'Test login enabled':'Test login disabled',x.testActive?'active':'inactive')+'<small class="application-access-note">Phase 2 isolated workspace '+esc(x.testWorkspaceId)+'. Read-only test portal; checkout and shared Admin functions blocked.</small>':
        rejected?badge('Not eligible','inactive'):
        prepared?
        badge('Activation pending','unknown')+'<small class="application-access-note">You can now create a controlled Phase 2 test login. Full production activation remains locked.</small>':
@@ -115,7 +115,7 @@
        (x.status==='CONTACTED'?'Reviewed':
        '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted (review only)</button>')+
        (testEnabled?
-         ' <span class="application-access-note">Test account created</span>':
+         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+'" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable test login':'Re-enable test login')+'</button>':
          prepared&&verified&&x.status==='CONTACTED'?
          ' <button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Phase 2 Test Account</button>':'')+
        (testEnabled?'':' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>');
@@ -149,6 +149,20 @@
        await reloadFranchiseRequests();
      }catch(e){error('franchiseRequestsMessage',e.message)}
      finally{activate.disabled=false}
+     return;
+   }
+   const access=event.target.closest('button[data-request-access]');
+   if(access){
+     const enabled=access.dataset.requestAccess==='true';
+     if(!window.confirm(enabled?'Re-enable this restricted Phase 2 test login?':'Disable this test login immediately and revoke its active sessions?'))return;
+     access.disabled=true;
+     try{
+       await api('franchise-requests/'+access.dataset.requestId+'/test-access',{
+         method:'PUT',body:JSON.stringify({enabled})
+       });
+       await reloadFranchiseRequests();
+     }catch(e){error('franchiseRequestsMessage',e.message)}
+     finally{access.disabled=false}
      return;
    }
    const prepare=event.target.closest('button[data-request-prepare]');
