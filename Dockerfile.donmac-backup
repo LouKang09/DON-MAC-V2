@@ -1,0 +1,5 @@
+FROM postgres:18-alpine
+RUN apk add --no-cache python3 py3-pip ca-certificates && python3 -m venv /opt/backup && /opt/backup/bin/pip install --no-cache-dir boto3
+COPY scripts/donmac-independent-backup.py /app/backup.py
+USER postgres
+ENTRYPOINT ["/opt/backup/bin/python","/app/backup.py"]
