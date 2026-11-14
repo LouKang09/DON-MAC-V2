@@ -257,7 +257,7 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 /* Admin Control self-service requests never activate users automatically. */
 .franchise-request-section .section-header{gap:15px}
 .franchise-request-section .section-header p{max-width:76ch;line-height:1.5}
-.franchise-requests-table{width:100%;min-width:790px}
+.franchise-requests-table{width:100%;min-width:1080px}
 .franchise-requests-table th,.franchise-requests-table td{
   vertical-align:middle;text-align:left;padding:12px 10px;font-size:12px
 }
@@ -303,3 +303,8 @@ main{max-width:1640px;padding:34px 36px 48px;margin:auto}
 @media(max-width:580px){
  #subscriptionDialog .branch-downgrade-list{grid-template-columns:1fr}
 }
+
+/* Plan preference is informational; Admin Control sets plan and payment status. */
+.franchise-requests-table .application-plan-button{display:block;margin-top:6px;font-weight:800;white-space:nowrap}
+.franchise-requests-table .application-plan-empty{font-size:11px;color:#7c8e7e}
+.franchise-requests-table td{overflow-wrap:anywhere}

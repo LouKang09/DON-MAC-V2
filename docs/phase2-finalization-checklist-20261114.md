@@ -51,6 +51,14 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 - [ ] **Production acceptance:** Confirm on the actual Admin Control/POS UI that table spacing, transfer action buttons, initial stock posting, OTP-created login, and account restrictions match expectations. This is separate from passing automated regressions.
 - [ ] **Full production franchise activation:** Replace remaining legacy shared POS/Admin paths and verify real checkout, reporting, subscriptions and uploads before granting full live POS access to newly registered accounts.
 
+## Applicant desired-plan selection and Admin Control assignment (2026-11-14)
+- [x] Add desired **Pro** or **Business** plan selection during signup (before email OTP). Persist the choice with the applicant and copy it into the newly created isolated workspace's pending plan request after a successful OTP/password registration.
+- [x] Show **Requested / Assigned Plan** on Admin Control → New Account Applications; add **Assign Plan / Manage Plan** action opening the existing subscription editor. The requested plan is preselected, while Admin Control exclusively decides actual plan, base subscription amount, next payment date, and Paid/Unpaid/On Hold status. No applicant can mark themselves paid.
+- [x] Preserve previous applications with no plan choice; Admin Control can still select an appropriate plan manually.
+- [x] Automated tests confirm Pro/Business validation, pending-plan provisioning, admin application controls, OTP single-use/password hashing, and unchanged 403 legacy-catalog gate.
+- [ ] **Live browser acceptance**: verify the new signup plan selector and Admin Control plan editor reflect the same applicant choice. Confirm that Paid, Unpaid and On Hold statuses behave as intended.
+- [ ] **Full unrestricted POS activation**: User's manual acceptance of multi-franchise catalog, pricing, ingredients and transaction separation is recorded. However, production source still accesses shared `products`, `ingredients`, `product_ingredients` for some `/api/catalog`, `/api/quote`, `/api/sales`, and some Admin/reporting paths. Do not disable `PHASE2_TEST_RESTRICTED` or `preventSharedCatalogLeak` for newly created accounts without completing scoped conversion and cross-tenant integration tests. Assigning/marking a plan Paid does not grant unsafe legacy routes.
+
 ## Must finish before Phase 2 can be called complete
 - [ ] **Checkout critical path**: switch all /api/catalog, /api/quote, /api/sales, product recipes, stock reservations/deductions, returns/reversals, and checkout stock-availability checks to the branch catalog in a single coordinated plan; confirm cash, GCash, addons, promos and packages do not mix legacy stock.
 - [ ] **Admin CRUD and costing**: isolate every product/ingredient edit, image/category edit, recipe & unit-cost update, promos, packages, cost reports, replenish and transfer audit views per workspace+branch; avoid global writes.

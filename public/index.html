@@ -72,6 +72,8 @@
           <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
           <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address"></label>
           <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
+          <label>Desired Subscription Plan<select id="regRequestedPlan" required><option value="">Choose your plan</option><option value="PRO">Pro — up to 3 branches</option><option value="BUSINESS">Business — multi-branch features</option></select></label>
+          <p class="auth-field-status">This is a plan request, not an automatic charge or activation. Admin Control will confirm your plan, subscription amount and payment status.</p>
           <p class="auth-field-status">After your email OTP is verified, your chosen password will create an isolated starter workspace with zero stock. Full production POS access remains subject to activation checks.</p>
           <button id="regSubmit" type="submit" class="primary auth-submit">Submit Request</button>
         </form>
@@ -1040,7 +1042,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.6.07"></script>
+  <script src="/auth-login-v1574.js?v=1.6.09"></script>
   <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.08"></script>
 </body>
 </html>

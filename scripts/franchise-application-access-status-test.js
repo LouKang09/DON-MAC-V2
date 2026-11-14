@@ -9,11 +9,11 @@ const requests=read('lib/public-franchise-requests.js');
 const readiness=read('lib/franchise-activation-readiness.js');
 const staging=read('lib/franchise-tenant-staging.js');
 
-assert.match(html,/<th>Account Access<\/th><th>Review Action<\/th>/);
-assert.match(html,/colspan="10">Loading applications/);
+assert.match(html,/<th>Requested \/ Assigned Plan<\/th><th>Account Access<\/th><th>Review Action<\/th>/);
+assert.match(html,/colspan="11">Loading applications/);
 assert.match(html,/Mark Contacted records outreach only/);
-assert.match(html,/platform-admin\.js\?v=1\.0\.13/);
-assert.match(html,/platform-admin\.css\?v=1\.0\.8/);
+assert.match(html,/platform-admin\.js\?v=1\.0\.14/);
+assert.match(html,/platform-admin\.css\?v=1\.0\.9/);
 assert.match(css,/\.application-access-note\{/);
 
 assert.match(app,/x\.status==='CONTACTED'\?'Contacted · reviewed'/);
@@ -29,6 +29,12 @@ assert.match(app,/Disable test login/);
 assert.match(html,/phase2TestLoginDialog/);
 assert.match(html,/Copy Credentials/);
 assert.match(app,/No franchise applications received/);
+assert.match(app,/Requested: /);
+assert.match(app,/data-request-plan/);
+assert.match(app,/openPlan\(owner\)/);
+assert.match(app,/Assign Plan/);
+assert.match(requests,/requested_plan/);
+assert.match(html,/Requested \/ Assigned Plan/);
 
 // Application review must never silently activate a new franchise account.
 assert.match(requests,/new Set\(\['PENDING','CONTACTED','REJECTED'\]\)/);
