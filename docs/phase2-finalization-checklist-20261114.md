@@ -12,10 +12,14 @@ Updated: 2026-11-14 (Asia/Manila). Status is based on the connected GitHub imple
 - [x] Add cashier-specific **View Transactions**, **View Expenses**, **Record/Edit Expenses** checkboxes; guard finance APIs and pin cashier finance data to their assigned branch. Owners/Co-Owners retain admin access.
 - [x] Enable **explicit Phase 2 TEST accounts** for reviewed, OTP-verified, staged applications. Admin Control issues a one-time password, a unique workspace, one independently seeded branch with zero stock, and an isolated test portal; login can be disabled immediately. Test-only stock replenishment, simulated checkout deduction, product price edits and private test-sales reports are supported. All normal checkout, global catalog editing, billing and exports remain blocked for test tenants. These tests do NOT replace real POS cross-franchise cutover testing.
 
+## User acceptance — functional isolation (2026-11-14)
+- [x] **User-reported acceptance beyond the test portal**: ingredients, product pricing, checkout and stock deduction were observed to behave independently in the tested accounts/branches. Accept this as completed user testing; do not request an identical manual retest. Precise production route and database table usage were not established by the report alone.
+- [ ] **Code-level production checkout alignment (separate from user acceptance)**: as of commit `dbbdda3afe514638fdc52bac54b8d88e0d398f76`, `getCatalog`, `quoteOrder` and `createSale` still query legacy global `products`/`ingredients`/`product_ingredients` paths. Complete scoped API conversion and verify through integration tests before declaring full franchise isolation.
+
 ## User acceptance — isolated test portal (2026-11-14)
 - [x] **User-confirmed**: test franchise ingredients, product pricing, simulated checkout and corresponding stock deductions behave independently in the Phase 2 test portal. This is a manual acceptance report, not independently observed live transaction logs.
 - [x] **Security denial button — user-confirmed 2026-11-14**: **Test shared-catalog access denial** returned `PASS · shared catalog blocked (403)` for an isolated Phase 2 test account. This verifies denial of `/api/catalog` from the test portal; it does not validate every production endpoint.
-- [ ] **Production checkout cutover**: independently verify the full real cash/GCash/add-on/promo/package checkout and reports operate on branch-scoped data. The portal's simulated test sales are stored separately from live POS sales.
+- [ ] **Production checkout code verification (not a request to repeat user testing)**: reconcile the regular cash/GCash/add-on/promo/package checkout and reporting implementations with isolated `branch_*` data. The portal's simulated test sales are stored separately from live POS sales.
 
 ## Must finish before Phase 2 can be called complete
 - [ ] **Checkout critical path**: switch all /api/catalog, /api/quote, /api/sales, product recipes, stock reservations/deductions, returns/reversals, and checkout stock-availability checks to the branch catalog in a single coordinated plan; confirm cash, GCash, addons, promos and packages do not mix legacy stock.
