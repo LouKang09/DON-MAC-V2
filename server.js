@@ -35,6 +35,7 @@ const marlouTestStockReset=require('./lib/marlou-test-stock-reset');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 const franchiseTestAccess=require('./lib/franchise-test-access');
+const franchiseTestOperations=require('./lib/franchise-test-operations');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -2053,8 +2054,20 @@ async function handleApi(req,res,url){
   // This is an exhaustive allowlist before every normal POS, billing, chat or Admin route.
   const phase2Test=await franchiseTestAccess.account(db,user.id);
   if(phase2Test){
-    if(method==='GET'&&p==='/api/phase2-test/overview')
-      return json(res,200,await franchiseTestAccess.overview(db,user.id,url.searchParams.get('branchId')),
+    if(method==='GET'&&p==='/api/phase2-test/overview'){
+      const result=await franchiseTestAccess.overview(db,user.id,url.searchParams.get('branchId'));
+      result.report=await franchiseTestOperations.report(db,user.id);
+      return json(res,200,result,safeHeaders({'Cache-Control':'no-store'}));
+    }
+    if(method==='POST'&&p==='/api/phase2-test/stock')
+      return json(res,200,await franchiseTestOperations.replenish(db,user.id,await readJson(req,4096)),
+        safeHeaders({'Cache-Control':'no-store'}));
+    if(method==='POST'&&p==='/api/phase2-test/sale')
+      return json(res,201,await franchiseTestOperations.simulatedSale(db,user.id,await readJson(req,4096)),
+        safeHeaders({'Cache-Control':'no-store'}));
+    const priceMatch=p.match(/^\/api\/phase2-test\/products\/(\d+)\/price$/);
+    if(method==='PUT'&&priceMatch)
+      return json(res,200,await franchiseTestOperations.updatePrice(db,user.id,Number(priceMatch[1]),await readJson(req,4096)),
         safeHeaders({'Cache-Control':'no-store'}));
     return json(res,403,{error:'Phase 2 test account: this operation is not activated. Use the isolated test portal. Live checkout and shared Admin APIs are blocked.',
       code:'PHASE2_TEST_RESTRICTED',testPortal:'/phase2-test.html'},safeHeaders({'Cache-Control':'no-store'}));
@@ -2342,7 +2355,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseTestOperations.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
