@@ -80,7 +80,7 @@
       <section class="main-card franchise-request-section" id="franchiseRequestSection" aria-label="Franchise signup requests">
         <div class="section-header"><div><span class="eyebrow">FRANCHISE REQUESTS</span>
           <h2>New account applications</h2>
-          <p>Review applications, verify email, and prepare separate starter catalogs. <strong>Mark Contacted records outreach only, not a signed contract or POS activation.</strong> New-account login remains locked until tenant isolation and security validation are complete.</p>
+          <p>Review applications, verify email, and prepare separate starter catalogs. <strong>Mark Contacted records outreach only, not a signed contract or POS activation.</strong> Production activation remains locked until tenant isolation and security validation pass. Admin Control can issue a restricted Phase 2 TEST login after email verification and starter catalog preparation.</p>
         </div><button id="refreshFranchiseRequests" class="btn btn-main" type="button">Refresh Requests</button></div>
         <p id="franchiseRequestsMessage" class="notice hidden" role="status"></p>
         <div id="franchiseActivationReadiness" class="franchise-activation-status" role="status" aria-live="polite">Checking franchise data isolation…</div>
@@ -122,6 +122,21 @@
     </main>
   </div>
 </div>
+<dialog id="phase2TestLoginDialog" class="editor" aria-labelledby="phase2TestCredentialsTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">PHASE 2 TEST ACCOUNT</span>
+    <h2 id="phase2TestCredentialsTitle">One-time test login credentials</h2>
+    <p>Copy and store these credentials now. The temporary password will not be displayed again.</p>
+  </div></div>
+  <label>Username<input id="phase2TestLoginUsername" readonly autocomplete="off"></label>
+  <label>Temporary password<input id="phase2TestLoginPassword" readonly autocomplete="off"></label>
+  <label>POS sign-in website<input id="phase2TestLoginUrl" readonly autocomplete="off"></label>
+  <p class="dialog-tip">This test account signs in at the regular POS address but opens a separate isolated test portal. Checkout, shared-data operations and real billing are disabled.</p>
+  <p id="phase2TestCredentialHint" class="dialog-tip" role="status">Copy credentials before closing.</p>
+  <div class="dialog-actions">
+    <button id="phase2TestCredentialsCopy" class="btn btn-main" type="button">Copy Credentials</button>
+    <button id="phase2TestCredentialsClose" class="btn btn-secondary" type="button">Close</button>
+  </div>
+</dialog>
 <dialog id="subscriptionDialog" class="editor">
 <form id="subscriptionForm" method="dialog">
  <div class="dialog-heading"><div><span class="eyebrow">MANUAL RECORD</span><h2>Manage Subscription</h2><p id="subscriptionOwner"></p></div>
@@ -170,6 +185,6 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.12"></script>
+<script defer src="/platform-admin.js?v=1.0.13"></script>
 <script defer src="/refresh-controls-v20261107.js?v=1"></script>
 </body></html>

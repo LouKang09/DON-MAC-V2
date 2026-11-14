@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Don Mac · Phase 2 Test Workspace</title><link rel="stylesheet" href="/phase2-test.css?v=1"></head>
+<body><main class="shell">
+ <header class="header"><div><p class="eyebrow">DON MACCHIATOS · CONTROLLED PHASE 2</p>
+  <h1>Isolated test workspace</h1><p class="sub">Live authentication and real branch isolation, with unsafe legacy operations blocked.</p></div>
+  <div class="header-actions"><button type="button" id="refresh">Refresh data</button><button type="button" id="logout" class="outline">Log out</button></div></header>
+ <div id="message" class="notice" role="status">Verifying signed-in account…</div>
+ <section class="overview" aria-label="Test environment">
+  <div class="metric"><small>Workspace</small><strong id="ws">—</strong></div>
+  <div class="metric"><small>Isolated branch</small><strong id="branch">—</strong></div>
+  <div class="metric"><small>Products</small><strong id="productCount">—</strong></div>
+  <div class="metric"><small>Ingredient types</small><strong id="ingredientCount">—</strong></div>
+  <div class="metric"><small>Opening inventory</small><strong id="stockCount">—</strong></div>
+ </section>
+ <section class="card"><h2>What you can verify here</h2><p>Adjust your own branch's ingredient stock, simulate a sale, edit a test product price, and review only this workspace's simulated receipts. Create a second test account in Admin Control to compare workspace IDs and validate the isolation boundaries. The data comes from isolated <code>branch_*</code> tables and a test-only sales ledger.</p>
+ <div class="actions"><button type="button" id="checkLegacy">Test shared-catalog access denial</button><span id="accessCheck" aria-live="polite"></span></div></section>
+ <section class="card"><h2>Isolated testing operations</h2>
+ <p>These operations affect only this test workspace. Sales are simulations in a separate test ledger, not actual customer payments.</p>
+ <div class="test-controls">
+  <form id="stockForm"><h3>1 · Add test stock</h3><label>Ingredient<select required id="stockIngredient"></select></label>
+    <label>Quantity to add<input id="stockQuantity" type="number" min=".001" max="10000" step=".001" value="5" required></label>
+    <button type="submit">Add test stock</button></form>
+  <form id="saleForm"><h3>2 · Simulate a checkout</h3><label>Product<select required id="saleProduct"></select></label>
+    <label>Quantity<input id="saleQuantity" type="number" min="1" max="25" step="1" value="1" required></label>
+    <button type="submit">Simulate sale and deduct branch ingredients</button></form>
+  <form id="priceForm"><h3>3 · Edit this branch's pricing</h3><label>Product<select required id="priceProduct"></select></label>
+    <label>New price (₱)<input id="priceAmount" type="number" min="0" max="9999999" step=".01" required></label>
+    <button type="submit">Save test product price</button></form>
+ </div>
+ <p id="operationMessage" role="status"></p>
+</section>
+<section class="card"><h2>Isolated test sales report</h2>
+ <div class="report-summary"><span id="testSaleCount">0 test sales</span><strong id="testRevenue">₱0.00</strong></div>
+ <div class="table-wrap"><table><thead><tr><th>Test product</th><th>Quantity</th><th>Test total</th><th>Recorded</th></tr></thead><tbody id="testSales"><tr><td colspan="4">No test transactions.</td></tr></tbody></table></div>
+</section>
+<div class="columns"><section class="card"><h2>Branch product catalog</h2><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Recipe / Availability</th></tr></thead><tbody id="products"><tr><td colspan="4">Loading…</td></tr></tbody></table></div></section>
+ <section class="card"><h2>Branch ingredient balances</h2><div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>Unit</th><th>On hand</th></tr></thead><tbody id="ingredients"><tr><td colspan="3">Loading…</td></tr></tbody></table></div></section></div>
+ <p class="foot">TEST ENVIRONMENT ONLY · No real sales or payments are created; test-only stock movements and catalog changes are isolated to this workspace. Global Admin CRUD and real POS checkout remain blocked. Full POS access will be enabled only after branch-scoped checkout and reporting passes validation.</p>
+</main><script defer src="/phase2-test.js?v=2"></script></body></html>

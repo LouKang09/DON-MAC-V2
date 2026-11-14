@@ -90,30 +90,35 @@
      el.innerHTML='<strong>Direct activation: '+(result.activationEnabled?'Enabled':'Locked — isolation in progress')+'</strong>'+
        '<p>'+esc(result.message||'')+'</p>'+
        (blocked?'<p>'+blocked+' of '+Number(result.checkedTables||0)+' live data tables still require workspace scoping.</p>':'')+
-       '<small>Admin Control can prepare independent catalogs for verified applications, but preparation does not create a login.</small>';
+       '<small>Verified, prepared applications can create restricted test logins. Full-production activation remains locked until tenant isolation passes.</small>';
    }catch(e){el.textContent='Activation readiness could not be verified. Direct activation remains locked.';}
  }
  function renderFranchiseRequests(){
    const rows=franchiseSignupRequests;
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
-     const verified=!!x.emailVerifiedAt,prepared=!!x.stageStatus,rejected=x.status==='REJECTED';
+     const verified=!!x.emailVerifiedAt,prepared=!!x.stageStatus,rejected=x.status==='REJECTED',
+       testEnabled=Number(x.testUserId)>0;
      const staging=rejected?'—':prepared?
-       badge('Prepared','active')+'<small class="application-access-note">Independent starter catalog staged; no existing stock, sales, or login copied.</small>':
+       badge('Prepared','active')+'<small class="application-access-note">Independent starter catalog; zero starting inventory.</small>':
        !verified?'Awaiting email verification':
        '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare starter catalog</button>';
-     // Contacted is only an outreach/review state. It is not a contract or activation.
-     const reviewLabel=x.status==='CONTACTED'?'Contacted · review only':x.status;
-     const access=rejected?
-       badge('Not eligible','inactive')+'<small class="application-access-note">Application rejected. No account was created.</small>':
+     const reviewLabel=x.status==='CONTACTED'?'Contacted · reviewed':x.status;
+     const access=testEnabled?
+       badge(x.testActive?'Test login enabled':'Test login disabled',x.testActive?'active':'inactive')+'<small class="application-access-note">Phase 2 isolated workspace '+esc(x.testWorkspaceId)+'. Read-only test portal; checkout and shared Admin functions blocked.</small>':
+       rejected?badge('Not eligible','inactive'):
        prepared?
-       badge('Activation pending','unknown')+'<small class="application-access-note">Catalog ready; POS login remains locked until Phase 2 tenant isolation is completed and approved.</small>':
+       badge('Activation pending','unknown')+'<small class="application-access-note">You can now create a controlled Phase 2 test login. Full production activation remains locked.</small>':
        !verified?
-       badge('Not activated','unknown')+'<small class="application-access-note">Applicant must verify email before starter catalog preparation.</small>':
-       badge('Not activated','unknown')+'<small class="application-access-note">Prepare starter catalog next. Mark Contacted does not grant POS login.</small>';
+       badge('Not activated','unknown')+'<small class="application-access-note">Applicant must verify email first.</small>':
+       badge('Not activated','unknown')+'<small class="application-access-note">Prepare starter catalog, then create test account.</small>';
      const actions=rejected?'—':
        (x.status==='CONTACTED'?'Reviewed':
-       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'" title="Records applicant outreach only; does not activate login">Mark Contacted (review only)</button>')+
-       ' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>';
+       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted (review only)</button>')+
+       (testEnabled?
+         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+'" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable test login':'Re-enable test login')+'</button>':
+         prepared&&verified&&x.status==='CONTACTED'?
+         ' <button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Phase 2 Test Account</button>':'')+
+       (testEnabled?'':' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Reject</button>');
      return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
       '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(verified?'Verified':'Pending',verified?'active':'unknown')+
@@ -131,6 +136,35 @@
    try{await reloadFranchiseRequests()}catch(e){error('franchiseRequestsMessage',e.message)}
  });
  $('franchiseRequestsBody').addEventListener('click',async event=>{
+   const activate=event.target.closest('button[data-request-test]');
+   if(activate){
+     if(!window.confirm('Create a real, isolated Phase 2 TEST login with a unique workspace, one branch and zero opening stock? It will have read-only catalog and inventory access. Checkout, global catalog editing, exports and financial operations remain blocked. Credentials will be shown once.'))return;
+     activate.disabled=true;
+     try{
+       const data=await api('franchise-requests/'+activate.dataset.requestTest+'/test-activate',{method:'POST',body:'{}'});
+       $('phase2TestLoginUsername').value=data.username||'';
+       $('phase2TestLoginPassword').value=data.password||'';
+       $('phase2TestLoginUrl').value='https://donmacpos.com/';
+       $('phase2TestLoginDialog').showModal();
+       await reloadFranchiseRequests();
+     }catch(e){error('franchiseRequestsMessage',e.message)}
+     finally{activate.disabled=false}
+     return;
+   }
+   const access=event.target.closest('button[data-request-access]');
+   if(access){
+     const enabled=access.dataset.requestAccess==='true';
+     if(!window.confirm(enabled?'Re-enable this restricted Phase 2 test login?':'Disable this test login immediately and revoke its active sessions?'))return;
+     access.disabled=true;
+     try{
+       await api('franchise-requests/'+access.dataset.requestId+'/test-access',{
+         method:'PUT',body:JSON.stringify({enabled})
+       });
+       await reloadFranchiseRequests();
+     }catch(e){error('franchiseRequestsMessage',e.message)}
+     finally{access.disabled=false}
+     return;
+   }
    const prepare=event.target.closest('button[data-request-prepare]');
    if(prepare){
      prepare.disabled=true;
@@ -161,6 +195,14 @@
      await reloadFranchiseRequests();
    }catch(e){error('franchiseRequestsMessage',e.message)}
    finally{button.disabled=false}
+ });
+ $('phase2TestCredentialsClose').addEventListener('click',()=>$('phase2TestLoginDialog').close());
+ $('phase2TestCredentialsCopy').addEventListener('click',async()=>{
+   const fields=['phase2TestLoginUsername','phase2TestLoginPassword','phase2TestLoginUrl'];
+   const labels=['Username: ','Temporary password: ','POS sign-in: '];
+   const text=fields.map((id,i)=>labels[i]+$(id).value).join('\\n');
+   try{await navigator.clipboard.writeText(text);$('phase2TestCredentialHint').textContent='Copied. Store these credentials securely.'}
+   catch(_){$('phase2TestLoginPassword').select();$('phase2TestCredentialHint').textContent='Clipboard unavailable. The password is selected for manual copy.'}
  });
  $('refreshAccounts').addEventListener('click',reload);
  const findOwner=ws=>accounts.find(x=>x.workspaceId===Number(ws));
