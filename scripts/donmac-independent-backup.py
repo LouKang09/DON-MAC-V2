@@ -5,7 +5,8 @@ TABLES=('users','chat_workspaces','chat_memberships','branches','chat_workspace_
 VARS=('DATABASE_URL','BACKUP_ENDPOINT','BACKUP_BUCKET','BACKUP_REGION','BACKUP_ACCESS_KEY_ID','BACKUP_SECRET_ACCESS_KEY')
 def info(event,**kw):print(json.dumps(dict(event=event,**kw)),flush=True)
 def run(args,label):
-    p=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=1200)
+    seconds=80 if label=='scratch postgres start' else 1200
+    p=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=seconds)
     if p.returncode:raise RuntimeError(label+' failed; exit '+str(p.returncode))
     return p.stdout.strip()
 def main():
@@ -29,7 +30,9 @@ def main():
         info('scratch-initialized')
         port='55432'
         try:
-            run(['pg_ctl','-D',str(store),'-o',"-c listen_addresses='' -c unix_socket_directories='/tmp' -p "+port,'-w','start'],'scratch postgres start')
+            info('scratch-starting')
+            run(['pg_ctl','-D',str(store),'-o','-p '+port+' -k /tmp -c listen_addresses=127.0.0.1','-w','start'],'scratch postgres start')
+            info('scratch-started')
             run(['createdb','-h','/tmp','-p',port,'-U','postgres','restore_test'],'create restore test DB')
             run(['pg_restore','--single-transaction','--exit-on-error','--no-owner','--no-acl','-h','/tmp','-p',port,'-U','postgres','-d','restore_test',str(dump)],'full restore')
             info('scratch-restored')
