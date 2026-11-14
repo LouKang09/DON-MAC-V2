@@ -1,0 +1,37 @@
+name: Signup requested plan and Admin assignment
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/public-franchise-requests.js"
+      - "lib/franchise-test-access.js"
+      - "public/platform-admin.js"
+      - "public/platform-admin.html"
+      - "public/platform-admin.css"
+      - "public/index.html"
+      - "public/auth-login-v1574.js"
+      - "scripts/franchise-plan-request-test.js"
+      - "scripts/signup-otp-selfservice-test.js"
+      - "scripts/franchise-application-access-status-test.js"
+      - ".github/workflows/franchise-plan-assignment.yml"
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Validate scripts and secure signup API
+        run: |
+          node --check server.js
+          node --check lib/public-franchise-requests.js
+          node --check lib/franchise-test-access.js
+          node --check public/platform-admin.js
+          node --check public/auth-login-v1574.js
+      - name: Verify request, OTP-bound provisioning, Admin plan and status
+        run: |
+          node scripts/franchise-plan-request-test.js
+          node scripts/signup-otp-selfservice-test.js
+          node scripts/franchise-application-access-status-test.js
+          node scripts/phase2-test-access-regression.js
