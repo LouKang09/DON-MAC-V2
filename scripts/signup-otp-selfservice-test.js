@@ -14,20 +14,20 @@ const otp=require('../lib/franchise-email-verification');
 const appId='77777777-7777-4777-8777-777777777777';
 const code='846213',salt='b'.repeat(32),digest=crypto.scryptSync(code,salt,32).toString('hex');
 let applicant={id:appId,username:'verified-owner',email:'registered@example.com',
- full_name:'Verified Owner',phone:'09171234567',status:'PENDING',email_verified_at:null,
+ full_name:'Verified Owner',phone:'09171234567',status:'PENDING',requested_plan:'BUSINESS',email_verified_at:null,
  verification_hash:salt+':'+digest,verification_expires_at:new Date(Date.now()+5*60000).toISOString(),
  verification_sent_at:new Date(Date.now()-60000).toISOString(),verification_attempts:0};
-const users=[],workspaces=[],memberships=[],branches=[],links=[],testAccounts=[],queries=[];
+const users=[],workspaces=[],memberships=[],branches=[],links=[],testAccounts=[],pendingPlans=[],queries=[];
 let nextUser=1,nextWorkspace=31,nextBranch=200;
 const db={
  engine:'postgres',
  async transaction(callback){
   const old=JSON.parse(JSON.stringify(applicant));
-  const lens=[users.length,workspaces.length,memberships.length,branches.length,links.length,testAccounts.length];
+  const lens=[users.length,workspaces.length,memberships.length,branches.length,links.length,testAccounts.length,pendingPlans.length];
   try{return await callback(db)}
   catch(err){
    applicant=old;
-   [users,workspaces,memberships,branches,links,testAccounts].forEach((arr,i)=>arr.length=lens[i]);
+   [users,workspaces,memberships,branches,links,testAccounts,pendingPlans].forEach((arr,i)=>arr.length=lens[i]);
    throw err;
   }
  },
@@ -48,7 +48,7 @@ const db={
    applicant.verification_expires_at=null;applicant.verification_sent_at=null;
    return{rows:[{id:appId}]};
   }
-  if(sql.startsWith('SELECT id,username,full_name,email,phone,status,email_verified_at FROM public_franchise_requests'))
+  if(sql.startsWith('SELECT id,username,full_name,email,phone,status,email_verified_at,requested_plan FROM public_franchise_requests'))
    return{rows:applicant.id===p[0]?[{...applicant}]:[]};
   if(sql.startsWith('SELECT user_id FROM franchise_test_accounts WHERE request_id='))
    return{rows:testAccounts.filter(x=>x.request_id===p[0]).map(x=>({user_id:x.user_id}))};
@@ -65,6 +65,9 @@ const db={
    const b={id:nextBranch++,name:p[0],active:p[2]};branches.push(b);return{rows:[b]};
   }
   if(sql.startsWith('INSERT INTO chat_workspace_branches(')){links.push({branch:p[0],ws:p[1]});return{rows:[]}};
+  if(sql.startsWith('INSERT INTO platform_account_plan_requests(')){
+   pendingPlans.push({workspaceId:p[0],plan:p[1],requestedBy:p[3]});return{rows:[]};
+  }
   if(sql.startsWith('INSERT INTO franchise_test_accounts(')){
    testAccounts.push({request_id:p[0],user_id:p[1],ws:p[2],branch:p[3]});return{rows:[]};
   }
@@ -99,6 +102,8 @@ const db={
  assert.deepEqual(memberships[0],{userId:users[0].id,ws:workspaces[0].id});
  assert.deepEqual(links[0],{branch:branches[0].id,ws:workspaces[0].id});
  assert.equal(testAccounts[0].request_id,appId);
+ assert.equal(pendingPlans.length,1);
+ assert.deepEqual(pendingPlans[0],{workspaceId:workspaces[0].id,plan:'BUSINESS',requestedBy:users[0].id});
  assert.equal(seeded.openingStock,0);
  assert.equal(seeded.ws,workspaces[0].id);
  assert.equal(seeded.branch,branches[0].id);
