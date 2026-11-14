@@ -38,6 +38,10 @@ const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 const franchiseTestAccess=require('./lib/franchise-test-access');
 const franchiseTestOperations=require('./lib/franchise-test-operations');
+const franchiseLiveScope=require('./lib/franchise-live-scope');
+const franchiseLiveSales=require('./lib/franchise-live-sales');
+const franchiseLiveExpenses=require('./lib/franchise-live-expenses');
+const franchiseLiveRouter=require('./lib/franchise-live-router');
 
 const ROOT = __dirname;
 function loadEnvFile(file){
@@ -2024,11 +2028,14 @@ async function handleApi(req,res,url){
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
     const owner=await initialOwnerId(u.id);
-    const testAccount=await franchiseTestAccess.account(db,u.id);
+    const liveCandidate=await franchiseLiveScope.candidate(db,u.id);
+    const liveMode=!!liveCandidate?.liveEnabled;
+    const testAccount=liveMode?null:await franchiseTestAccess.account(db,u.id);
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
       testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
-      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
+      liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='GET'&&p==='/api/auth/username-available'){
@@ -2090,13 +2097,29 @@ async function handleApi(req,res,url){
     if(!access.allowed)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
-    const testAccount=await franchiseTestAccess.account(db,user.id);
+    const liveCandidate=await franchiseLiveScope.candidate(db,user.id);
+    const liveMode=!!liveCandidate?.liveEnabled;
+    const testAccount=liveMode?null:await franchiseTestAccess.account(db,user.id);
     return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
-      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
+      liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
-  // Temporary test owners may authenticate but must never access live legacy data.
-  // This is an exhaustive allowlist before every normal POS, billing, chat or Admin route.
+  // Paid, OTP-verified franchise workspaces use independent live tables, never
+  // the legacy globally shared products, recipes, sales or reports. Unknown
+  // routes fail closed. Admin Control's PAID subscription enables this path.
+  const franchiseLive=await franchiseLiveScope.active(db,user);
+  if(franchiseLive){
+    if(p.startsWith('/api/live/')){
+      const response=await franchiseLiveRouter.run(db,franchiseLive,user,method,url,
+        ()=>readJson(req,262144));
+      return json(res,response.status,response.data,safeHeaders({'Cache-Control':'no-store'}));
+    }
+    return json(res,403,{error:'This franchise uses isolated live POS routes. Legacy shared APIs are not accessible.',
+      code:'LIVE_FRANCHISE_SCOPED_ONLY',livePortal:'/franchise-live.html'},
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
+  // Unpaid/pending onboarding accounts remain confined to isolated testing.
   const phase2Test=await franchiseTestAccess.account(db,user.id);
   if(phase2Test){
     if(method==='GET'&&p==='/api/phase2-test/overview'){
@@ -2410,7 +2433,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseTestOperations.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);

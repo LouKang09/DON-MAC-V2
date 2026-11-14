@@ -1,0 +1,57 @@
+name: Paid franchise live POS cutover
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "server.js"
+      - "public/app-core.js"
+      - "public/franchise-live.*"
+      - "lib/franchise-live-*.js"
+      - "public/platform-admin.js"
+      - "scripts/franchise-live-static-regression.js"
+      - "scripts/franchise-live-postgres-test.js"
+      - "scripts/franchise-live-browser-test.js"
+      - ".github/workflows/franchise-live-cutover.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: franchise_live
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d franchise_live"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PG_TEST_URL: postgres://test:test@localhost:5432/franchise_live
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Validate syntax of checkout, routing and live UI
+        run: |
+          node --check server.js
+          node --check public/app-core.js
+          node --check public/franchise-live.js
+          node --check lib/franchise-live-scope.js
+          node --check lib/franchise-live-catalog.js
+          node --check lib/franchise-live-sales.js
+          node --check lib/franchise-live-expenses.js
+          node --check lib/franchise-live-router.js
+      - name: Validate fail-closed legacy routing and production feature wiring
+        run: node scripts/franchise-live-static-regression.js
+      - name: Install PostgreSQL and DOM test dependencies
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
+      - name: Real PostgreSQL cross-franchise checkout and concurrency
+        run: node scripts/franchise-live-postgres-test.js
+      - name: Browser checkout and stock warning smoke
+        run: node scripts/franchise-live-browser-test.js
