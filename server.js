@@ -2076,9 +2076,11 @@ async function handleApi(req,res,url){
   }
   if(method==='POST'&&p==='/api/auth/register/verify'){
     checkLoginRate(req,'franchise-email-verification');
-    const body=await readJson(req,1024);
-    return json(res,200,await franchiseEmailVerification.verify(db,body.email,body.code,body.applicationId||null),
-      safeHeaders({'Cache-Control':'no-store'}));
+    const body=await readJson(req,2048);
+    const password=franchiseTestAccess.validateSignupPassword(body.password,body.confirmPassword);
+    return json(res,201,await franchiseEmailVerification.verify(db,body.email,body.code,body.applicationId||null,{
+      onVerified:(tx,requestId)=>franchiseTestAccess.activateVerifiedSignup(tx,requestId,password)
+    }),safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){
