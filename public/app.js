@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.05-cashier-feature-access';
+  const VERSION = '1.6.06-product-stock-limits';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -166,6 +166,7 @@
 
   // Authentication and the proven POS core always load first.
   loadScript('/ui-utils.js')
+    .then(() => loadScript('/pos-stock-limit-v20261114.js'))
     .then(() => loadScript('/app-core.js'))
     .then(() => {
       watchForAuthenticatedApp();
