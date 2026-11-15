@@ -49,7 +49,7 @@ const server=fs.readFileSync('server.js','utf8');
 const loader=fs.readFileSync('public/app.js','utf8');
 const index=fs.readFileSync('public/index.html','utf8');
 assert.match(loader,/loadScript\('\/pos-stock-limit-v20261114\.js'\)/);
-assert.match(index,/app\.js\?v=1\.6\.10/);
+assert.match(index,/app\.js\?v=1\.6\.11/);
 assert.match(code,/const stockPlanner=window\.donmacPosStock/);
 assert.match(code,/decision=stockPlanner\.lowFor/);
 assert.match(code,/const decision=stockNext\('package',id\)/);
