@@ -193,7 +193,8 @@ async function requireUser(req, res, role) {
     return null;
   }
   const access=await platformAccounts.workspaceAccess(db,user.id);
-  if(!access.allowed){
+  const franchiseSetup=await franchiseLiveScope.candidate(db,user.id);
+  if(!access.allowed&&!franchiseSetup){
     json(res,403,{error:'Your subscription is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
@@ -2020,7 +2021,8 @@ async function handleApi(req,res,url){
       return json(res,403,{error:'Your assigned branch is inactive. Please contact your Owner or Co-Owner to move your account to an active branch.',
         code:'BRANCH_INACTIVE'},safeHeaders({'Cache-Control':'no-store'}));
     const access=await platformAccounts.workspaceAccess(db,u.id);
-    if(!access.allowed)return json(res,403,{
+    const franchiseCandidate=await franchiseLiveScope.candidate(db,u.id);
+    if(!access.allowed&&!franchiseCandidate)return json(res,403,{
       error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
         '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
@@ -2029,13 +2031,15 @@ async function handleApi(req,res,url){
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
     const owner=await initialOwnerId(u.id);
-    const liveCandidate=await franchiseLiveScope.candidate(db,u.id);
-    const liveMode=!!liveCandidate?.liveEnabled;
+    const liveCandidate=franchiseCandidate;
+    const liveMode=!!liveCandidate;
     const testAccount=liveMode?null:await franchiseTestAccess.account(db,u.id);
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
       testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
       liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
+      setupMode:liveMode&&!liveCandidate.liveEnabled,
       accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
@@ -2095,21 +2099,24 @@ async function handleApi(req,res,url){
     const user=await getUser(req);
     if(!user)return json(res,401,{error:'Not signed in.'},safeHeaders());
     const access=await platformAccounts.workspaceAccess(db,user.id);
-    if(!access.allowed)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
+    const franchiseCandidate=await franchiseLiveScope.candidate(db,user.id);
+    if(!access.allowed&&!franchiseCandidate)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
-    const liveCandidate=await franchiseLiveScope.candidate(db,user.id);
-    const liveMode=!!liveCandidate?.liveEnabled;
+    const liveCandidate=franchiseCandidate;
+    const liveMode=!!liveCandidate;
     const testAccount=liveMode?null:await franchiseTestAccess.account(db,user.id);
     return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
       liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
+      setupMode:liveMode&&!liveCandidate.liveEnabled,
       accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
   // Paid, OTP-verified franchise workspaces use independent live tables, never
   // the legacy globally shared products, recipes, sales or reports. Unknown
   // routes fail closed. Admin Control's PAID subscription enables this path.
-  const franchiseLive=await franchiseLiveScope.active(db,user);
+  const franchiseLive=await franchiseLiveScope.setup(db,user);
   if(franchiseLive){
     if(p.startsWith('/api/live/')){
       const response=await franchiseLiveRouter.run(db,franchiseLive,user,method,url,
@@ -2120,7 +2127,9 @@ async function handleApi(req,res,url){
       code:'LIVE_FRANCHISE_SCOPED_ONLY',livePortal:'/franchise-live.html'},
       safeHeaders({'Cache-Control':'no-store'}));
   }
-  // Unpaid/pending onboarding accounts remain confined to isolated testing.
+  // Legacy Phase 2 simulations are retained only for older non-live test data.
+  // Every newly verified franchise now enters workspace-scoped POS setup, regardless
+  // of Paid/Unpaid/On Hold status. Neither path can reach legacy global data.
   const phase2Test=await franchiseTestAccess.account(db,user.id);
   if(phase2Test){
     if(method==='GET'&&p==='/api/phase2-test/overview'){
