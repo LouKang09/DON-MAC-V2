@@ -122,6 +122,24 @@
   if(match&&method==='GET')return live('/api/live/recipes/'+Number(match[1])+qs(selected()));
   if(match&&method==='PUT')
    return live('/api/live/recipes/'+Number(match[1]),'PUT',{...data,branchId:scopedBranch(state)});
+  // Original Catalog editor: archives, price promotions and package composition.
+  let edit=p.match(/^\/api\/admin\/(products|ingredients|promos|packages)\/(\d+)$/);
+  if(edit&&method==='DELETE'){
+   const kind=edit[1],id=Number(edit[2]);
+   return live('/api/live/'+kind+'/'+id+qs(scopedBranch(state)),'DELETE');
+  }
+  if(p==='/api/admin/promos'&&method==='POST')
+   return live('/api/live/promos','POST',{...data,branchId:scopedBranch(state)});
+  if(p==='/api/admin/packages'&&method==='POST')
+   return live('/api/live/packages','POST',{...data,branchId:scopedBranch(state)});
+  edit=p.match(/^\/api\/admin\/(promos|packages)\/(\d+)$/);
+  if(edit&&method==='PUT')
+   return live('/api/live/'+edit[1]+'/'+Number(edit[2]),'PUT',
+    {...data,branchId:scopedBranch(state)});
+  edit=p.match(/^\/api\/admin\/packages\/(\d+)\/items$/);
+  if(edit&&method==='PUT')
+   return live('/api/live/packages/'+Number(edit[1])+'/items','PUT',
+    {...data,branchId:scopedBranch(state)});
   if(p==='/api/reports/cashiers'&&method==='GET'){
    const r=await live('/api/live/cashiers');
    return{cashiers:(r.cashiers||[]).map(x=>x.username)};
