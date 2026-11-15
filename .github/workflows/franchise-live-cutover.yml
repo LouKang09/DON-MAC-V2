@@ -11,6 +11,8 @@ on:
       - "lib/franchise-account-modes.js"
       - "lib/franchise-test-access.js"
       - "lib/franchise-live-scope.js"
+      - "lib/franchise-live-finance.js"
+      - "public/pos-finance.js"
       - "scripts/franchise-account-mode-test.js"
       - "lib/franchise-live-router.js"
       - "scripts/franchise-unified-adapter-test.js"
@@ -26,7 +28,9 @@ on:
       - "public/auth-shell-guard-v20261115.css"
       - "lib/cashier-access.js"
       - "lib/franchise-account-modes.js"
+      - "lib/franchise-live-finance.js"
       - "scripts/franchise-account-mode-test.js"
+      - "public/pos-finance.js"
       - "lib/franchise-test-access.js"
       - "scripts/signup-otp-selfservice-test.js"
       - "public/franchise-live.*"
@@ -78,6 +82,8 @@ jobs:
           node --check lib/franchise-live-catalog.js
           node --check lib/franchise-live-sales.js
           node --check lib/franchise-live-expenses.js
+          node --check lib/franchise-live-finance.js
+          node --check public/pos-finance.js
           node --check lib/franchise-live-router.js
           node --check public/app.js
           node --check lib/franchise-test-access.js
