@@ -395,6 +395,42 @@
   document.querySelectorAll('[data-cashier-only]').forEach(x=>x.classList.toggle('hidden',isOwner()));
   $('liveNav').addEventListener('click',e=>{
    const b=e.target.closest('button[data-view]');if(b)selectView(b.dataset.view)});
+  $('branchForm').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const btn=$('addBranchButton');btn.disabled=true;
+   try{
+    const created=await post('branches',{name:$('branchName').value.trim(),
+     address:$('branchAddress').value.trim()});
+    state.me=await get('status');
+    state.branchId=Number(created.id);
+    state.cart=[];state.quote=null;state.checkoutId=null;state.salesPage=1;
+    $('branchForm').reset();
+    updateBranchControls();updateNavigation();renderBranches();
+    await refreshAll();
+    notice('Branch '+created.name+' created. Its stock begins at zero and is independent of other branches.');
+   }catch(error){notice(error.message,true)}
+   finally{btn.disabled=false;renderBranches()}
+  });
+  $('branchesBody').addEventListener('click',async event=>{
+   const btn=event.target.closest('[data-switch-branch]');
+   if(!btn)return;
+   state.branchId=Number(btn.dataset.switchBranch);
+   state.cart=[];state.quote=null;state.checkoutId=null;state.salesPage=1;
+   updateBranchControls();await refreshAll();renderBranches();
+  });
+  $('permissionCashier').addEventListener('change',syncCashierPermissions);
+  $('cashierPermissionsForm').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const uid=Number($('permissionCashier').value);
+   if(!uid)return;
+   const permissions=[...document.querySelectorAll('[name="cashierPermission"]:checked')].map(x=>x.value);
+   try{
+    await put('cashiers/'+uid+'/permissions',{permissions});
+    notice('Cashier sidebar permissions updated. Unassigned menu buttons will remain hidden.');
+    await loadCashiers();
+   }catch(error){notice(error.message,true)}
+  });
+
   $('menuToggle').addEventListener('click',()=>document.querySelector('.live-app').classList.toggle('menu-open'));
   $('branchSelect').addEventListener('change',async()=>{
    state.branchId=Number($('branchSelect').value);
@@ -429,6 +465,7 @@
   $('cashTender').addEventListener('input',updatePaymentUI);
   $('paymentReference').addEventListener('input',updatePaymentUI);
   $('checkoutButton').addEventListener('click',async()=>{
+   if(!isPaid()){notice('Live checkout is available only after subscription validation.',true);return}
    if(!state.quote||$('checkoutButton').disabled)return;
    if(!state.checkoutId)state.checkoutId=crypto.randomUUID();
    const b=$('checkoutButton');b.disabled=true;b.textContent='Saving live transaction…';
@@ -582,11 +619,13 @@
    $('cashierBranch').innerHTML=info.branches.map(x=>
      '<option value="'+x.id+'">'+escape(x.name)+'</option>').join('');
    $('overviewRoleNote').textContent=isOwner()?
-     'You can manage the branch catalog, ingredients, finance and cashier accounts. Only cashiers may process sales.':
-     'Cashier access: real checkout, transaction history and branch stock availability.';
-   wire();await refreshAll();
+     'You can create branches, employees, products and inventory before subscription payment. Only cashiers can process sales after Admin Control approval.':
+     'Only the POS and features granted by your Owner appear in the sidebar. Checkout is disabled until subscription approval.';
+   wire();updateBranchControls();updateNavigation();await refreshAll();
    selectView(isOwner()?'overview':'pos');
-   notice('Connected to '+info.branchName+' · independent production franchise workspace.');
+   notice(info.subscriptionActive?
+     'Welcome to the main franchise POS. Subscription validated and live checkout available.':
+     'Welcome to the main franchise POS. You can set up your branches and users now; cashier checkout is awaiting Admin Control validation.');
   }catch(err){notice('Unable to load your live franchise POS: '+err.message,true)}
  }
  boot();
