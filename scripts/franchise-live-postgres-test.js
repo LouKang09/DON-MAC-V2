@@ -9,6 +9,7 @@ const liveSales=require('../lib/franchise-live-sales');
 const expenses=require('../lib/franchise-live-expenses');
 const finance=require('../lib/franchise-live-finance');
 const accountModes=require('../lib/franchise-account-modes');
+const incoming=require('../lib/branch-incoming-supply');
 const liveRouter=require('../lib/franchise-live-router');
 const cashierAccess=require('../lib/cashier-access');
 const seed=require('../lib/branch-catalog-seeding');
@@ -69,6 +70,7 @@ async function setup(){
  await accountModes.register(db,20,'NEW','isolated PostgreSQL test');
  for(const stmt of isolatedSchema.statements('postgres'))await db.exec(stmt);
  await liveSales.migrate(db);await expenses.migrate(db);await cashierAccess.migrate(db);
+ await incoming.migrate(db);
  await db.query("INSERT INTO branch_categories(workspace_id,branch_id,name,active) VALUES(10,101,'Coffee',TRUE),(20,201,'Coffee',TRUE)");
  // Both franchises deliberately choose identical names; the rows must stay separate.
  const product=await db.query("INSERT INTO branch_products(workspace_id,branch_id,sku,name,category,price,active) VALUES"+
@@ -314,6 +316,40 @@ async function run(){
  await assert.rejects(liveScope.deactivateCashier(db,ctxB,3),{status:404});
  await liveScope.deactivateCashier(db,ctxA,3);
  assert.equal((await liveScope.cashiers(db,ctxA)).find(x=>x.id===3).active,false);
+ // Inventory receiving uses the SAME legacy-shaped Main POS workflow, but
+ // all transfer and request records are authenticated to the franchise workspace.
+ const supply=await incoming.create(db,ownerA,{sourceBranchId:101,receivingBranchId:101,
+  sourceLabel:'Independent Supplier',items:[{ingredientId:ingredientA,qty:0.05}]},'SUPPLIER');
+ assert.equal(supply.status,'PENDING');
+ const availableSupply=await incoming.list(db,ownerA,101);
+ assert(availableSupply.requests.some(x=>x.id===supply.id&&x.canReceive));
+ await assert.rejects(incoming.process(db,ownerB,supply.id,'reject',{}),{status:403},
+  'Foreign franchise cannot reject incoming inventory');
+ const supplierStock=await stock(10,101,ingredientA);
+ await incoming.process(db,ownerA,supply.id,'receive',{deliveredBy:'Supplier'});
+ assert.equal(await stock(10,101,ingredientA),supplierStock+0.05);
+ await assert.rejects(incoming.process(db,ownerA,supply.id,'receive',{deliveredBy:'Supplier'}),{status:409},
+  'Supplier receipt cannot be credited twice');
+ const destination=(await db.query('SELECT branch_id FROM chat_workspace_branches WHERE workspace_id=10 AND branch_id<>101 ORDER BY branch_id LIMIT 1')).rows[0];
+ assert(destination,'Owner has a separate destination branch for transfer tests');
+ const destBranch=Number(destination.branch_id);
+ await db.query("UPDATE platform_account_plans SET plan='BUSINESS' WHERE workspace_id=10");
+ const cloned=await db.query('INSERT INTO branch_ingredients(workspace_id,branch_id,code,display_name,'+
+  'uom,stock_qty,low_stock_threshold,unit_cost,active) VALUES(10,$1,$2,$3,$4,0,0,0,TRUE) RETURNING id',
+  [destBranch,'A-BEANS','Beans','KG']);
+ const destIngredient=Number(cloned.rows[0].id);
+ const transfer=await incoming.create(db,ownerA,{sourceBranchId:101,destinationBranchId:destBranch,
+  items:[{ingredientId:ingredientA,qty:0.05}]},'TRANSFER');
+ const preAccepted=await stock(10,101,ingredientA);
+ await assert.rejects(incoming.process(db,ownerB,transfer.id,'accept',{}),{status:403});
+ assert.equal(await stock(10,101,ingredientA),preAccepted,'Pending transfer leaves stock untouched');
+ await incoming.process(db,ownerA,transfer.id,'accept',{});
+ assert.equal(await stock(10,101,ingredientA),preAccepted-0.05);
+ assert.equal(await stock(10,destBranch,destIngredient),0);
+ await incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'});
+ assert.equal(await stock(10,destBranch,destIngredient),0.05);
+ await assert.rejects(incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'}),{status:409});
+ console.log('PASS: scoped supplier receipt, transfer Accept/Receive, foreign franchise denial and no double stock credit.');
  console.log('PASS PostgreSQL: actual branch-isolated sale, price/recipe edits, cashier account, concurrent oversell protection, refunds and per-franchise reports.');
 }
 run().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{
