@@ -8,6 +8,10 @@ on:
       - "public/app.js"
       - "public/franchise-unified-adapter.js"
       - "lib/franchise-unified-dashboard.js"
+      - "lib/franchise-account-modes.js"
+      - "lib/franchise-test-access.js"
+      - "lib/franchise-live-scope.js"
+      - "scripts/franchise-account-mode-test.js"
       - "lib/franchise-live-router.js"
       - "scripts/franchise-unified-adapter-test.js"
       - "scripts/franchise-unified-browser-test.js"
@@ -21,6 +25,8 @@ on:
       - "public/index.html"
       - "public/auth-shell-guard-v20261115.css"
       - "lib/cashier-access.js"
+      - "lib/franchise-account-modes.js"
+      - "scripts/franchise-account-mode-test.js"
       - "lib/franchise-test-access.js"
       - "scripts/signup-otp-selfservice-test.js"
       - "public/franchise-live.*"
@@ -68,6 +74,7 @@ jobs:
           node --check lib/franchise-unified-dashboard.js
           node --check public/franchise-live.js
           node --check lib/franchise-live-scope.js
+          node --check lib/franchise-account-modes.js
           node --check lib/franchise-live-catalog.js
           node --check lib/franchise-live-sales.js
           node --check lib/franchise-live-expenses.js
@@ -79,6 +86,7 @@ jobs:
         run: |
           node scripts/franchise-live-static-regression.js
           node scripts/franchise-unified-adapter-test.js
+          node scripts/franchise-account-mode-test.js
       - name: Install PostgreSQL and DOM test dependencies
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
       - name: Real PostgreSQL cross-franchise checkout and concurrency
