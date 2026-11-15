@@ -596,6 +596,10 @@
    }catch(err){notice(err.message,true)}
   });
   $('logout').addEventListener('click',async()=>{
+   state.me=null;state.cart=[];state.quote=null;
+   const shell=document.querySelector('.live-app');
+   if(shell){shell.inert=true;shell.setAttribute('aria-hidden','true');shell.hidden=true;}
+   document.body.classList.add('logging-out');
    try{await api('/api/auth/logout',{method:'POST'})}catch(_){}
    location.replace('/');
   });
