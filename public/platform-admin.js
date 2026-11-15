@@ -85,18 +85,20 @@
    const rows=franchiseSignupRequests;
    $('franchiseRequestsBody').innerHTML=rows.map(x=>{
      const verified=!!x.emailVerifiedAt,created=Number(x.testUserId)>0,
-       rejected=x.status==='REJECTED',prepared=!!x.stageStatus;
+       rejected=x.status==='REJECTED',prepared=!!x.stageStatus,
+       isSandbox=created&&x.dataMode!=='NEW';
      const paid=x.assignedStatus==='PAID',held=x.assignedStatus==='ON_HOLD';
-     const ready=created&&x.testActive&&paid;
+     const ready=created&&!isSandbox&&x.testActive&&paid;
      const catalogStatus=created?
        badge('Catalog initialized','active')+'<small class="application-access-note">Opening inventory starts at zero and can be replenished directly.</small>':
        prepared?badge('Starter catalog prepared','active'):
        verified?'Pending account creation':'Awaiting verification';
      const accountStatus=created?
-       badge(!x.testActive?'Login disabled':paid?'Live POS active':held?'On Hold':'Awaiting payment',
-        ready?'active':(!x.testActive||held)?'inactive':'unknown')+
+       badge(!x.testActive?'Login disabled':isSandbox?'Sandbox account':paid?'Live POS active':held?'On Hold':'Awaiting payment',
+        ready?'active':(!x.testActive||held||isSandbox)?'inactive':'unknown')+
        '<small class="application-access-note">'+
        (ready?'Own live checkout, inventory, sales and reports enabled.':
+        isSandbox?'Enable Main POS to use the normal franchise account screens.':
         held?'Admin Control has placed this account on hold.':
         !x.testActive?'Account login is disabled.':
         'Assign and mark the subscription Paid to activate real checkout.')+'</small>':
@@ -116,7 +118,9 @@
      const action=rejected?'Declined':
        created?'Account created'+
          ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+
-         '" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable login':'Enable login')+'</button>':
+         '" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable login':'Enable login')+'</button>'+
+         (isSandbox?' <button type="button" class="link-btn" data-enable-main-pos="'+esc(x.id)+'">Enable Main POS</button>':
+         ' <a class="link-btn" href="https://donmacpos.com/" target="_blank" rel="noopener">Open Main POS</a>'):
        !verified?'Awaiting OTP':
        prepared&&x.status==='CONTACTED'?
          '<button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Account</button>':
@@ -167,6 +171,21 @@
        await reloadFranchiseRequests();
      }catch(e){error('franchiseRequestsMessage',e.message)}
      finally{activate.disabled=false}
+     return;
+   }
+   const enableMain=event.target.closest('button[data-enable-main-pos]');
+   if(enableMain){
+     const target=franchiseSignupRequests.find(x=>x.id===enableMain.dataset.enableMainPos);
+     if(!target||target.dataMode==='NEW')return;
+     if(!window.confirm('Enable the normal Main POS for '+target.username+'? Its existing independent franchise data is retained. No other account data will be used. Sign in again after enabling; cashier selling still requires Admin Control to mark the plan Paid.'))return;
+     enableMain.disabled=true;
+     try{
+       const updated=await api('franchise-requests/'+enableMain.dataset.enableMainPos+'/enable-main-pos',{
+         method:'POST',body:'{}'});
+       await reloadFranchiseRequests();
+       window.alert(updated.username+' now uses the normal Main POS at https://donmacpos.com/. Sign in again to test.');
+     }catch(e){error('franchiseRequestsMessage',e.message)}
+     finally{enableMain.disabled=false}
      return;
    }
    const access=event.target.closest('button[data-request-access]');

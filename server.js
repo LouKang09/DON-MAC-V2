@@ -37,6 +37,7 @@ const marlouCheckoutStockBridge=require('./lib/marlou-checkout-stock-bridge');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 const franchiseTestAccess=require('./lib/franchise-test-access');
+const franchiseAccountModes=require('./lib/franchise-account-modes');
 const franchiseTestOperations=require('./lib/franchise-test-operations');
 const franchiseLiveScope=require('./lib/franchise-live-scope');
 const franchiseLiveSales=require('./lib/franchise-live-sales');
@@ -194,7 +195,8 @@ async function requireUser(req, res, role) {
   }
   const access=await platformAccounts.workspaceAccess(db,user.id);
   const franchiseSetup=await franchiseLiveScope.candidate(db,user.id);
-  if(!access.allowed&&!franchiseSetup){
+  if(!access.allowed&&!franchiseSetup&&
+      (await franchiseAccountModes.forUser(db,user.id)).mode!=='TEMPORARY'){
     json(res,403,{error:'Your subscription is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
@@ -2022,7 +2024,8 @@ async function handleApi(req,res,url){
         code:'BRANCH_INACTIVE'},safeHeaders({'Cache-Control':'no-store'}));
     const access=await platformAccounts.workspaceAccess(db,u.id);
     const franchiseCandidate=await franchiseLiveScope.candidate(db,u.id);
-    if(!access.allowed&&!franchiseCandidate)return json(res,403,{
+    if(!access.allowed&&!franchiseCandidate&&
+        (await franchiseAccountModes.forUser(db,u.id)).mode!=='TEMPORARY')return json(res,403,{
       error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
         '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
@@ -2037,10 +2040,11 @@ async function handleApi(req,res,url){
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
       testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
-      liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      dataMode:liveMode?'NEW':testAccount?'TEMPORARY':'SHARED',
+      liveMode,livePortal:liveMode?'/':null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
-      accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
+      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='GET'&&p==='/api/auth/username-available'){
@@ -2100,17 +2104,19 @@ async function handleApi(req,res,url){
     if(!user)return json(res,401,{error:'Not signed in.'},safeHeaders());
     const access=await platformAccounts.workspaceAccess(db,user.id);
     const franchiseCandidate=await franchiseLiveScope.candidate(db,user.id);
-    if(!access.allowed&&!franchiseCandidate)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
+    if(!access.allowed&&!franchiseCandidate&&
+        (await franchiseAccountModes.forUser(db,user.id)).mode!=='TEMPORARY')return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
     const liveCandidate=franchiseCandidate;
     const liveMode=!!liveCandidate;
     const testAccount=liveMode?null:await franchiseTestAccess.account(db,user.id);
     return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
-      liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      dataMode:liveMode?'NEW':testAccount?'TEMPORARY':'SHARED',
+      liveMode,livePortal:liveMode?'/':null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
-      accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
+      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
   // Paid, OTP-verified franchise workspaces use independent live tables, never
@@ -2124,7 +2130,7 @@ async function handleApi(req,res,url){
       return json(res,response.status,response.data,safeHeaders({'Cache-Control':'no-store'}));
     }
     return json(res,403,{error:'This franchise uses isolated live POS routes. Legacy shared APIs are not accessible.',
-      code:'LIVE_FRANCHISE_SCOPED_ONLY',livePortal:'/franchise-live.html'},
+      code:'LIVE_FRANCHISE_SCOPED_ONLY',livePortal:'/'},
       safeHeaders({'Cache-Control':'no-store'}));
   }
   // Legacy Phase 2 simulations are retained only for older non-live test data.
@@ -2443,11 +2449,23 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseAccountModes.migrate(db);
+  // Operator-authorized, one-time test1 cutover. OFF by default; never promotes
+  // any other franchise. A failed cutover must not take existing POS offline.
+  if(process.env.DONMAC_PROMOTE_TEST1_MAIN_POS==='1'){
+   const changed=await franchiseTestAccess.promoteTest1OnLaunch(db).catch(error=>({status:'blocked',reason:error.message}));
+   console.log('[Authorized test1 Main POS activation]',JSON.stringify(changed));
+  }
+  await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleApi(req,res,url);
+      // All franchises use the original Main POS page. Keep the former
+      // live-portal URL as an HTTP redirect for older signup emails/links.
+      if(!SUPPLY_OFFICE_PORTAL&&req.method==='GET'&&url.pathname==='/franchise-live.html'){
+        res.writeHead(302,safeHeaders({'Location':'/','Cache-Control':'no-store'}));res.end();return;
+      }
       if(SUPPLY_OFFICE_PORTAL){
         const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/office-campaign-ui-v20261108.js','/office-campaign-v20261108.css','/platform-admin.html','/platform-admin.css','/platform-admin.js','/tenant-billing-ui.js','/tenant-billing.css','/refresh-controls-v20261107.css','/refresh-controls-v20261107.js','/coffee-workspace-theme-v20261107.css','/assets/refresh-clockwise-v20261107.svg','/donmac-logo-hires.svg','/auth-login-v1574.css','/office-login-pos.css','/assets/login-coffee-pattern-approved-hd.png','/assets/catalog/v1562-coffee-beans.svg','/assets/login-coffee-beans-bold-outline-v1585.svg','/assets/login-coffee-beans-white-outline-v1586.svg','/assets/login-coffee-beans-all-white-strokes-v1587.svg']);
         const target=url.pathname==='/'?'/supply-office.html':url.pathname;

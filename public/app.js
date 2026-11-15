@@ -47,7 +47,21 @@
     }
   }
 
+  let scopedFinanceStarted=false;
+  async function startScopedFinanceWhenAppReady(){
+    if(scopedFinanceStarted || !window.donmacFranchiseUnified || !isVisible(document.getElementById('app')))return;
+    scopedFinanceStarted=true;
+    try{
+      loadCss('posFinanceV20261107','/pos-finance.css');
+      loadCss('posCatalogV1544Css','/pos-catalog-v1544.css');
+      await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
+      await loadScript('/pos-finance.js?v=20261115-isolated');
+      const view=document.querySelector('.view.active')?.id;
+      if(view==='view-transactions'||view==='view-expenses')window.donmacFinance?.open(view.slice(5));
+    }catch(err){scopedFinanceStarted=false;console.error('Isolated finance display:',err);}
+  }
   async function startEnhancementsWhenAppIsReady() {
+    if(window.donmacFranchiseUnified){await startScopedFinanceWhenAppReady();return;}
     if (enhancementsStarted) return;
     const app = document.getElementById('app');
     if (!isVisible(app)) return;
@@ -168,6 +182,7 @@
   // Authentication and the proven POS core always load first.
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
+    .then(() => loadScript('/franchise-unified-adapter.js'))
     .then(() => loadScript('/app-core.js'))
     .then(() => {
       watchForAuthenticatedApp();

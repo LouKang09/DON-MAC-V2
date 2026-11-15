@@ -62,6 +62,12 @@
   }
 
   async function api(url,options={}){
+    // The same Main POS interface serves established and new franchises.
+    // New franchise operations are routed only to independently scoped live APIs.
+    if(state.user?.liveMode && !/^\/api\/(?:auth\/|status(?:$|\?))/.test(String(url))){
+      if(!window.donmacFranchiseCompat)throw new Error('Isolated POS adapter is unavailable. Refresh to retry.');
+      return window.donmacFranchiseCompat.request(url,options,state);
+    }
     const controller=new AbortController();
     const timeoutMs=Number(options.timeoutMs||20000);
     const timer=setTimeout(()=>controller.abort(),timeoutMs);
@@ -127,6 +133,7 @@
   }
   function showApp(){
     document.body.classList.add('legacy-authenticated');
+    window.donmacFranchiseUnified=!!state.user?.liveMode;
     const legacyApp=$('app');legacyApp.inert=false;legacyApp.removeAttribute('aria-hidden');
     window.donmacAuthenticatedRole=state.user.role;
     window.donmacPlanWidgets?.setRole?.(state.user.role);
@@ -145,7 +152,9 @@
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
       ...(userGrants.includes('expenses.view')?['expenses']:[])]);
     document.querySelectorAll('#app button[data-view]').forEach(button=>{
-      const allowed=isAdmin||cashierViews.has(button.dataset.view);
+      // Reuse every existing Owner sidebar view in the SAME Main POS layout.
+      // Requests from NEW workspaces remain isolated by the API adapter and server.
+      const allowed=isAdmin?button.dataset.view!=='pos':cashierViews.has(button.dataset.view);
       button.classList.toggle('hidden',!allowed);
       button.disabled=!allowed;
       button.setAttribute('aria-hidden',String(!allowed));
@@ -212,7 +221,7 @@
     $('accountPlanPill').textContent=(business?'Business':'Pro')+' Plan User';
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
     renderAccountBranchPricing(sub);
-    $('saveAccountPlan').disabled=!admin;
+    $('saveAccountPlan').disabled=!admin||!!state.user?.liveMode;
     $('accountPlanName').textContent=business?'Business':'Pro';
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
     $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
@@ -319,11 +328,14 @@
   async function boot(){
     state.status=await api('/api/status');
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
-    try{state.user=(await api('/api/auth/me')).user;if(state.user?.liveMode){location.replace('/franchise-live.html');return;}if(state.user?.testMode){location.replace('/phase2-test.html');return;}}
+    try{state.user=(await api('/api/auth/me')).user;if(state.user?.testMode){location.replace('/phase2-test.html');return;}}
     catch(err){if(err.status===401||err.status===403){state.user=null;resetOrderState({render:false});showAuth(false);if(err.status===403)$('authHint').textContent=err.message;return;}throw err;}
-    resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');
+    resetOrderState({render:false});showApp();
+    if(state.user?.liveMode){await loadBranches();await Promise.all([loadDevSubscription(),loadCatalog()]);}
+    else await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);
+    switchView(state.user.role==='User'?'pos':'dashboard');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;if(state.user?.liveMode){$('authPassword').value='';location.assign('/franchise-live.html');return;}if(state.user?.testMode){$('authPassword').value='';location.assign('/phase2-test.html');return;}resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;if(state.user?.testMode){$('authPassword').value='';location.assign('/phase2-test.html');return;}resetOrderState({render:false});showApp();if(state.user?.liveMode){await loadBranches();await Promise.all([loadDevSubscription(),loadCatalog()]);}else await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
   $('logoutButton').onclick=async()=>{state.user=null;resetOrderState({render:false});showAuth(false);try{await api('/api/auth/logout',{method:'POST'});}catch(_){} };
 
   async function refreshPosDailyCount(){
@@ -348,6 +360,8 @@
   }
   function switchView(view){
     if(view==='pos'&&state.user?.role!=='User')view='dashboard';
+    // Do not restrict an Owner's visible Main POS screens by franchise age.
+    // Cashier navigation remains permission-gated below.
     if(state.user?.role==='User'){
       const grants=state.user.accessPermissions||[];
       const authorized=view==='pos'||

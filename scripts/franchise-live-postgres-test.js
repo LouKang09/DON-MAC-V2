@@ -7,6 +7,9 @@ const liveScope=require('../lib/franchise-live-scope');
 const liveCatalog=require('../lib/franchise-live-catalog');
 const liveSales=require('../lib/franchise-live-sales');
 const expenses=require('../lib/franchise-live-expenses');
+const finance=require('../lib/franchise-live-finance');
+const accountModes=require('../lib/franchise-account-modes');
+const incoming=require('../lib/branch-incoming-supply');
 const liveRouter=require('../lib/franchise-live-router');
 const cashierAccess=require('../lib/cashier-access');
 const seed=require('../lib/branch-catalog-seeding');
@@ -37,8 +40,10 @@ async function setup(){
  await pool.query('CREATE SCHEMA '+schema);
  await db.exec('CREATE TABLE users(id BIGSERIAL PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
   'password_hash TEXT,role TEXT NOT NULL,active BOOLEAN NOT NULL,branch_id BIGINT,'+
-  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT)');
- await db.exec('CREATE TABLE branches(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL,address TEXT)');
+  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT,email TEXT,phone TEXT,profile_photo TEXT)');
+ await db.exec('CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id BIGINT)');
+ await db.exec('CREATE TABLE branches(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL,address TEXT,'+
+  'city TEXT,province TEXT,postal_code TEXT,country TEXT,phone TEXT,description TEXT)');
  await db.exec('CREATE TABLE chat_workspaces(id BIGINT PRIMARY KEY,owner_user_id BIGINT NOT NULL REFERENCES users(id))');
  await db.exec('CREATE TABLE chat_memberships(user_id BIGINT REFERENCES users(id),workspace_id BIGINT REFERENCES chat_workspaces(id),PRIMARY KEY(user_id,workspace_id))');
  await db.exec('CREATE TABLE chat_workspace_branches(workspace_id BIGINT REFERENCES chat_workspaces(id),branch_id BIGINT REFERENCES branches(id),PRIMARY KEY(workspace_id,branch_id))');
@@ -60,8 +65,12 @@ async function setup(){
  await db.query("INSERT INTO franchise_test_accounts VALUES('11111111-1111-4111-8111-111111111111',1,10,101,now(),'OTP'),"+
   "('22222222-2222-4222-8222-222222222222',2,20,201,now(),'OTP')");
  await db.query("INSERT INTO platform_account_plans(workspace_id,status,plan,amount,base_amount) VALUES(10,'UNPAID','PRO',0,0),(20,'PAID','PRO',0,0)");
+ await accountModes.migrate(db);
+ await accountModes.register(db,10,'NEW','isolated PostgreSQL test');
+ await accountModes.register(db,20,'NEW','isolated PostgreSQL test');
  for(const stmt of isolatedSchema.statements('postgres'))await db.exec(stmt);
  await liveSales.migrate(db);await expenses.migrate(db);await cashierAccess.migrate(db);
+ await incoming.migrate(db);
  await db.query("INSERT INTO branch_categories(workspace_id,branch_id,name,active) VALUES(10,101,'Coffee',TRUE),(20,201,'Coffee',TRUE)");
  // Both franchises deliberately choose identical names; the rows must stay separate.
  const product=await db.query("INSERT INTO branch_products(workspace_id,branch_id,sku,name,category,price,active) VALUES"+
@@ -104,6 +113,9 @@ async function run(){
     paymentMode:'Cash',tender:100})),{status:403});
  await assert.rejects(liveRouter.run(db,setupCashier,cashierA,'GET',
   new URL('https://donmacpos.com/api/live/transactions'),async()=>({})),{status:403});
+ await assert.rejects(liveRouter.run(db,setupCashier,cashierA,'GET',
+  new URL('https://donmacpos.com/api/live/finance/transactions'),async()=>({})),{status:403},
+  'Unpaid cashiers cannot access the finance ledgers');
  const setupStatus=await liveRouter.run(db,setupOwner,ownerA,'GET',
   new URL('https://donmacpos.com/api/live/status'),async()=>({}));
  assert.equal(setupStatus.data.setupMode,true);
@@ -170,6 +182,45 @@ async function run(){
  await assert.rejects(liveCatalog.saveRecipe(db,ctxA,101,added.id,{items:[{ingredientId:ingredientB,quantity:1}]}),{status:403});
  assert.equal((await liveCatalog.catalog(db,ctxA,101)).products.find(x=>x.id===added.id).available,false,
   'New product with zero stock is automatically disabled');
+ // The same original admin Catalog editor now manages photos, promos and packages.
+ const image='data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+ await liveCatalog.saveProduct(db,ctxA,101,productA,{name:'test1',category:'Coffee',price:109,
+  active:true,imageData:image});
+ const scopedAdmin=await liveCatalog.manage(db,ctxA,{branchId:101});
+ assert.equal(scopedAdmin.products.find(x=>x.id===productA).imageData,image);
+ assert.equal(scopedAdmin.products.find(x=>x.id===productA).recipeCount,1);
+ assert.equal(scopedAdmin.products.find(x=>x.id===productA).unitCost,2);
+ assert(!scopedAdmin.products.some(x=>x.id===productB));
+ await liveCatalog.saveIngredient(db,ctxA,101,ingredientA,{
+  name:'Beans',uom:'KG',lowStockThreshold:0.1,active:true});
+ const retained=(await db.query('SELECT unit_cost FROM branch_ingredients WHERE workspace_id=10 AND branch_id=101 AND id=$1',[ingredientA])).rows[0];
+ assert.equal(Number(retained.unit_cost),20,'Ingredient cost survives original form edits');
+ const promotion=await liveCatalog.savePromo(db,ctxA,101,0,{
+  name:'Afternoon Combo',inclusion:'Coffee + Food',price:88,foodLimit:1,coffeeLimit:1});
+ assert(promotion.id>0);
+ const packageRow=await liveCatalog.savePackage(db,ctxA,101,0,{
+  name:'Private Bundle',price:180,active:true});
+ await assert.rejects(liveCatalog.saveComposition(db,ctxA,101,packageRow.id,{
+  items:[{productId:productB,qty:1}]}),{status:403},
+  'Package cannot include another franchise product');
+ await liveCatalog.saveComposition(db,ctxA,101,packageRow.id,{
+  items:[{productId:productA,qty:1}]});
+ const hydrated=await liveCatalog.manage(db,ctxA,{branchId:101});
+ assert.equal(hydrated.packages.find(x=>x.id===packageRow.id).items[0].productId,productA);
+ assert.equal(hydrated.promos.find(x=>x.id===promotion.id).inclusion,'Coffee + Food');
+ assert.equal((await liveCatalog.catalog(db,ctxCashierA,101)).packages.find(x=>x.id===packageRow.id).contents.length,1);
+ await assert.rejects(liveCatalog.savePromo(db,ctxB,101,promotion.id,{
+  name:'Cross Franchise',price:1,foodLimit:0,coffeeLimit:0}),{status:403});
+ await assert.rejects(liveCatalog.archivePackage(db,ctxB,101,packageRow.id),{status:403});
+ await assert.rejects(liveCatalog.archiveProduct(db,ctxB,101,productA),{status:403});
+ await assert.rejects(liveCatalog.archiveIngredient(db,ctxA,101,ingredientA),{status:409},
+  'Cannot archive an ingredient while a recipe still uses it');
+ const isolatedPromo=await liveCatalog.manage(db,ctxB,{branchId:201});
+ assert.equal(isolatedPromo.promos.some(x=>x.id===promotion.id),false);
+ assert.equal(isolatedPromo.packages.some(x=>x.id===packageRow.id),false);
+ await liveCatalog.archivePromo(db,ctxA,101,promotion.id);
+ await liveCatalog.archivePackage(db,ctxA,101,packageRow.id);
+ assert.equal((await liveCatalog.manage(db,ctxA,{branchId:101})).promos.find(x=>x.id===promotion.id).active,false);
  const q=await liveSales.quote(db,ctxCashierA,{branchId:101,items:[{kind:'product',id:productA,qty:2}]});
  assert.equal(q.gross,218);assert.equal(q.actual,218);
  await assert.rejects(liveSales.quote(db,ctxCashierA,{branchId:101,
@@ -197,6 +248,27 @@ async function run(){
  await expenses.add(db,ctxA,{branchId:101,category:'Supplies',amount:12,notes:'Owner A'});
  assert.equal((await expenses.list(db,ctxA,101)).rows.length,1);
  assert.equal((await expenses.list(db,ctxB,201)).rows.length,0);
+ // The existing transaction and expense screens now use scoped SQL.
+ const financeDates=new URLSearchParams({start:'2020-01-01',end:'2030-12-31'});
+ const financeA=await finance.transactions(db,ctxA,financeDates);
+ const financeB=await finance.transactions(db,ctxB,financeDates);
+ assert.equal(financeA.total,2);assert.equal(financeB.total,0);
+ assert.equal(financeA.rows[0].branch,'Cebu A');
+ await assert.rejects(finance.transactions(db,ctxA,new URLSearchParams('branchId=201')),{status:403},
+  'A foreign branch cannot be queried from the shared original finance UI');
+ await assert.rejects(finance.expenses(db,ctxB,new URLSearchParams('branchId=101')),{status:403});
+ const day=new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+ const daily={branchId:101,date:day,note:'Operating costs',rent:150,stocks:25,ice:10};
+ await finance.saveExpenses(db,ctxA,daily);
+ await finance.saveExpenses(db,ctxA,{...daily,rent:200});
+ const dailyA=await finance.expenses(db,ctxA,financeDates),dailyB=await finance.expenses(db,ctxB,financeDates);
+ assert(dailyA.grandTotal>=247,'Daily expense save and existing entries are counted together');
+ assert.equal(dailyB.grandTotal,0,'Other franchise sees no expense rows');
+ assert.equal(dailyA.rows.find(x=>x.date===day)?.rent,200,'Same day updated instead of duplicated');
+ const current=(await finance.expenses(db,ctxA,financeDates)).rows.find(x=>x.date===day);
+ assert.equal(current.stocks,25);
+ await assert.rejects(finance.saveExpenses(db,ctxA,{...daily,branchId:201}),{status:403});
+ await assert.rejects(finance.saveExpenses(db,{...ctxCashierA,permissions:[]},daily),{status:403});
  // Remaining .05 units: two concurrent 0.1 requests cannot both succeed.
  // Replenish to 0.15 units and test atomic update lock in two DB transactions.
  await db.query('UPDATE branch_ingredients SET stock_qty=0.15 WHERE id=$1 AND workspace_id=10 AND branch_id=101',[ingredientA]);
@@ -226,6 +298,58 @@ async function run(){
  assert.equal(await stock(20,201,ingredientB),.15);
  assert.equal((await liveSales.transactions(db,ctxB,{branchId:201})).total,1);
  assert.equal((await liveSales.transactions(db,ctxA,{branchId:101})).total,3);
+ // Original Main POS Branches and Cashiers forms: owner can edit only their own records.
+ await liveScope.updateBranch(db,ctxA,101,{
+  name:'Cebu A',address:'Cebu City',city:'Cebu',province:'Cebu',postalCode:'6000',
+  country:'Philippines',phone:'0123',description:'Owner-managed shop',active:true});
+ assert.equal((await liveScope.branches(db,ctxA)).find(x=>x.id===101).city,'Cebu');
+ await assert.rejects(liveScope.deactivateBranch(db,ctxA,101),{status:409},
+  'Starter branch cannot be disabled without reassigning the login anchor');
+ await assert.rejects(liveScope.updateBranch(db,ctxB,101,{name:'Hijack',active:true}),{status:404},
+  'Other franchise cannot change branch profile');
+ await liveScope.updateCashier(db,ctxA,3,{
+  role:'User',branchId:101,fullName:'Cashier A Updated',password:'NewPassword123456',
+  active:true,email:'cashier@example.com',phone:'09000000000',photoData:null});
+ assert.equal((await liveScope.cashiers(db,ctxA)).find(x=>x.id===3).fullName,'Cashier A Updated');
+ await assert.rejects(liveScope.updateCashier(db,ctxB,3,{role:'User',branchId:201,fullName:'Hijack'}),
+  {status:404},'Other franchise cannot edit employee');
+ await assert.rejects(liveScope.deactivateCashier(db,ctxB,3),{status:404});
+ await liveScope.deactivateCashier(db,ctxA,3);
+ assert.equal((await liveScope.cashiers(db,ctxA)).find(x=>x.id===3).active,false);
+ // Inventory receiving uses the SAME legacy-shaped Main POS workflow, but
+ // all transfer and request records are authenticated to the franchise workspace.
+ const supply=await incoming.create(db,ownerA,{sourceBranchId:101,receivingBranchId:101,
+  sourceLabel:'Independent Supplier',items:[{ingredientId:ingredientA,qty:0.05}]},'SUPPLIER');
+ assert.equal(supply.status,'PENDING');
+ const availableSupply=await incoming.list(db,ownerA,101);
+ assert(availableSupply.requests.some(x=>x.id===supply.id&&x.canReceive));
+ await assert.rejects(incoming.process(db,ownerB,supply.id,'reject',{}),{status:403},
+  'Foreign franchise cannot reject incoming inventory');
+ const supplierStock=await stock(10,101,ingredientA);
+ await incoming.process(db,ownerA,supply.id,'receive',{deliveredBy:'Supplier'});
+ assert(Math.abs((await stock(10,101,ingredientA))-(supplierStock+0.05))<0.0000001);
+ await assert.rejects(incoming.process(db,ownerA,supply.id,'receive',{deliveredBy:'Supplier'}),{status:409},
+  'Supplier receipt cannot be credited twice');
+ const destination=(await db.query('SELECT branch_id FROM chat_workspace_branches WHERE workspace_id=10 AND branch_id<>101 ORDER BY branch_id LIMIT 1')).rows[0];
+ assert(destination,'Owner has a separate destination branch for transfer tests');
+ const destBranch=Number(destination.branch_id);
+ await db.query("UPDATE platform_account_plans SET plan='BUSINESS' WHERE workspace_id=10");
+ const cloned=await db.query('INSERT INTO branch_ingredients(workspace_id,branch_id,code,display_name,'+
+  'uom,stock_qty,low_stock_threshold,unit_cost,active) VALUES(10,$1,$2,$3,$4,0,0,0,TRUE) RETURNING id',
+  [destBranch,'A-BEANS','Beans','KG']);
+ const destIngredient=Number(cloned.rows[0].id);
+ const transfer=await incoming.create(db,ownerA,{sourceBranchId:101,destinationBranchId:destBranch,
+  items:[{ingredientId:ingredientA,qty:0.05}]},'TRANSFER');
+ const preAccepted=await stock(10,101,ingredientA);
+ await assert.rejects(incoming.process(db,ownerB,transfer.id,'accept',{}),{status:403});
+ assert.equal(await stock(10,101,ingredientA),preAccepted,'Pending transfer leaves stock untouched');
+ await incoming.process(db,ownerA,transfer.id,'accept',{});
+ assert(Math.abs((await stock(10,101,ingredientA))-(preAccepted-0.05))<0.0000001);
+ assert.equal(await stock(10,destBranch,destIngredient),0);
+ await incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'});
+ assert.equal(await stock(10,destBranch,destIngredient),0.05);
+ await assert.rejects(incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'}),{status:409});
+ console.log('PASS: scoped supplier receipt, transfer Accept/Receive, foreign franchise denial and no double stock credit.');
  console.log('PASS PostgreSQL: actual branch-isolated sale, price/recipe edits, cashier account, concurrent oversell protection, refunds and per-franchise reports.');
 }
 run().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{
