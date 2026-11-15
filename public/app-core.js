@@ -169,11 +169,11 @@
     $('mobileMoreButton')?.classList.toggle('hidden',!moreAvailable);
     if(!moreAvailable)$('mobileMorePanel')?.classList.add('hidden');
     document.querySelectorAll('.nav-finance .nav[data-access-key]').forEach(link=>{
-      link.classList.toggle('hidden',!isAdmin&&!userGrants.includes(link.dataset.accessKey));
+      link.classList.toggle('hidden',!!state.user.liveMode||(!isAdmin&&!userGrants.includes(link.dataset.accessKey)));
     });
     const hasFinanceAccess=isAdmin||userGrants.includes('transactions.view')||
        userGrants.includes('expenses.view');
-    document.querySelector('.nav-finance')?.classList.toggle('hidden',!hasFinanceAccess);
+    document.querySelector('.nav-finance')?.classList.toggle('hidden',!!state.user.liveMode||!hasFinanceAccess);
     window.donmacFinanceAccess={viewTransactions:isAdmin||userGrants.includes('transactions.view'),
       viewExpenses:isAdmin||userGrants.includes('expenses.view'),
       manageExpenses:isAdmin||userGrants.includes('expenses.manage')};
@@ -222,7 +222,7 @@
     $('accountPlanPill').textContent=(business?'Business':'Pro')+' Plan User';
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
     renderAccountBranchPricing(sub);
-    $('saveAccountPlan').disabled=!admin;
+    $('saveAccountPlan').disabled=!admin||!!state.user?.liveMode;
     $('accountPlanName').textContent=business?'Business':'Pro';
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
     $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
