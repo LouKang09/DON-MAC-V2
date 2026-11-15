@@ -92,7 +92,18 @@
   if(p==='/api/inventory'&&method==='GET')
    return live('/api/live/inventory'+qs(selected()));
   if(p==='/api/inventory/movements'&&method==='GET')
-   return live('/api/live/inventory/movements'+qs(selected()));
+   return live('/api/live/inventory/movements'+qs(selected())+'&limit='+encodeURIComponent(url.searchParams.get('limit')||300));
+  if(p==='/api/inventory/incoming'&&method==='GET')
+   return live('/api/live/inventory/incoming'+qs(selected()));
+  const incomingMatch=p.match(/^\/api\/inventory\/incoming\/(\d+)\/(accept|reject|receive)$/);
+  if(incomingMatch&&method==='POST')
+   return live('/api/live/inventory/incoming/'+Number(incomingMatch[1])+'/'+incomingMatch[2],'POST',data);
+  if(p==='/api/inventory/transfer-branches'&&method==='GET'){
+   const source=scopedBranch(state,url.searchParams.get('sourceBranchId'));
+   return live('/api/live/inventory/transfer-branches?sourceBranchId='+encodeURIComponent(source));
+  }
+  if(p==='/api/inventory/transfer'&&method==='POST')
+   return live('/api/live/inventory/transfer','POST',data);
   if(p==='/api/inventory/replenish/direct'&&method==='POST')
    return live('/api/live/stock','POST',data);
   if(p==='/api/users'&&method==='GET'){
