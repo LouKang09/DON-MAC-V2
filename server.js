@@ -2037,10 +2037,10 @@ async function handleApi(req,res,url){
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
       testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
-      liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      liveMode,livePortal:liveMode?'/':null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
-      accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
+      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='GET'&&p==='/api/auth/username-available'){
@@ -2107,10 +2107,10 @@ async function handleApi(req,res,url){
     const liveMode=!!liveCandidate;
     const testAccount=liveMode?null:await franchiseTestAccess.account(db,user.id);
     return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
-      liveMode,livePortal:liveMode?'/franchise-live.html':null,
+      liveMode,livePortal:liveMode?'/':null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
-      accessPermissions:(testAccount||liveMode)?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
+      accessPermissions:testAccount?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
   // Paid, OTP-verified franchise workspaces use independent live tables, never
