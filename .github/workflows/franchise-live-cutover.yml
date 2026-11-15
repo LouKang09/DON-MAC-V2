@@ -13,6 +13,9 @@ on:
       - "scripts/signup-otp-selfservice-test.js"
       - "public/franchise-live.*"
       - "lib/franchise-live-*.js"
+      - "lib/franchise-unified-dashboard.js"
+      - "public/franchise-unified-adapter.js"
+      - "scripts/franchise-unified-adapter-test.js"
       - "public/platform-admin.js"
       - "scripts/franchise-live-static-regression.js"
       - "scripts/franchise-live-postgres-test.js"
@@ -48,6 +51,8 @@ jobs:
         run: |
           node --check server.js
           node --check public/app-core.js
+          node --check public/franchise-unified-adapter.js
+          node --check lib/franchise-unified-dashboard.js
           node --check public/franchise-live.js
           node --check lib/franchise-live-scope.js
           node --check lib/franchise-live-catalog.js
@@ -58,7 +63,9 @@ jobs:
           node --check lib/franchise-test-access.js
           node --check scripts/franchise-setup-before-paid-browser-test.js
       - name: Validate fail-closed legacy routing and production feature wiring
-        run: node scripts/franchise-live-static-regression.js
+        run: |
+          node scripts/franchise-live-static-regression.js
+          node scripts/franchise-unified-adapter-test.js
       - name: Install PostgreSQL and DOM test dependencies
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
       - name: Real PostgreSQL cross-franchise checkout and concurrency
