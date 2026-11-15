@@ -39,8 +39,10 @@ async function setup(){
  await pool.query('CREATE SCHEMA '+schema);
  await db.exec('CREATE TABLE users(id BIGSERIAL PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
   'password_hash TEXT,role TEXT NOT NULL,active BOOLEAN NOT NULL,branch_id BIGINT,'+
-  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT)');
- await db.exec('CREATE TABLE branches(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL,address TEXT)');
+  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT,email TEXT,phone TEXT,profile_photo TEXT)');
+ await db.exec('CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id BIGINT)');
+ await db.exec('CREATE TABLE branches(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL,address TEXT,'+
+  'city TEXT,province TEXT,postal_code TEXT,country TEXT,phone TEXT,description TEXT)');
  await db.exec('CREATE TABLE chat_workspaces(id BIGINT PRIMARY KEY,owner_user_id BIGINT NOT NULL REFERENCES users(id))');
  await db.exec('CREATE TABLE chat_memberships(user_id BIGINT REFERENCES users(id),workspace_id BIGINT REFERENCES chat_workspaces(id),PRIMARY KEY(user_id,workspace_id))');
  await db.exec('CREATE TABLE chat_workspace_branches(workspace_id BIGINT REFERENCES chat_workspaces(id),branch_id BIGINT REFERENCES branches(id),PRIMARY KEY(workspace_id,branch_id))');
@@ -294,6 +296,24 @@ async function run(){
  assert.equal(await stock(20,201,ingredientB),.15);
  assert.equal((await liveSales.transactions(db,ctxB,{branchId:201})).total,1);
  assert.equal((await liveSales.transactions(db,ctxA,{branchId:101})).total,3);
+ // Original Main POS Branches and Cashiers forms: owner can edit only their own records.
+ await liveScope.updateBranch(db,ctxA,101,{
+  name:'Cebu A',address:'Cebu City',city:'Cebu',province:'Cebu',postalCode:'6000',
+  country:'Philippines',phone:'0123',description:'Owner-managed shop',active:true});
+ assert.equal((await liveScope.branches(db,ctxA)).find(x=>x.id===101).city,'Cebu');
+ await assert.rejects(liveScope.deactivateBranch(db,ctxA,101),{status:409},
+  'Starter branch cannot be disabled without reassigning the login anchor');
+ await assert.rejects(liveScope.updateBranch(db,ctxB,101,{name:'Hijack',active:true}),{status:404},
+  'Other franchise cannot change branch profile');
+ await liveScope.updateCashier(db,ctxA,3,{
+  role:'User',branchId:101,fullName:'Cashier A Updated',password:'NewPassword123456',
+  active:true,email:'cashier@example.com',phone:'09000000000',photoData:null});
+ assert.equal((await liveScope.cashiers(db,ctxA)).find(x=>x.id===3).fullName,'Cashier A Updated');
+ await assert.rejects(liveScope.updateCashier(db,ctxB,3,{role:'User',branchId:201,fullName:'Hijack'}),
+  {status:404},'Other franchise cannot edit employee');
+ await assert.rejects(liveScope.deactivateCashier(db,ctxB,3),{status:404});
+ await liveScope.deactivateCashier(db,ctxA,3);
+ assert.equal((await liveScope.cashiers(db,ctxA)).find(x=>x.id===3).active,false);
  console.log('PASS PostgreSQL: actual branch-isolated sale, price/recipe edits, cashier account, concurrent oversell protection, refunds and per-franchise reports.');
 }
 run().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{
