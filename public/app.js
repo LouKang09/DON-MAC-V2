@@ -47,8 +47,20 @@
     }
   }
 
+  let scopedFinanceStarted=false;
+  async function startScopedFinanceWhenAppReady(){
+    if(scopedFinanceStarted || !window.donmacFranchiseUnified || !isVisible(document.getElementById('app')))return;
+    scopedFinanceStarted=true;
+    try{
+      loadCss('posFinanceV20261107','/pos-finance.css');
+      await loadScript('/pos-finance.js?v=20261115-isolated');
+      const view=document.querySelector('.view.active')?.id;
+      if(view==='view-transactions'||view==='view-expenses')window.donmacFinance?.open(view.slice(5));
+    }catch(err){scopedFinanceStarted=false;console.error('Isolated finance display:',err);}
+  }
   async function startEnhancementsWhenAppIsReady() {
-    if (enhancementsStarted || window.donmacFranchiseUnified) return;
+    if(window.donmacFranchiseUnified){await startScopedFinanceWhenAppReady();return;}
+    if (enhancementsStarted) return;
     const app = document.getElementById('app');
     if (!isVisible(app)) return;
     enhancementsStarted = true;
