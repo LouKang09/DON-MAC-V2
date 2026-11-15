@@ -2448,6 +2448,11 @@ async function main(){
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleApi(req,res,url);
+      // All franchises use the original Main POS page. Keep the former
+      // live-portal URL as an HTTP redirect for older signup emails/links.
+      if(!SUPPLY_OFFICE_PORTAL&&req.method==='GET'&&url.pathname==='/franchise-live.html'){
+        res.writeHead(302,safeHeaders({'Location':'/','Cache-Control':'no-store'}));res.end();return;
+      }
       if(SUPPLY_OFFICE_PORTAL){
         const allowed=new Set(['/supply-office.html','/supply-office.js','/supply-office.css','/office-campaign-ui-v20261108.js','/office-campaign-v20261108.css','/platform-admin.html','/platform-admin.css','/platform-admin.js','/tenant-billing-ui.js','/tenant-billing.css','/refresh-controls-v20261107.css','/refresh-controls-v20261107.js','/coffee-workspace-theme-v20261107.css','/assets/refresh-clockwise-v20261107.svg','/donmac-logo-hires.svg','/auth-login-v1574.css','/office-login-pos.css','/assets/login-coffee-pattern-approved-hd.png','/assets/catalog/v1562-coffee-beans.svg','/assets/login-coffee-beans-bold-outline-v1585.svg','/assets/login-coffee-beans-white-outline-v1586.svg','/assets/login-coffee-beans-all-white-strokes-v1587.svg']);
         const target=url.pathname==='/'?'/supply-office.html':url.pathname;
