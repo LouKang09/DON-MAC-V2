@@ -176,7 +176,23 @@
   if(p==='/api/finance/expenses'&&method==='POST')
    return live('/api/live/finance/expenses','POST',data);
   // Legacy receipt drawer expects these field names. Never use legacy sales APIs.
-  const saleDetail=p.match(/^\\/api\\/sales\\/(BR-[A-F0-9]{18})$/);
+  const saleDetail=p.match(new RegExp('^/api/sales/(BR-[A-F0-9]{18})
+  if(saleDetail&&method==='GET'){
+   const d=await live('/api/live/transactions/'+saleDetail[1]+qs(selected()));
+   return{...d,items:(d.items||[]).map(x=>({...x,type:x.kind,unitPrice:x.price,
+     lineTotal:x.total})),tender:d.tender??null,change:d.change??null,
+     inventoryMovements:[],auditEvents:[]};
+  }
+  if(p==='/api/reports/cashiers'&&method==='GET'){
+   const r=await live('/api/live/cashiers');
+   return{cashiers:(r.cashiers||[]).map(x=>x.username)};
+  }
+  // DO NOT add a catch-all proxy or return fake empty data. An incomplete
+  // feature must be unavailable rather than show someone else's records.
+  throw fail('This Main POS function has not yet been migrated to your isolated franchise data. It remains disabled to protect other accounts.',403);
+ }
+ window.donmacFranchiseCompat={request,fail};
+})();));
   if(saleDetail&&method==='GET'){
    const d=await live('/api/live/transactions/'+saleDetail[1]+qs(selected()));
    return{...d,items:(d.items||[]).map(x=>({...x,type:x.kind,unitPrice:x.price,
