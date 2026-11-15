@@ -1,19 +1,20 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Don Macchiatos · Live Franchise POS</title>
-<link rel="stylesheet" href="/franchise-live.css?v=1"></head>
+<title>Don Macchiatos · Point of Sale</title>
+<link rel="stylesheet" href="/franchise-live.css?v=2"></head>
 <body>
 <div class="live-app">
   <aside class="live-sidebar" aria-label="Live franchise navigation">
-    <div class="brand"><span class="brand-icon">DM</span><div><strong>Don Macchiatos</strong><small>FRANCHISE · LIVE POS</small></div></div>
+    <div class="brand"><span class="brand-icon">DM</span><div><strong>Don Macchiatos</strong><small>FRANCHISE · MAIN POS</small></div></div>
     <nav id="liveNav">
-      <button class="nav-btn selected" data-view="overview">◫ <span>Overview</span></button>
+      <button class="nav-btn selected" data-view="overview" data-admin-only>◫ <span>Overview</span></button>
       <button class="nav-btn" data-view="pos" data-cashier-only>▣ <span>Point of Sale</span></button>
-      <button class="nav-btn" data-view="transactions">▤ <span>Transactions</span></button>
+      <button class="nav-btn" data-view="transactions" data-access="transactions.view">▤ <span>Transactions</span></button>
       <button class="nav-btn" data-view="inventory" data-admin-only>◈ <span>Inventory</span></button>
+      <button class="nav-btn" data-view="branches" data-admin-only>⌂ <span>Branches</span></button>
       <button class="nav-btn" data-view="catalog" data-admin-only>▦ <span>Catalog & Recipes</span></button>
       <button class="nav-btn" data-view="reports" data-admin-only>▥ <span>Reports</span></button>
-      <button class="nav-btn" data-view="expenses" data-admin-only>▧ <span>Expenses</span></button>
+      <button class="nav-btn" data-view="expenses" data-access="expenses.view">▧ <span>Expenses</span></button>
       <button class="nav-btn" data-view="team" data-admin-only>♙ <span>Cashiers & Access</span></button>
     </nav>
     <div class="nav-foot">Independent workspace<br><strong id="sidebarWorkspace">—</strong><button id="logout" class="logout-btn">Log out</button></div>
@@ -22,7 +23,7 @@
     <header class="live-topbar">
       <div class="top-left"><button id="menuToggle" class="mobile-menu" aria-label="Toggle navigation">☰</button>
         <div class="breadcrumb">DON MACCHIATOS / <strong id="activeSection">Overview</strong></div></div>
-      <div class="top-right"><span class="live-pill"><span class="pulse"></span> LIVE · ISOLATED</span>
+      <div class="top-right"><span class="live-pill" id="subscriptionPill"><span class="pulse"></span> VERIFYING ACCOUNT</span>
         <select id="branchSelect" aria-label="Select branch" title="Choose active branch"></select>
         <span class="user-chip" id="userChip">Loading…</span>
         <button id="refreshAll" class="round-action" title="Refresh branch data">↻</button></div>
@@ -30,19 +31,20 @@
     <div class="content">
       <div id="notice" class="message" role="status">Authenticating and verifying franchise ownership…</div>
       <section class="view active" id="view-overview">
-        <div class="section-heading"><div><p class="eyebrow">FRANCHISE WORKSPACE</p><h1>Business overview</h1><p>Real sales and inventory exclusively for this branch.</p></div><span class="section-tag" id="planTag">—</span></div>
+        <div class="section-heading"><div><p class="eyebrow">FRANCHISE WORKSPACE</p><h1>Business overview</h1><p>Manage your franchise setup, staff and branch inventory. Payment approval activates cashier checkout.</p></div><span class="section-tag" id="planTag">—</span></div>
         <div class="stats">
           <article class="stat"><span>Completed live sales</span><strong id="statOrders">0</strong><small>Branch total</small></article>
           <article class="stat"><span>Gross revenue</span><strong id="statRevenue">₱0.00</strong><small>Branch total</small></article>
           <article class="stat"><span>Ingredient types</span><strong id="statIngredients">0</strong><small>Branch inventory</small></article>
           <article class="stat"><span>Low or out of stock</span><strong id="statLow">0</strong><small>Requires replenishment</small></article>
         </div>
-        <div class="panel"><h2>Active franchise</h2>
-          <p>This is a real production workspace with its own product catalog, ingredients, receipts, inventory movements and financial reports. Completed checkouts are not simulations. Your activity does not use other franchises' legacy sales tables.</p>
+        <div class="panel"><h2>Franchise account setup</h2>
+          <p>Use Branches to register your locations, Cashiers &amp; Access to add employees and assign their permissions, and Inventory or Catalog to prepare your business. All information is stored only inside your franchise. Cashiers can process real sales once Admin Control validates the subscription as Paid.</p>
           <p id="overviewRoleNote" class="subnote"></p>
         </div>
       </section>
       <section class="view" id="view-pos">
+        <div id="cashierPaymentGate" class="subscription-gate hidden" role="status">Checkout is locked until Admin Control confirms a Paid subscription. Product selection and inventory are available for review.</div>
         <div class="section-heading"><div><p class="eyebrow">CASHIER CHECKOUT</p><h1>Point of Sale</h1><p>Every item is checked against this branch’s own ingredient balances.</p></div><button class="ghost" id="posRefresh">Refresh products</button></div>
         <div class="pos-layout">
           <div class="panel product-picker"><div class="picker-top"><input id="productSearch" placeholder="Search products…" aria-label="Search products">
@@ -84,6 +86,18 @@
           <button class="primary" type="submit">Save branch stock</button></form>
           <div class="panel"><h2>Branch ingredient balances</h2><div class="table-scroll"><table><thead><tr><th>Ingredient</th><th>Stock</th><th>Low threshold</th><th>Status</th></tr></thead><tbody id="inventoryBody"></tbody></table></div></div></div>
       </section>
+      <section class="view" id="view-branches">
+        <div class="section-heading"><div><p class="eyebrow">FRANCHISE STRUCTURE</p><h1>Branches</h1><p>Create locations before or after subscription approval. Each branch starts with separate inventory.</p></div></div>
+        <div class="two-col">
+          <form id="branchForm" class="panel form-panel"><h2>Add a branch</h2>
+            <label>Branch name<input id="branchName" required minlength="3" maxlength="120" placeholder="e.g. Sampaguita Branch"></label>
+            <label>Address (optional)<textarea id="branchAddress" maxlength="250" rows="2" placeholder="Street, city or unit"></textarea></label>
+            <p class="subnote">New branches receive their own catalog and zero starting stock. Pro permits up to 3 branches; Business supports additional branches with subscription fees.</p>
+            <button class="primary" type="submit" id="addBranchButton">Create Branch</button></form>
+          <div class="panel"><h2>Branch management</h2><p id="branchPlanNote" class="subnote"></p>
+            <div class="table-scroll"><table><thead><tr><th>Branch</th><th>Inventory</th><th>Access</th></tr></thead><tbody id="branchesBody"></tbody></table></div></div>
+        </div>
+      </section>
       <section class="view" id="view-catalog">
         <div class="section-heading"><div><p class="eyebrow">BRANCH CATALOG</p><h1>Products, ingredients & costing</h1><p>All definitions and recipes stay within your franchise and branch.</p></div><button id="catalogRefresh" class="ghost">Refresh</button></div>
         <div class="two-col">
@@ -116,17 +130,26 @@
         <div class="two-col"><div class="panel"><h2>Payment methods</h2><div class="table-scroll"><table><thead><tr><th>Method</th><th>Count</th><th>Amount</th></tr></thead><tbody id="reportPayments"></tbody></table></div></div><div class="panel"><h2>Product performance</h2><div class="table-scroll"><table><thead><tr><th>Product</th><th>Qty</th><th>Gross</th><th>Cost</th></tr></thead><tbody id="reportProducts"></tbody></table></div></div></div>
       </section>
       <section class="view" id="view-expenses"><div class="section-heading"><div><p class="eyebrow">BRANCH FINANCE</p><h1>Expenses</h1><p>Only entries from this franchise branch are visible.</p></div></div>
-        <form id="expenseForm" class="panel expense-form"><label>Category<input id="expenseCategory" maxlength="80" placeholder="Utilities / Supplies" required></label><label>Amount (₱)<input id="expenseAmount" type="number" step=".01" min=".01" required></label><label>Notes<input id="expenseNotes" maxlength="500"></label><button class="primary" type="submit">Record expense</button></form>
+        <form id="expenseForm" class="panel expense-form" data-requires="expenses.manage"><label>Category<input id="expenseCategory" maxlength="80" placeholder="Utilities / Supplies" required></label><label>Amount (₱)<input id="expenseAmount" type="number" step=".01" min=".01" required></label><label>Notes<input id="expenseNotes" maxlength="500"></label><button class="primary" type="submit">Record expense</button></form>
         <div class="panel table-scroll"><table><thead><tr><th>Date</th><th>Category</th><th>Notes</th><th>Amount</th></tr></thead><tbody id="expensesBody"></tbody></table></div>
       </section>
       <section class="view" id="view-team"><div class="section-heading"><div><p class="eyebrow">ACCOUNT ACCESS</p><h1>Cashier accounts</h1><p>Only cashiers may process live sales. Each is restricted to their assigned branch.</p></div></div>
         <form id="cashierForm" class="panel expense-form"><label>Username<input id="cashierUsername" maxlength="80" required></label><label>Full name<input id="cashierName" maxlength="120" required></label><label>Temporary password<input id="cashierPassword" type="password" autocomplete="new-password" minlength="10" required></label><label>Branch<select id="cashierBranch"></select></label><button class="primary" type="submit">Create cashier</button></form>
-        <div class="panel table-scroll"><table><thead><tr><th>Username</th><th>Name</th><th>Branch</th><th>Status</th></tr></thead><tbody id="cashiersBody"></tbody></table></div>
+        <div class="panel table-scroll"><table><thead><tr><th>Username</th><th>Name</th><th>Branch</th><th>Granted sidebar access</th><th>Status</th></tr></thead><tbody id="cashiersBody"></tbody></table></div>
+        <form id="cashierPermissionsForm" class="panel form-panel">
+          <h2>Cashier sidebar permissions</h2>
+          <p>POS is always assigned to cashiers, but checkout requires a Paid subscription. Other navigation items stay hidden until granted.</p>
+          <label>Select cashier<select id="permissionCashier" required></select></label>
+          <label class="check-label"><input type="checkbox" value="transactions.view" name="cashierPermission"> View Transactions</label>
+          <label class="check-label"><input type="checkbox" value="expenses.view" name="cashierPermission"> View Expenses</label>
+          <label class="check-label"><input type="checkbox" value="expenses.manage" name="cashierPermission"> Record Expenses</label>
+          <button class="primary" type="submit">Save Cashier Access</button>
+        </form>
       </section>
     </div>
   </main>
 </div>
 <dialog id="receiptDialog"><div class="dialog-head"><h2>Live receipt</h2><button id="receiptClose" type="button" class="ghost">Close</button></div><div id="receiptContent"></div></dialog>
 <script defer src="/pos-stock-limit-v20261114.js"></script>
-<script defer src="/franchise-live.js?v=1"></script>
+<script defer src="/franchise-live.js?v=2"></script>
 </body></html>
