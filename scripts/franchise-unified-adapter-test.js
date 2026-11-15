@@ -26,7 +26,10 @@ const stubs={
  '/api/live/dashboard':{rangeTransactions:0,rangeActual:0,metrics:{}},
  '/api/live/cashiers':{cashiers:[]},
  '/api/live/branches':{ok:true,id:905},
- '/api/live/inventory':{branchId:901,items:[]}
+ '/api/live/inventory':{branchId:901,items:[]},
+ '/api/live/finance/transactions':{rows:[],total:0},
+ '/api/live/finance/expenses':{rows:[],total:0},
+ '/api/live/transactions/BR-123456789012345678':{reference:'BR-123456789012345678',items:[{kind:'product',name:'Coffee',qty:1,price:100,total:100}]}
 };
 const fetch=async(path,options={})=>{
  const u=new URL(path,origin);
@@ -57,7 +60,14 @@ assert(scoped&&typeof scoped.request==='function');
  const dashboardResult=await scoped.request('/api/dashboard?view=hourly&branchId=901',{},state);
  assert.equal(dashboardResult.rangeActual,0);
  await assert.rejects(scoped.request('/api/backups',{},state),/not yet been migrated/i);
- await assert.rejects(scoped.request('/api/finance/transactions',{},state),/not yet been migrated/i);
+ const finance=await scoped.request('/api/finance/transactions?branchId=901',{},state);
+ assert.equal(finance.total,0);
+ const expense=await scoped.request('/api/finance/expenses?branchId=901',{},state);
+ assert.equal(expense.total,0);
+ const receipt=await scoped.request('/api/sales/BR-123456789012345678',{},state);
+ assert.equal(receipt.items[0].unitPrice,100);
+ assert.equal(receipt.items[0].lineTotal,100);
+ await assert.rejects(scoped.request('/api/sales/BR-123456789012345677',{},state),/Unavailable isolated endpoint/);
  assert(!calls.some(x=>x.path==='/api/catalog'||x.path==='/api/sales'||x.path==='/api/dashboard'));
  assert(!/location\.(?:assign|replace)\('\/franchise-live\.html'\)/.test(core));
  assert.match(core,/window\.donmacFranchiseCompat\.request/);
