@@ -327,7 +327,7 @@ async function run(){
   'Foreign franchise cannot reject incoming inventory');
  const supplierStock=await stock(10,101,ingredientA);
  await incoming.process(db,ownerA,supply.id,'receive',{deliveredBy:'Supplier'});
- assert.equal(await stock(10,101,ingredientA),supplierStock+0.05);
+ assert(Math.abs((await stock(10,101,ingredientA))-(supplierStock+0.05))<0.0000001);
  await assert.rejects(incoming.process(db,ownerA,supply.id,'receive',{deliveredBy:'Supplier'}),{status:409},
   'Supplier receipt cannot be credited twice');
  const destination=(await db.query('SELECT branch_id FROM chat_workspace_branches WHERE workspace_id=10 AND branch_id<>101 ORDER BY branch_id LIMIT 1')).rows[0];
