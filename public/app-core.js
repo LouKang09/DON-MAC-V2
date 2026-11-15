@@ -152,10 +152,9 @@
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
       ...(userGrants.includes('expenses.view')?['expenses']:[])]);
     document.querySelectorAll('#app button[data-view]').forEach(button=>{
-      const unifiedAdmin=new Set(['dashboard','inventory','catalog','users','account','transactions','expenses']);
-      const unifiedCashier=new Set([...cashierViews]);
-      const allowed=(isAdmin||cashierViews.has(button.dataset.view))&&
-        (!state.user.liveMode||(isAdmin?unifiedAdmin:unifiedCashier).has(button.dataset.view));
+      // Reuse every existing Owner sidebar view in the SAME Main POS layout.
+      // Requests from NEW workspaces remain isolated by the API adapter and server.
+      const allowed=isAdmin||cashierViews.has(button.dataset.view);
       button.classList.toggle('hidden',!allowed);
       button.disabled=!allowed;
       button.setAttribute('aria-hidden',String(!allowed));
@@ -361,14 +360,8 @@
   }
   function switchView(view){
     if(view==='pos'&&state.user?.role!=='User')view='dashboard';
-    if(state.user?.liveMode){
-      const grants=state.user.accessPermissions||[];
-      const approved=state.user.role==='Admin'?
-        ['dashboard','inventory','catalog','users','account','transactions','expenses']:
-        ['pos',...(grants.includes('transactions.view')?['transactions']:[]),
-         ...(grants.includes('expenses.view')?['expenses']:[])];
-      if(!approved.includes(view))view=state.user.role==='Admin'?'dashboard':'pos';
-    }
+    // Do not restrict an Owner's visible Main POS screens by franchise age.
+    // Cashier navigation remains permission-gated below.
     if(state.user?.role==='User'){
       const grants=state.user.accessPermissions||[];
       const authorized=view==='pos'||
