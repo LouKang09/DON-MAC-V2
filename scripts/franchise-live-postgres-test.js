@@ -7,6 +7,8 @@ const liveScope=require('../lib/franchise-live-scope');
 const liveCatalog=require('../lib/franchise-live-catalog');
 const liveSales=require('../lib/franchise-live-sales');
 const expenses=require('../lib/franchise-live-expenses');
+const finance=require('../lib/franchise-live-finance');
+const accountModes=require('../lib/franchise-account-modes');
 const liveRouter=require('../lib/franchise-live-router');
 const cashierAccess=require('../lib/cashier-access');
 const seed=require('../lib/branch-catalog-seeding');
@@ -60,6 +62,9 @@ async function setup(){
  await db.query("INSERT INTO franchise_test_accounts VALUES('11111111-1111-4111-8111-111111111111',1,10,101,now(),'OTP'),"+
   "('22222222-2222-4222-8222-222222222222',2,20,201,now(),'OTP')");
  await db.query("INSERT INTO platform_account_plans(workspace_id,status,plan,amount,base_amount) VALUES(10,'UNPAID','PRO',0,0),(20,'PAID','PRO',0,0)");
+ await accountModes.migrate(db);
+ await accountModes.register(db,10,'NEW','isolated PostgreSQL test');
+ await accountModes.register(db,20,'NEW','isolated PostgreSQL test');
  for(const stmt of isolatedSchema.statements('postgres'))await db.exec(stmt);
  await liveSales.migrate(db);await expenses.migrate(db);await cashierAccess.migrate(db);
  await db.query("INSERT INTO branch_categories(workspace_id,branch_id,name,active) VALUES(10,101,'Coffee',TRUE),(20,201,'Coffee',TRUE)");
@@ -104,6 +109,9 @@ async function run(){
     paymentMode:'Cash',tender:100})),{status:403});
  await assert.rejects(liveRouter.run(db,setupCashier,cashierA,'GET',
   new URL('https://donmacpos.com/api/live/transactions'),async()=>({})),{status:403});
+ await assert.rejects(liveRouter.run(db,setupCashier,cashierA,'GET',
+  new URL('https://donmacpos.com/api/live/finance/transactions'),async()=>({})),{status:403},
+  'Unpaid cashiers cannot access the finance ledgers');
  const setupStatus=await liveRouter.run(db,setupOwner,ownerA,'GET',
   new URL('https://donmacpos.com/api/live/status'),async()=>({}));
  assert.equal(setupStatus.data.setupMode,true);
@@ -197,6 +205,27 @@ async function run(){
  await expenses.add(db,ctxA,{branchId:101,category:'Supplies',amount:12,notes:'Owner A'});
  assert.equal((await expenses.list(db,ctxA,101)).rows.length,1);
  assert.equal((await expenses.list(db,ctxB,201)).rows.length,0);
+ // The existing transaction and expense screens now use scoped SQL.
+ const financeDates=new URLSearchParams({start:'2020-01-01',end:'2030-12-31'});
+ const financeA=await finance.transactions(db,ctxA,financeDates);
+ const financeB=await finance.transactions(db,ctxB,financeDates);
+ assert.equal(financeA.total,2);assert.equal(financeB.total,0);
+ assert.equal(financeA.rows[0].branch,'Cebu A');
+ await assert.rejects(finance.transactions(db,ctxA,new URLSearchParams('branchId=201')),{status:403},
+  'A foreign branch cannot be queried from the shared original finance UI');
+ await assert.rejects(finance.expenses(db,ctxB,new URLSearchParams('branchId=101')),{status:403});
+ const day=new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+ const daily={branchId:101,date:day,note:'Operating costs',rent:150,stocks:25,ice:10};
+ await finance.saveExpenses(db,ctxA,daily);
+ await finance.saveExpenses(db,ctxA,{...daily,rent:200});
+ const dailyA=await finance.expenses(db,ctxA,financeDates),dailyB=await finance.expenses(db,ctxB,financeDates);
+ assert(dailyA.grandTotal>=247,'Daily expense save and existing entries are counted together');
+ assert.equal(dailyB.grandTotal,0,'Other franchise sees no expense rows');
+ assert.equal(dailyA.rows.find(x=>x.date===day)?.rent,200,'Same day updated instead of duplicated');
+ const current=(await finance.expenses(db,ctxA,financeDates)).rows.find(x=>x.date===day);
+ assert.equal(current.stocks,25);
+ await assert.rejects(finance.saveExpenses(db,ctxA,{...daily,branchId:201}),{status:403});
+ await assert.rejects(finance.saveExpenses(db,{...ctxCashierA,permissions:[]},daily),{status:403});
  // Remaining .05 units: two concurrent 0.1 requests cannot both succeed.
  // Replenish to 0.15 units and test atomic update lock in two DB transactions.
  await db.query('UPDATE branch_ingredients SET stock_qty=0.15 WHERE id=$1 AND workspace_id=10 AND branch_id=101',[ingredientA]);
