@@ -14,6 +14,7 @@ on:
       - "lib/franchise-live-finance.js"
       - "public/pos-finance.js"
       - "scripts/franchise-account-mode-test.js"
+      - "scripts/franchise-main-pos-promotion-test.js"
       - "lib/franchise-live-router.js"
       - "scripts/franchise-unified-adapter-test.js"
       - "scripts/franchise-unified-browser-test.js"
@@ -93,6 +94,7 @@ jobs:
           node scripts/franchise-live-static-regression.js
           node scripts/franchise-unified-adapter-test.js
           node scripts/franchise-account-mode-test.js
+          node scripts/franchise-main-pos-promotion-test.js
       - name: Install PostgreSQL and DOM test dependencies
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
       - name: Real PostgreSQL cross-franchise checkout and concurrency
