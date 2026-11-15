@@ -37,6 +37,7 @@ const marlouCheckoutStockBridge=require('./lib/marlou-checkout-stock-bridge');
 const branchIsolatedSchema=require('./lib/branch-isolated-schema');
 const branchCatalogSeeding=require('./lib/branch-catalog-seeding');
 const franchiseTestAccess=require('./lib/franchise-test-access');
+const franchiseAccountModes=require('./lib/franchise-account-modes');
 const franchiseTestOperations=require('./lib/franchise-test-operations');
 const franchiseLiveScope=require('./lib/franchise-live-scope');
 const franchiseLiveSales=require('./lib/franchise-live-sales');
@@ -194,7 +195,8 @@ async function requireUser(req, res, role) {
   }
   const access=await platformAccounts.workspaceAccess(db,user.id);
   const franchiseSetup=await franchiseLiveScope.candidate(db,user.id);
-  if(!access.allowed&&!franchiseSetup){
+  if(!access.allowed&&!franchiseSetup&&
+      (await franchiseAccountModes.forUser(db,user.id)).mode!=='TEMPORARY'){
     json(res,403,{error:'Your subscription is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
@@ -2022,7 +2024,8 @@ async function handleApi(req,res,url){
         code:'BRANCH_INACTIVE'},safeHeaders({'Cache-Control':'no-store'}));
     const access=await platformAccounts.workspaceAccess(db,u.id);
     const franchiseCandidate=await franchiseLiveScope.candidate(db,u.id);
-    if(!access.allowed&&!franchiseCandidate)return json(res,403,{
+    if(!access.allowed&&!franchiseCandidate&&
+        (await franchiseAccountModes.forUser(db,u.id)).mode!=='TEMPORARY')return json(res,403,{
       error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
         '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
@@ -2037,6 +2040,7 @@ async function handleApi(req,res,url){
     return json(res,200,{user:{id:Number(u.id),username:u.login_name,photoData:u.profile_photo||null,role:u.role,
       branchId:u.branch_id==null?null:Number(u.branch_id),isOwner:Number(u.id)===owner,
       testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
+      dataMode:liveMode?'NEW':testAccount?'TEMPORARY':'SHARED',
       liveMode,livePortal:liveMode?'/':null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
@@ -2100,13 +2104,15 @@ async function handleApi(req,res,url){
     if(!user)return json(res,401,{error:'Not signed in.'},safeHeaders());
     const access=await platformAccounts.workspaceAccess(db,user.id);
     const franchiseCandidate=await franchiseLiveScope.candidate(db,user.id);
-    if(!access.allowed&&!franchiseCandidate)return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
+    if(!access.allowed&&!franchiseCandidate&&
+        (await franchiseAccountModes.forUser(db,user.id)).mode!=='TEMPORARY')return json(res,403,{error:'This account is '+(access.status==='ON_HOLD'?'on hold':'unpaid')+
       '. POS access is disabled. Please contact Admin Control.',
       code:'SUBSCRIPTION_INACTIVE',status:access.status},safeHeaders({'Cache-Control':'no-store'}));
     const liveCandidate=franchiseCandidate;
     const liveMode=!!liveCandidate;
     const testAccount=liveMode?null:await franchiseTestAccess.account(db,user.id);
     return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
+      dataMode:liveMode?'NEW':testAccount?'TEMPORARY':'SHARED',
       liveMode,livePortal:liveMode?'/':null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
@@ -2443,7 +2449,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseAccountModes.migrate(db);await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
