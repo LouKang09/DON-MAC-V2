@@ -37,7 +37,7 @@ const fetch=async(path,options={})=>{
  if(payload===undefined)return{ok:false,status:404,json:async()=>({error:'Unavailable isolated endpoint'})};
  return{ok:true,status:200,json:async()=>payload};
 };
-vm.runInNewContext(source,{window,fetch,URL,location:{origin},console},
+vm.runInNewContext(source,{window,fetch,URL,URLSearchParams,location:{origin},console},
  {filename:'franchise-unified-adapter.js'});
 const scoped=window.donmacFranchiseCompat;
 assert(scoped&&typeof scoped.request==='function');
