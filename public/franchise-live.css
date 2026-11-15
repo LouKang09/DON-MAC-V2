@@ -33,3 +33,7 @@ input,select,textarea{border:1px solid #cfddd2;border-radius:9px;min-height:39px
 #cashierPermissionsForm .check-label input{width:18px;height:18px;min-height:auto;accent-color:#075d38}
 #cashierPermissionsForm{max-width:760px}
 @media(max-width:850px){#view-branches .two-col{grid-template-columns:1fr}.subscription-gate{padding:12px;font-size:11px}}
+
+/* During sign-out remove the previous page before network completion. */
+.live-app[hidden],body.logging-out .live-app{display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.logging-out{background:#f4f7f4!important;min-height:100dvh}
