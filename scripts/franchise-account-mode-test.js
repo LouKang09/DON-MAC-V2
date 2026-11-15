@@ -35,7 +35,8 @@ const db={
 (async()=>{
  await modes.migrate(db);
  assert.equal((await modes.forUser(db,1)).mode,'SHARED','Old franchise stays on legacy storage');
- assert.equal((await modes.forUser(db,2)).mode,'NEW','Existing isolated accounts remain compatible');
+ assert.equal((await modes.forUser(db,2)).mode,'TEMPORARY','Old unclassified test tenants cannot silently become commercial accounts');
+ assert.equal(await scope.candidate(db,2),null,'Unclassified old test accounts cannot access live checkout');
  await modes.register(db,22,modes.MODES.NEW,'OTP verified');
  await modes.register(db,33,modes.MODES.TEMPORARY,'Admin Control test activation');
  await modes.register(db,44,modes.MODES.NEW,'OTP verified');
