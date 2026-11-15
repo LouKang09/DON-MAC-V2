@@ -176,7 +176,8 @@
   if(p==='/api/finance/expenses'&&method==='POST')
    return live('/api/live/finance/expenses','POST',data);
   // Legacy receipt drawer expects these field names. Never use legacy sales APIs.
-  const saleDetail=p.match(new RegExp('^/api/sales/(BR-[A-F0-9]{18})
+  const receiptKey=p.startsWith('/api/sales/')?p.slice('/api/sales/'.length):'';
+  const saleDetail=receiptKey.length===21 && /^BR-[A-F0-9]{18}/.test(receiptKey)?[null,receiptKey]:null;
   if(saleDetail&&method==='GET'){
    const d=await live('/api/live/transactions/'+saleDetail[1]+qs(selected()));
    return{...d,items:(d.items||[]).map(x=>({...x,type:x.kind,unitPrice:x.price,
