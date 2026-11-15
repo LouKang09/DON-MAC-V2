@@ -7,6 +7,9 @@ const liveScope=require('../lib/franchise-live-scope');
 const liveCatalog=require('../lib/franchise-live-catalog');
 const liveSales=require('../lib/franchise-live-sales');
 const expenses=require('../lib/franchise-live-expenses');
+const liveRouter=require('../lib/franchise-live-router');
+const cashierAccess=require('../lib/cashier-access');
+const seed=require('../lib/branch-catalog-seeding');
 const pool=new Pool({connectionString:process.env.PG_TEST_URL,max:8});
 const schema='franchise_live_'+crypto.randomBytes(5).toString('hex');
 async function client(){
@@ -35,12 +38,12 @@ async function setup(){
  await db.exec('CREATE TABLE users(id BIGSERIAL PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
   'password_hash TEXT,role TEXT NOT NULL,active BOOLEAN NOT NULL,branch_id BIGINT,'+
   'created_at TEXT,full_name TEXT,owner_scope_id BIGINT)');
- await db.exec('CREATE TABLE branches(id BIGINT PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL)');
+ await db.exec('CREATE TABLE branches(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL,address TEXT)');
  await db.exec('CREATE TABLE chat_workspaces(id BIGINT PRIMARY KEY,owner_user_id BIGINT NOT NULL REFERENCES users(id))');
  await db.exec('CREATE TABLE chat_memberships(user_id BIGINT REFERENCES users(id),workspace_id BIGINT REFERENCES chat_workspaces(id),PRIMARY KEY(user_id,workspace_id))');
  await db.exec('CREATE TABLE chat_workspace_branches(workspace_id BIGINT REFERENCES chat_workspaces(id),branch_id BIGINT REFERENCES branches(id),PRIMARY KEY(workspace_id,branch_id))');
  await db.exec('CREATE TABLE franchise_test_accounts(request_id TEXT PRIMARY KEY,user_id BIGINT,workspace_id BIGINT,branch_id BIGINT,created_at TEXT,created_by TEXT)');
- await db.exec('CREATE TABLE platform_account_plans(workspace_id BIGINT PRIMARY KEY,status TEXT,plan TEXT)');
+ await db.exec('CREATE TABLE platform_account_plans(workspace_id BIGINT PRIMARY KEY,status TEXT,plan TEXT,amount NUMERIC(12,2),base_amount NUMERIC(12,2),next_payment_date TEXT)');
  await db.exec('CREATE TABLE branch_catalog_provisioning(workspace_id BIGINT NOT NULL,branch_id BIGINT NOT NULL,PRIMARY KEY(workspace_id,branch_id))');
  await db.query("INSERT INTO users(id,username,login_username,role,active,branch_id,full_name) VALUES"+
   "(1,'ownerA','ownerA','Admin',TRUE,NULL,'A Owner'),"+
@@ -48,16 +51,17 @@ async function setup(){
   "(3,'cashierA','cashierA','User',TRUE,101,'A Cashier'),"+
   "(4,'cashierB','cashierB','User',TRUE,201,'B Cashier')");
  await db.query("SELECT setval(pg_get_serial_sequence('users','id'),(SELECT MAX(id) FROM users))");
- await db.query("INSERT INTO branches VALUES(101,'Cebu A',TRUE),(201,'Cebu B',TRUE)");
+ await db.query("INSERT INTO branches(id,name,active) VALUES(101,'Cebu A',TRUE),(201,'Cebu B',TRUE)");
+ await db.query("SELECT setval(pg_get_serial_sequence('branches','id'),(SELECT MAX(id) FROM branches))");
  await db.query('INSERT INTO chat_workspaces VALUES(10,1),(20,2)');
  await db.query('INSERT INTO chat_memberships VALUES(1,10),(2,20),(3,10),(4,20)');
  await db.query('INSERT INTO chat_workspace_branches VALUES(10,101),(20,201)');
  await db.query('INSERT INTO branch_catalog_provisioning VALUES(10,101),(20,201)');
  await db.query("INSERT INTO franchise_test_accounts VALUES('11111111-1111-4111-8111-111111111111',1,10,101,now(),'OTP'),"+
   "('22222222-2222-4222-8222-222222222222',2,20,201,now(),'OTP')");
- await db.query("INSERT INTO platform_account_plans VALUES(10,'UNPAID','BUSINESS'),(20,'PAID','PRO')");
+ await db.query("INSERT INTO platform_account_plans(workspace_id,status,plan,amount,base_amount) VALUES(10,'UNPAID','PRO',0,0),(20,'PAID','PRO',0,0)");
  for(const stmt of isolatedSchema.statements('postgres'))await db.exec(stmt);
- await liveSales.migrate(db);await expenses.migrate(db);
+ await liveSales.migrate(db);await expenses.migrate(db);await cashierAccess.migrate(db);
  await db.query("INSERT INTO branch_categories(workspace_id,branch_id,name,active) VALUES(10,101,'Coffee',TRUE),(20,201,'Coffee',TRUE)");
  // Both franchises deliberately choose identical names; the rows must stay separate.
  const product=await db.query("INSERT INTO branch_products(workspace_id,branch_id,sku,name,category,price,active) VALUES"+
@@ -88,6 +92,50 @@ async function run(){
  assert.equal((await liveScope.candidate(db,1)).liveEnabled,false,
   'Unpaid application must not enter production POS');
  assert.equal(await liveScope.active(db,ownerA),null);
+ const setupOwner=await liveScope.setup(db,ownerA),setupCashier=await liveScope.setup(db,cashierA);
+ assert.equal(setupOwner.workspaceId,10);assert.equal(setupOwner.subscriptionActive,false);
+ assert.equal(setupCashier.cashier,true);
+ assert.throws(()=>liveScope.requirePaid(setupCashier),{status:403});
+ await assert.rejects(liveSales.sale(db,setupCashier,{}),{status:403},
+  'A cashier cannot sell with a fabricated checkout request before payment');
+ await assert.rejects(liveRouter.run(db,setupCashier,cashierA,'POST',
+  new URL('https://donmacpos.com/api/live/checkout'),async()=>({
+    clientRequestId:crypto.randomUUID(),items:[{kind:'product',id:productA,qty:1}],
+    paymentMode:'Cash',tender:100})),{status:403});
+ await assert.rejects(liveRouter.run(db,setupCashier,cashierA,'GET',
+  new URL('https://donmacpos.com/api/live/transactions'),async()=>({})),{status:403});
+ const setupStatus=await liveRouter.run(db,setupOwner,ownerA,'GET',
+  new URL('https://donmacpos.com/api/live/status'),async()=>({}));
+ assert.equal(setupStatus.data.setupMode,true);
+ assert.equal(setupStatus.data.subscriptionStatus,'UNPAID');
+ assert.equal(setupStatus.data.branches.length,1);
+ const initialCashier=await liveScope.createCashier(db,setupOwner,{
+  username:'setupCashier',fullName:'Created Before Payment',password:'NewPass123456',branchId:101});
+ assert(initialCashier.id>0);
+ await liveScope.setCashierPermissions(db,setupOwner,initialCashier.id,
+  ['transactions.view','expenses.manage']);
+ const roster=await liveScope.cashiers(db,setupOwner);
+ assert.equal(roster.find(x=>x.id===initialCashier.id).permissions.length,3);
+ assert.equal((await cashierAccess.forUser(db,{id:initialCashier.id,role:'User'})).includes('expenses.view'),true);
+ await assert.rejects(liveScope.setCashierPermissions(db,setupOwner,4,['transactions.view']),{status:403},
+  'Owner of franchise A cannot grant access to the cashier in franchise B');
+ // A real PostgreSQL branch record is inserted transactionally and belongs to only A.
+ // The verified catalog seeding unit suite separately tests the full template copy.
+ const readOriginal=seed.readTemplate,seedOriginal=seed.seedBranch;
+ seed.readTemplate=async()=>({id:1,template:{}});
+ seed.seedBranch=async(tx,ws,branch,master,opening)=>{
+  await tx.query('INSERT INTO branch_catalog_provisioning(workspace_id,branch_id) VALUES($1,$2)',
+   [ws,branch]);return{status:'prepared',openingStock:opening};
+ };
+ try{
+  const branch1=await liveScope.createBranch(db,setupOwner,{name:'New Setup Branch'});
+  const branch2=await liveScope.createBranch(db,setupOwner,{name:'Second Setup Branch'});
+  assert.equal(branch1.workspaceId,10);assert.equal(branch1.openingStock,0);
+  assert.equal(branch2.workspaceId,10);
+  assert.equal((await liveScope.branches(db,setupOwner)).length,3);
+  assert.equal((await liveScope.branches(db,await liveScope.setup(db,ownerB))).length,1);
+  await assert.rejects(liveScope.createBranch(db,setupOwner,{name:'Pro Fourth Branch'}),{status:409});
+ }finally{seed.readTemplate=readOriginal;seed.seedBranch=seedOriginal}
  await db.query("UPDATE platform_account_plans SET status='PAID' WHERE workspace_id=10");
  ctxA=await liveScope.active(db,ownerA);ctxB=await liveScope.active(db,ownerB);
  ctxCashierA=await liveScope.active(db,cashierA);ctxCashierB=await liveScope.active(db,cashierB);
