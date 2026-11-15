@@ -10,6 +10,7 @@
   return parts.year+'-'+parts.month+'-'+parts.day;
  };
  const categories=['rent','stocks','salary','transportation','electricity','ice','water','misc'];
+ const financeApiBase=window.donmacFranchiseUnified?'/api/live/finance':'/api/finance';
  const idByCategory={rent:'financeRent',stocks:'financeStocks',salary:'financeSalary',
   transportation:'financeTransportation',electricity:'financeElectricity',ice:'financeIce',
   water:'financeWater',misc:'financeMisc'};
@@ -71,7 +72,7 @@
   state[kind].loading=true;
   const requestQuery=query(kind);
   try{
-   const data=await api('/api/finance/'+kind+'?'+requestQuery);
+   const data=await api(financeApiBase+'/'+kind+'?'+requestQuery);
    // Do not overwrite results for newer search text or filter selections.
    if(kind==='transactions'&&requestQuery!==query('transactions')){
     state.transactions.queued=true;
@@ -162,7 +163,7 @@
    const body={date:$('financeExpenseDate').value,branchId:$('financeExpenseBranch').value,
     note:$('financeExpenseNote').value.trim()};
    for(const c of categories)body[c]=$(idByCategory[c]).value||'0';
-   await api('/api/finance/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+   await api(financeApiBase+'/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
    message('Daily expenses saved for '+body.date+'.');
    state.expenses.page=1;await load('expenses');
   }catch(err){message(err.message,true);}
