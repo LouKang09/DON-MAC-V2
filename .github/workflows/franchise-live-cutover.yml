@@ -1,6 +1,17 @@
 name: Paid franchise live POS cutover
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "server.js"
+      - "public/app-core.js"
+      - "public/app.js"
+      - "public/franchise-unified-adapter.js"
+      - "lib/franchise-unified-dashboard.js"
+      - "lib/franchise-live-router.js"
+      - "scripts/franchise-unified-adapter-test.js"
+      - "scripts/franchise-live-static-regression.js"
+      - ".github/workflows/franchise-live-cutover.yml"
   push:
     paths:
       - "server.js"
