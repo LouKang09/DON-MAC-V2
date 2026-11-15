@@ -152,8 +152,8 @@
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
       ...(userGrants.includes('expenses.view')?['expenses']:[])]);
     document.querySelectorAll('#app button[data-view]').forEach(button=>{
-      const unifiedAdmin=new Set(['dashboard','inventory','catalog','users','account']);
-      const unifiedCashier=new Set(['pos']);
+      const unifiedAdmin=new Set(['dashboard','inventory','catalog','users','account','transactions','expenses']);
+      const unifiedCashier=new Set([...cashierViews]);
       const allowed=(isAdmin||cashierViews.has(button.dataset.view))&&
         (!state.user.liveMode||(isAdmin?unifiedAdmin:unifiedCashier).has(button.dataset.view));
       button.classList.toggle('hidden',!allowed);
@@ -169,11 +169,11 @@
     $('mobileMoreButton')?.classList.toggle('hidden',!moreAvailable);
     if(!moreAvailable)$('mobileMorePanel')?.classList.add('hidden');
     document.querySelectorAll('.nav-finance .nav[data-access-key]').forEach(link=>{
-      link.classList.toggle('hidden',!!state.user.liveMode||(!isAdmin&&!userGrants.includes(link.dataset.accessKey)));
+      link.classList.toggle('hidden',!isAdmin&&!userGrants.includes(link.dataset.accessKey));
     });
     const hasFinanceAccess=isAdmin||userGrants.includes('transactions.view')||
        userGrants.includes('expenses.view');
-    document.querySelector('.nav-finance')?.classList.toggle('hidden',!!state.user.liveMode||!hasFinanceAccess);
+    document.querySelector('.nav-finance')?.classList.toggle('hidden',!hasFinanceAccess);
     window.donmacFinanceAccess={viewTransactions:isAdmin||userGrants.includes('transactions.view'),
       viewExpenses:isAdmin||userGrants.includes('expenses.view'),
       manageExpenses:isAdmin||userGrants.includes('expenses.manage')};
@@ -362,8 +362,11 @@
   function switchView(view){
     if(view==='pos'&&state.user?.role!=='User')view='dashboard';
     if(state.user?.liveMode){
+      const grants=state.user.accessPermissions||[];
       const approved=state.user.role==='Admin'?
-        ['dashboard','inventory','catalog','users','account']:['pos'];
+        ['dashboard','inventory','catalog','users','account','transactions','expenses']:
+        ['pos',...(grants.includes('transactions.view')?['transactions']:[]),
+         ...(grants.includes('expenses.view')?['expenses']:[])];
       if(!approved.includes(view))view=state.user.role==='Admin'?'dashboard':'pos';
     }
     if(state.user?.role==='User'){
