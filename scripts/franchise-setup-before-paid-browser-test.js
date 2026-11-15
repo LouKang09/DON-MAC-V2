@@ -17,6 +17,7 @@ const stockCatalog={branchId:101,products:[{id:51,name:'Sample Coffee',
 async function browser(role){
  const dom=new JSDOM(html,{url:'https://donmacpos.com/franchise-live.html',runScripts:'outside-only'});
  const w=dom.window,doc=w.document;
+ try{
  let paid=false,permissions=[],cashiers=[],branches=[{id:101,name:'Starter Branch'}];
  const requests=[];
  const status=()=>({ok:true,liveMode:true,productionIsolated:true,workspaceId:10,
@@ -92,8 +93,8 @@ async function browser(role){
   assert.equal(doc.querySelector('[data-view="pos"]').classList.contains('hidden'),true,
    'Owner is never permitted to process sales');
  }
- dom.window.close();
  return requests;
+ }finally{dom.window.close()}
 }
 (async()=>{
  assert.match(css,/body:not\(\.legacy-authenticated\) #app/);
@@ -105,4 +106,4 @@ async function browser(role){
  await browser('User');
  await browser('Admin');
  console.log('PASS browser: pending owners manage branches/cashiers, pending cashiers cannot sell, Paid unlocks checkout, only granted nav visible, legacy app cannot peek behind login.');
-})().catch(err=>{console.error(err);process.exitCode=1});
+})().catch(err=>{console.error(err);process.exit(1)});
