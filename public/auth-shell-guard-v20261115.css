@@ -1,0 +1,39 @@
+/* Highest-priority display/authentication isolation.
+ * The tablet/phone responsive grid must NEVER unhide an unauthenticated POS shell.
+ * Do not rely on .hidden alone: several responsive sheets set display:grid!important.
+ */
+html body:not(.legacy-authenticated) #app,
+html body #app.hidden,
+html body #app[aria-hidden="true"] {
+ display:none!important;
+ visibility:hidden!important;
+ content-visibility:hidden!important;
+ pointer-events:none!important;
+ position:absolute!important;
+ width:0!important;
+ height:0!important;
+ max-height:0!important;
+ overflow:hidden!important;
+}
+html body.legacy-authenticated #authScreen,
+html body.legacy-authenticated #authScreen:not(.hidden) {
+ display:none!important;
+ visibility:hidden!important;
+ pointer-events:none!important;
+}
+html body:not(.legacy-authenticated) #mobileBottomNav,
+html body:not(.legacy-authenticated) #mobileMorePanel,
+html body:not(.legacy-authenticated) #mainNav {
+ display:none!important;
+ visibility:hidden!important;
+}
+html body #app .nav.hidden,
+html body #app .nav-section.hidden,
+html body #app .mobile-nav-item.hidden,
+html body #app #mobileMoreButton.hidden,
+html body #app .mobile-more-item.hidden,
+html body #app .nav-finance.hidden {
+ display:none!important;
+ visibility:hidden!important;
+ pointer-events:none!important;
+}
