@@ -178,6 +178,45 @@ async function run(){
  await assert.rejects(liveCatalog.saveRecipe(db,ctxA,101,added.id,{items:[{ingredientId:ingredientB,quantity:1}]}),{status:403});
  assert.equal((await liveCatalog.catalog(db,ctxA,101)).products.find(x=>x.id===added.id).available,false,
   'New product with zero stock is automatically disabled');
+ // The same original admin Catalog editor now manages photos, promos and packages.
+ const image='data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+ await liveCatalog.saveProduct(db,ctxA,101,productA,{name:'test1',category:'Coffee',price:109,
+  active:true,imageData:image});
+ const scopedAdmin=await liveCatalog.manage(db,ctxA,{branchId:101});
+ assert.equal(scopedAdmin.products.find(x=>x.id===productA).imageData,image);
+ assert.equal(scopedAdmin.products.find(x=>x.id===productA).recipeCount,1);
+ assert.equal(scopedAdmin.products.find(x=>x.id===productA).unitCost,2);
+ assert(!scopedAdmin.products.some(x=>x.id===productB));
+ await liveCatalog.saveIngredient(db,ctxA,101,ingredientA,{
+  name:'Beans',uom:'KG',lowStockThreshold:0.1,active:true});
+ const retained=(await db.query('SELECT unit_cost FROM branch_ingredients WHERE workspace_id=10 AND branch_id=101 AND id=$1',[ingredientA])).rows[0];
+ assert.equal(Number(retained.unit_cost),20,'Ingredient cost survives original form edits');
+ const promotion=await liveCatalog.savePromo(db,ctxA,101,0,{
+  name:'Afternoon Combo',inclusion:'Coffee + Food',price:88,foodLimit:1,coffeeLimit:1});
+ assert(promotion.id>0);
+ const packageRow=await liveCatalog.savePackage(db,ctxA,101,0,{
+  name:'Private Bundle',price:180,active:true});
+ await assert.rejects(liveCatalog.saveComposition(db,ctxA,101,packageRow.id,{
+  items:[{productId:productB,qty:1}]}),{status:403},
+  'Package cannot include another franchise product');
+ await liveCatalog.saveComposition(db,ctxA,101,packageRow.id,{
+  items:[{productId:productA,qty:1}]});
+ const hydrated=await liveCatalog.manage(db,ctxA,{branchId:101});
+ assert.equal(hydrated.packages.find(x=>x.id===packageRow.id).items[0].productId,productA);
+ assert.equal(hydrated.promos.find(x=>x.id===promotion.id).inclusion,'Coffee + Food');
+ assert.equal((await liveCatalog.catalog(db,ctxCashierA,101)).packages.find(x=>x.id===packageRow.id).contents.length,1);
+ await assert.rejects(liveCatalog.savePromo(db,ctxB,101,promotion.id,{
+  name:'Cross Franchise',price:1,foodLimit:0,coffeeLimit:0}),{status:403});
+ await assert.rejects(liveCatalog.archivePackage(db,ctxB,101,packageRow.id),{status:403});
+ await assert.rejects(liveCatalog.archiveProduct(db,ctxB,101,productA),{status:403});
+ await assert.rejects(liveCatalog.archiveIngredient(db,ctxA,101,ingredientA),{status:409},
+  'Cannot archive an ingredient while a recipe still uses it');
+ const isolatedPromo=await liveCatalog.manage(db,ctxB,{branchId:201});
+ assert.equal(isolatedPromo.promos.some(x=>x.id===promotion.id),false);
+ assert.equal(isolatedPromo.packages.some(x=>x.id===packageRow.id),false);
+ await liveCatalog.archivePromo(db,ctxA,101,promotion.id);
+ await liveCatalog.archivePackage(db,ctxA,101,packageRow.id);
+ assert.equal((await liveCatalog.manage(db,ctxA,{branchId:101})).promos.find(x=>x.id===promotion.id).active,false);
  const q=await liveSales.quote(db,ctxCashierA,{branchId:101,items:[{kind:'product',id:productA,qty:2}]});
  assert.equal(q.gross,218);assert.equal(q.actual,218);
  await assert.rejects(liveSales.quote(db,ctxCashierA,{branchId:101,
