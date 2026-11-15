@@ -2124,7 +2124,7 @@ async function handleApi(req,res,url){
       return json(res,response.status,response.data,safeHeaders({'Cache-Control':'no-store'}));
     }
     return json(res,403,{error:'This franchise uses isolated live POS routes. Legacy shared APIs are not accessible.',
-      code:'LIVE_FRANCHISE_SCOPED_ONLY',livePortal:'/franchise-live.html'},
+      code:'LIVE_FRANCHISE_SCOPED_ONLY',livePortal:'/'},
       safeHeaders({'Cache-Control':'no-store'}));
   }
   // Legacy Phase 2 simulations are retained only for older non-live test data.
