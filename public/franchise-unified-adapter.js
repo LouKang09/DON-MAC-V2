@@ -167,6 +167,22 @@
   if(edit&&method==='PUT')
    return live('/api/live/packages/'+Number(edit[1])+'/items','PUT',
     {...data,branchId:scopedBranch(state)});
+  // Original Main POS finance widgets keep their existing response contract.
+  // The server independently restricts branch IDs and cashier permissions.
+  if(p==='/api/finance/transactions'&&method==='GET')
+   return live('/api/live/finance/transactions?'+url.searchParams.toString());
+  if(p==='/api/finance/expenses'&&method==='GET')
+   return live('/api/live/finance/expenses?'+url.searchParams.toString());
+  if(p==='/api/finance/expenses'&&method==='POST')
+   return live('/api/live/finance/expenses','POST',data);
+  // Legacy receipt drawer expects these field names. Never use legacy sales APIs.
+  const saleDetail=p.match(/^\\/api\\/sales\\/(BR-[A-F0-9]{18})$/);
+  if(saleDetail&&method==='GET'){
+   const d=await live('/api/live/transactions/'+saleDetail[1]+qs(selected()));
+   return{...d,items:(d.items||[]).map(x=>({...x,type:x.kind,unitPrice:x.price,
+     lineTotal:x.total})),tender:d.tender??null,change:d.change??null,
+     inventoryMovements:[],auditEvents:[]};
+  }
   if(p==='/api/reports/cashiers'&&method==='GET'){
    const r=await live('/api/live/cashiers');
    return{cashiers:(r.cashiers||[]).map(x=>x.username)};
