@@ -15,6 +15,7 @@ function fake(dbMode='TEMPORARY',opts={}){
   async query(sql,args=[]){
    statements.push({sql,args});
    if(sql.includes('pg_advisory_xact_lock'))return{rows:[{}]};
+   if(sql.includes('SELECT t.request_id FROM franchise_test_accounts t'))return{rows:[{request_id:REQUEST}]};
    if(sql.includes('SELECT t.user_id,t.workspace_id'))return{rows:[{...user,data_mode:mode}]};
    if(sql.includes('SELECT 1 FROM chat_memberships'))return{rows:[{ok:1}]};
    if(sql.includes('SELECT 1 FROM branch_catalog_provisioning'))return{rows:[{ok:1}]};
@@ -38,6 +39,8 @@ function fake(dbMode='TEMPORARY',opts={}){
  assert(db.statements.some(x=>x.sql.startsWith('DELETE FROM sessions')),
   'Existing sessions must be invalidated after promotion.');
  assert(!db.statements.some(x=>/\b(?:FROM|UPDATE|INTO)\s+(?:sales|products|ingredients)\b/i.test(x.sql)));
+ const auto=fake();
+ assert.equal((await accounts.promoteTest1OnLaunch(auto)).status,'promoted');
  const old=fake(null);
  assert.equal((await accounts.promote(old,REQUEST,'Admin Control')).dataMode,'NEW',
   'Old test accounts without a recorded mode can be explicitly promoted.');
@@ -48,6 +51,8 @@ function fake(dbMode='TEMPORARY',opts={}){
  await assert.rejects(accounts.promote(fake('TEMPORARY',{owner_user_id:72}),REQUEST,'Admin Control'),{status:409});
  await assert.rejects(accounts.promote(fake('TEMPORARY',{active:false}),REQUEST,'Admin Control'),{status:409});
  assert(modes.MODES.NEW==='NEW'&&modes.MODES.TEMPORARY==='TEMPORARY');
+ const boot=fs.readFileSync('server.js','utf8');
+ assert.match(boot,/DONMAC_PROMOTE_TEST1_MAIN_POS/);
  const ui=fs.readFileSync('public/platform-admin.js','utf8');
  const api=fs.readFileSync('lib/platform-admin-auth.js','utf8');
  const signup=fs.readFileSync('lib/franchise-test-access.js','utf8');
