@@ -15,7 +15,7 @@ const stockCatalog={branchId:101,products:[{id:51,name:'Sample Coffee',
   required:0.1,current:3,threshold:1,active:true}],stockWarnings:[]}],
  packages:[],promos:[],addOns:[],categories:[]};
 async function browser(role){
- const dom=new JSDOM(html,{url:'https://donmacpos.com/franchise-live.html',runScripts:'outside-only'});
+ const dom=new JSDOM(html,{url:'https://donmacpos.com/franchise-live.html',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window,doc=w.document;
  try{
  let paid=false,permissions=[],cashiers=[],branches=[{id:101,name:'Starter Branch'}];
@@ -56,18 +56,19 @@ async function browser(role){
  assert.equal(doc.querySelector('#checkoutButton').disabled,true,'Checkout is disabled before approval');
  assert.equal(requests.includes('/api/live/quote'),false);
  assert.equal(requests.includes('/api/live/checkout'),false);
+ for(let i=0;i<80&&!doc.querySelector('#notice').textContent.includes('Welcome to the main franchise POS');i++)await wait(20);
  if(role==='User'){
   const visible=()=>[...doc.querySelectorAll('#liveNav button[data-view]')]
    .filter(x=>!x.classList.contains('hidden')).map(x=>x.dataset.view);
   assert.deepEqual(visible(),['pos'],'Cashiers default to POS only, with all other side buttons hidden');
   paid=true;permissions=['transactions.view'];
-  w.dispatchEvent(new w.Event('focus'));
+  doc.querySelector('#refreshAll').click();
   for(let i=0;i<80&&(doc.querySelector('.product-tile').disabled||!visible().includes('transactions'));i++)await wait(20);
   assert.equal(doc.querySelector('.product-tile').disabled,false,
    'Subscription approval immediately enables item ordering without re-login');
   assert.deepEqual(visible(),['pos','transactions']);
   paid=false;permissions=[];
-  w.dispatchEvent(new w.Event('focus'));
+  doc.querySelector('#refreshAll').click();
   for(let i=0;i<80&&!doc.querySelector('.product-tile').disabled;i++)await wait(20);
   assert.equal(doc.querySelector('.product-tile').disabled,true);
   assert.deepEqual(visible(),['pos'],'Revoked grant hides cashier tab on every screen size');
