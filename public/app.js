@@ -48,7 +48,7 @@
   }
 
   async function startEnhancementsWhenAppIsReady() {
-    if (enhancementsStarted) return;
+    if (enhancementsStarted || window.donmacFranchiseUnified) return;
     const app = document.getElementById('app');
     if (!isVisible(app)) return;
     enhancementsStarted = true;
@@ -168,6 +168,7 @@
   // Authentication and the proven POS core always load first.
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
+    .then(() => loadScript('/franchise-unified-adapter.js'))
     .then(() => loadScript('/app-core.js'))
     .then(() => {
       watchForAuthenticatedApp();
