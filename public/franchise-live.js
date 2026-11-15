@@ -330,7 +330,7 @@
   $('branchPlanNote').textContent=(plan.plan||'Pro')+' plan · '+branches.length+
    ' registered branches · '+max+'. First branch included; additional branches cost ₱'+
    Number(plan.extraBranchRate||799).toLocaleString('en-PH')+' each per renewal.'+
-   (!state.me?.subscriptionPlan?' Until your plan is assigned, branch additions follow the Pro limit.':'');
+   (state.me?.subscriptionStatus==='NOT_CONFIGURED'?' Until your plan is assigned, branch additions follow the Pro limit.':'');
   $('addBranchButton').disabled=!plan.mayAdd;
   $('addBranchButton').textContent=plan.mayAdd?'Create Branch':'Branch limit reached';
   $('branchesBody').innerHTML=branches.map(x=>
