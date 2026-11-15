@@ -344,7 +344,7 @@ async function run(){
  await assert.rejects(incoming.process(db,ownerB,transfer.id,'accept',{}),{status:403});
  assert.equal(await stock(10,101,ingredientA),preAccepted,'Pending transfer leaves stock untouched');
  await incoming.process(db,ownerA,transfer.id,'accept',{});
- assert.equal(await stock(10,101,ingredientA),preAccepted-0.05);
+ assert(Math.abs((await stock(10,101,ingredientA))-(preAccepted-0.05))<0.0000001);
  assert.equal(await stock(10,destBranch,destIngredient),0);
  await incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'});
  assert.equal(await stock(10,destBranch,destIngredient),0.05);
