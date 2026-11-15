@@ -312,22 +312,81 @@
     escape(x.category)+'</td><td>'+escape(x.notes||'')+'</td><td>'+money(x.amount)+'</td></tr>'
   ).join('')||'<tr><td colspan="4">No branch expenses.</td></tr>';
  }
+ function updateBranchControls(){
+  const existing=String(state.branchId||'');
+  const branches=state.me?.branches||[];
+  $('branchSelect').innerHTML=branches.map(x=>
+   '<option value="'+Number(x.id)+'">'+escape(x.name)+'</option>').join('');
+  if(!branches.some(x=>String(x.id)===existing))state.branchId=Number(state.me.branchId);
+  $('branchSelect').value=String(state.branchId);
+  $('branchSelect').disabled=!isOwner()||branches.length<=1;
+  $('cashierBranch').innerHTML=branches.map(x=>
+   '<option value="'+Number(x.id)+'">'+escape(x.name)+'</option>').join('');
+ }
+ function renderBranches(){
+  if(!isOwner())return;
+  const plan=state.me?.entitlements||{},branches=state.me?.branches||[];
+  const max=plan.maxBranches==null?'No fixed branch limit':String(plan.maxBranches)+' maximum';
+  $('branchPlanNote').textContent=(plan.plan||'Pro')+' plan · '+branches.length+
+   ' registered branches · '+max+'. First branch included; additional branches cost ₱'+
+   Number(plan.extraBranchRate||799).toLocaleString('en-PH')+' each per renewal.'+
+   (!state.me?.subscriptionPlan?' Until your plan is assigned, branch additions follow the Pro limit.':'');
+  $('addBranchButton').disabled=!plan.mayAdd;
+  $('addBranchButton').textContent=plan.mayAdd?'Create Branch':'Branch limit reached';
+  $('branchesBody').innerHTML=branches.map(x=>
+   '<tr><td><strong>'+escape(x.name)+'</strong></td>'+
+   '<td>Separate stock ledger · starts at 0</td>'+
+   '<td><button type="button" class="ghost" data-switch-branch="'+Number(x.id)+'">'+
+   (Number(x.id)===state.branchId?'Selected':'Select Branch')+'</button></td></tr>'
+  ).join('')||'<tr><td colspan="3">Create your first branch.</td></tr>';
+ }
+ function syncCashierPermissions(){
+  const selected=Number($('permissionCashier').value);
+  const record=(state.me?.cashiers||[]).find(x=>Number(x.id)===selected);
+  const current=record?.permissions||[];
+  document.querySelectorAll('[name="cashierPermission"]').forEach(input=>{
+   input.checked=current.includes(input.value);
+   input.disabled=!record;
+  });
+  $('cashierPermissionsForm').querySelector('button[type="submit"]').disabled=!record;
+ }
  async function loadCashiers(){
   const data=await get('cashiers');
-  $('cashiersBody').innerHTML=(data.cashiers||[]).map(x=>
+  state.me.cashiers=data.cashiers||[];
+  $('cashiersBody').innerHTML=state.me.cashiers.map(x=>
    '<tr><td>'+escape(x.username)+'</td><td>'+escape(x.fullName)+'</td><td>'+
     escape(state.me.branches.find(b=>Number(b.id)===Number(x.branchId))?.name||String(x.branchId))+
-    '</td><td>'+escape(x.active?'Active':'Inactive')+'</td></tr>'
-  ).join('')||'<tr><td colspan="4">No cashiers registered.</td></tr>';
+    '</td><td>'+escape((x.permissions||[]).map(key=>({
+      'transactions.view':'Transactions','expenses.view':'Expenses','expenses.manage':'Record Expenses'
+    })[key]||key).join(', ')||'POS only')+'</td><td>'+escape(x.active?'Active':'Inactive')+'</td></tr>'
+  ).join('')||'<tr><td colspan="5">No cashiers registered.</td></tr>';
+  const selected=$('permissionCashier').value;
+  $('permissionCashier').innerHTML=state.me.cashiers.map(x=>
+   '<option value="'+Number(x.id)+'">'+escape(x.username)+'</option>').join('');
+  if(state.me.cashiers.some(x=>String(x.id)===selected))$('permissionCashier').value=selected;
+  syncCashierPermissions();
  }
  async function refreshAll(){
   if(refreshLock||!state.me)return;
   refreshLock=true;
   try{
-   await Promise.all([fetchCatalog(),fetchInventory(),loadSales()]);
+   const status=await get('status');
+   const prior=state.me.subscriptionActive;
+   state.me={...status,cashiers:state.me.cashiers||status.cashiers};
+   updateBranchControls();updateNavigation();
+   await Promise.all([fetchCatalog(),fetchInventory(),
+    canView('transactions')?loadSales():Promise.resolve()]);
    $('statIngredients').textContent=state.inventory.length;
    $('statLow').textContent=state.inventory.filter(x=>x.stock<=x.lowStockThreshold).length;
    if(isOwner()&&state.view==='catalog')await loadManage();
+   if(isOwner()&&state.view==='branches')renderBranches();
+   if(prior!==state.me.subscriptionActive){
+    state.cart=[];state.quote=null;state.checkoutId=null;
+    renderPos();
+    notice(state.me.subscriptionActive?
+      'Subscription validated. Cashier live checkout is now enabled.':
+      'Checkout is locked. Admin Control must validate your subscription.');
+   }
   }catch(e){notice(e.message,true)}
   finally{refreshLock=false}
  }
