@@ -32,12 +32,12 @@ async function browser(role){
   else if(p==='/api/live/catalog')data=stockCatalog;
   else if(p==='/api/live/inventory')data={branchId:101,items:[]};
   else if(p==='/api/live/transactions')data={branchId:101,total:0,revenue:0,rows:[]};
-  else if(p==='/api/live/cashiers')data={cashiers};
+  else if(p==='/api/live/cashiers'&&(opts.method||'GET')==='GET')data={cashiers};
   else if(p==='/api/live/branches'){
    if(role!=='Admin')throw Error('Cashier may not create branch');
    const body=JSON.parse(opts.body),id=101+branches.length;
    branches.push({id,name:body.name});data={ok:true,id,name:body.name,branchId:id};
-  }else if(p==='/api/live/cashiers'){
+  }else if(p==='/api/live/cashiers'&&opts.method==='POST'){
    const body=JSON.parse(opts.body);
    cashiers.push({id:3,username:body.username,fullName:body.fullName,
     branchId:body.branchId,active:true,permissions:[]});
