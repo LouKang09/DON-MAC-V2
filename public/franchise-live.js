@@ -21,18 +21,40 @@
  const put=(path,data)=>api('/api/live/'+path,{method:'PUT',body:JSON.stringify(data)});
  const selection=()=>'?branchId='+encodeURIComponent(state.branchId);
  const isOwner=()=>state.me?.role==='Admin';
+ const isPaid=()=>state.me?.subscriptionActive===true;
+ const permits=key=>isOwner()||(state.me?.permissions||[]).includes(key);
+ const canView=view=>isOwner()
+   ?view!=='pos'&&(isPaid()||!['transactions','reports','expenses'].includes(view))
+   :view==='pos'||(isPaid()&&
+     (view==='transactions'&&permits('transactions.view')||view==='expenses'&&permits('expenses.view')));
+ function updateNavigation(){
+  document.querySelectorAll('.nav-btn[data-view]').forEach(button=>{
+   const allowed=canView(button.dataset.view);
+   button.classList.toggle('hidden',!allowed);
+   button.disabled=!allowed;
+   button.setAttribute('aria-hidden',String(!allowed));
+  });
+  $('cashierPaymentGate').classList.toggle('hidden',isPaid()||isOwner());
+  $('expenseForm').classList.toggle('hidden',!permits('expenses.manage')||!isPaid());
+  const pill=$('subscriptionPill');
+  pill.classList.toggle('subscription-pending',!isPaid());
+  pill.innerHTML='<span class="pulse"></span> '+(isPaid()?'PAID · LIVE CHECKOUT':
+    'SETUP MODE · '+escape(state.me?.subscriptionStatus||'PENDING'));
+  $('planTag').textContent=(state.me?.plan||'Pro')+' · '+(isPaid()?'Live POS':'Setup access');
+  if(!canView(state.view))selectView(isOwner()?'overview':'pos');
+ }
  function selectView(view){
-  if((!isOwner()&&['catalog','inventory','reports','expenses','team'].includes(view))||
-    (isOwner()&&view==='pos'))return;
+  if(!canView(view))return;
   state.view=view;
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+view));
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('selected',x.dataset.view===view));
   $('activeSection').textContent=({overview:'Overview',pos:'Point of Sale',transactions:'Transactions',
-   inventory:'Inventory',catalog:'Catalog & Recipes',reports:'Reports',
+   inventory:'Inventory',branches:'Branches',catalog:'Catalog & Recipes',reports:'Reports',
    expenses:'Expenses',team:'Cashiers & Access'})[view]||'Franchise';
   document.querySelector('.live-app').classList.remove('menu-open');
   if(view==='pos')renderPos();
   if(view==='inventory')renderInventory();
+  if(view==='branches')renderBranches();
   if(view==='catalog')loadManage().catch(e=>notice(e.message,true));
   if(view==='transactions')loadSales().catch(e=>notice(e.message,true));
   if(view==='reports')loadReports().catch(e=>notice(e.message,true));
@@ -68,9 +90,9 @@
   $('productGrid').innerHTML=filtered.map(x=>{
    const decision=x.kind==='addon'?{ok:!!$('promoSelect').value,message:'Add-ons need an active POS promotion.',low:[]}:
      stock.lowFor(state.catalog,state.cart,x.kind,x.id);
-   const available=x.kind==='addon'?!!$('promoSelect').value:x.available&&decision.ok;
+   const available=isPaid()&&(x.kind==='addon'?!!$('promoSelect').value:x.available&&decision.ok);
    const low=!!(decision.low?.length||x.stockWarnings?.length);
-   const label=x.kind!=='addon'&&!x.available?'UNAVAILABLE · '+(x.availabilityMessage||'Recipe required'):
+   const label=!isPaid()?'CHECKOUT LOCKED · PENDING SUBSCRIPTION':x.kind!=='addon'&&!x.available?'UNAVAILABLE · '+(x.availabilityMessage||'Recipe required'):
      !decision.ok?'OUT OF STOCK · '+(decision.message||'Insufficient ingredients'):
      low?'LOW INGREDIENT STOCK':'Available';
    const warning=!available?'soldout':low?'low':'';
@@ -105,6 +127,13 @@
   clearTimeout(quoteTimer);
   state.quote=null;
   $('checkoutButton').disabled=true;
+  if(!isPaid()){
+   ++state.quoteSeq;
+   $('amountDue').textContent=money(totals());
+   $('discountTotal').textContent=money(0);
+   $('stockMessage').textContent='Checkout is locked until Admin Control marks the subscription Paid.';
+   return;
+  }
   if(!state.cart.length){$('amountDue').textContent=money(0);$('discountTotal').textContent=money(0);$('stockMessage').textContent='';return}
   const decision=stock.evaluate(state.catalog,state.cart);
   if(!decision.ok){$('stockMessage').textContent=decision.message; $('stockMessage').classList.add('error');return}
@@ -137,7 +166,7 @@
   $('changeTotal').textContent=money(cash&&state.quote?
     Math.max(0,Number($('cashTender').value||0)-state.quote.actual):0);
   const tender=Number($('cashTender').value);
-  const valid=!!state.quote&&(cash?
+  const valid=isPaid()&&!!state.quote&&(cash?
     Number.isFinite(tender)&&tender>=state.quote.actual:
     !!$('paymentReference').value.trim());
   $('checkoutButton').disabled=!valid;
@@ -155,6 +184,7 @@
   state.checkoutId=null;renderProducts();renderCart();scheduleQuote();
  }
  function addItem(kind,id){
+  if(!isPaid()){notice('Checkout is locked until Admin Control validates a Paid subscription.',true);return}
   const p=product(kind,id);
   if(!p)return;
   if(kind==='addon'&&!$('promoSelect').value){notice('Choose a POS promotion before adding an upgrade.',true);return}
