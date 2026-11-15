@@ -42,6 +42,9 @@
   return{plan:x.plan||'PRO',status:x.subscriptionStatus||'NOT_CONFIGURED',
    startedAt:null,renewAt:null,daysRemaining:null,history:[],pendingPlan:null,
    branchPricing:{plan:x.plan||'PRO',extraBranches:Number(extra),
+    totalBranches:Number(pricing.totalBranches??(x.branches||[]).length),
+    activeBranches:Number(pricing.activeBranches??(x.branches||[]).length),
+    mayAdd:pricing.mayAdd===true,maxBranches:Number(pricing.maxBranches||3),
     extraBranchRate:Number(rate),nextRenewalAmount:Number(pricing.nextRenewalAmount||0),
     branches:(x.branches||[]).map(b=>({...b,active:true}))}};
  }
