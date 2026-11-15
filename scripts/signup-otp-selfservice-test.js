@@ -89,7 +89,10 @@ const db={
  });
  assert.equal(result.ok,true);
  assert.equal(result.created,true);
- assert.equal(result.testMode,true);
+ assert.equal(result.testMode,false);
+ assert.equal(result.liveMode,true);
+ assert.equal(result.setupMode,true);
+ assert.equal(result.portal,'/franchise-live.html');
  assert.equal(result.username,'verified-owner');
  assert.equal(users.length,1);
  assert.equal(users[0].role,'Admin');
