@@ -21,18 +21,40 @@
  const put=(path,data)=>api('/api/live/'+path,{method:'PUT',body:JSON.stringify(data)});
  const selection=()=>'?branchId='+encodeURIComponent(state.branchId);
  const isOwner=()=>state.me?.role==='Admin';
+ const isPaid=()=>state.me?.subscriptionActive===true;
+ const permits=key=>isOwner()||(state.me?.permissions||[]).includes(key);
+ const canView=view=>isOwner()
+   ?view!=='pos'&&(isPaid()||!['transactions','reports','expenses'].includes(view))
+   :view==='pos'||(isPaid()&&
+     (view==='transactions'&&permits('transactions.view')||view==='expenses'&&permits('expenses.view')));
+ function updateNavigation(){
+  document.querySelectorAll('.nav-btn[data-view]').forEach(button=>{
+   const allowed=canView(button.dataset.view);
+   button.classList.toggle('hidden',!allowed);
+   button.disabled=!allowed;
+   button.setAttribute('aria-hidden',String(!allowed));
+  });
+  $('cashierPaymentGate').classList.toggle('hidden',isPaid()||isOwner());
+  $('expenseForm').classList.toggle('hidden',!permits('expenses.manage')||!isPaid());
+  const pill=$('subscriptionPill');
+  pill.classList.toggle('subscription-pending',!isPaid());
+  pill.innerHTML='<span class="pulse"></span> '+(isPaid()?'PAID · LIVE CHECKOUT':
+    'SETUP MODE · '+escape(state.me?.subscriptionStatus||'PENDING'));
+  $('planTag').textContent=(state.me?.plan||'Pro')+' · '+(isPaid()?'Live POS':'Setup access');
+  if(!canView(state.view))selectView(isOwner()?'overview':'pos');
+ }
  function selectView(view){
-  if((!isOwner()&&['catalog','inventory','reports','expenses','team'].includes(view))||
-    (isOwner()&&view==='pos'))return;
+  if(!canView(view))return;
   state.view=view;
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+view));
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('selected',x.dataset.view===view));
   $('activeSection').textContent=({overview:'Overview',pos:'Point of Sale',transactions:'Transactions',
-   inventory:'Inventory',catalog:'Catalog & Recipes',reports:'Reports',
+   inventory:'Inventory',branches:'Branches',catalog:'Catalog & Recipes',reports:'Reports',
    expenses:'Expenses',team:'Cashiers & Access'})[view]||'Franchise';
   document.querySelector('.live-app').classList.remove('menu-open');
   if(view==='pos')renderPos();
   if(view==='inventory')renderInventory();
+  if(view==='branches')renderBranches();
   if(view==='catalog')loadManage().catch(e=>notice(e.message,true));
   if(view==='transactions')loadSales().catch(e=>notice(e.message,true));
   if(view==='reports')loadReports().catch(e=>notice(e.message,true));
@@ -68,9 +90,9 @@
   $('productGrid').innerHTML=filtered.map(x=>{
    const decision=x.kind==='addon'?{ok:!!$('promoSelect').value,message:'Add-ons need an active POS promotion.',low:[]}:
      stock.lowFor(state.catalog,state.cart,x.kind,x.id);
-   const available=x.kind==='addon'?!!$('promoSelect').value:x.available&&decision.ok;
+   const available=isPaid()&&(x.kind==='addon'?!!$('promoSelect').value:x.available&&decision.ok);
    const low=!!(decision.low?.length||x.stockWarnings?.length);
-   const label=x.kind!=='addon'&&!x.available?'UNAVAILABLE · '+(x.availabilityMessage||'Recipe required'):
+   const label=!isPaid()?'CHECKOUT LOCKED · PENDING SUBSCRIPTION':x.kind!=='addon'&&!x.available?'UNAVAILABLE · '+(x.availabilityMessage||'Recipe required'):
      !decision.ok?'OUT OF STOCK · '+(decision.message||'Insufficient ingredients'):
      low?'LOW INGREDIENT STOCK':'Available';
    const warning=!available?'soldout':low?'low':'';
@@ -105,6 +127,13 @@
   clearTimeout(quoteTimer);
   state.quote=null;
   $('checkoutButton').disabled=true;
+  if(!isPaid()){
+   ++state.quoteSeq;
+   $('amountDue').textContent=money(totals());
+   $('discountTotal').textContent=money(0);
+   $('stockMessage').textContent='Checkout is locked until Admin Control marks the subscription Paid.';
+   return;
+  }
   if(!state.cart.length){$('amountDue').textContent=money(0);$('discountTotal').textContent=money(0);$('stockMessage').textContent='';return}
   const decision=stock.evaluate(state.catalog,state.cart);
   if(!decision.ok){$('stockMessage').textContent=decision.message; $('stockMessage').classList.add('error');return}
@@ -137,7 +166,7 @@
   $('changeTotal').textContent=money(cash&&state.quote?
     Math.max(0,Number($('cashTender').value||0)-state.quote.actual):0);
   const tender=Number($('cashTender').value);
-  const valid=!!state.quote&&(cash?
+  const valid=isPaid()&&!!state.quote&&(cash?
     Number.isFinite(tender)&&tender>=state.quote.actual:
     !!$('paymentReference').value.trim());
   $('checkoutButton').disabled=!valid;
@@ -155,6 +184,7 @@
   state.checkoutId=null;renderProducts();renderCart();scheduleQuote();
  }
  function addItem(kind,id){
+  if(!isPaid()){notice('Checkout is locked until Admin Control validates a Paid subscription.',true);return}
   const p=product(kind,id);
   if(!p)return;
   if(kind==='addon'&&!$('promoSelect').value){notice('Choose a POS promotion before adding an upgrade.',true);return}
@@ -282,22 +312,81 @@
     escape(x.category)+'</td><td>'+escape(x.notes||'')+'</td><td>'+money(x.amount)+'</td></tr>'
   ).join('')||'<tr><td colspan="4">No branch expenses.</td></tr>';
  }
+ function updateBranchControls(){
+  const existing=String(state.branchId||'');
+  const branches=state.me?.branches||[];
+  $('branchSelect').innerHTML=branches.map(x=>
+   '<option value="'+Number(x.id)+'">'+escape(x.name)+'</option>').join('');
+  if(!branches.some(x=>String(x.id)===existing))state.branchId=Number(state.me.branchId);
+  $('branchSelect').value=String(state.branchId);
+  $('branchSelect').disabled=!isOwner()||branches.length<=1;
+  $('cashierBranch').innerHTML=branches.map(x=>
+   '<option value="'+Number(x.id)+'">'+escape(x.name)+'</option>').join('');
+ }
+ function renderBranches(){
+  if(!isOwner())return;
+  const plan=state.me?.entitlements||{},branches=state.me?.branches||[];
+  const max=plan.maxBranches==null?'No fixed branch limit':String(plan.maxBranches)+' maximum';
+  $('branchPlanNote').textContent=(plan.plan||'Pro')+' plan · '+branches.length+
+   ' registered branches · '+max+'. First branch included; additional branches cost ₱'+
+   Number(plan.extraBranchRate||799).toLocaleString('en-PH')+' each per renewal.'+
+   (!state.me?.subscriptionPlan?' Until your plan is assigned, branch additions follow the Pro limit.':'');
+  $('addBranchButton').disabled=!plan.mayAdd;
+  $('addBranchButton').textContent=plan.mayAdd?'Create Branch':'Branch limit reached';
+  $('branchesBody').innerHTML=branches.map(x=>
+   '<tr><td><strong>'+escape(x.name)+'</strong></td>'+
+   '<td>Separate stock ledger · starts at 0</td>'+
+   '<td><button type="button" class="ghost" data-switch-branch="'+Number(x.id)+'">'+
+   (Number(x.id)===state.branchId?'Selected':'Select Branch')+'</button></td></tr>'
+  ).join('')||'<tr><td colspan="3">Create your first branch.</td></tr>';
+ }
+ function syncCashierPermissions(){
+  const selected=Number($('permissionCashier').value);
+  const record=(state.me?.cashiers||[]).find(x=>Number(x.id)===selected);
+  const current=record?.permissions||[];
+  document.querySelectorAll('[name="cashierPermission"]').forEach(input=>{
+   input.checked=current.includes(input.value);
+   input.disabled=!record;
+  });
+  $('cashierPermissionsForm').querySelector('button[type="submit"]').disabled=!record;
+ }
  async function loadCashiers(){
   const data=await get('cashiers');
-  $('cashiersBody').innerHTML=(data.cashiers||[]).map(x=>
+  state.me.cashiers=data.cashiers||[];
+  $('cashiersBody').innerHTML=state.me.cashiers.map(x=>
    '<tr><td>'+escape(x.username)+'</td><td>'+escape(x.fullName)+'</td><td>'+
     escape(state.me.branches.find(b=>Number(b.id)===Number(x.branchId))?.name||String(x.branchId))+
-    '</td><td>'+escape(x.active?'Active':'Inactive')+'</td></tr>'
-  ).join('')||'<tr><td colspan="4">No cashiers registered.</td></tr>';
+    '</td><td>'+escape((x.permissions||[]).map(key=>({
+      'transactions.view':'Transactions','expenses.view':'Expenses','expenses.manage':'Record Expenses'
+    })[key]||key).join(', ')||'POS only')+'</td><td>'+escape(x.active?'Active':'Inactive')+'</td></tr>'
+  ).join('')||'<tr><td colspan="5">No cashiers registered.</td></tr>';
+  const selected=$('permissionCashier').value;
+  $('permissionCashier').innerHTML=state.me.cashiers.map(x=>
+   '<option value="'+Number(x.id)+'">'+escape(x.username)+'</option>').join('');
+  if(state.me.cashiers.some(x=>String(x.id)===selected))$('permissionCashier').value=selected;
+  syncCashierPermissions();
  }
  async function refreshAll(){
   if(refreshLock||!state.me)return;
   refreshLock=true;
   try{
-   await Promise.all([fetchCatalog(),fetchInventory(),loadSales()]);
+   const status=await get('status');
+   const prior=state.me.subscriptionActive;
+   state.me={...status,cashiers:state.me.cashiers||status.cashiers};
+   updateBranchControls();updateNavigation();
+   await Promise.all([fetchCatalog(),fetchInventory(),
+    canView('transactions')?loadSales():Promise.resolve()]);
    $('statIngredients').textContent=state.inventory.length;
    $('statLow').textContent=state.inventory.filter(x=>x.stock<=x.lowStockThreshold).length;
    if(isOwner()&&state.view==='catalog')await loadManage();
+   if(isOwner()&&state.view==='branches')renderBranches();
+   if(prior!==state.me.subscriptionActive){
+    state.cart=[];state.quote=null;state.checkoutId=null;
+    renderPos();
+    notice(state.me.subscriptionActive?
+      'Subscription validated. Cashier live checkout is now enabled.':
+      'Checkout is locked. Admin Control must validate your subscription.');
+   }
   }catch(e){notice(e.message,true)}
   finally{refreshLock=false}
  }
@@ -306,6 +395,42 @@
   document.querySelectorAll('[data-cashier-only]').forEach(x=>x.classList.toggle('hidden',isOwner()));
   $('liveNav').addEventListener('click',e=>{
    const b=e.target.closest('button[data-view]');if(b)selectView(b.dataset.view)});
+  $('branchForm').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const btn=$('addBranchButton');btn.disabled=true;
+   try{
+    const created=await post('branches',{name:$('branchName').value.trim(),
+     address:$('branchAddress').value.trim()});
+    state.me=await get('status');
+    state.branchId=Number(created.id);
+    state.cart=[];state.quote=null;state.checkoutId=null;state.salesPage=1;
+    $('branchForm').reset();
+    updateBranchControls();updateNavigation();renderBranches();
+    await refreshAll();
+    notice('Branch '+created.name+' created. Its stock begins at zero and is independent of other branches.');
+   }catch(error){notice(error.message,true)}
+   finally{btn.disabled=false;renderBranches()}
+  });
+  $('branchesBody').addEventListener('click',async event=>{
+   const btn=event.target.closest('[data-switch-branch]');
+   if(!btn)return;
+   state.branchId=Number(btn.dataset.switchBranch);
+   state.cart=[];state.quote=null;state.checkoutId=null;state.salesPage=1;
+   updateBranchControls();await refreshAll();renderBranches();
+  });
+  $('permissionCashier').addEventListener('change',syncCashierPermissions);
+  $('cashierPermissionsForm').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const uid=Number($('permissionCashier').value);
+   if(!uid)return;
+   const permissions=[...document.querySelectorAll('[name="cashierPermission"]:checked')].map(x=>x.value);
+   try{
+    await put('cashiers/'+uid+'/permissions',{permissions});
+    notice('Cashier sidebar permissions updated. Unassigned menu buttons will remain hidden.');
+    await loadCashiers();
+   }catch(error){notice(error.message,true)}
+  });
+
   $('menuToggle').addEventListener('click',()=>document.querySelector('.live-app').classList.toggle('menu-open'));
   $('branchSelect').addEventListener('change',async()=>{
    state.branchId=Number($('branchSelect').value);
@@ -340,6 +465,7 @@
   $('cashTender').addEventListener('input',updatePaymentUI);
   $('paymentReference').addEventListener('input',updatePaymentUI);
   $('checkoutButton').addEventListener('click',async()=>{
+   if(!isPaid()){notice('Live checkout is available only after subscription validation.',true);return}
    if(!state.quote||$('checkoutButton').disabled)return;
    if(!state.checkoutId)state.checkoutId=crypto.randomUUID();
    const b=$('checkoutButton');b.disabled=true;b.textContent='Saving live transaction…';
@@ -470,6 +596,10 @@
    }catch(err){notice(err.message,true)}
   });
   $('logout').addEventListener('click',async()=>{
+   state.me=null;state.cart=[];state.quote=null;
+   const shell=document.querySelector('.live-app');
+   if(shell){shell.inert=true;shell.setAttribute('aria-hidden','true');shell.hidden=true;}
+   document.body.classList.add('logging-out');
    try{await api('/api/auth/logout',{method:'POST'})}catch(_){}
    location.replace('/');
   });
@@ -493,11 +623,13 @@
    $('cashierBranch').innerHTML=info.branches.map(x=>
      '<option value="'+x.id+'">'+escape(x.name)+'</option>').join('');
    $('overviewRoleNote').textContent=isOwner()?
-     'You can manage the branch catalog, ingredients, finance and cashier accounts. Only cashiers may process sales.':
-     'Cashier access: real checkout, transaction history and branch stock availability.';
-   wire();await refreshAll();
+     'You can create branches, employees, products and inventory before subscription payment. Only cashiers can process sales after Admin Control approval.':
+     'Only the POS and features granted by your Owner appear in the sidebar. Checkout is disabled until subscription approval.';
+   wire();updateBranchControls();updateNavigation();await refreshAll();
    selectView(isOwner()?'overview':'pos');
-   notice('Connected to '+info.branchName+' · independent production franchise workspace.');
+   notice(info.subscriptionActive?
+     'Welcome to the main franchise POS. Subscription validated and live checkout available.':
+     'Welcome to the main franchise POS. You can set up your branches and users now; cashier checkout is awaiting Admin Control validation.');
   }catch(err){notice('Unable to load your live franchise POS: '+err.message,true)}
  }
  boot();

@@ -5,12 +5,19 @@ on:
     paths:
       - "server.js"
       - "public/app-core.js"
+      - "public/app.js"
+      - "public/index.html"
+      - "public/auth-shell-guard-v20261115.css"
+      - "lib/cashier-access.js"
+      - "lib/franchise-test-access.js"
+      - "scripts/signup-otp-selfservice-test.js"
       - "public/franchise-live.*"
       - "lib/franchise-live-*.js"
       - "public/platform-admin.js"
       - "scripts/franchise-live-static-regression.js"
       - "scripts/franchise-live-postgres-test.js"
       - "scripts/franchise-live-browser-test.js"
+      - "scripts/franchise-setup-before-paid-browser-test.js"
       - ".github/workflows/franchise-live-cutover.yml"
 jobs:
   test:
@@ -47,6 +54,9 @@ jobs:
           node --check lib/franchise-live-sales.js
           node --check lib/franchise-live-expenses.js
           node --check lib/franchise-live-router.js
+          node --check public/app.js
+          node --check lib/franchise-test-access.js
+          node --check scripts/franchise-setup-before-paid-browser-test.js
       - name: Validate fail-closed legacy routing and production feature wiring
         run: node scripts/franchise-live-static-regression.js
       - name: Install PostgreSQL and DOM test dependencies
@@ -55,3 +65,7 @@ jobs:
         run: node scripts/franchise-live-postgres-test.js
       - name: Browser checkout and stock warning smoke
         run: node scripts/franchise-live-browser-test.js
+      - name: Browser unpaid owner setup, staff access and hidden old POS shell
+        run: node scripts/franchise-setup-before-paid-browser-test.js
+      - name: Email OTP signup returns main POS setup, not test
+        run: node scripts/signup-otp-selfservice-test.js

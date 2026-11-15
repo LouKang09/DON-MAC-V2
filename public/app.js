@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.10-live-franchise-pos';
+  const VERSION = '1.6.11-setup-before-paid-and-nav-guard';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -24,9 +24,10 @@
   const isVisible = el => !!el && !el.classList.contains('hidden');
 
   function showRecoveryLogin(message) {
+    document.body.classList.remove('legacy-authenticated');
     const auth = document.getElementById('authScreen');
     const app = document.getElementById('app');
-    app?.classList.add('hidden');
+    if(app){app.inert=true;app.setAttribute('aria-hidden','true');app.classList.add('hidden');}
     auth?.classList.remove('hidden');
     const title = document.getElementById('authTitle');
     const hint = document.getElementById('authHint');

@@ -96,6 +96,8 @@
   };
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){
+    document.body.classList.remove('legacy-authenticated');
+    const legacyApp=$('app');legacyApp.inert=true;legacyApp.setAttribute('aria-hidden','true');
     window.donmacAuthenticatedRole=null;window.donmacPlanWidgets?.setRole?.(null);
     window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);
     safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');
@@ -124,6 +126,8 @@
     }
   }
   function showApp(){
+    document.body.classList.add('legacy-authenticated');
+    const legacyApp=$('app');legacyApp.inert=false;legacyApp.removeAttribute('aria-hidden');
     window.donmacAuthenticatedRole=state.user.role;
     window.donmacPlanWidgets?.setRole?.(state.user.role);
     window.donmacChatUserId=state.user.id;
@@ -136,6 +140,24 @@
       x.classList.toggle('hidden',state.user.role!=='User'));
     const userGrants=Array.isArray(state.user.accessPermissions)?state.user.accessPermissions:[];
     const isAdmin=state.user.role==='Admin';
+    // Hide every unapproved desktop, tablet and mobile sidebar item for cashiers.
+    const cashierViews=new Set(['pos',
+      ...(userGrants.includes('transactions.view')?['transactions']:[]),
+      ...(userGrants.includes('expenses.view')?['expenses']:[])]);
+    document.querySelectorAll('#app button[data-view]').forEach(button=>{
+      const allowed=isAdmin||cashierViews.has(button.dataset.view);
+      button.classList.toggle('hidden',!allowed);
+      button.disabled=!allowed;
+      button.setAttribute('aria-hidden',String(!allowed));
+    });
+    document.querySelectorAll('#mainNav .nav-section').forEach(section=>{
+      const visible=[...section.querySelectorAll('button.nav[data-view]')].some(b=>!b.classList.contains('hidden'));
+      section.classList.toggle('hidden',!visible);
+    });
+    const moreButtons=[...document.querySelectorAll('#mobileMorePanel [data-view]')];
+    const moreAvailable=moreButtons.some(b=>!b.classList.contains('hidden'));
+    $('mobileMoreButton')?.classList.toggle('hidden',!moreAvailable);
+    if(!moreAvailable)$('mobileMorePanel')?.classList.add('hidden');
     document.querySelectorAll('.nav-finance .nav[data-access-key]').forEach(link=>{
       link.classList.toggle('hidden',!isAdmin&&!userGrants.includes(link.dataset.accessKey));
     });
@@ -302,7 +324,7 @@
     resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');
   }
   $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;if(state.user?.liveMode){$('authPassword').value='';location.assign('/franchise-live.html');return;}if(state.user?.testMode){$('authPassword').value='';location.assign('/phase2-test.html');return;}resetOrderState({render:false});showApp();await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
-  $('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch(_){}state.user=null;resetOrderState({render:true});showAuth(false);};
+  $('logoutButton').onclick=async()=>{state.user=null;resetOrderState({render:false});showAuth(false);try{await api('/api/auth/logout',{method:'POST'});}catch(_){} };
 
   async function refreshPosDailyCount(){
     if(!state.user)return;
@@ -326,9 +348,12 @@
   }
   function switchView(view){
     if(view==='pos'&&state.user?.role!=='User')view='dashboard';
-    if(state.user?.role==='User'&&['transactions','expenses'].includes(view)){
-      const required=view==='transactions'?'transactions.view':'expenses.view';
-      if(!(state.user.accessPermissions||[]).includes(required))view='pos';
+    if(state.user?.role==='User'){
+      const grants=state.user.accessPermissions||[];
+      const authorized=view==='pos'||
+        (view==='transactions'&&grants.includes('transactions.view'))||
+        (view==='expenses'&&grants.includes('expenses.view'));
+      if(!authorized)view='pos';
     }
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
     const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Report / Inventory Management'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';

@@ -9,12 +9,12 @@ const html=read('public/franchise-live.html'),js=read('public/franchise-live.js'
 const admin=read('public/platform-admin.js'),otp=read('lib/franchise-test-access.js');
 const authLogin=server.indexOf("if(method==='POST'&&p==='/api/auth/login')");
 const beforeLegacy=server.indexOf('await legacyCatalogGuard.preventSharedCatalogLeak(db,user,p);');
-const live=server.indexOf('const franchiseLive=await franchiseLiveScope.active(db,user);');
+const live=server.indexOf('const franchiseLive=await franchiseLiveScope.setup(db,user);');
 const priorTest=server.indexOf('const phase2Test=await franchiseTestAccess.account(db,user.id);');
 assert(authLogin>0&&live>authLogin&&live<priorTest&&priorTest<beforeLegacy);
 assert.match(server.slice(live,priorTest),/LIVE_FRANCHISE_SCOPED_ONLY/);
 assert.match(server.slice(live,priorTest),/franchiseLiveRouter\.run/);
-assert.match(server,/const liveCandidate=await franchiseLiveScope\.candidate\(db,u\.id\)/);
+assert.match(server,/const franchiseCandidate=await franchiseLiveScope\.candidate\(db,u\.id\)/);
 assert.match(server,/liveMode,livePortal:liveMode\?'\/franchise-live\.html':null/);
 assert.match(server,/await franchiseLiveSales\.migrate\(db\)/);
 assert.match(server,/await franchiseLiveExpenses\.migrate\(db\)/);

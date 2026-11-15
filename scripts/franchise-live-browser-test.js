@@ -31,7 +31,7 @@ async function smoke(){
   if(request==='/api/auth/me')response={user:{role:'User',liveMode:true,username:'testCashier'}};
   else if(request==='/api/live/status')response={ok:true,liveMode:true,workspaceId:10,
    branchId:101,branchName:'Independent test branch',username:'testCashier',role:'User',
-   plan:'PRO',branches:[{id:101,name:'Independent test branch'}]};
+   plan:'PRO',subscriptionStatus:'PAID',subscriptionActive:true,setupMode:false,permissions:['transactions.view'],branches:[{id:101,name:'Independent test branch'}]};
   else if(request==='/api/live/catalog')response=catalog(balance);
   else if(request==='/api/live/inventory')response=inventory(balance);
   else if(request==='/api/live/transactions'){
