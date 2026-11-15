@@ -154,7 +154,7 @@
     document.querySelectorAll('#app button[data-view]').forEach(button=>{
       // Reuse every existing Owner sidebar view in the SAME Main POS layout.
       // Requests from NEW workspaces remain isolated by the API adapter and server.
-      const allowed=(isAdmin&&button.dataset.view!=='pos')||cashierViews.has(button.dataset.view);
+      const allowed=isAdmin?button.dataset.view!=='pos':cashierViews.has(button.dataset.view);
       button.classList.toggle('hidden',!allowed);
       button.disabled=!allowed;
       button.setAttribute('aria-hidden',String(!allowed));
