@@ -50,7 +50,8 @@
  }
  const mapCashier=x=>({id:Number(x.id),username:x.username,fullName:x.fullName||x.username,
   role:'User',roleLabel:'Cashier',branchId:Number(x.branchId),active:x.active!==false,
-  hasWebPassword:true,accessPermissions:x.permissions||[],email:'',phone:'',isOwner:false});
+  hasWebPassword:true,accessPermissions:x.permissions||[],email:x.email||'',phone:x.phone||'',
+  photoData:x.photoData||null,branchName:x.branchName||'',isOwner:false});
  async function adminCatalog(state,kind){
   const x=await live('/api/live/manage'+qs(scopedBranch(state)));
   const key=({products:'products',ingredients:'ingredients',promos:'promos',packages:'packages'})[kind];
@@ -82,6 +83,11 @@
   }
   if(p==='/api/branches'&&method==='POST')
    return live('/api/live/branches','POST',{name:data.name,address:data.address||''});
+  let branchEdit=p.match(/^\/api\/branches\/(\d+)$/);
+  if(branchEdit&&method==='PUT')
+   return live('/api/live/branches/'+Number(branchEdit[1]),'PUT',data);
+  if(branchEdit&&method==='DELETE')
+   return live('/api/live/branches/'+Number(branchEdit[1]),'DELETE');
   if(p==='/api/account/subscription'&&method==='GET')return subscription(await status());
   if(p==='/api/inventory'&&method==='GET')
    return live('/api/live/inventory'+qs(selected()));
@@ -104,6 +110,16 @@
    }
    return created;
   }
+  let cashierEdit=p.match(/^\/api\/users\/(\d+)$/);
+  if(cashierEdit&&method==='PUT'){
+   if(data.role!=='User')throw fail('The isolated account currently supports cashier editing only.',403);
+   const saved=await live('/api/live/cashiers/'+Number(cashierEdit[1]),'PUT',data);
+   await live('/api/live/cashiers/'+Number(cashierEdit[1])+'/permissions','PUT',
+    {permissions:data.accessPermissions||[]});
+   return saved;
+  }
+  if(cashierEdit&&method==='DELETE')
+   return live('/api/live/cashiers/'+Number(cashierEdit[1]),'DELETE');
   if(p==='/api/admin/products'&&method==='GET')return adminCatalog(state,'products');
   if(p==='/api/admin/ingredients'&&method==='GET')return adminCatalog(state,'ingredients');
   if(p==='/api/admin/promos'&&method==='GET')return adminCatalog(state,'promos');
