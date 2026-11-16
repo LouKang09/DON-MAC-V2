@@ -41,7 +41,11 @@
   box-shadow:0 4px 18px rgba(23,63,34,.035);
 }
 #view-inventory .inv-audit-detail-title{color:#224d32;font-size:13px;font-weight:850;margin:0 0 11px}
-#view-inventory .inv-audit-inner-table{width:100%;min-width:440px;border-collapse:collapse}
+#view-inventory .inv-audit-inner-table{width:100%;min-width:650px;border-collapse:collapse}
+#view-inventory .inv-audit-inner-table th:nth-child(3),
+#view-inventory .inv-audit-inner-table th:nth-child(4){width:13%;text-align:right}
+#view-inventory .inv-audit-inner-table td:nth-child(3),
+#view-inventory .inv-audit-inner-table td:nth-child(4){white-space:nowrap}
 #view-inventory .inv-audit-inner-table th{
   font-size:10px;letter-spacing:.03em;text-transform:uppercase;
   color:#849085;background:#f7f8f4;padding:10px 12px;
