@@ -225,14 +225,20 @@
       }
 
     }
-    // Granting Inventory never permits replenishment, transfers, receiving or audit editing.
-    const inventoryReadOnly=!isAdmin;
-    for(const selector of ['#incomingSupplyPanel','.inv-operation-launch','#replenishForm','#transferForm','.inv-audit-card','#transferPlanGate']){
+    // Inventory grants include daily replenishment and incoming stock processing.
+    // Only owners establish opening stock; transfers require a Business plan
+    // and another active branch, both validated independently on the server.
+    const inventoryAllowed=isAdmin||userGrants.includes('inventory.view');
+    for(const selector of ['#incomingSupplyPanel','.inv-operation-launch','.inv-audit-card']){
       document.querySelectorAll('#view-inventory '+selector).forEach(element=>{
-        element.classList.toggle('hidden',inventoryReadOnly);
-        if(inventoryReadOnly)element.setAttribute('aria-hidden','true');
-        else element.removeAttribute('aria-hidden');
+        element.classList.toggle('hidden',!inventoryAllowed);
       });
+    }
+    if($('replenishEntryType')){
+      const initial=$('replenishEntryType').querySelector('option[value="INITIAL_STOCK"]');
+      if(initial)initial.disabled=!isAdmin;
+      if(!isAdmin&&$('replenishEntryType').value==='INITIAL_STOCK')
+        $('replenishEntryType').value='DIRECT_REPLENISH';
     }
     // Hide every unapproved desktop, tablet and mobile sidebar item for cashiers.
     const cashierViews=new Set(['pos',
@@ -753,9 +759,9 @@
   async function loadInventory(){
     const branchId=selectedInventoryBranch();
     if(!branchId){toast('Choose an active inventory branch first.');return;}
-    // Cashier inventory is read-only: never request stock movement/admin receiving APIs.
-    const auditTask=state.user?.role==='Admin'?loadMovements():Promise.resolve();
-    const incomingTask=state.user?.role==='Admin'?loadIncomingSupplies():Promise.resolve();
+    const inventoryGranted=state.user?.role==='Admin'||state.user?.accessPermissions?.includes('inventory.view');
+    const auditTask=inventoryGranted?loadMovements():Promise.resolve();
+    const incomingTask=inventoryGranted?loadIncomingSupplies():Promise.resolve();
     try{
       const response=await api('/api/inventory?branchId='+encodeURIComponent(branchId));
       if(selectedInventoryBranch()!==branchId)return;
