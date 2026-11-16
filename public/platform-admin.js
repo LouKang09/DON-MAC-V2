@@ -438,8 +438,40 @@
   $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||nextMonthlyDate();
   error('subscriptionError','');
   updateSubscriptionBranchQuote();
+  syncPayrollAddonForm();loadPayrollAddon(owner.workspaceId);
   $('subscriptionDialog').showModal();
  }
+ function syncPayrollAddonForm(){
+  const pane=$('subPayrollAddon');if(!pane)return;
+  const franchise=selected?.kind==='subscription';
+  pane.hidden=!franchise;
+  $('subPayrollAddonInfo').textContent=$('subPlan').value==='BUSINESS'
+    ?'Payroll is included with an active Business plan. Pro add-on settings are retained for future downgrades.'
+    :'Pro payroll requires a separately paid add-on verified by Admin Control.';
+ }
+ async function loadPayrollAddon(ws){
+  $('subPayrollAddonFee').value='0';
+  $('subPayrollAddonStatus').value='UNPAID';
+  $('subPayrollAddonMessage').textContent='Loading payroll add-on…';
+  try{
+   const result=await api('accounts/'+ws+'/payroll-addon');
+   if(selected?.kind!=='subscription'||selected?.owner?.workspaceId!==ws)return;
+   $('subPayrollAddonFee').value=result.addon?.fee||0;
+   $('subPayrollAddonStatus').value=result.addon?.status||'UNPAID';
+   $('subPayrollAddonMessage').textContent=result.message||'Ready to configure.';
+  }catch(error){$('subPayrollAddonMessage').textContent=error.message;}
+ }
+ $('savePayrollAddon').addEventListener('click',async()=>{
+  if(selected?.kind!=='subscription')return;
+  const ws=selected.owner.workspaceId,btn=$('savePayrollAddon');btn.disabled=true;
+  try{
+   const result=await api('accounts/'+ws+'/payroll-addon',{method:'PUT',body:JSON.stringify({
+    fee:$('subPayrollAddonFee').value,status:$('subPayrollAddonStatus').value})});
+   $('subPayrollAddonMessage').textContent=result.entitlement?.message||'Payroll add-on saved.';
+  }catch(error){$('subPayrollAddonMessage').textContent=error.message;}
+  finally{btn.disabled=false;}
+ });
+ $('subPlan').addEventListener('change',syncPayrollAddonForm);
  function openOfficePlan(){
   selected={kind:'office'};
   billingFilter={kind:'SUPPLY_OFFICE',id:'supply-office',label:'Supply Chain / Main Office'};billingPage=1;reloadBilling();
@@ -448,7 +480,7 @@
   $('subStatus').value=officeSubscription?.status||'UNPAID';
   $('subAmount').value=officeSubscription?.amount??defaultBase($('subPlan').value);
   $('subNextPaymentDate').value=officeSubscription?.nextPaymentDate||nextMonthlyDate();
-  error('subscriptionError','');updateSubscriptionBranchQuote();$('subscriptionDialog').showModal();
+  error('subscriptionError','');updateSubscriptionBranchQuote();syncPayrollAddonForm();$('subscriptionDialog').showModal();
  }
  $('subscriptionForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!['subscription','office'].includes(selected?.kind))return;
