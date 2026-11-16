@@ -34,6 +34,17 @@
   $('dmPayrollLocked')?.setAttribute('hidden','');
   if($('dmPayrollRoster'))$('dmPayrollRoster').replaceChildren();
   if($('dmPayrollDtr'))$('dmPayrollDtr').innerHTML='<tr><td colspan="8">Choose a cashier and preview.</td></tr>';
+  // Tenant switch: remove all financial data from previous user's DOM and JS state.
+  window.__donmacPayrollSavedList=[];
+  for(const key of ['dmPayrollEmployee','dmPayrollEarnings','dmPayrollDeductions','dmPayrollStats','dmPayrollSaved']){
+   const node=$(key);if(node)node.replaceChildren();
+  }
+  for(const key of ['dmPayrollSlipEmployee','dmPayrollPeriodLabel','dmPayrollPayDate','dmPayrollNotes',
+   'dmPayrollRate','dmPayrollNet','dmPayrollSlipNumber','dmAttendanceStatus','dmAttendanceInfo','dmAttendanceTimer']){
+   const node=$(key);if(node)node.value!==undefined && /^(INPUT|TEXTAREA|SELECT)$/.test(node.tagName) ? node.value='' : node.textContent='';
+  }
+  if($('dmPayrollDtrDialog')?.open)$('dmPayrollDtrDialog').close();
+  message('');
  }
  function markAttendance(){
   if(!$('dmAttendanceWidget')||!user||user.role!=='User'||!entitlement?.enabled)return;
