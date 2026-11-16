@@ -32,6 +32,8 @@
   <link rel="stylesheet" href="/mobile-nav-v1529.css?v=20261116-shell" />
   <link rel="stylesheet" href="/main-pos-shell-layout-v20261116.css?v=2" />
   <link rel="stylesheet" href="/auth-shell-guard-v20261115.css?v=1" />
+  <link rel="stylesheet" href="/franchise-payroll-v20261117.css?v=1" />
+  <link rel="stylesheet" href="/catalog-stock-polish-v20261117.css?v=1" />
   <link rel="stylesheet" href="/guided-tour-v20261116.css?v=4" />
 </head>
 <body class="auth-locked">
@@ -293,6 +295,15 @@
       </section>
 
       <section id="view-pos" class="view active">
+ <section id="dmAttendanceWidget" class="dm-attendance-widget" aria-label="My daily attendance" hidden>
+  <div class="dm-attendance-heading"><div><span>MY DAILY ATTENDANCE</span><strong id="dmAttendanceStatus">Attendance ready</strong><small id="dmAttendanceInfo">Logging into POS does not automatically Time In or Time Out.</small></div>
+   <div class="dm-attendance-time"><small>Paid work time</small><strong id="dmAttendanceTimer">0h 00m</strong></div></div>
+  <div class="dm-attendance-actions"><button type="button" data-attendance-action="time-in">Time In</button>
+   <button type="button" data-attendance-action="lunch-start">Start Lunch</button><button type="button" data-attendance-action="lunch-end">End Lunch</button>
+   <button type="button" data-attendance-action="time-out">Time Out</button><button type="button" data-attendance-action="continue">Continue Shift</button></div>
+  <p id="dmAttendanceMessage" role="status">Clock out before leaving. Logging out of POS is not Time Out.</p>
+ </section>
+
         <div class="pos-branch-bar hidden" aria-hidden="true"><select id="posBranch" aria-label="Branch for this sale"></select><span id="posBranchReadOnly"></span></div>
         <div class="pos-layout">
           <div class="catalog-panel">
@@ -766,6 +777,41 @@
     <div class="pos-finance-summary"><div><small>Total recorded expenses</small><strong id="financeExpenseTotal">—</strong></div><div><small>Daily records</small><strong id="financeExpenseCount">—</strong></div></div>
     <div class="table-wrap"><table class="pos-finance-table expenses-table"><thead><tr><th>Date</th><th>Branch</th><th>Rent</th><th>Stocks</th><th>Salary</th><th>Transportation</th><th>Electricity</th><th>Ice</th><th>Water</th><th>Misc</th><th>Total</th><th>Notes</th><th>Action</th></tr></thead><tbody id="financeExpensesBody"><tr><td colspan="13">Select Expenses to load records.</td></tr></tbody></table></div><nav id="financeExpensePages" class="pos-finance-pagination"></nav>
   </div>
+
+ <section id="dmPayrollManager" class="dm-payroll-manager admin-only" aria-label="Franchise payroll and attendance" hidden>
+  <header class="dm-payroll-header"><div><span class="eyebrow">EMPLOYEE PAYROLL &amp; TIME RECORDS</span><h2>Payroll &amp; Attendance</h2><p>15th / month-end cutoffs · employee pay rates · audited daily time records · editable payslips</p></div>
+   <button type="button" id="dmPayrollRefresh" class="primary">Refresh Payroll</button></header>
+  <div id="dmPayrollLocked" class="dm-payroll-locked" hidden><strong id="dmPayrollLockTitle">Payroll feature not available</strong><p id="dmPayrollLockText"></p></div>
+  <div id="dmPayrollReady" hidden>
+   <section class="dm-payroll-panel"><div class="dm-payroll-section-head"><div><h3>Current cashier attendance</h3><p>Staff are identified by their Don Mac POS login and assigned branch.</p></div><span id="dmPayrollToday"></span></div>
+    <div class="dm-payroll-roster" id="dmPayrollRoster"></div></section>
+   <section class="dm-payroll-panel">
+    <div class="dm-payroll-section-head"><div><h3>Pay Period &amp; Employee</h3><p>Water POS defaults: 9 AM–6 PM; ₱582 daily / 8 paid hours; 1-hour unpaid lunch; lateness deducted starting at 30 minutes. Daily wages are editable.</p></div></div>
+    <div class="dm-payroll-filters"><label>Cashier<select id="dmPayrollEmployee"></select></label>
+      <label>Year<input id="dmPayrollYear" type="number" min="2020" max="2100"></label>
+      <label>Month<select id="dmPayrollMonth"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+      <label>Cutoff<select id="dmPayrollHalf"><option value="first">1st–15th</option><option value="second">16th–month end</option></select></label>
+      <label>Daily wage (₱)<input id="dmPayrollRate" type="number" min="0" step="0.01" value="582"></label>
+      <button id="dmPayrollRateSave" type="button">Save Rate</button><button id="dmPayrollPreview" type="button" class="primary">Preview Payroll</button>
+    </div>
+    <div id="dmPayrollStats" class="dm-payroll-stats"></div>
+    <div class="dm-payroll-section-head"><h3>Daily Time Records</h3><p>Incomplete shifts are excluded from automatic earnings.</p></div>
+    <div class="table-wrap"><table class="dm-payroll-table"><thead><tr><th>Date</th><th>Status</th><th>Time In</th><th>Lunch</th><th>Time Out</th><th>Paid Hours</th><th>Late</th><th>Actions</th></tr></thead><tbody id="dmPayrollDtr"><tr><td colspan="8">Choose a cashier and preview.</td></tr></tbody></table></div>
+   </section>
+   <section class="dm-payroll-panel" id="dmPayrollSlipPanel"><div class="dm-payroll-section-head"><div><h3>Editable Payslip <span id="dmPayrollSlipNumber"></span></h3><p>Review earnings and deductions before saving. Payslip numbering starts at 46 per franchise.</p></div></div>
+    <div class="dm-payroll-filters"><label>Employee name<input id="dmPayrollSlipEmployee" maxlength="120"></label><label>Pay period label<input id="dmPayrollPeriodLabel" maxlength="120"></label><label>Pay date<input id="dmPayrollPayDate" type="date"></label><label>Remarks<input id="dmPayrollNotes" maxlength="500"></label></div>
+    <div class="dm-payroll-columns"><div><div class="dm-payroll-section-head"><h4>Earnings</h4><button type="button" id="dmPayrollAddEarning">+ Add</button></div><div id="dmPayrollEarnings" class="dm-payroll-rows"></div></div>
+    <div><div class="dm-payroll-section-head"><h4>Deductions</h4><button type="button" id="dmPayrollAddDeduction">+ Add</button></div><div id="dmPayrollDeductions" class="dm-payroll-rows"></div></div></div>
+    <div class="dm-payroll-summary">Net Pay <strong id="dmPayrollNet">₱0.00</strong></div>
+    <div class="dm-payroll-buttons"><button id="dmPayrollRecalculate" type="button">Recalculate from DTR</button><button id="dmPayrollSaveSlip" type="button" class="primary">Save Payslip</button><button id="dmPayrollPrintSlip" type="button">Print / Save PDF</button></div>
+    <p id="dmPayrollMessage" role="status"></p></section>
+   <section class="dm-payroll-panel"><div class="dm-payroll-section-head"><h3>Saved Payslips</h3><label>Next number <input id="dmPayrollNextNumber" type="number" min="1" step="1" value="46"></label><button id="dmPayrollSaveNext" type="button">Update Numbering</button></div>
+    <div id="dmPayrollSaved" class="dm-payroll-saved">No payslips saved yet.</div></section>
+  </div>
+  <dialog id="dmPayrollDtrDialog" class="dm-payroll-dtr-dialog"><form id="dmPayrollDtrForm"><h3>Edit Daily Time Record</h3><p>Times are Philippine Standard Time. Enter a reason for an audited correction.</p>
+   <input type="hidden" id="dmPayrollDtrId"><div class="dm-payroll-filters"><label>Time In<input id="dmPayrollDtrIn" type="datetime-local" required></label><label>Time Out<input id="dmPayrollDtrOut" type="datetime-local"></label><label>Lunch Start<input id="dmPayrollDtrLunchStart" type="datetime-local"></label><label>Lunch End<input id="dmPayrollDtrLunchEnd" type="datetime-local"></label><label>Reason<input id="dmPayrollDtrReason" maxlength="400" minlength="5" required></label></div>
+   <div class="dm-payroll-buttons"><button id="dmPayrollDtrCancel" type="button">Cancel</button><button id="dmPayrollDtrSave" type="submit" class="primary">Save Correction</button></div></form></dialog>
+ </section>
 </section>
 <section id="view-supply" class="view admin-only">
   <div class="supply-head"><div><p class="muted">Order supplies for your registered branches, upload payment proof and track delivery.</p></div><div class="supply-toolbar"><button type="button" id="supplyRefresh" class="primary"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M5 10a8 8 0 0 1 13-4l2 6M4 12l2 6a8 8 0 0 0 13-4"/></svg> Refresh</button><button type="button" id="supplyNotificationsButton" class="primary" aria-expanded="false" aria-controls="supplyNotificationsPanel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg> Notifications <span id="supplyUnreadCount" class="supply-badge">0</span></button></div></div>
@@ -1072,6 +1118,6 @@
   <script src="/auth-login-v1574.js?v=1.6.10"></script>
   <script src="/guided-tour-content-v20261116.js?v=3"></script>
   <script src="/guided-tour-v20261116.js?v=4"></script>
-  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/app.js?v=1.6.16-cashier-tour-fix"></script>
+  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/franchise-payroll-v20261117.js?v=1"></script><script src="/app.js?v=1.6.16-cashier-tour-fix"></script>
 </body>
 </html>
