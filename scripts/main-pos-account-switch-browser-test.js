@@ -117,7 +117,7 @@ async function snapshot(page){
  return page.evaluate(()=>{
   const css=sel=>{const el=document.querySelector(sel),r=el.getBoundingClientRect(),c=getComputedStyle(el);
    return{background:c.backgroundImage,color:c.backgroundColor,display:c.display,
-    height:r.height,width:r.width}};
+    height:r.height,width:r.width};
   };
   return{user:document.getElementById('topbarUsername').textContent,
    main:css('#app .main'),summary:css('#dashboardSummary .summary-card'),
