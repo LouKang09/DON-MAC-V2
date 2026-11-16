@@ -22,6 +22,8 @@
     return window.getComputedStyle(el).display==='none' || window.getComputedStyle(el).visibility==='hidden';
   };
   const allowed = key => {
+    if(LIB[key]?.adminOnly && window.donmacAuthenticatedRole!=='Admin')return false;
+    if(LIB[key]?.cashierOnly && window.donmacAuthenticatedRole!=='User')return false;
     const p = topicParent(key);
     const n = navFor(p);
     return !!(n && !n.disabled && !n.classList.contains('hidden') &&
@@ -33,7 +35,7 @@
     const result = [];
     top.forEach(key=>{
       result.push(key);
-      Object.keys(LIB).filter(k=>LIB[k].parent===key).forEach(k=>result.push(k));
+      Object.keys(LIB).filter(k=>LIB[k].parent===key && allowed(k)).forEach(k=>result.push(k));
     });
     return result;
   };
