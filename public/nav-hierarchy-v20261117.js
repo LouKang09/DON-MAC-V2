@@ -121,6 +121,7 @@
  }
  // Keep navigation usable after account switching and permission filtering.
  // Do not store the open/closed state across different franchise logins.
+ let lastActiveView='';
  function sync(){
   const role=window.donmacAuthenticatedRole;
   nav.querySelectorAll('[data-expense-admin]').forEach(el=>{
@@ -128,9 +129,15 @@
   });
   const active=nav.querySelector('.nav.active[data-view]');
   const targetSection=active?.closest('.nav-section');
-  if(targetSection){
-   targetSection.classList.remove('dm-group-collapsed');
-   targetSection.querySelector('.dm-nav-group-toggle')?.setAttribute('aria-expanded','true');
+  const currentView=active?.dataset.view||'';
+  // Open the new destination group on navigation, not on every unrelated
+  // mutation; users must be able to close a group while its item is active.
+  if(currentView!==lastActiveView){
+   lastActiveView=currentView;
+   if(targetSection){
+    targetSection.classList.remove('dm-group-collapsed');
+    targetSection.querySelector('.dm-nav-group-toggle')?.setAttribute('aria-expanded','true');
+   }
   }
   window.donmacExpenseMenu?.sync?.();
  }
