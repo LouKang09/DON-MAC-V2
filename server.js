@@ -44,6 +44,10 @@ const franchiseLiveScope=require('./lib/franchise-live-scope');
 const franchiseLiveSales=require('./lib/franchise-live-sales');
 const franchiseLiveExpenses=require('./lib/franchise-live-expenses');
 const franchiseLiveRouter=require('./lib/franchise-live-router');
+const franchisePayrollEntitlement=require('./lib/franchise-payroll-entitlement');
+const franchiseAttendance=require('./lib/franchise-attendance');
+const franchisePayrollLedger=require('./lib/franchise-payroll-ledger');
+const franchisePayrollRouter=require('./lib/franchise-payroll-router');
 const retireLegacyDemoAccounts=require('./lib/retire-test-franchise-accounts');
 
 const ROOT = __dirname;
@@ -1681,7 +1685,7 @@ async function restoreBackup(user,name){
     for(const suffix of ['-wal','-shm'])try{fs.unlinkSync(dbPath+suffix);}catch(_){}
     try{fs.unlinkSync(dbPath);}catch(_){}
     fs.renameSync(incoming,dbPath);
-    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
+    db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await franchisePayrollEntitlement.migrate(db);await franchiseAttendance.migrate(db);await franchisePayrollLedger.migrate(db);await migrateCashierProfiles();await db.query('DELETE FROM sessions');
     await logAction({id:null,username:user.username},`Database restored from: ${name}`,'Restored','Automatic pre-restore backup created; all web sessions cleared');
     return{ok:true,name,requiresRelogin:true};
   }catch(err){
@@ -2125,6 +2129,11 @@ async function handleApi(req,res,url){
       accessPermissions:testAccount?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
   }
   const user=await requireUser(req,res);if(!user)return;
+  // These routes authenticate via the same POS login session and never use shared sales APIs.
+  if(p.startsWith('/api/payroll/')){
+    const result=await franchisePayrollRouter.run(db,user,method,url,()=>readJson(req,262144));
+    return json(res,result.status,result.data,safeHeaders({'Cache-Control':'no-store'}));
+  }
   // Paid, OTP-verified franchise workspaces use independent live tables, never
   // the legacy globally shared products, recipes, sales or reports. Unknown
   // routes fail closed. Admin Control's PAID subscription enables this path.
@@ -2472,7 +2481,7 @@ async function main(){
    const changed=await franchiseTestAccess.promoteTest1OnLaunch(db).catch(error=>({status:'blocked',reason:error.message}));
    console.log('[Authorized test1 Main POS activation]',JSON.stringify(changed));
   }
-  await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await franchisePayrollEntitlement.migrate(db);await franchiseAttendance.migrate(db);await franchisePayrollLedger.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
