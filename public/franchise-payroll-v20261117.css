@@ -1,0 +1,87 @@
+/* Payroll is deliberately isolated from the POS checkout and expenses input. */
+#dmAttendanceWidget[hidden],#dmPayrollManager[hidden],
+#dmPayrollManager [hidden]{display:none!important}
+.dm-attendance-widget{margin:0 0 16px;border:1px solid #bcdac5;background:#f2faf5;border-radius:16px;padding:15px 18px;display:grid;gap:12px}
+.dm-attendance-heading{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.dm-attendance-heading>div:first-child{display:grid;gap:2px}
+.dm-attendance-heading span{font-size:10px;color:#427653;font-weight:900;letter-spacing:.11em}
+.dm-attendance-heading strong{font-size:17px;color:#165336}
+.dm-attendance-heading small{font-size:11px;color:#647e69}
+.dm-attendance-time{display:grid;gap:4px;text-align:right;white-space:nowrap}
+.dm-attendance-time strong{font-size:22px;color:#165336}
+.dm-attendance-actions{display:flex;gap:8px;flex-wrap:wrap}
+.dm-attendance-actions button{min-height:36px;border-radius:9px;border:1px solid #14643d;background:#14643d;color:white;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:750}
+.dm-attendance-actions button:disabled{display:none}
+.dm-attendance-actions button:hover:not(:disabled){background:#094f2c}
+#dmAttendanceMessage{font-size:12px;color:#445e4d;margin:0}
+.dm-payroll-manager{margin-top:22px;padding:16px;display:grid;gap:16px;background:rgba(255,255,255,.65);border:1px solid #c8decf;border-radius:16px}
+.dm-payroll-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dm-payroll-header h2{margin:2px 0 6px;font-size:23px;color:#144d32}
+.dm-payroll-header p{margin:0;font-size:12px;color:#53705e}
+.dm-payroll-locked{padding:18px;background:#f6f4eb;border:1px solid #dacbaa;border-radius:12px;line-height:1.65}
+.dm-payroll-locked strong{display:block;color:#704c22}
+.dm-payroll-locked p{margin:6px 0 0;color:#62563e}
+#dmPayrollReady{display:grid;gap:16px}
+.dm-payroll-panel{background:#fff;border:1px solid #dce9df;border-radius:13px;padding:16px;display:grid;gap:12px;min-width:0}
+.dm-payroll-section-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.dm-payroll-section-head h3{font-size:16px;margin:0;color:#174c32}
+.dm-payroll-section-head h4{font-size:14px;margin:0;color:#185a39}
+.dm-payroll-section-head p{font-size:11px;color:#677b6d;margin:3px 0 0}
+.dm-payroll-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.dm-payroll-employee{display:grid;gap:5px;border-radius:10px;padding:11px;background:#f6faf7;border:1px solid #dce9e0}
+.dm-payroll-employee strong{font-size:13px;color:#1b4732}
+.dm-payroll-employee small{font-size:11px;color:#59715e}
+.dm-payroll-employee em{font-size:11px;font-style:normal;font-weight:800;color:#236c44}
+.dm-payroll-employee[data-state="out"] em{color:#ad5037}
+.dm-payroll-employee[data-state="lunch"] em{color:#a67721}
+.dm-payroll-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.dm-payroll-filters label{display:grid;gap:5px;font-size:11px;font-weight:750;color:#2b513a;flex:1 1 130px;min-width:100px}
+.dm-payroll-filters input,.dm-payroll-filters select{width:100%;min-height:39px;border-radius:9px;border:1px solid #cbdecf;background:#fff;font:inherit;font-size:12px;padding:8px 10px}
+.dm-payroll-filters button,.dm-payroll-panel button,.dm-payroll-buttons button{border-radius:9px;border:1px solid #b6d7c3;background:#edf6ef;color:#15583b;min-height:36px;padding:7px 12px;cursor:pointer;font-size:12px;font-weight:750}
+.dm-payroll-panel button.primary,.dm-payroll-filters button.primary,.dm-payroll-buttons button.primary{background:#11633e;color:white;border-color:#11633e}
+.dm-payroll-panel button:hover:not(:disabled){filter:brightness(.96)}
+.dm-payroll-panel button:disabled{opacity:.48;cursor:not-allowed}
+.dm-payroll-table{border-collapse:collapse;width:100%;font-size:12px}
+.dm-payroll-table th,.dm-payroll-table td{border-bottom:1px solid #e0eae3;text-align:left;padding:10px 8px;white-space:nowrap}
+.dm-payroll-table th{color:#305541;font-size:11px}
+.dm-payroll-table td button{margin:0 3px 3px 0}
+.dm-payroll-stats{display:flex;flex-wrap:wrap;gap:8px}
+.dm-payroll-stats>span{border:1px solid #d3e7d8;background:#f4faf5;border-radius:10px;padding:10px;color:#29533b;font-size:12px}
+.dm-payroll-stats strong{display:block;font-size:17px;color:#17613e}
+.dm-payroll-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dm-payroll-columns>div{min-width:0;display:grid;align-content:start;gap:8px}
+.dm-payroll-rows{display:grid;gap:7px}
+.dm-payroll-row{display:grid;grid-template-columns:minmax(0,1fr) 118px 31px;gap:6px;align-items:center}
+.dm-payroll-row input{min-width:0;width:100%;border:1px solid #cbdccb;border-radius:8px;min-height:35px;padding:7px 8px;font-size:12px}
+.dm-payroll-row button{padding:0!important;min-height:30px!important}
+.dm-payroll-summary{margin-top:5px;font-weight:800;font-size:14px;color:#235138;border-top:1px solid #dce9e1;padding-top:12px;text-align:right}
+.dm-payroll-summary strong{font-size:24px;margin-left:12px;color:#0c6238}
+.dm-payroll-buttons{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+#dmPayrollMessage{font-size:12px;color:#4e6d57;min-height:18px}
+.dm-payroll-saved{display:grid;gap:7px}
+.dm-payroll-saved-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #e4eee5;padding:9px 0}
+.dm-payroll-saved-row>div{display:grid;gap:2px}
+.dm-payroll-saved-row strong{color:#154c32;font-size:12px}
+.dm-payroll-saved-row span{color:#6e786f;font-size:11px}
+.dm-payroll-dtr-dialog{border:1px solid #cbdccc;border-radius:16px;max-width:min(700px,96vw);padding:22px;box-shadow:0 20px 70px #0004}
+.dm-payroll-dtr-dialog::backdrop{background:rgba(0,0,0,.6)}
+.dm-payroll-dtr-dialog form{display:grid;gap:14px}
+.dm-payroll-dtr-dialog h3{margin:0;color:#125632}
+.dm-payroll-dtr-dialog p{margin:0;color:#607263;font-size:12px}
+#subPayrollAddon[hidden]{display:none!important}
+.payroll-addon-admin{border:1px solid #bfd9c4;border-radius:12px;padding:14px;margin:16px 0}
+.payroll-addon-admin legend{font-weight:800;color:#225638}
+.payroll-addon-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.payroll-addon-controls label{display:grid;gap:6px}
+@media(max-width:850px){
+ .dm-payroll-columns{grid-template-columns:1fr}
+ .dm-payroll-roster{grid-template-columns:repeat(auto-fit,minmax(155px,1fr))}
+}
+@media(max-width:580px){
+ .dm-attendance-heading{align-items:start}
+ .dm-payroll-manager{padding:10px}
+ .dm-payroll-panel{padding:12px}
+ .dm-payroll-header h2{font-size:19px}
+ .dm-payroll-row{grid-template-columns:minmax(0,1fr) 100px 28px}
+ .payroll-addon-controls{grid-template-columns:1fr}
+}
