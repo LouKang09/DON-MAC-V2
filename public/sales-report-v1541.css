@@ -227,3 +227,7 @@
 @media print {
   #view-reports .report-pagination, #view-reports .report-loading-status { display: none !important; }
 }
+
+/* Historical ingredient allocation is explicitly distinguished from saved costing snapshots. */
+#view-reports .costing-history-note{font-size:12px;color:#64756a;margin:11px 3px 0;line-height:1.55}
+#view-reports .costing-group summary span{font-size:11px}
