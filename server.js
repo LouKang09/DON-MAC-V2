@@ -2135,7 +2135,11 @@ async function handleApi(req,res,url){
     // This is not a legacy POS/catalog endpoint and is safe for new franchises.
     if(p.startsWith('/api/supply/'))return handleFranchiseSupplyApi(req,res,p,method,user);
     // Team messages are independently scoped by chat_memberships and branch ownership.
-    if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
+    if(p.startsWith('/api/chat/')){
+      if(franchiseLive.cashier&&!(await cashierAccess.forUser(db,{id:user.id,role:'User'})).includes('messages.view'))
+        return json(res,403,{error:'Messages access has not been granted by your Owner.'},safeHeaders({'Cache-Control':'no-store'}));
+      return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
+    }
     if(p.startsWith('/api/live/')){
       const response=await franchiseLiveRouter.run(db,franchiseLive,user,method,url,
         ()=>readJson(req,262144));
