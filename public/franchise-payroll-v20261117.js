@@ -16,7 +16,7 @@
   minute:'2-digit'}).format(new Date(value)):'—';
  const minuteText=n=>Math.floor(Math.max(0,n)/60)+'h '+pad(Math.max(0,n)%60)+'m';
  let user=null,token=0,entitlement=null,shift=null,shiftReceivedAt=0,employees=[],previewData=null,savedSlip=null;
- let loadInProgress=false;
+ let loadInProgress=false,expenseTab='ledger';
  async function api(path,method='GET',data){
   const res=await fetch(path,{method,credentials:'same-origin',cache:'no-store',
    headers:data===undefined?{}:{'Content-Type':'application/json'},
@@ -27,7 +27,9 @@
  }
  function message(text){if($('dmPayrollMessage'))$('dmPayrollMessage').textContent=text||'';}
  function reset(){
-  shift=null;entitlement=null;employees=[];previewData=null;savedSlip=null;
+  shift=null;entitlement=null;employees=[];previewData=null;savedSlip=null;expenseTab='ledger';
+  if($('dmExpenseTabs'))$('dmExpenseTabs').hidden=true;
+  const ledger=document.querySelector('#view-expenses>.pos-finance-shell');if(ledger)ledger.hidden=false;
   $('dmAttendanceWidget')?.setAttribute('hidden','');
   $('dmPayrollManager')?.setAttribute('hidden','');
   $('dmPayrollReady')?.setAttribute('hidden','');
@@ -45,6 +47,23 @@
   }
   if($('dmPayrollDtrDialog')?.open)$('dmPayrollDtrDialog').close();
   message('');
+ }
+ function switchExpenseTab(tab){
+  if(!user||user.role!=='Admin')return;
+  expenseTab=tab==='payroll'?'payroll':'ledger';
+  const ledger=document.querySelector('#view-expenses>.pos-finance-shell');
+  if(ledger)ledger.hidden=expenseTab!=='ledger';
+  const payroll=$('dmPayrollManager');
+  if(payroll)payroll.hidden=expenseTab!=='payroll';
+  $('dmExpenseTabs')?.querySelectorAll('[data-expense-tab]').forEach(button=>{
+   const selected=button.dataset.expenseTab===expenseTab;
+   button.classList.toggle('active',selected);
+   button.setAttribute('aria-pressed',String(selected));
+  });
+  if(expenseTab==='payroll'){
+   if(!entitlement)refreshStatus();
+   else if(entitlement.enabled)loadTeam();
+  }
  }
  function markAttendance(){
   if(!$('dmAttendanceWidget')||!user||user.role!=='User'||!entitlement?.enabled)return;
@@ -71,7 +90,7 @@
    entitlement=info;
    shift=info.shift||null;shiftReceivedAt=Date.now();
    if(user.role==='Admin'){
-    $('dmPayrollManager').hidden=false;
+    $('dmPayrollManager').hidden=expenseTab!=='payroll';
     $('dmPayrollLocked').hidden=info.enabled;
     $('dmPayrollReady').hidden=!info.enabled;
     $('dmPayrollLockTitle').textContent=info.plan==='PRO'?'Pro payroll add-on required':'Payroll unavailable';
@@ -81,7 +100,7 @@
    }else markAttendance();
   }catch(error){
    if(thisToken===token){
-    if(user.role==='Admin'){$('dmPayrollManager').hidden=false;$('dmPayrollLocked').hidden=false;
+    if(user.role==='Admin'){$('dmPayrollManager').hidden=expenseTab!=='payroll';$('dmPayrollLocked').hidden=false;
      $('dmPayrollLockText').textContent=error.message;}
     else if($('dmAttendanceMessage'))$('dmAttendanceMessage').textContent=error.message;
    }
@@ -277,6 +296,10 @@
  function onLogin(next){
   token++;user=next;reset();
   if(!next)return;
+  if(next.role==='Admin'){
+   $('dmExpenseTabs').hidden=false;
+   switchExpenseTab('ledger');
+  }
   refreshStatus();
  }
  function onLogout(){token++;user=null;reset();}
@@ -286,6 +309,7 @@
  $('dmAttendanceWidget')?.addEventListener('click',e=>{
   const b=e.target.closest('[data-attendance-action]');if(b)takeAction(b.dataset.attendanceAction);
  });
+ $('dmExpenseTabs').addEventListener('click',event=>{const button=event.target.closest('[data-expense-tab]');if(button)switchExpenseTab(button.dataset.expenseTab);});
  $('dmPayrollRefresh').onclick=()=>{refreshStatus();if(entitlement?.enabled)loadTeam();};
  $('dmPayrollPreview').onclick=previewPayroll;
  for(const id of ['dmPayrollEmployee','dmPayrollYear','dmPayrollMonth','dmPayrollHalf'])
