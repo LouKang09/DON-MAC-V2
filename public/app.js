@@ -52,6 +52,8 @@
     if(scopedFinanceStarted || !window.donmacFranchiseUnified || !isVisible(document.getElementById('app')))return;
     scopedFinanceStarted=true;
     try{
+      // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
+      await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
       loadCss('posFinanceV20261107','/pos-finance.css');
       loadCss('posCatalogV1544Css','/pos-catalog-v1544.css');
       await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
@@ -87,7 +89,7 @@
       loadCss('chatCss', '/internal-chat.css');
       loadCss('floatingChatSidebarCss', '/sidebar-chat-floating-v1523.css');
       loadCss('chatResponsiveV1527Css', '/sidebar-chat-responsive-v1527.css');
-      loadCss('mobileBottomNavV1529Css', '/mobile-nav-v1529.css');
+      // Mobile navigation CSS is now linked in index.html before first paint.
       loadCss('inventoryRedesignV1536Css', '/inventory-redesign-v1536.css');
       loadCss('inventoryCardsV1537Css', '/inventory-cards-v1537.css');
       loadCss('inventoryBatchV1538Css', '/inventory-batch-editor-v1538.css');
