@@ -13,6 +13,7 @@
   let mode = '', currentTopic = '', steps = [], index = 0;
   let previouslyFocused = null, wasInert = false, savedBodyOverflow = '', savedHtmlOverflow = '';
   let welcomeDelay = null, loginSequence = 0, generated = false;
+  let redrawFrame = 0, settledDraw = 0, resizeWatcher = null;
   const isHidden = el => {
     if(!el || !el.isConnected)return true;
     for(let a=el; a && a!==document.body; a=a.parentElement){
@@ -73,52 +74,115 @@
     element.style.width = Math.max(0,width)+'px';
     element.style.height = Math.max(0,height)+'px';
   };
-  const draw = () => {
-    if(!overlay || mode!=='tour')return;
-    const step=steps[index]; if(!step)return;
-    let el=step.target ? $(step.target) : null;
-    if(isHidden(el))el=null;
-    if(el && el.getBoundingClientRect().width<4)el=null;
-    const w=window.innerWidth, h=window.innerHeight;
-    let x=w/2-4,y=h/2-4,right=w/2+4,bottom=h/2+4;
-    if(el){
-      const r=el.getBoundingClientRect();
-      const pad=6;
-      x=Math.max(5,r.left-pad);y=Math.max(5,r.top-pad);
-      right=Math.min(w-5,r.right+pad);bottom=Math.min(h-5,r.bottom+pad);
-      if(right<=x||bottom<=y)el=null;
+  const scrollClip = el => {
+    const r=el.getBoundingClientRect(), w=window.innerWidth, h=window.innerHeight;
+    let box={left:r.left,top:r.top,right:r.right,bottom:r.bottom};
+    for(let node=el.parentElement;node&&node!==document.body;node=node.parentElement){
+      const cs=window.getComputedStyle(node);
+      const x=/(auto|scroll|hidden|clip)/.test(cs.overflowX);
+      const y=/(auto|scroll|hidden|clip)/.test(cs.overflowY);
+      if(!x&&!y)continue;
+      const c=node.getBoundingClientRect();
+      if(x){box.left=Math.max(box.left,c.left);box.right=Math.min(box.right,c.right);}
+      if(y){box.top=Math.max(box.top,c.top);box.bottom=Math.min(box.bottom,c.bottom);}
     }
-    if(!el){x=w/2;y=h/2;right=x;bottom=y;}
-    shadeBox(shade[0],0,0,w,y);
-    shadeBox(shade[1],0,y,x,bottom-y);
-    shadeBox(shade[2],right,y,w-right,bottom-y);
-    shadeBox(shade[3],0,bottom,w,h-bottom);
-    if(el){
-      ring.hidden=false;
-      shadeBox(ring,x,y,right-x,bottom-y);
-    }else{ring.hidden=true;}
+    box.left=Math.max(0,box.left);box.top=Math.max(0,box.top);
+    box.right=Math.min(w,box.right);box.bottom=Math.min(h,box.bottom);
+    if(box.right-box.left<8 || box.bottom-box.top<8)return null;
+    return box;
+  };
+  const hasScreenRect=el => !!el && !isHidden(el) && el.getClientRects().length>0;
+  const currentTarget = step => {
+    const el=step?.target?$(step.target):null;
+    if(!hasScreenRect(el))return null;
+    const r=el.getBoundingClientRect();
+    // Whole pages/panels are not useful instructional highlights.
+    // Target the first real heading or toolbar instead of outlining thousands of pixels.
+    if(r.width>window.innerWidth*.78 && r.height>window.innerHeight*.46){
+      for(const selector of ['.card-head h2','.card-head h3','.users-heading h2',
+        '.inv-toolbar','.supply-head','.admin-tabs','.pos-layout .catalog-tools',
+        'h2','h3','[role="tablist"]','input','select','button']){
+        const child=el.querySelector(selector);
+        if(hasScreenRect(child) && scrollClip(child))return child;
+      }
+    }
+    return el;
+  };
+  const positionCard = bounds => {
+    const w=window.innerWidth,h=window.innerHeight,margin=12;
     const card=panel;
-    card.classList.toggle('dm-guide-centered',!el);
-    if(el && w>=760){
-      const cardW=Math.min(420,w-28);
-      const left = right+cardW+22 < w ? right+16 : x-cardW-16 >= 8 ? x-cardW-16 : Math.max(12,(w-cardW)/2);
-      const availableBelow=h-bottom;
-      const top=availableBelow>270 && bottom<330 ? bottom+14 : Math.max(12,Math.min(y,h-450));
-      card.style.left=Math.max(12,left)+'px';
-      card.style.top=Math.max(12,top)+'px';
-      card.style.bottom='auto';
-      card.style.width=cardW+'px';
-      card.style.transform='none';
-    }else{
-      card.style.left='12px';card.style.width='calc(100% - 24px)';
-      card.style.top='auto';card.style.bottom='12px';card.style.transform='none';
+    const cardW=Math.min(w-2*margin,w>=760?420:Math.min(480,w-2*margin));
+    card.style.width=cardW+'px';
+    card.style.transform='none';
+    card.style.top='12px';card.style.bottom='auto';
+    const cardH=Math.min(card.offsetHeight,h-24);
+    const clamp=(n,min,max)=>Math.min(Math.max(n,min),Math.max(min,max));
+    const x=bounds?.left ?? w/2, y=bounds?.top ?? h/2;
+    if(!bounds){
+      card.style.left=clamp((w-cardW)/2,margin,w-cardW-margin)+'px';
+      card.style.top=clamp((h-cardH)/2,margin,h-cardH-margin)+'px';
+      return;
     }
+    const options=w>=760
+      ? [{left:bounds.right+18,top:clamp(y,margin,h-cardH-margin)},
+         {left:bounds.left-cardW-18,top:clamp(y,margin,h-cardH-margin)},
+         {left:clamp(x,margin,w-cardW-margin),top:bounds.bottom+18},
+         {left:clamp(x,margin,w-cardW-margin),top:bounds.top-cardH-18}]
+      : [{left:margin,top:margin},
+         {left:margin,top:h-cardH-margin}];
+    let best=null,bestScore=Infinity;
+    for(const candidate of options){
+      const left=clamp(candidate.left,margin,w-cardW-margin);
+      const top=clamp(candidate.top,margin,h-cardH-margin);
+      const overlapX=Math.max(0,Math.min(left+cardW,bounds.right)-Math.max(left,bounds.left));
+      const overlapY=Math.max(0,Math.min(top+cardH,bounds.bottom)-Math.max(top,bounds.top));
+      const overlaps=overlapX*overlapY;
+      const displaced=Math.abs(candidate.left-left)+Math.abs(candidate.top-top);
+      const score=overlaps*100+displaced + (left<margin||top<margin?10000:0);
+      if(score<bestScore){bestScore=score;best={left,top};}
+    }
+    card.style.left=best.left+'px';card.style.top=best.top+'px';
+  };
+  const draw = () => {
+    if(!overlay || mode!=='tour' || !panel)return;
+    const target=currentTarget(steps[index]);
+    const clipped=target ? scrollClip(target) : null;
+    const w=window.innerWidth,h=window.innerHeight;
+    const pad=5;
+    const bounds=clipped
+      ? {left:Math.max(4,clipped.left-pad),top:Math.max(4,clipped.top-pad),
+        right:Math.min(w-4,clipped.right+pad),bottom:Math.min(h-4,clipped.bottom+pad)}
+      : null;
+    const left=bounds?.left??w/2,top=bounds?.top??h/2,
+      right=bounds?.right??w/2,bottom=bounds?.bottom??h/2;
+    shadeBox(shade[0],0,0,w,top);
+    shadeBox(shade[1],0,top,left,bottom-top);
+    shadeBox(shade[2],right,top,w-right,bottom-top);
+    shadeBox(shade[3],0,bottom,w,h-bottom);
+    ring.hidden=!bounds;
+    if(bounds)shadeBox(ring,left,top,right-left,bottom-top);
+    panel.classList.toggle('dm-guide-centered',!bounds);
+    positionCard(bounds);
+  };
+  const queueDraw = () => {
+    if(redrawFrame)cancelAnimationFrame(redrawFrame);
+    redrawFrame=requestAnimationFrame(()=>{redrawFrame=0;draw();});
   };
   const findStepTarget = step => {
-    if(!step || !step.target)return;
-    const target=$(step.target);
-    if(target && !isHidden(target)){
-      try{target.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});}catch(_){}
+    const target=currentTarget(step);
+    if(!target)return;
+    try{
+      // Center in the scrollable content rather than leaving the target under
+      // sticky headers or the fixed tutorial card.
+      target.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+    }catch(_){}
+  };
+  const watchTarget = () => {
+    resizeWatcher?.disconnect();resizeWatcher=null;
+    const target=currentTarget(steps[index]);
+    if(target && typeof ResizeObserver!=='undefined'){
+      resizeWatcher=new ResizeObserver(queueDraw);
+      resizeWatcher.observe(target);
     }
   };
   const lockedWheel = event => {
@@ -169,8 +233,8 @@
     window.addEventListener('keydown',keyTrap,true);
     window.addEventListener('wheel',lockedWheel,{passive:false,capture:true});
     window.addEventListener('touchmove',lockedWheel,{passive:false,capture:true});
-    window.addEventListener('resize',draw);
-    window.addEventListener('scroll',draw,true);
+    window.addEventListener('resize',queueDraw);
+    window.addEventListener('scroll',queueDraw,true);
   };
   const clearPanel=()=>{
     if(!panel)return;
@@ -202,6 +266,9 @@
   const finish=(completed)=>{
     if(!overlay)return;
     if(completed)markSeen();
+    resizeWatcher?.disconnect();resizeWatcher=null;
+    clearTimeout(settledDraw);settledDraw=0;
+    if(redrawFrame)cancelAnimationFrame(redrawFrame);redrawFrame=0;
     overlay.remove();overlay=null;shade=[];ring=null;panel=null;
     document.body.classList.remove('dm-tour-active');
     document.body.style.overflow=savedBodyOverflow;
@@ -211,8 +278,8 @@
     window.removeEventListener('keydown',keyTrap,true);
     window.removeEventListener('wheel',lockedWheel,true);
     window.removeEventListener('touchmove',lockedWheel,true);
-    window.removeEventListener('resize',draw);
-    window.removeEventListener('scroll',draw,true);
+    window.removeEventListener('resize',queueDraw);
+    window.removeEventListener('scroll',queueDraw,true);
     if(previouslyFocused?.isConnected && !isHidden(previouslyFocused) && !previouslyFocused.disabled)previouslyFocused.focus();
     previouslyFocused=null;mode='';currentTopic='';steps=[];index=0;
   };
@@ -290,10 +357,13 @@
     const actions=make('div','dm-guide-actions');
     addButton(actions,'Back',()=>move(-1),'muted').disabled=index===0;
     addButton(actions,index===steps.length-1?'Finish tour':'Next',()=>move(1),'primary');
-    addButton(actions,'Exit tour',()=>{markSeen();finish(false);},'muted');
+    addButton(actions,'Exit tour',()=>{markSeen();finish(false);},'exit');
     panel.appendChild(actions);addFooter();
     findStepTarget(step);
-    draw();
+    watchTarget();
+    queueDraw();
+    clearTimeout(settledDraw);
+    settledDraw=setTimeout(()=>{findStepTarget(steps[index]);watchTarget();queueDraw();},170);
     panel.focus();
   };
   const move=offset=>{
