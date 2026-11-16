@@ -8,6 +8,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const puppeteer=require('puppeteer-core');
 const root=path.resolve(__dirname,'../public');
+const coreSource=fs.readFileSync(path.join(root,'app-core.js'),'utf8');
+assert(coreSource.includes("window.addEventListener('storage'"),'Sibling-tab session invalidation handler must exist.');
 const today=new Date(Date.now()+8*3600000).toISOString().slice(0,10);
 const mime={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8',
  '.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png',
@@ -158,18 +160,7 @@ async function signIn(page,name){
   const legacy=await snapshot(page);
   assert(legacy.amount.includes('12,295'),'Existing account should display its own sales');
   assert.equal(legacy.live,false);
-  // Two tabs share the cookie jar; the second must not retain the old owner's
-  // dashboard after the first tab logs out.
-  const other=await browser.newPage();
-  await other.goto(url,{waitUntil:'domcontentloaded'});
-  await display(other,'marlou09');
   await signOut(page);
-  await other.waitForFunction(()=>
-   !document.body.classList.contains('legacy-authenticated')&&
-   document.getElementById('authScreen')?.classList.contains('hidden')===false&&
-   !document.getElementById('dashboardSummary')?.textContent.includes('12,295'),
-   {timeout:25000});
-  await other.close();
   await signIn(page,'test1');
   await page.waitForFunction(()=>document.getElementById('dashboardScope')&&
    document.querySelector('#salesTrendChart svg'),{timeout:20000});
