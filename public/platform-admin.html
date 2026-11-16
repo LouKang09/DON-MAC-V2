@@ -161,6 +161,17 @@
   <p>Other branches will be deactivated; their cashiers must be reassigned.</p>
   <div id="subKeepBranchChoices" class="branch-downgrade-list"></div>
  </fieldset>
+ <fieldset id="subPayrollAddon" class="payroll-addon-admin" hidden>
+  <legend>Payroll add-on · separate subscription for Pro</legend>
+  <p class="dialog-tip" id="subPayrollAddonInfo">Business includes Payroll. Pro needs a separately paid add-on approved by Admin Control.</p>
+  <div class="payroll-addon-controls">
+   <label>Payroll add-on fee (₱)<input id="subPayrollAddonFee" type="number" min="0" max="1000000" step="0.01" value="0"></label>
+   <label>Add-on payment status<select id="subPayrollAddonStatus"><option value="UNPAID">Unpaid / Not activated</option><option value="ON_HOLD">On Hold</option><option value="PAID">Paid (manual verification)</option></select></label>
+  </div>
+  <button id="savePayrollAddon" type="button" class="btn btn-secondary">Save Payroll Add-on Only</button>
+  <p id="subPayrollAddonMessage" class="dialog-tip" role="status"></p>
+  <p class="dialog-tip">Pro payroll is enabled only after a separate positive fee is configured and marked Paid by Admin Control. This action records a manual approval; it does not charge the customer.</p>
+ </fieldset>
  <p class="dialog-tip">For new subscriptions the due date defaults to one month from today; you can change it.</p>
  <p class="dialog-tip">Only Admin Control can change payment status. Unpaid or On Hold disables POS sign-in until the account is marked Paid. Saving the record does not initiate a charge.</p>
  <div class="subscription-history-preview"><h3>Verified subscription payment history</h3><div id="subscriptionPaymentHistory">Choose a tenant to see previous payments.</div></div><p id="subscriptionError" class="notice error hidden" role="alert"></p>
@@ -194,6 +205,6 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.17"></script>
+<script defer src="/platform-admin.js?v=1.0.18-payroll"></script>
 <script defer src="/refresh-controls-v20261107.js?v=1"></script>
 </body></html>
