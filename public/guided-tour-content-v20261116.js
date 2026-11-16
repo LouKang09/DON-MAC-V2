@@ -133,7 +133,7 @@
       intro: 'Manage cashier time records, branch status, pay rates and audited payslips. Business includes payroll; Pro requires a separate paid add-on.',
       steps: [
         item('Plan entitlement', 'Payroll is included in an active Business subscription. Pro needs a separately paid add-on verified in Admin Control. Neither opening the tour nor changing a filter enables payroll.', '#dmPayrollLocked'),
-        item('Current branch roster', 'View each cashier and their assigned branch. Status appears as Not Clocked In, Clocked In, On Lunch or Timed Out, based on their attendance actions.', '#dmPayrollRoster'),
+        item('Branch → Cashier → Workday', 'Choose All branches or one branch, expand its cashier list, select an employee, then expand a workday to inspect Time In, Lunch Start, Lunch End, Time Out, paid hours and breaks. Only this franchise is included.', '#dmPayrollRoster'),
         item('Choose employee and cutoff', 'Select the employee, year, month and 1st–15th or 16th–month-end period. Open shifts are excluded from automatic payroll earnings.', '#dmPayrollEmployee'),
         item('Daily wage and DTR', 'The default rate and 9 AM–6 PM schedule follow the Water POS policy. Managers can review attendance and correct an entry with an audit reason.', '#dmPayrollDtr'),
         item('Review deductions', 'Preview late, early-out, excess lunch and time-out-gap adjustments. Verify figures against attendance and the applicable wage agreement.', '#dmPayrollDeductions'),
