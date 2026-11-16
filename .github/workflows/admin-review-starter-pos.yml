@@ -1,0 +1,72 @@
+name: Admin review and new franchise starter POS
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'public/platform-admin.js'
+      - 'public/platform-admin.html'
+      - 'public/platform-admin-review-v20261116.css'
+      - 'lib/platform-admin-auth.js'
+      - 'lib/franchise-account-inspector.js'
+      - 'lib/branch-catalog-seeding.js'
+      - 'lib/franchise-live-catalog.js'
+      - 'lib/franchise-live-router.js'
+      - 'public/franchise-unified-adapter.js'
+      - 'public/pos-categories-admin.js'
+      - 'public/app-core.js'
+      - 'public/app.js'
+      - 'public/main-pos-shell-layout-v20261116.css'
+      - 'scripts/admin-review-starter-test.js'
+      - 'scripts/main-pos-shell-browser-test.js'
+      - '.github/workflows/admin-review-starter-pos.yml'
+  push:
+    paths:
+      - 'public/platform-admin.js'
+      - 'public/platform-admin.html'
+      - 'public/platform-admin-review-v20261116.css'
+      - 'lib/platform-admin-auth.js'
+      - 'lib/franchise-account-inspector.js'
+      - 'lib/branch-catalog-seeding.js'
+      - 'lib/franchise-live-catalog.js'
+      - 'lib/franchise-live-router.js'
+      - 'public/franchise-unified-adapter.js'
+      - 'public/pos-categories-admin.js'
+      - 'public/app-core.js'
+      - 'public/app.js'
+      - 'public/main-pos-shell-layout-v20261116.css'
+      - 'scripts/admin-review-starter-test.js'
+      - 'scripts/main-pos-shell-browser-test.js'
+      - '.github/workflows/admin-review-starter-pos.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate backend and browser JavaScript syntax
+        run: |
+          node --check lib/platform-admin-auth.js
+          node --check lib/franchise-account-inspector.js
+          node --check lib/branch-catalog-seeding.js
+          node --check lib/franchise-live-catalog.js
+          node --check lib/franchise-live-router.js
+          node --check public/platform-admin.js
+          node --check public/app-core.js
+          node --check public/app.js
+          node --check public/pos-categories-admin.js
+          node --check public/franchise-unified-adapter.js
+          node --check scripts/admin-review-starter-test.js
+      - name: Verify starter catalog and read-only account inspection
+        run: node scripts/admin-review-starter-test.js
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Install UI test dependency
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund puppeteer-core@24
+      - name: Check original Main POS cards, icons and responsive page
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/main-pos-shell-browser-test.js
