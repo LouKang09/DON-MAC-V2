@@ -72,3 +72,25 @@
  .app.sidebar-collapsed .sidebar #mainNav .dm-expense-children{display:none!important}
 }
 @media(max-width:699px){#mainNav .dm-expense-children{display:none}}
+
+/* Mobile More drawer: Main remains on the bottom bar; other groups expand. */
+#mobileMorePanel .dm-mobile-nav-group[hidden],
+#mobileMorePanel .dm-mobile-nav-group-items[hidden],
+#mobileMorePanel .dm-mobile-expense-payroll[hidden]{display:none!important}
+@media(max-width:699px){
+ #mobileMorePanel .dm-mobile-nav-group{display:grid;gap:4px;border-bottom:1px solid #304a3a;padding-bottom:6px}
+ #mobileMorePanel .dm-mobile-nav-group:last-child{border-bottom:none}
+ #mobileMorePanel .dm-mobile-nav-group-toggle{display:flex;justify-content:space-between;
+  align-items:center;width:100%;min-height:38px;border:none;border-radius:9px;
+  background:#243c2c;color:#f5fff6;font-size:12px;font-weight:800;padding:8px 12px;cursor:pointer}
+ #mobileMorePanel .dm-mobile-nav-arrow{font-size:19px;transition:transform .15s}
+ #mobileMorePanel .dm-mobile-nav-group-toggle[aria-expanded="true"] .dm-mobile-nav-arrow{transform:rotate(180deg)}
+ #mobileMorePanel .dm-mobile-nav-group-items{display:grid;gap:4px;border-left:1px solid #4b7956;margin-left:14px;padding-left:9px}
+ #mobileMorePanel .dm-mobile-expense-payroll{position:relative;text-align:left;cursor:pointer;color:#d3e7d8;
+  background:transparent;border:0;border-radius:8px;min-height:37px;font-size:12px;font-weight:650;
+  padding:9px 9px 9px 23px}
+ #mobileMorePanel .dm-mobile-expense-payroll::before{content:"";position:absolute;left:6px;top:16px;
+  width:12px;height:1px;background:#739980}
+ #mobileMorePanel .dm-mobile-expense-payroll:hover,
+ #mobileMorePanel .dm-mobile-expense-payroll:focus-visible{background:#28573a;color:white}
+}
