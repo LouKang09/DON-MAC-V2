@@ -116,6 +116,11 @@
     try{
       // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
       await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
+      // The original Main POS shell still needs the matching enhancement styles.
+      loadCss('supplyFranchiseLiveCss','/supply-franchise.css');
+      loadCss('internalChatLiveCss','/internal-chat.css');
+      loadCss('floatingChatLiveCss','/sidebar-chat-floating-v1523.css');
+      loadCss('chatResponsiveLiveCss','/sidebar-chat-responsive-v1527.css');
       // Shared Main Office procurement catalog; orders and conversations are
       // still filtered by the authenticated franchise workspace on the server.
       await loadScript('/supply-franchise.js?v=20261116-live-franchise');
