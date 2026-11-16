@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.11-setup-before-paid-and-nav-guard';
+  const VERSION = '1.6.12-unified-franchise-session-privacy';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -17,61 +17,13 @@
     const css = document.createElement('link');
     css.id = id;
     css.rel = 'stylesheet';
-    css.href = `${src}?v=${encodeURIComponent(VERSION)}`;
+    css.href = `${src}${src.includes('?') ? '&' : '?'}v=${encodeURIComponent(VERSION)}`;
     document.head.appendChild(css);
   };
 
-  const isVisible = el => !!el && !el.classList.contains('hidden');
-
-  function showRecoveryLogin(message) {
-    document.body.classList.remove('legacy-authenticated');
-    const auth = document.getElementById('authScreen');
-    const app = document.getElementById('app');
-    if(app){app.inert=true;app.setAttribute('aria-hidden','true');app.classList.add('hidden');}
-    auth?.classList.remove('hidden');
-    const title = document.getElementById('authTitle');
-    const hint = document.getElementById('authHint');
-    const submit = document.getElementById('authSubmit');
-    if (title) title.textContent = 'Welcome Back, Please login to your account';
-    if (hint) hint.textContent = message || '';
-    if (submit) submit.textContent = 'Sign In';
-  }
-
-  // Start independent network downloads together, but execute scripts in their proven dependency order.
-  function preloadEnhancementScripts(){
-    for(const src of ["/supply-franchise.js?v=1.5.79","/tenant-billing-ui.js?v=1","/pos-finance.js?v=20261107c","/pos-quickpay-v1556.js","/mobile-nav-v1529.js","/live-refresh.js","/v15-safe.js","/v153-features.js","/v154-tuning.js","/v155-features.js","/v156-features.js","/pos-refresh.js","/dashboard-v1512.js","/dashboard-compact-v1571.js","/dashboard-experience-v1573.js?v=20261107c","/sales-csv-import-v1572.js","/premium-dashboard-feature-gallery-v1533.js","/reference-dashboard-preview-v1535.js","/plan-dashboard-v1570.js","/pos-categories-admin.js","/catalog-batch-v1544.js","/internal-chat.js","/refresh-controls-v20261107.js"]){
-      const link=document.createElement('link');
-      link.rel='preload';link.as='script';
-      link.href=src+(src.includes('?')?'&':'?')+'v='+encodeURIComponent(VERSION);
-      document.head.appendChild(link);
-    }
-  }
-
-  let scopedFinanceStarted=false;
-  async function startScopedFinanceWhenAppReady(){
-    if(scopedFinanceStarted || !window.donmacFranchiseUnified || !isVisible(document.getElementById('app')))return;
-    scopedFinanceStarted=true;
-    try{
-      // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
-      await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
-      loadCss('posFinanceV20261107','/pos-finance.css');
-      loadCss('posCatalogV1544Css','/pos-catalog-v1544.css');
-      loadCss('posCategoryAdminCss','/pos-categories-admin.css');
-      await loadScript('/pos-categories-admin.js?v=20261116-isolated');
-      await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
-      await loadScript('/pos-finance.js?v=20261115-isolated');
-      const view=document.querySelector('.view.active')?.id;
-      if(view==='view-transactions'||view==='view-expenses')window.donmacFinance?.open(view.slice(5));
-    }catch(err){scopedFinanceStarted=false;console.error('Isolated finance display:',err);}
-  }
-  async function startEnhancementsWhenAppIsReady() {
-    if(window.donmacFranchiseUnified){await startScopedFinanceWhenAppReady();return;}
-    if (enhancementsStarted) return;
-    const app = document.getElementById('app');
-    if (!isVisible(app)) return;
-    enhancementsStarted = true;
-    try {
-      preloadEnhancementScripts();
+  // Presentation is identical for SHARED and NEW franchises. Never condition
+  // visual CSS on account data mode; only network features remain isolated.
+  function loadSharedPresentationStyles(){
       loadCss('v15SafeCss', '/v15.css');
       loadCss('v153Css', '/v153.css');
       loadCss('v154Css', '/v154.css');
@@ -127,7 +79,68 @@
       loadCss('dmAdvancedLive20261108','/advanced-analytics-v20261108.css');
       loadCss('dmProductGalleryWidgetDrag20261108','/pos-gallery-widget-drag-v20261108.css');
       loadCss('dmBranchCampaignNotifications','/franchise-promotions-branches-v20261108.css');
+  }
+  // Apply the original POS theme before login or account data can be rendered.
+  loadSharedPresentationStyles();
 
+  const isVisible = el => !!el && !el.classList.contains('hidden');
+
+  function showRecoveryLogin(message) {
+    document.body.classList.remove('legacy-authenticated');
+    const auth = document.getElementById('authScreen');
+    const app = document.getElementById('app');
+    if(app){app.inert=true;app.setAttribute('aria-hidden','true');app.classList.add('hidden');}
+    auth?.classList.remove('hidden');
+    const title = document.getElementById('authTitle');
+    const hint = document.getElementById('authHint');
+    const submit = document.getElementById('authSubmit');
+    if (title) title.textContent = 'Welcome Back, Please login to your account';
+    if (hint) hint.textContent = message || '';
+    if (submit) submit.textContent = 'Sign In';
+  }
+
+  // Start independent network downloads together, but execute scripts in their proven dependency order.
+  function preloadEnhancementScripts(){
+    for(const src of ["/supply-franchise.js?v=1.5.79","/tenant-billing-ui.js?v=1","/pos-finance.js?v=20261107c","/pos-quickpay-v1556.js","/mobile-nav-v1529.js","/live-refresh.js","/v15-safe.js","/v153-features.js","/v154-tuning.js","/v155-features.js","/v156-features.js","/pos-refresh.js","/dashboard-v1512.js","/dashboard-compact-v1571.js","/dashboard-experience-v1573.js?v=20261107c","/sales-csv-import-v1572.js","/premium-dashboard-feature-gallery-v1533.js","/reference-dashboard-preview-v1535.js","/plan-dashboard-v1570.js","/pos-categories-admin.js","/catalog-batch-v1544.js","/internal-chat.js","/refresh-controls-v20261107.js"]){
+      const link=document.createElement('link');
+      link.rel='preload';link.as='script';
+      link.href=src+(src.includes('?')?'&':'?')+'v='+encodeURIComponent(VERSION);
+      document.head.appendChild(link);
+    }
+  }
+
+  let scopedFinanceStarted=false;
+  async function startScopedFinanceWhenAppReady(){
+    if(scopedFinanceStarted || !window.donmacFranchiseUnified || !isVisible(document.getElementById('app')))return;
+    scopedFinanceStarted=true;
+    try{
+      // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
+      await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
+      loadCss('posFinanceV20261107','/pos-finance.css');
+      loadCss('posCatalogV1544Css','/pos-catalog-v1544.css');
+      loadCss('posCategoryAdminCss','/pos-categories-admin.css');
+      await loadScript('/pos-categories-admin.js?v=20261116-isolated');
+      await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
+      // These are presentation-only enhancements (no unscoped fetches).
+      // Do not import dashboard-compact or plan-dashboard here: their legacy
+      // data calls are intentionally incompatible with isolated franchises.
+      await loadScript('/dashboard-v1512.js');
+      await loadScript('/dashboard-experience-v1573.js?v=20261107c');
+      await loadScript('/pos-finance.js?v=20261115-isolated');
+      await loadScript('/refresh-controls-v20261107.js');
+      const view=document.querySelector('.view.active')?.id;
+      if(view==='view-transactions'||view==='view-expenses')window.donmacFinance?.open(view.slice(5));
+    }catch(err){scopedFinanceStarted=false;console.error('Isolated finance display:',err);}
+  }
+  async function startEnhancementsWhenAppIsReady() {
+    if(window.donmacFranchiseUnified){await startScopedFinanceWhenAppReady();return;}
+    if (enhancementsStarted) return;
+    const app = document.getElementById('app');
+    if (!isVisible(app)) return;
+    enhancementsStarted = true;
+    try {
+      preloadEnhancementScripts();
+      loadSharedPresentationStyles();
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
       await loadScript('/supply-franchise.js?v=1.5.79');
