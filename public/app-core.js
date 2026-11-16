@@ -205,7 +205,11 @@
     // Hide every unapproved desktop, tablet and mobile sidebar item for cashiers.
     const cashierViews=new Set(['pos',
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
-      ...(userGrants.includes('expenses.view')?['expenses']:[])]);
+      ...(userGrants.includes('expenses.view')?['expenses']:[]),
+      ...(userGrants.includes('dashboard.view')?['dashboard']:[]),
+      ...(userGrants.includes('inventory.view')?['inventory']:[]),
+      ...(userGrants.includes('messages.view')?['chat']:[]),
+      ...(userGrants.includes('reports.view')?['reports']:[])]);
     document.querySelectorAll('#app button[data-view]').forEach(button=>{
       // Reuse every existing Owner sidebar view in the SAME Main POS layout.
       // Requests from NEW workspaces remain isolated by the API adapter and server.
@@ -455,7 +459,11 @@
       const grants=state.user.accessPermissions||[];
       const authorized=view==='pos'||
         (view==='transactions'&&grants.includes('transactions.view'))||
-        (view==='expenses'&&grants.includes('expenses.view'));
+        (view==='expenses'&&grants.includes('expenses.view'))||
+        (view==='dashboard'&&grants.includes('dashboard.view'))||
+        (view==='inventory'&&grants.includes('inventory.view'))||
+        (view==='chat'&&grants.includes('messages.view'))||
+        (view==='reports'&&grants.includes('reports.view'));
       if(!authorized)view='pos';
     }
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
@@ -2197,11 +2205,12 @@
    });
   }
 
-  const CASHIER_ACCESS=['transactions.view','expenses.view','expenses.manage'];
+  const CASHIER_ACCESS=['transactions.view','expenses.view','expenses.manage','dashboard.view','inventory.view','messages.view','reports.view'];
   function selectedCashierGrants(){
     const selected=CASHIER_ACCESS.filter(key=>$('cashierAccessControls')?.
       querySelector('input[data-cashier-grant="'+key+'"]')?.checked);
     if(selected.includes('expenses.manage')&&!selected.includes('expenses.view'))selected.push('expenses.view');
+    selected.push($('cashierReportWindow')?.value||'report.window.day');
     return selected;
   }
   function setCashierGrants(grants=[]){
@@ -2209,6 +2218,7 @@
     for(const input of document.querySelectorAll('#cashierAccessControls [data-cashier-grant]')){
       input.checked=enabled.has(input.dataset.cashierGrant);
     }
+    if($('cashierReportWindow'))$('cashierReportWindow').value=['report.window.day','report.window.week','report.window.month'].find(x=>enabled.has(x))||'report.window.day';
     syncCashierGrantControls();
   }
   function syncCashierGrantControls(){
