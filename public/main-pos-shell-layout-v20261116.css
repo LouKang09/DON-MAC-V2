@@ -1,0 +1,50 @@
+/*
+ * Main POS layout containment (2026-11-16).
+ * This is a FIRST-PAINT stylesheet for every account: NEW, TEMPORARY, SHARED.
+ * The mobile bottom bar used to be styled only by asynchronously loaded
+ * enhancements. Without its CSS it became a grid child and pushed the actual
+ * dashboard into a narrow sidebar-width column.
+ */
+#app:not(.hidden) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: start;
+}
+#app > main.main {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-self: stretch;
+}
+#app > main.main > .view,
+#app > main.main .dashboard-grid,
+#app > main.main .dashboard-summary {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (min-width: 700px) {
+  /* Never let a phone-only control consume a desktop/tablet grid cell. */
+  html body #app #mobileBottomNav,
+  html body #app #mobileMorePanel {
+    display: none !important;
+  }
+}
+@media (max-width: 699px) {
+  #app:not(.hidden) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  #app > main.main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+@media print {
+  #app > main.main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
