@@ -787,7 +787,10 @@
    <button type="button" id="dmPayrollRefresh" class="primary">Refresh Payroll</button></header>
   <div id="dmPayrollLocked" class="dm-payroll-locked" hidden><strong id="dmPayrollLockTitle">Payroll feature not available</strong><p id="dmPayrollLockText"></p></div>
   <div id="dmPayrollReady" hidden>
-   <section class="dm-payroll-panel"><div class="dm-payroll-section-head"><div><h3>Current cashier attendance</h3><p>Staff are identified by their Don Mac POS login and assigned branch.</p></div><span id="dmPayrollToday"></span></div>
+   <section class="dm-payroll-panel"><div class="dm-payroll-section-head"><div><h3>Attendance by Branch</h3><p>Select a branch, expand a cashier, then open any workday to see Time In, Lunch, Time Out and paid hours. All employees belong only to this franchise.</p></div><span id="dmPayrollToday"></span></div>
+    <div class="dm-payroll-branch-toolbar"><label for="dmPayrollBranchFilter">Select branch</label>
+      <select id="dmPayrollBranchFilter" aria-label="Filter payroll employees by branch"><option value="all">All branches</option></select>
+      <span id="dmPayrollBranchCount" role="status"></span></div>
     <div class="dm-payroll-roster" id="dmPayrollRoster"></div></section>
    <section class="dm-payroll-panel">
     <div class="dm-payroll-section-head"><div><h3>Pay Period &amp; Employee</h3><p>Water POS defaults: 9 AM–6 PM; ₱582 daily / 8 paid hours; 1-hour unpaid lunch; lateness deducted starting at 30 minutes. Daily wages are editable.</p></div></div>
