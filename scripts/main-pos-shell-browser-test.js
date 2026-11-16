@@ -52,6 +52,7 @@ async function evaluate(page){
    await page.setViewport({width,height:900,deviceScaleFactor:1});
    await page.goto('http://127.0.0.1:'+port+'/',{waitUntil:'networkidle0'});
    const d=await evaluate(page);
+   console.log('GEOMETRY '+width+'px '+JSON.stringify(d));
    assert(d.app.width>=width-1,'Application must occupy full viewport at '+width);
    assert(d.main.width>0&&d.main.right<=width+1,'Main view fits browser at '+width);
    if(width>=700){
