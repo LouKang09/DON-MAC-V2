@@ -855,7 +855,7 @@
                   <p id="cashierPhotoError" role="alert" aria-live="polite" class="users-photo-error hidden"></p>
                 </div>
                 <label>Full name<input id="newFullName" maxlength="120" placeholder="Cashier name" /></label>
-                <label>Email<input id="newUserEmail" type="email" maxlength="180" placeholder="cashier@example.com" /></label>
+                <label>Email (optional)<input id="newUserEmail" type="email" maxlength="180" placeholder="cashier@example.com" aria-describedby="newUserEmailWarning" /></label><p id="newUserEmailWarning" class="muted tiny" role="status">No email provided: this employee can sign in with their username and password, but cannot recover a forgotten password by OTP until an email is added. An added email is unverified until the employee successfully completes email OTP recovery.</p>
                 <label>Phone number<input id="newUserPhone" type="tel" maxlength="32" placeholder="+63..." /></label>
                 <label>Username <span class="required">*</span><input id="newUsername" minlength="2" maxlength="80" required autocomplete="off" /></label>
                 <label>Password <span class="required">*</span><span class="users-password-wrap"><input id="newPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" /><button id="toggleCashierPassword" class="users-password-toggle" type="button" aria-label="Show cashier password" title="Show password"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
