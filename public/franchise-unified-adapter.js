@@ -114,20 +114,15 @@
    if(data.role!=='User')throw fail('Co-Owner provisioning must be enabled in the isolated staff service before it can be used.',403);
    // Contact fields and compressed profile photos are stored by the
    // workspace-scoped employee endpoint, not by the legacy global user API.
-   const created=await live('/api/live/cashiers','POST',data);
-   if((data.accessPermissions||[]).length){
-    await live('/api/live/cashiers/'+Number(created.id)+'/permissions','PUT',
-     {permissions:data.accessPermissions});
-   }
-   return created;
+   // The scoped staff endpoint now stores the employee and grants atomically.
+   // Do not make a second request that could leave a partially saved account.
+   return live('/api/live/cashiers','POST',data);
   }
   let cashierEdit=p.match(/^\/api\/users\/(\d+)$/);
   if(cashierEdit&&method==='PUT'){
    if(data.role!=='User')throw fail('The isolated account currently supports cashier editing only.',403);
-   const saved=await live('/api/live/cashiers/'+Number(cashierEdit[1]),'PUT',data);
-   await live('/api/live/cashiers/'+Number(cashierEdit[1])+'/permissions','PUT',
-    {permissions:data.accessPermissions||[]});
-   return saved;
+   // Update fields and permissions in one server-side transaction.
+   return live('/api/live/cashiers/'+Number(cashierEdit[1]),'PUT',data);
   }
   if(cashierEdit&&method==='DELETE')
    return live('/api/live/cashiers/'+Number(cashierEdit[1]),'DELETE');
