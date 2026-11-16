@@ -80,6 +80,65 @@
   window.donmacExpenseMenu={expand:openExpense,sync:updateLeaf};
   openExpense(false);
  }
+ // Phones retain Main in the bottom bar; the More drawer uses the same
+ // Team / Transactions / Management hierarchy without duplicating POS buttons.
+ const mobilePanel=$('mobileMorePanel');
+ if(mobilePanel && mobilePanel.dataset.hierarchyReady!=='1'){
+  mobilePanel.dataset.hierarchyReady='1';
+  const mobileHeader=mobilePanel.querySelector('.mobile-more-heading');
+  if(mobileHeader){
+   mobilePanel.prepend(mobileHeader);
+   const h=mobileHeader.querySelector('strong');if(h)h.textContent='Navigation';
+  }
+  const defs=[
+   {name:'Team',views:['users']},
+   {name:'Transactions',views:['transactions','expenses']},
+   {name:'Management',views:['reports','advanced','supply','catalog','logs','account']}
+  ];
+  const mobileGroups=[];
+  defs.forEach(def=>{
+   const wrap=document.createElement('section');wrap.className='dm-mobile-nav-group';
+   const header=document.createElement('button');header.type='button';
+   header.className='dm-mobile-nav-group-toggle';
+   header.innerHTML='<span>'+def.name+'</span><span class="dm-mobile-nav-arrow" aria-hidden="true">⌄</span>';
+   const pane=document.createElement('div');pane.className='dm-mobile-nav-group-items';
+   pane.id='dmMobile'+def.name;
+   header.setAttribute('aria-controls',pane.id);
+   header.setAttribute('aria-expanded',String(def.name==='Transactions'));
+   pane.hidden=def.name!=='Transactions';
+   header.onclick=()=>{pane.hidden=!pane.hidden;header.setAttribute('aria-expanded',String(!pane.hidden));};
+   wrap.append(header,pane);
+   mobilePanel.appendChild(wrap);
+   def.views.forEach(view=>{
+    const button=mobilePanel.querySelector('.mobile-more-item[data-view="'+view+'"]');
+    if(button)pane.appendChild(button);
+    if(view==='expenses'&&button){
+     const payroll=document.createElement('button');payroll.type='button';
+     payroll.className='dm-mobile-expense-payroll';payroll.dataset.mobilePayroll='true';
+     payroll.textContent='Payroll & Attendance';
+     payroll.onclick=()=>{
+      if(window.donmacAuthenticatedRole!=='Admin')return;
+      button.click();window.donmacPayroll?.open?.('payroll');
+      $('mobileMoreClose')?.click();
+     };
+     pane.appendChild(payroll);
+    }
+   });
+   mobileGroups.push(wrap);
+  });
+  const syncMobile=()=>{
+   for(const group of mobileGroups){
+    const hasVisible=[...group.querySelectorAll('.mobile-more-item')].some(x=>!x.classList.contains('hidden'));
+    group.hidden=!hasVisible;
+   }
+   const sub=mobilePanel.querySelector('[data-mobile-payroll]');
+   if(sub)sub.hidden=window.donmacAuthenticatedRole!=='Admin';
+  };
+  new MutationObserver(()=>syncMobile()).observe(mobilePanel,{
+   subtree:true,attributes:true,attributeFilter:['class']
+  });
+  syncMobile();
+ }
  const sectionName=section=>{
   if(section.classList.contains('nav-communication'))return 'Team';
   if(section.classList.contains('nav-finance'))return 'Transactions';
