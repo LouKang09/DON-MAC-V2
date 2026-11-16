@@ -11,6 +11,8 @@
  };
  const categories=['rent','stocks','salary','transportation','electricity','ice','water','misc'];
  const financeApiBase=window.donmacFranchiseUnified?'/api/live/finance':'/api/finance';
+ const boundSession=window.donmacSessionGeneration?.();
+ const sessionStillValid=()=>!window.donmacSessionGeneration||window.donmacSessionGeneration()===boundSession;
  const idByCategory={rent:'financeRent',stocks:'financeStocks',salary:'financeSalary',
   transportation:'financeTransportation',electricity:'financeElectricity',ice:'financeIce',
   water:'financeWater',misc:'financeMisc'};
@@ -65,6 +67,7 @@
   $(id).querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>{state[kind].page+=Number(b.dataset.next);load(kind);}));
  }
  async function load(kind){
+  if(!sessionStillValid())return;
   if(state[kind].loading){
    if(kind==='transactions')state.transactions.queued=true;
    return;
@@ -73,6 +76,7 @@
   const requestQuery=query(kind);
   try{
    const data=await api(financeApiBase+'/'+kind+'?'+requestQuery);
+   if(!sessionStillValid())return; // Never render previous account results.
    // Do not overwrite results for newer search text or filter selections.
    if(kind==='transactions'&&requestQuery!==query('transactions')){
     state.transactions.queued=true;
@@ -113,6 +117,7 @@
     renderPager('financeExpensePages',Math.max(1,Math.ceil(Number(data.total||0)/10)),kind);
    }
   }catch(err){
+   if(!sessionStillValid())return;
    if(kind==='transactions')$('financeTransactionsBody').innerHTML='<tr><td colspan="8">'+esc(err.message)+'</td></tr>';
    else message(err.message,true);
   }finally{
