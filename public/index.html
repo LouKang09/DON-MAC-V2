@@ -485,7 +485,7 @@
         <div id="replenishBatchRows" class="inv-batch-rows"></div>
         <div class="inv-batch-clipboard">
           <span id="replenishCopiedHint">Copy a quantity from any row.</span>
-          <button id="replenishPasteAll" type="button" class="inv-batch-small-button" disabled>Paste to all</button>
+          <button id="replenishPasteAll" type="button" class="inv-batch-small-button" disabled>Paste to empty</button>
         </div>
       </section>
     </div>
@@ -517,7 +517,7 @@
         <div id="transferBatchRows" class="inv-batch-rows"></div>
         <div class="inv-batch-clipboard">
           <span id="transferCopiedHint">Copy a quantity from any row.</span>
-          <button id="transferPasteAll" type="button" class="inv-batch-small-button" disabled>Paste to all</button>
+          <button id="transferPasteAll" type="button" class="inv-batch-small-button" disabled>Paste to empty</button>
         </div>
       </section>
     </div>
@@ -756,6 +756,10 @@
   </div>
 </section>
 <section id="view-expenses" class="view">
+ <nav id="dmExpenseTabs" class="dm-expense-tabs admin-only" aria-label="Expenses and Payroll sections" hidden>
+  <button type="button" data-expense-tab="ledger" aria-pressed="true" class="active">Expenses Ledger</button>
+  <button type="button" data-expense-tab="payroll" aria-pressed="false">Payroll &amp; Attendance</button>
+ </nav>
   <div class="card pos-finance-shell">
     <div class="card-head"><div><p class="eyebrow">FRANCHISE EXPENDITURE</p><h3>Expenses Ledger</h3><p class="muted">Enter daily expenses by branch. Saving the same branch and date updates that day's row.</p></div><button id="financeExpenseRefresh" type="button" class="primary">Refresh Expenses</button></div>
     <form id="financeExpenseForm" class="pos-finance-form">
