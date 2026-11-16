@@ -50,7 +50,7 @@
  }
  const mapCashier=x=>({id:Number(x.id),username:x.username,fullName:x.fullName||x.username,
   role:'User',roleLabel:'Cashier',branchId:Number(x.branchId),active:x.active!==false,
-  hasWebPassword:true,accessPermissions:x.permissions||[],email:x.email||'',phone:x.phone||'',
+  hasWebPassword:true,accessPermissions:x.permissions||[],email:x.email||'',emailVerified:x.emailVerified===true,phone:x.phone||'',
   photoData:x.photoData||null,branchName:x.branchName||'',isOwner:false});
  async function adminCatalog(state,kind){
   const x=await live('/api/live/manage'+qs(scopedBranch(state)));
