@@ -78,7 +78,7 @@
   }
   if(p==='/api/branches'&&method==='GET'){
    const s=await status();
-   return{branches:(s.branches||[]).map(b=>({...b,active:true,usersCount:0,salesCount:0})),
+   return{branches:(s.branches||[]).map(b=>({...b,active:b.active!==false,usersCount:Number(b.usersCount||0),salesCount:Number(b.salesCount||0)})),
     branchPricing:subscription(s).branchPricing};
   }
   if(p==='/api/branches'&&method==='POST')
