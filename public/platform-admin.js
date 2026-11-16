@@ -82,59 +82,62 @@
   }finally{button.disabled=false}
  }
  function renderFranchiseRequests(){
-   const rows=franchiseSignupRequests;
-   $('franchiseRequestsBody').innerHTML=rows.map(x=>{
-     const verified=!!x.emailVerifiedAt,created=Number(x.testUserId)>0,
-       rejected=x.status==='REJECTED',prepared=!!x.stageStatus,
-       isSandbox=created&&x.dataMode!=='NEW';
-     const paid=x.assignedStatus==='PAID',held=x.assignedStatus==='ON_HOLD';
-     const ready=created&&!isSandbox&&x.testActive&&paid;
-     const catalogStatus=created?
-       badge('Catalog initialized','active')+'<small class="application-access-note">Opening inventory starts at zero and can be replenished directly.</small>':
-       prepared?badge('Starter catalog prepared','active'):
-       verified?'Pending account creation':'Awaiting verification';
-     const accountStatus=created?
-       badge(!x.testActive?'Login disabled':isSandbox?'Sandbox account':paid?'Live POS active':held?'On Hold':'Awaiting payment',
-        ready?'active':(!x.testActive||held||isSandbox)?'inactive':'unknown')+
+   $('franchiseRequestsBody').innerHTML=franchiseSignupRequests.map(x=>{
+     const verified=!!x.emailVerifiedAt,created=Number(x.testUserId)>0;
+     const plan=String(x.assignedPlan||x.requestedPlan||'PRO').toUpperCase();
+     const isSandbox=created&&x.dataMode!=='NEW';
+     const live=created&&!isSandbox&&x.testActive&&x.assignedStatus==='PAID';
+     const state=live?'Active':'Pending';
+     const planDisplay='<div><strong>'+esc(x.requestedPlan||'Not selected')+'</strong><small class="application-access-note">Requested</small></div>'+
+       (x.assignedPlan?'<small class="application-access-note">Assigned: '+esc(x.assignedPlan)+' · '+esc(x.assignedStatus||'UNPAID')+'</small>':'')+
+       (created?' <button type="button" class="link-btn application-plan-button" data-request-plan="'+esc(x.id)+'">Manage</button>':'');
+     const access=created?
+       '<button type="button" class="link-btn" data-request-inspect="'+esc(x.id)+'">Open account (view only)</button>'+
        '<small class="application-access-note">'+
-       (ready?'Own live checkout, inventory, sales and reports enabled.':
-        isSandbox?'Enable Main POS to use the normal franchise account screens.':
-        held?'Admin Control has placed this account on hold.':
-        !x.testActive?'Account login is disabled.':
-        'Assign and mark the subscription Paid to activate real checkout.')+'</small>':
-       rejected?badge('Declined','inactive'):
-       verified?badge('Not yet created','unknown'):
-       badge('Email verification required','unknown');
-     const requested=String(x.requestedPlan||'').toUpperCase();
-     const assigned=String(x.assignedPlan||'').toUpperCase();
-     const chosen=['PRO','BUSINESS'].includes(requested);
-     const planDisplay=(chosen?badge('Requested: '+(requested==='PRO'?'Pro':'Business'),'unknown'):
-       '<span class="application-plan-empty">Plan not selected</span>')+
-       (assigned?'<small class="application-access-note">Assigned: '+esc(assigned==='PRO'?'Pro':'Business')+
-        ' · '+esc(x.assignedStatus||'UNPAID')+'</small>':
-        '<small class="application-access-note">Awaiting plan assignment</small>')+
-       (created?'<button type="button" class="link-btn application-plan-button" data-request-plan="'+esc(x.id)+
-        '">'+(assigned?'Manage Plan':'Assign Plan')+'</button>':'');
-     const action=rejected?'Declined':
-       created?'Account created'+
-         ' <button type="button" class="link-btn" data-request-access="'+(x.testActive?'false':'true')+
-         '" data-request-id="'+esc(x.id)+'">'+(x.testActive?'Disable login':'Enable login')+'</button>'+
-         (isSandbox?' <button type="button" class="link-btn" data-enable-main-pos="'+esc(x.id)+'">Enable Main POS</button>':
-         ' <a class="link-btn" href="https://donmacpos.com/" target="_blank" rel="noopener">Open Main POS</a>'):
-       !verified?'Awaiting OTP':
-       prepared&&x.status==='CONTACTED'?
-         '<button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Account</button>':
-       x.status==='CONTACTED'?
-         '<button type="button" class="link-btn" data-request-prepare="'+esc(x.id)+'">Prepare Starter Catalog</button>':
-       '<button type="button" class="link-btn" data-request-status="CONTACTED" data-request-id="'+esc(x.id)+'">Mark Contacted</button>'+
-         ' <button type="button" class="link-btn" data-request-status="REJECTED" data-request-id="'+esc(x.id)+'">Decline</button>';
-     return'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
-      '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
-      '</td><td>'+esc(date(x.createdAt))+'</td><td>'+
-       badge(verified?'Verified':'Pending',verified?'active':'unknown')+
-      '</td><td>'+badge(x.status,rejected?'inactive':'unknown')+
-      '</td><td>'+catalogStatus+'</td><td>'+planDisplay+'</td><td>'+accountStatus+'</td><td>'+action+'</td></tr>';
-   }).join('')||'<tr><td colspan="11">No franchise applications received.</td></tr>';
+       (!x.testActive?'Login disabled':isSandbox?'Enable Main POS first':
+        x.assignedStatus==='ON_HOLD'?'Suspended':x.assignedStatus==='PAID'?'Live POS active':'Awaiting payment')+'</small>'+
+       (isSandbox?' <button type="button" class="link-btn" data-enable-main-pos="'+esc(x.id)+'">Enable Main POS</button>':''):
+       verified?'<button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Account</button>':
+       '<span class="muted">Awaiting email verification</span>';
+     const review=created?
+       '<select class="application-review-select" data-review-action="'+esc(x.id)+'" aria-label="Review action for '+esc(x.username)+'">'+
+       '<option value="">Choose action</option>'+
+       '<option value="DISABLE_LOGIN">Disable login</option>'+
+       '<option value="SUSPEND">Suspend account</option>'+
+       '<option value="UNPAID">Unpaid</option>'+
+       (!x.testActive?'<option value="ENABLE_LOGIN">Enable login</option>':'')+'</select>':
+       '<span class="muted">'+(verified?'Ready to create':'Pending OTP')+'</span>';
+     return '<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.fullName)+'</td><td>'+
+       '<a href="mailto:'+encodeURIComponent(x.email)+'">'+esc(x.email)+'</a></td><td>'+esc(x.phone)+
+       '</td><td>'+esc(date(x.createdAt))+'</td><td>'+badge(verified?'Verified':'Pending',verified?'active':'unknown')+
+       '</td><td>'+badge(state,live?'active':'unknown')+'</td><td>'+planDisplay+'</td><td>'+access+'</td><td>'+review+'</td></tr>';
+   }).join('')||'<tr><td colspan="10">No franchise applications received.</td></tr>';
+ }
+ function showFranchiseInspection(x){
+   const container=$('franchiseInspectorContent');
+   const p=x.account,formatter=n=>peso(n);
+   const branchList=x.branches.map(b=>'<tr><td>'+esc(b.name)+'</td><td>'+esc(b.city||b.province||'—')+
+     '</td><td>'+esc(b.active?'Active':'Inactive')+'</td></tr>').join('');
+   const userList=x.users.map(u=>'<tr><td>'+esc(u.username)+'</td><td>'+esc(u.role)+'</td><td>'+esc(u.branch||'—')+
+     '</td><td>'+esc(u.active?'Active':'Inactive')+'</td></tr>').join('');
+   const salesList=x.sales.recent.map(t=>'<tr><td>'+esc(t.reference)+'</td><td>'+esc(date(t.at))+
+     '</td><td>'+esc(t.branch)+'</td><td>'+esc(t.cashier)+'</td><td>'+esc(t.status)+
+     '</td><td>'+formatter(t.net)+'</td></tr>').join('');
+   container.innerHTML='<div class="inspector-banner">READ ONLY · No franchise login or editing permissions are issued.</div>'+
+     '<h3>'+esc(p.username)+' · Workspace #'+esc(x.workspaceId)+'</h3>'+
+     '<p>'+esc(p.fullName||'')+' · '+esc(p.email||'')+' · '+esc(p.phone||'')+'</p>'+
+     '<div class="inspector-kpis"><div><small>Plan</small><strong>'+esc(p.plan||'Unassigned')+'</strong></div>'+
+     '<div><small>Payment</small><strong>'+esc(p.paymentStatus)+'</strong></div>'+
+     '<div><small>Sales (net)</small><strong>'+formatter(x.sales.net)+'</strong></div>'+
+     '<div><small>Transactions</small><strong>'+esc(x.sales.transactions)+'</strong></div>'+
+     '<div><small>Low-stock items</small><strong>'+esc(x.inventory.lowStock)+'</strong></div></div>'+
+     '<h3>Branches</h3><div class="table-scroll"><table><thead><tr><th>Name</th><th>Location</th><th>Status</th></tr></thead><tbody>'+
+     (branchList||'<tr><td colspan="3">No branches</td></tr>')+'</tbody></table></div>'+
+     '<h3>Users (view only)</h3><div class="table-scroll"><table><thead><tr><th>User</th><th>Role</th><th>Branch</th><th>Status</th></tr></thead><tbody>'+
+     (userList||'<tr><td colspan="4">No users</td></tr>')+'</tbody></table></div>'+
+     '<h3>Recent sales</h3><div class="table-scroll"><table><thead><tr><th>Reference</th><th>Date</th><th>Branch</th><th>Cashier</th><th>Status</th><th>Net</th></tr></thead><tbody>'+
+     (salesList||'<tr><td colspan="6">No sales yet</td></tr>')+'</tbody></table></div>';
+   $('franchiseInspectorDialog').showModal();
  }
  async function reloadFranchiseRequests(){
    const data=await api('franchise-requests');
@@ -145,7 +148,44 @@
    error('franchiseRequestsMessage','');
    try{await reloadFranchiseRequests()}catch(e){error('franchiseRequestsMessage',e.message)}
  });
+ $('franchiseRequestsBody').addEventListener('change',async event=>{
+   const select=event.target.closest('select[data-review-action]');
+   if(!select||!select.value)return;
+   const action=select.value,application=franchiseSignupRequests.find(x=>x.id===select.dataset.reviewAction);
+   select.value='';
+   if(!application||!application.testUserId)return;
+   const message={DISABLE_LOGIN:'Disable login and revoke sessions for ',SUSPEND:'Suspend cashier selling for ',
+    UNPAID:'Mark subscription unpaid for ',ENABLE_LOGIN:'Re-enable login for '}[action];
+   if(!message||!window.confirm(message+application.username+'?'))return;
+   select.disabled=true;
+   try{
+     if(action==='DISABLE_LOGIN'||action==='ENABLE_LOGIN'){
+       await api('franchise-requests/'+application.id+'/test-access',{method:'PUT',
+        body:JSON.stringify({enabled:action==='ENABLE_LOGIN'})});
+     }else{
+       const owner=accounts.find(x=>Number(x.workspaceId)===Number(application.testWorkspaceId));
+       if(!owner)throw Error('Reload accounts to update this subscription.');
+       const plan=owner.subscription?.plan||application.assignedPlan||application.requestedPlan||'PRO';
+       const amount=owner.subscription?.baseAmount??(plan==='BUSINESS'?2599:1499);
+       await api('accounts/'+owner.workspaceId+'/subscription',{method:'PUT',
+        body:JSON.stringify({plan,status:action==='SUSPEND'?'ON_HOLD':'UNPAID',amount,
+         nextPaymentDate:owner.subscription?.nextPaymentDate||nextMonthlyDate(),keepBranchIds:[]})});
+     }
+     await reload();
+   }catch(e){error('franchiseRequestsMessage',e.message)}
+   finally{select.disabled=false}
+ });
  $('franchiseRequestsBody').addEventListener('click',async event=>{
+   const inspectButton=event.target.closest('button[data-request-inspect]');
+   if(inspectButton){
+     inspectButton.disabled=true;
+     try{
+       const details=await api('franchise-requests/'+inspectButton.dataset.requestInspect+'/inspect');
+       showFranchiseInspection(details);
+     }catch(e){error('franchiseRequestsMessage',e.message)}
+     finally{inspectButton.disabled=false}
+     return;
+   }
    const planButton=event.target.closest('button[data-request-plan]');
    if(planButton){
      const application=franchiseSignupRequests.find(x=>x.id===planButton.dataset.requestPlan);
@@ -154,7 +194,7 @@
      openPlan(owner);
      if(!owner.subscription&&['PRO','BUSINESS'].includes(application?.requestedPlan)){
        $('subPlan').value=application.requestedPlan;
-       updateSubscriptionBranchQuote();
+       applyPlanBaseDefault();
      }
      return;
    }
@@ -163,7 +203,7 @@
      if(!window.confirm('Create a franchise account for this verified applicant? Its independent starter catalog begins with zero stock. Admin Control must assign a Paid subscription before real checkout is enabled. One-time credentials will be shown once.'))return;
      activate.disabled=true;
      try{
-       const data=await api('franchise-requests/'+activate.dataset.requestTest+'/test-activate',{method:'POST',body:'{}'});
+       const data=await api('franchise-requests/'+activate.dataset.requestTest+'/create-account',{method:'POST',body:'{}'});
        $('phase2TestLoginUsername').value=data.username||'';
        $('phase2TestLoginPassword').value=data.password||'';
        $('phase2TestLoginUrl').value='https://donmacpos.com/';
@@ -348,6 +388,20 @@
    if(owner)openUser(owner,findUser(owner,uid));
   }
  });
+ function nextMonthlyDate(){
+   const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+   const get=k=>Number(parts.find(x=>x.type===k)?.value||0);
+   const y=get('year'),m=get('month'),d=get('day');
+   const nextMonth=m===12?1:m+1,nextYear=m===12?y+1:y;
+   const last=new Date(Date.UTC(nextYear,nextMonth,0)).getUTCDate();
+   return String(nextYear)+'-'+String(nextMonth).padStart(2,'0')+'-'+String(Math.min(d,last)).padStart(2,'0');
+ }
+ function defaultBase(plan){return plan==='BUSINESS'?2599:1499;}
+ function applyPlanBaseDefault(){
+   if(!['subscription','office'].includes(selected?.kind))return;
+   $('subAmount').value=String(defaultBase($('subPlan').value));
+   updateSubscriptionBranchQuote();
+ }
  function updateSubscriptionBranchQuote(){
    const franchise=selected?.kind==='subscription',plan=$('subPlan').value;
    const branches=franchise?(selected.owner.branches||[]).filter(b=>b.active):[];
@@ -370,7 +424,7 @@
      (needChoice?' · Select 3 to retain; excess branches will be deactivated.':''):
      'Supply Office uses independent subscription pricing.';
  }
- $('subPlan').addEventListener('change',updateSubscriptionBranchQuote);
+ $('subPlan').addEventListener('change',applyPlanBaseDefault);
  $('subAmount').addEventListener('input',updateSubscriptionBranchQuote);
  function openPlan(owner){
   if(!owner)return;
@@ -380,8 +434,8 @@
    (owner.pendingPlan?' · Requested '+owner.pendingPlan.plan+' plan (awaiting review)':'');
   $('subPlan').value=owner.pendingPlan?.plan||owner.subscription?.plan||'PRO';
   $('subStatus').value=owner.subscription?.status||'UNPAID';
-  $('subAmount').value=owner.subscription?.baseAmount??owner.subscription?.amount??'';
-  $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||'';
+  $('subAmount').value=owner.subscription?.baseAmount??owner.subscription?.amount??defaultBase($('subPlan').value);
+  $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||nextMonthlyDate();
   error('subscriptionError','');
   updateSubscriptionBranchQuote();
   $('subscriptionDialog').showModal();
@@ -392,8 +446,8 @@
   $('subscriptionOwner').textContent='Supply Chain / Main Office · Independent tenant';
   $('subPlan').value=officeSubscription?.plan||'PRO';
   $('subStatus').value=officeSubscription?.status||'UNPAID';
-  $('subAmount').value=officeSubscription?.amount??'';
-  $('subNextPaymentDate').value=officeSubscription?.nextPaymentDate||'';
+  $('subAmount').value=officeSubscription?.amount??defaultBase($('subPlan').value);
+  $('subNextPaymentDate').value=officeSubscription?.nextPaymentDate||nextMonthlyDate();
   error('subscriptionError','');updateSubscriptionBranchQuote();$('subscriptionDialog').showModal();
  }
  $('subscriptionForm').addEventListener('submit',async e=>{

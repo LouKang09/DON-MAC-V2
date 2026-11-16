@@ -35,12 +35,21 @@ async function evaluate(page){
   app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');
   // The app boot script is intentionally suppressed; explicitly show the Dashboard.
   document.getElementById('view-dashboard').classList.add('active');
+  const summary=document.getElementById('dashboardSummary');
+  summary.innerHTML=Array.from({length:7},(_,i)=>'<article class="summary-card">'+
+   '<div class="dash-card-main"><div class="dash-summary-label">'+
+   '<span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">'+
+   '<rect x="3" y="4" width="18" height="16"/></svg></span><span>Metric '+i+'</span></div>'+
+   '<strong>₱0.00</strong><small>Selected range</small></div></article>').join('');
+
   const get=id=>{const element=document.querySelector(id);const r=element.getBoundingClientRect();
    return{display:getComputedStyle(element).display,position:getComputedStyle(element).position,
     x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
   return{width:innerWidth,app:get('#app'),sidebar:get('#app > .sidebar'),
    main:get('#app > main.main'),mobile:get('#mobileBottomNav'),
-   more:get('#mobileMorePanel'),summary:get('#dashboardSummary')};
+   more:get('#mobileMorePanel'),summary:get('#dashboardSummary'),
+   icon:get('#dashboardSummary .dash-summary-icon svg'),
+   firstCard:get('#dashboardSummary .summary-card')};
  });
 }
 (async()=>{
@@ -56,6 +65,10 @@ async function evaluate(page){
    const d=await evaluate(page);
    console.log('GEOMETRY '+width+'px '+JSON.stringify(d));
    assert(d.app.width>=width-1,'Application must occupy full viewport at '+width);
+   assert(d.icon.width>=16&&d.icon.width<=24,'KPI icon must remain compact at '+width+'; '+JSON.stringify(d.icon));
+   assert(d.icon.height>=16&&d.icon.height<=24,'KPI icon height must remain compact at '+width);
+   assert(d.firstCard.height>=80&&d.firstCard.height<=240,
+    'KPI card should not grow due to giant icons at '+width+'; '+JSON.stringify(d.firstCard));
    assert(d.main.width>0&&d.main.right<=width+1,'Main view fits browser at '+width);
    if(width>=700){
     assert.equal(d.mobile.display,'none','Phone bottom bar must not take a desktop grid column at '+width);

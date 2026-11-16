@@ -1,0 +1,40 @@
+/* Admin Control: focused application review and safe read-only audit. */
+#franchiseRequestsBody .application-review-select {
+ min-width:142px;max-width:175px;padding:9px 10px;background:#fff;
+ border:1px solid #b9d2c4;border-radius:10px;color:#183d2b;
+ font:inherit;font-size:12px;cursor:pointer;
+}
+#franchiseRequestsBody td {vertical-align:middle}
+#franchiseRequestsBody .application-plan-button {display:inline-flex;margin-top:4px}
+#franchiseRequestsBody .application-access-note {display:block;margin-top:5px;line-height:1.45;white-space:normal}
+#franchiseRequestsBody .link-btn {line-height:1.35}
+.franchise-inspector-dialog {
+ width:min(950px,calc(100vw - 28px));max-width:950px;
+ max-height:min(92vh,960px);overflow-y:auto;
+}
+.franchise-inspector-dialog #franchiseInspectorContent {padding-bottom:14px;line-height:1.55}
+.franchise-inspector-dialog .inspector-banner {
+ background:#e7f3eb;color:#145133;border:1px solid #aad1b9;
+ border-radius:10px;padding:10px 12px;font-weight:750;font-size:12px;margin:14px 0;
+}
+.franchise-inspector-dialog .inspector-kpis {
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));
+ gap:10px;margin:16px 0;
+}
+.franchise-inspector-dialog .inspector-kpis>div {
+ display:flex;flex-direction:column;gap:6px;border:1px solid #d8e6da;
+ background:#f5f9f6;border-radius:10px;padding:12px;min-width:0;
+}
+.franchise-inspector-dialog .inspector-kpis small {font-size:11px;color:#5e7769}
+.franchise-inspector-dialog .inspector-kpis strong {font-size:17px;color:#143c28;overflow-wrap:anywhere}
+.franchise-inspector-dialog h3 {margin:16px 0 10px}
+.franchise-inspector-dialog table {width:100%;border-collapse:collapse;font-size:12px}
+.franchise-inspector-dialog th,.franchise-inspector-dialog td {
+ padding:9px 11px;text-align:left;border-bottom:1px solid #e7ede7;white-space:nowrap
+}
+.franchise-inspector-dialog th {background:#f1f6f2;color:#2a4939}
+@media(max-width:700px){
+ #franchiseRequestsBody .application-review-select {min-width:125px}
+ .franchise-inspector-dialog {width:calc(100vw - 16px);max-height:96dvh}
+ .franchise-inspector-dialog .inspector-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+}

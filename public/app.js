@@ -56,6 +56,8 @@
       await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
       loadCss('posFinanceV20261107','/pos-finance.css');
       loadCss('posCatalogV1544Css','/pos-catalog-v1544.css');
+      loadCss('posCategoryAdminCss','/pos-categories-admin.css');
+      await loadScript('/pos-categories-admin.js?v=20261116-isolated');
       await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
       await loadScript('/pos-finance.js?v=20261115-isolated');
       const view=document.querySelector('.view.active')?.id;

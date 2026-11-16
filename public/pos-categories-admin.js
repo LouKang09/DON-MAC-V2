@@ -9,6 +9,10 @@
   const builtinSlugs={Coffee:'coffee','Non Coffee':'noncoffee',Food:'food','Add-ons':'addons',Promos:'promos',Packages:'packages'};
   let categories=[],products=[],chosenIcon=null,processing=false,invalid=false,generation=0;
   async function request(path,method='GET',body){
+    if(window.donmacFranchiseUnified){
+      if(typeof window.donmacScopedApi!=='function')throw new Error('Isolated POS session is unavailable. Reload to retry.');
+      return window.donmacScopedApi(path,{method,body});
+    }
     const options={method,credentials:'same-origin',headers:{}};
     if(body!==undefined){options.headers['Content-Type']='application/json';options.body=JSON.stringify(body);}
     const resp=await fetch(path,options);
