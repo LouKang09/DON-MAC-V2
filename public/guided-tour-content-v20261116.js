@@ -22,7 +22,7 @@
         item('Choose order type', 'Select Dine In, Take Away or Order Online as appropriate. This is recorded on the transaction and can change the location details required.', '.order-type-switch'),
         item('Customer and location', 'Enter customer name and table/location details when useful. Verify names carefully; optional fields do not replace payment or stock validation.', '#posCustomerName'),
         item('Review current order', 'Check the item list, quantities, prices, included add-ons and discounts. Clear removes the working order, so do not clear while serving a customer.', '.order-panel'),
-        item('Checkout and payment', 'Before finalizing, confirm the total and select the actual payment method. Enter exact cash tender or the correct reference for non-cash payments. A successful checkout records the sale and deducts ingredient stock.', '#checkoutButton'),
+        item('Checkout and payment', 'Before finalizing, confirm the total and select the actual payment method. Enter exact cash tender or the correct reference for non-cash payments. A successful checkout records the sale and deducts ingredient stock.', '#payButton'),
         item('Receipt and reconciliation', 'After payment succeeds, review the receipt and transaction reference. Use Transactions to locate the entry if a customer asks about a previous purchase.', '.order-panel')
       ]
     },
@@ -43,7 +43,7 @@
       label: 'Messages', intro: 'Communicate with teammates using only conversations permitted for your account.',
       steps: [
         item('Communication channels', 'Select the correct owner, coworker or branch group conversation. Only the chats available to your account should be visible.', '#view-chat'),
-        item('Compose carefully', 'Type a clear request, include relevant branch/order context, and verify the recipient before sending.', '#chatDraft'),
+        item('Compose carefully', 'Type a clear request, include relevant branch/order context, and verify the recipient before sending.', '#chatText'),
         item('Photos and attachments', 'Attach an image only if needed for business coordination. Avoid sharing customer payment credentials or sensitive personal information.', '#chatFloatingPanel'),
         item('Follow-up', 'Return to the conversation to see replies. Messages are not a substitute for the inventory acceptance or transaction posting workflow.', '#view-chat')
       ]
@@ -98,7 +98,7 @@
       label: 'POS Catalog', intro: 'Set up the menu and costing in a sensible order: ingredients, categories, products, recipes, promotions and backups.',
       steps: [
         item('Catalog sections', 'The category tiles switch between independent catalog editors. No changes are saved by viewing or switching tabs.', '#adminTabs'),
-        item('Products', 'Add the name, category, sale price and availability for a menu item; confirm it is assigned to the intended franchise.', '#admin-productSearch', 'products'),
+        item('Products', 'Add the name, category, sale price and availability for a menu item; confirm it is assigned to the intended franchise.', '#adminProductSearch', 'products'),
         item('POS Categories', 'Maintain the menu categories and icons shown at checkout. Inactive categories should not be offered to cashiers.', '#admin-categories', 'categories'),
         item('Ingredients', 'Maintain ingredient names and units before assigning recipe requirements. Stock levels belong to Inventory.', '#admin-ingredients', 'ingredients'),
         item('Recipes and costing', 'Link ingredient quantities to products and review calculated costs. Correct recipe quantities are essential for stock deduction.', '#admin-recipes', 'recipes'),
