@@ -30,6 +30,12 @@
   shift=null;entitlement=null;employees=[];branches=[];previewData=null;savedSlip=null;expenseTab='ledger';loadInProgress=false;
   if($('dmPayrollBranchFilter'))$('dmPayrollBranchFilter').value='all';
   if($('dmExpenseTabs'))$('dmExpenseTabs').hidden=true;
+  const area=$('view-expenses');
+  if(area)area.dataset.expenseMode='ledger';
+  const pane=$('dmPayrollManager');
+  if(pane){pane.classList.add('dm-expense-pane-inactive');pane.inert=true;}
+  const expenseLedger=document.querySelector('#view-expenses>.pos-finance-shell');
+  if(expenseLedger){expenseLedger.classList.remove('dm-expense-pane-inactive');expenseLedger.inert=false;}
   const ledger=document.querySelector('#view-expenses>.pos-finance-shell');if(ledger)ledger.hidden=false;
   $('dmAttendanceWidget')?.setAttribute('hidden','');
   $('dmPayrollManager')?.setAttribute('hidden','');
@@ -56,10 +62,22 @@
    if($('viewTitle'))$('viewTitle').textContent=expenseTab==='payroll'?'Payroll & Attendance':'Expenses Ledger';
    if($('viewEyebrow'))$('viewEyebrow').textContent=expenseTab==='payroll'?'EMPLOYEE MANAGEMENT':'TRANSACTIONS';
   }
+  const parent=$('view-expenses');
+  if(parent)parent.dataset.expenseMode=expenseTab;
   const ledger=document.querySelector('#view-expenses>.pos-finance-shell');
-  if(ledger)ledger.hidden=expenseTab!=='ledger';
+  if(ledger){
+   ledger.hidden=expenseTab!=='ledger';
+   ledger.classList.toggle('dm-expense-pane-inactive',expenseTab!=='ledger');
+   ledger.inert=expenseTab!=='ledger';
+   ledger.setAttribute('aria-hidden',String(expenseTab!=='ledger'));
+  }
   const payroll=$('dmPayrollManager');
-  if(payroll)payroll.hidden=expenseTab!=='payroll';
+  if(payroll){
+   payroll.hidden=expenseTab!=='payroll';
+   payroll.classList.toggle('dm-expense-pane-inactive',expenseTab!=='payroll');
+   payroll.inert=expenseTab!=='payroll';
+   payroll.setAttribute('aria-hidden',String(expenseTab!=='payroll'));
+  }
   $('dmExpenseTabs')?.querySelectorAll('[data-expense-tab]').forEach(button=>{
    const selected=button.dataset.expenseTab===expenseTab;
    button.classList.toggle('active',selected);
