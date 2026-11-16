@@ -210,9 +210,19 @@
       if($('reportPeriod')?.selectedOptions[0]?.disabled)$('reportPeriod').value='daily';
       if($('reportDate')){$('reportDate').value=manilaToday();$('reportDate').disabled=true;}
       if($('trendView')){
-        for(const option of $('trendView').options)option.disabled=option.value==='custom'&&maxDays===1;
-        if($('trendView').value==='custom'&&maxDays===1)$('trendView').value='hourly';
+        for(const option of $('trendView').options)
+          option.disabled=option.value==='10days'&&maxDays<10||option.value==='custom'&&maxDays===1;
+        if($('trendView').selectedOptions[0]?.disabled)$('trendView').value='hourly';
+        const today=manilaToday();
+        const oldest=new Date(Date.parse(today+'T00:00:00Z')-(maxDays-1)*86400000).toISOString().slice(0,10);
+        for(const id of ['trendFrom','trendTo']){
+          const field=$(id);if(!field)continue;
+          field.min=oldest;field.max=today;
+          if(field.value<oldest)field.value=oldest;
+          if(field.value>today)field.value=today;
+        }
       }
+      $('reportCashierSelect')?.classList.add('hidden');
     }
     // Granting Inventory never permits replenishment, transfers, receiving or audit editing.
     const inventoryReadOnly=!isAdmin;
@@ -1620,7 +1630,7 @@
      {title:'Total Revenue',value:peso(d.rangeActual),gross:peso(d.rangeGross),net:peso(d.rangeActual),caption:d.grain==='hourly'?'Selected day':'Selected range',glyph:'revenue'},
      {title:'Orders',value:num(d.rangeTransactions,0),caption:'Completed · selected range',glyph:'orders'},
      {title:'Today Sales',value:peso(d.metrics.todayActual),gross:peso(d.metrics.todayGross),net:peso(d.metrics.todayActual),caption:'Today · completed sales',glyph:'today'},
-     {title:'Month Revenue',value:peso(d.metrics.monthActual),gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
+     {title:state.user?.role==='User'?'Allowed Period Revenue':'Month Revenue',value:peso(d.metrics.monthActual),gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
      {title:'Total Expenses',value:d.rangeExpenses==null?'—':peso(d.rangeExpenses),caption:d.rangeExpenses==null?'Owner / Co-Owner only':'Selected range · expense ledger',glyph:'expense'},
      {title:'Discount',value:peso(d.rangeDiscount),caption:'Selected range · completed sales',glyph:'discount'},
      {title:'Low Stock Alerts',value:num(d.metrics.lowStockCount,0),caption:'Ingredients needing attention',glyph:'alert'}
