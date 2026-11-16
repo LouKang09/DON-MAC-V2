@@ -1,4 +1,15 @@
 /* Payroll is deliberately isolated from the POS checkout and expenses input. */
+/* Expenses subcategory selector. */
+#view-expenses>.pos-finance-shell[hidden],#dmExpenseTabs[hidden]{display:none!important}
+.dm-expense-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:5px;background:rgba(245,251,246,.92);
+ border:1px solid #c7e0d0;border-radius:12px;margin:0 0 12px}
+.dm-expense-tabs button{border:1px solid transparent;border-radius:9px;padding:11px 16px;
+ background:transparent;color:#27513a;font-size:13px;font-weight:800;cursor:pointer}
+.dm-expense-tabs button.active,.dm-expense-tabs button[aria-pressed="true"]{
+ background:#10653c;color:#fff;box-shadow:0 3px 10px #0b51351f}
+.dm-expense-tabs button:focus-visible{outline:2px solid #309262;outline-offset:2px}
+.dm-expense-tabs button:hover:not(.active){background:#e3f1e8}
+
 #dmAttendanceWidget[hidden],#dmPayrollManager[hidden],
 #dmPayrollManager [hidden]{display:none!important}
 .dm-attendance-widget{margin:0 0 16px;border:1px solid #bcdac5;background:#f2faf5;border-radius:16px;padding:15px 18px;display:grid;gap:12px}
