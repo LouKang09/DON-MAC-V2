@@ -132,7 +132,8 @@ async function snapshot(page){
  });
 }
 async function signOut(page){
- await page.click('#logoutButton');
+ await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
+  page.click('#logoutButton')]);
  await page.waitForFunction(()=>!document.body.classList.contains('legacy-authenticated')&&
   document.getElementById('authScreen')?.classList.contains('hidden')===false,{timeout:25000});
  await page.waitForFunction(()=>!document.getElementById('dashboardSummary').textContent.includes('12,295'),
@@ -141,7 +142,8 @@ async function signOut(page){
 async function signIn(page,name){
  await page.type('#authUsername',name);
  await page.type('#authPassword','password-for-browser-smoke');
- await page.click('#authSubmit');
+ await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
+  page.click('#authSubmit')]);
  await display(page,name);
 }
 (async()=>{
