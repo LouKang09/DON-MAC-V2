@@ -84,10 +84,10 @@
           <p>Review applicant details, confirm email verification and assign the requested subscription plan. <strong>Marking a plan Paid activates that franchise's independent live POS.</strong> New accounts receive their own starter catalog and zero opening stock. Unpaid and On Hold accounts cannot access live checkout.</p>
         </div><button id="refreshFranchiseRequests" class="btn btn-main" type="button">Refresh Requests</button></div>
         <p id="franchiseRequestsMessage" class="notice hidden" role="status"></p>
-        <div class="franchise-activation-status is-ready" role="status"><strong>Franchise activation available</strong><p>Assign the applicant’s Pro or Business plan, payment amount and next payment date. When payment status is Paid, their live branch-isolated POS is enabled. Unpaid and On Hold remain blocked from live checkout.</p></div>
+        <div class="franchise-activation-status is-ready" role="status"><strong>Franchise activation available</strong><p>Choose a plan and payment status. Paid enables sales; Unpaid or Suspended blocks cashier checkout. Login access is controlled separately.</p></div>
         <div class="table-scroll"><table class="owners-table franchise-requests-table" aria-label="New franchise account applications">
-          <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Email</th><th>Status</th><th>Starter Catalog</th><th>Requested / Assigned Plan</th><th>Account Access</th><th>Review Action</th></tr></thead>
-          <tbody id="franchiseRequestsBody"><tr><td colspan="11">Loading applications…</td></tr></tbody>
+          <thead><tr><th>Requested Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Received</th><th>Email</th><th>Status</th><th>Requested / Assigned Plan</th><th>Account Access</th><th>Review Action</th></tr></thead>
+          <tbody id="franchiseRequestsBody"><tr><td colspan="10">Loading applications…</td></tr></tbody>
         </table></div>
       </section>
 
@@ -153,7 +153,7 @@
   <p>Other branches will be deactivated; their cashiers must be reassigned.</p>
   <div id="subKeepBranchChoices" class="branch-downgrade-list"></div>
  </fieldset>
- <p class="dialog-tip">Payment dates are entered manually. Existing subscriptions show no due date until one is recorded.</p>
+ <p class="dialog-tip">For new subscriptions the due date defaults to one month from today; you can change it.</p>
  <p class="dialog-tip">Only Admin Control can change payment status. Unpaid or On Hold disables POS sign-in until the account is marked Paid. Saving the record does not initiate a charge.</p>
  <div class="subscription-history-preview"><h3>Verified subscription payment history</h3><div id="subscriptionPaymentHistory">Choose a tenant to see previous payments.</div></div><p id="subscriptionError" class="notice error hidden" role="alert"></p>
  <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
