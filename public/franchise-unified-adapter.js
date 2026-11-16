@@ -188,9 +188,10 @@
   const saleDetail=receiptKey.length===21 && /^BR-[A-F0-9]{18}/.test(receiptKey)?[null,receiptKey]:null;
   if(saleDetail&&method==='GET'){
    const d=await live('/api/live/transactions/'+saleDetail[1]+qs(selected()));
+   // Show the scoped receipt's actual stock movements and stored/derived audit
+   // history. Never erase server-authoritative live checkout data.
    return{...d,items:(d.items||[]).map(x=>({...x,type:x.kind,unitPrice:x.price,
-     lineTotal:x.total})),tender:d.tender??null,change:d.change??null,
-     inventoryMovements:[],auditEvents:[]};
+     lineTotal:x.total})),tender:d.tender??null,change:d.change??null};
   }
   if((p==='/api/reports/sales'||p==='/api/reports/costing')&&method==='GET'){
    const requested=String(url.searchParams.get('period')||'daily');
@@ -198,7 +199,10 @@
    if(!period)throw fail('Choose Daily, Weekly, or Monthly for this isolated franchise report.',403);
    // Server checks the cashier's grant and maximum history duration.
    const raw=await live('/api/live/report?range='+period+'&branchId='+encodeURIComponent(scopedBranch(state)));
-   if(p==='/api/reports/costing')return{totalCost:(raw.products||[]).reduce((n,x)=>n+Number(x.costing||0),0),ingredients:[]};
+   if(p==='/api/reports/costing'){
+    return live('/api/live/report/costing?range='+period+
+      '&branchId='+encodeURIComponent(scopedBranch(state)));
+   }
    const totalProductGross=(raw.products||[]).reduce((n,x)=>n+Number(x.gross||0),0);
    const ratio=totalProductGross>0?Number(raw.actual||0)/totalProductGross:0;
    const products=(raw.products||[]).map(x=>{
