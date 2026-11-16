@@ -37,7 +37,7 @@ const fetch=async(path,options={})=>{
  calls.push({path:u.pathname,search:u.search,method:options.method||'GET',
   body:options.body?JSON.parse(options.body):undefined});
  assert(u.pathname.startsWith('/api/live/'),'No new-franchise request may reach legacy APIs.');
- const payload=stubs[u.pathname];
+ const payload=stubs[u.pathname]??(u.pathname.startsWith('/api/live/categories/')?{ok:true}:undefined);
  if(payload===undefined)return{ok:false,status:404,json:async()=>({error:'Unavailable isolated endpoint'})};
  return{ok:true,status:200,json:async()=>payload};
 };
