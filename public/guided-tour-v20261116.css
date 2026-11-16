@@ -23,6 +23,8 @@ body.dm-tour-active{overscroll-behavior:none}
 .dm-guide-root{position:fixed!important;inset:0!important;z-index:2147482000!important;
   pointer-events:auto;overflow:hidden;isolation:isolate}
 .dm-guide-shade{position:fixed;background:rgba(8,22,17,.79);pointer-events:none}
+.dm-guide-root:not(.dm-guide-mode-tour) .dm-guide-shade:first-child{inset:0!important;width:100%!important;height:100%!important}
+.dm-guide-root:not(.dm-guide-mode-tour) .dm-guide-shade:not(:first-child){display:none}
 .dm-guide-ring{position:fixed;pointer-events:none;border:3px solid #a0f2bb;border-radius:12px;
   box-shadow:0 0 0 1px rgba(0,0,0,.15) inset,0 0 25px 4px rgba(103,235,149,.35);
   transition:top .18s ease,left .18s ease,width .18s ease,height .18s ease}
