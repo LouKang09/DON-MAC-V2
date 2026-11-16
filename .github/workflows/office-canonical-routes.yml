@@ -1,0 +1,36 @@
+name: Don Mac unified office URLs
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'server.js'
+      - 'lib/office-origin-proxy.js'
+      - 'public/platform-admin.html'
+      - 'public/supply-office.html'
+      - 'scripts/office-canonical-routes-test.js'
+      - '.github/workflows/office-canonical-routes.yml'
+  push:
+    paths:
+      - 'server.js'
+      - 'lib/office-origin-proxy.js'
+      - 'public/platform-admin.html'
+      - 'public/supply-office.html'
+      - 'scripts/office-canonical-routes-test.js'
+      - '.github/workflows/office-canonical-routes.yml'
+jobs:
+  route-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          node --check server.js
+          node --check lib/office-origin-proxy.js
+          node --check scripts/office-canonical-routes-test.js
+      - name: URL, auth-cookie isolation, and proxy regression
+        run: node scripts/office-canonical-routes-test.js
