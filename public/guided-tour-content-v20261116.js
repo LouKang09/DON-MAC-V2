@@ -128,6 +128,28 @@
         item('Transaction details', 'Open a row to review its items, payment method, discounts and reference. Use recorded details for reconciliation; do not assume every draft order was paid.', '#financeTransactionsBody')
       ]
     },
+    'expenses:payroll': {
+      label: 'Expenses • Payroll & Attendance', parent: 'expenses', adminOnly: true,
+      intro: 'Manage cashier time records, branch status, pay rates and audited payslips. Business includes payroll; Pro requires a separate paid add-on.',
+      steps: [
+        item('Plan entitlement', 'Payroll is included in an active Business subscription. Pro needs a separately paid add-on verified in Admin Control. Neither opening the tour nor changing a filter enables payroll.', '#dmPayrollLocked'),
+        item('Current branch roster', 'View each cashier and their assigned branch. Status appears as Not Clocked In, Clocked In, On Lunch or Timed Out, based on their attendance actions.', '#dmPayrollRoster'),
+        item('Choose employee and cutoff', 'Select the employee, year, month and 1st–15th or 16th–month-end period. Open shifts are excluded from automatic payroll earnings.', '#dmPayrollEmployee'),
+        item('Daily wage and DTR', 'The default rate and 9 AM–6 PM schedule follow the Water POS policy. Managers can review attendance and correct an entry with an audit reason.', '#dmPayrollDtr'),
+        item('Review deductions', 'Preview late, early-out, excess lunch and time-out-gap adjustments. Verify figures against attendance and the applicable wage agreement.', '#dmPayrollDeductions'),
+        item('Payslip review', 'Edit the displayed earnings and deductions before saving; only a saved payslip receives its unique franchise number. Print the saved result for distribution.', '#dmPayrollSlipPanel')
+      ]
+    },
+    'pos:attendance': {
+      label: 'POS • Time In / Time Out', parent: 'pos', cashierOnly: true,
+      intro: 'Learn how your POS login connects to franchise attendance without automatically clocking you in.',
+      steps: [
+        item('Start your shift', 'Use Time In after signing in to POS. The attendance record links your user account and current assigned branch. Login alone does not count as Time In.', '#dmAttendanceWidget'),
+        item('Lunch breaks', 'Tap Start Lunch and End Lunch to record the unpaid break. Your work status changes to On Lunch until lunch is ended.', '#dmAttendanceWidget'),
+        item('End or continue a shift', 'Tap Time Out when leaving. Early Time Out may request confirmation; Continue Shift is available if you return during the same workday.', '#dmAttendanceWidget'),
+        item('Daily status', 'Review your current work status and paid work timer. Logging out of the application does not automatically Time Out.', '#dmAttendanceStatus')
+      ]
+    },
     expenses: {
       label: 'Expenses', intro: 'Track operating costs with the correct branch and date. Editing depends on your permission level.',
       steps: [
