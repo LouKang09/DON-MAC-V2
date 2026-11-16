@@ -1618,7 +1618,29 @@
     ['Refund',peso(r.refund??0),'Value of voided sales; not confirmation that cash was repaid.'],
     ['Deleted',r.deletedCount,'Number of deleted or voided transactions.']
   ].map(([a,b,help])=>`<div class="summary-card" title="${esc(help)}"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=reportPageSlice('products',r.products).map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=reportPageSlice('promos',r.promos).map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=reportPageSlice('transactions',r.transactions).map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
-  function renderCosting(){const r=state.costing;if(!r)return;$('costingTotal').textContent=`Total Cost: ${peso(r.totalCost)}`;$('costingList').innerHTML=reportPageSlice('ingredients',r.ingredients).map(g=>`<details class="costing-group"><summary><div><b>${esc(g.name)}</b><span>${num(g.totalQty)} ${esc(String(g.uom).toUpperCase())}</span></div><strong>${peso(g.totalCost)}</strong></summary><div class="table-wrap"><table><thead><tr><th>Product</th><th class="num">Sold Qty</th><th class="num">Recipe Qty</th><th class="num">Total Usage</th><th class="num">Cost / Item</th><th class="num">Total Cost</th></tr></thead><tbody>${g.details.map(d=>`<tr><td>${esc(d.product)}</td><td class="num">${num(d.productQty,3)}</td><td class="num">${num(d.quantityRequired)}</td><td class="num">${num(d.usageQty)}</td><td class="num">${peso(d.costPerItem)}</td><td class="num">${peso(d.totalCost)}</td></tr>`).join('')}</tbody></table></div></details>`).join('')||'<div class="empty-state">No costed product sales for this period.</div>';}
+  function renderCosting(){
+    const r=state.costing;if(!r)return;
+    $('costingTotal').textContent='Total Cost: '+peso(r.totalCost);
+    const sections=reportPageSlice('ingredients',Array.isArray(r.ingredients)?r.ingredients:[]).map(g=>
+      '<details class="costing-group"><summary><div><b>'+esc(g.name)+'</b>'+
+      '<span>'+num(g.totalQty)+' '+esc(String(g.uom||'').toUpperCase())+
+      (g.reconstructed?' · Historical allocation':'')+'</span></div>'+
+      '<strong>'+peso(g.totalCost)+'</strong></summary><div class="table-wrap"><table><thead>'+
+      '<tr><th>Product</th><th class="num">Sold Qty</th><th class="num">Recipe Qty</th>'+
+      '<th class="num">Total Usage</th><th class="num">Cost / Item</th>'+
+      '<th class="num">Total Cost</th></tr></thead><tbody>'+
+      (g.details||[]).map(d=>'<tr><td>'+esc(d.product)+
+       (d.reconstructed?' <small title="Recipe information reconstructed from current settings">Historical</small>':'')+
+       '</td><td class="num">'+num(d.productQty,3)+'</td>'+
+       '<td class="num">'+num(d.quantityRequired)+'</td><td class="num">'+num(d.usageQty)+
+       '</td><td class="num">'+peso(d.costPerItem)+'</td><td class="num">'+
+       peso(d.totalCost)+'</td></tr>').join('')+'</tbody></table></div></details>'
+    ).join('');
+    const note=r.reconstructed?'<p class="costing-history-note">'+esc(r.note||
+      'Older receipts have reconstructed ingredient allocations; original product totals remain authoritative.')+'</p>':'';
+    $('costingList').innerHTML=sections?
+      sections+note:'<div class="empty-state">No costed product sales for this period.</div>';
+  }
   function transactionInfo(label,value,{money=false,wide=false}={}){const shown=value===null||value===undefined||value===''?'—':money?peso(value):esc(value);return`<div class="transaction-info ${wide?'wide':''}"><span>${esc(label)}</span><strong>${shown}</strong></div>`;}
   function renderTransactionDetail(d){
     $('transactionReference').textContent=d.reference||'Transaction Details';
