@@ -131,6 +131,19 @@
   }
   if(cashierEdit&&method==='DELETE')
    return live('/api/live/cashiers/'+Number(cashierEdit[1]),'DELETE');
+  // Built-in and custom POS category editor, strictly isolated by branch.
+  if(p==='/api/admin/pos-categories'&&method==='GET')
+   return live('/api/live/categories'+qs(selected()));
+  if(p==='/api/admin/pos-categories'&&method==='POST')
+   return live('/api/live/categories','POST',{...data,branchId:scopedBranch(state)});
+  if(p.startsWith('/api/admin/pos-categories/')){
+   const key=p.slice('/api/admin/pos-categories/'.length);
+   if(key&&!key.includes('/')){
+    const target='/api/live/categories/'+key;
+    if(method==='PUT')return live(target,'PUT',{...data,branchId:scopedBranch(state)});
+    if(method==='DELETE')return live(target+qs(scopedBranch(state)),'DELETE');
+   }
+  }
   if(p==='/api/admin/products'&&method==='GET')return adminCatalog(state,'products');
   if(p==='/api/admin/ingredients'&&method==='GET')return adminCatalog(state,'ingredients');
   if(p==='/api/admin/promos'&&method==='GET')return adminCatalog(state,'promos');
