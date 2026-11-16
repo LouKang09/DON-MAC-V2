@@ -94,3 +94,7 @@
  #mobileMorePanel .dm-mobile-expense-payroll:hover,
  #mobileMorePanel .dm-mobile-expense-payroll:focus-visible{background:#28573a;color:white}
 }
+
+/* Preserve role and permission hiding even where older responsive rules use !important. */
+.app .sidebar #mainNav .nav-section.hidden,
+.app.sidebar-collapsed .sidebar #mainNav .nav-section.hidden{display:none!important}
