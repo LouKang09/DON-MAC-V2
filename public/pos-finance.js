@@ -18,6 +18,15 @@
   water:'financeWater',misc:'financeMisc'};
  const state={transactions:{page:1,branches:[],loading:false,queued:false},expenses:{page:1,branches:[],loading:false}};
  function canManageExpenses(){return window.donmacFinanceAccess?.manageExpenses===true;}
+ function enforceHistoryBounds(){
+  if(cashierHistoryDays()===null)return;
+  const min=firstAllowedDate();
+  for(const id of ['financeTransactionStart','financeExpenseStart','financeTransactionEnd','financeExpenseEnd']){
+   const el=$(id);if(!el)continue;el.min=min;el.max=now;
+   if(el.value<min)el.value=min;
+   if(el.value>now)el.value=now;
+  }
+ }
  function applyFinanceAccess(){
    const canManage=canManageExpenses();
    $('financeExpenseForm')?.classList.toggle('hidden',!canManage);
@@ -25,7 +34,16 @@
  }
  const now=today();
  for(const id of ['financeTransactionEnd','financeExpenseEnd','financeExpenseDate'])$(id).value=now;
- for(const id of ['financeTransactionStart','financeExpenseStart'])$(id).value=now.slice(0,7)+'-01';
+ const cashierHistoryDays=()=>{
+  if(!window.donmacFranchiseUnified||window.donmacAuthenticatedRole!=='User')return null;
+  const permissions=window.donmacCashierPermissions||[];
+  return permissions.includes('report.window.month')?30:permissions.includes('report.window.week')?7:1;
+ };
+ const firstAllowedDate=()=>{
+  const days=cashierHistoryDays();if(days===null)return now.slice(0,7)+'-01';
+  return new Date(Date.parse(now+'T00:00:00Z')-(days-1)*86400000).toISOString().slice(0,10);
+ };
+ for(const id of ['financeTransactionStart','financeExpenseStart'])$(id).value=firstAllowedDate();
  function message(text,bad=false){
   const box=$('financeExpenseMessage');
   box.classList.toggle('hidden',!text);box.textContent=text;box.classList.toggle('bad',bad);
@@ -150,7 +168,7 @@
  }
  $('financeTransactionReset').onclick=()=>{
   if(transactionSearchTimer!==null){clearTimeout(transactionSearchTimer);transactionSearchTimer=null;}
-  $('financeTransactionStart').value=now.slice(0,7)+'-01';
+  $('financeTransactionStart').value=firstAllowedDate();
   $('financeTransactionEnd').value=now;
   for(const id of ['financeTransactionBranch','financeTransactionStatus','financeTransactionPayment',
    'financeTransactionOrderType','financeTransactionSearch'])$(id).value='';
@@ -174,5 +192,5 @@
   }catch(err){message(err.message,true);}
   finally{btn.disabled=false;}
  });
- window.donmacFinance={open(view){applyFinanceAccess();if(view==='transactions'||view==='expenses')load(view);}};
+ window.donmacFinance={open(view){enforceHistoryBounds();applyFinanceAccess();if(view==='transactions'||view==='expenses')load(view);}};
 })();
