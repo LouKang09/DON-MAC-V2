@@ -206,10 +206,15 @@
    if(p==='/api/reports/costing')return{totalCost:(raw.products||[]).reduce((n,x)=>n+Number(x.costing||0),0),ingredients:[]};
    const products=(raw.products||[]).map(x=>({name:x.name,qty:x.qty,
     gross:x.gross,adjusted:0,actual:x.gross,costing:x.costing,net:x.net}));
-   return{period,transactionCount:raw.transactionCount,allTransactionCount:raw.transactionCount,
-    gross:products.reduce((n,x)=>n+Number(x.gross||0),0),discounts:raw.discounts||0,
+   const transactions=raw.transactions||[];
+   const active=transactions.filter(t=>t.status==='Sold');
+   const totalGross=active.reduce((n,t)=>n+Number(t.gross||0),0);
+   const deleted=transactions.filter(t=>t.status==='Voided'||t.status==='Deleted');
+   return{period,transactionCount:raw.transactionCount,
+    allTransactionCount:transactions.length,gross:totalGross,discounts:raw.discounts||0,
     actual:raw.actual||0,grossProfit:Number(raw.actual||0)-products.reduce((n,x)=>n+Number(x.costing||0),0),
-    refund:0,deletedCount:0,products,promos:[],transactions:[]};
+    refund:deleted.reduce((n,t)=>n+Number(t.actual||0),0),deletedCount:deleted.length,
+    products,promos:[],transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
   }
   if(p==='/api/reports/cashiers'&&method==='GET'){
    // Staff cannot enumerate other branches or private employee accounts.
