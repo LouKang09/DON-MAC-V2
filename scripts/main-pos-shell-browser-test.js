@@ -33,6 +33,8 @@ async function evaluate(page){
   document.body.classList.add('legacy-authenticated');
   const app=document.getElementById('app');
   app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');
+  // The app boot script is intentionally suppressed; explicitly show the Dashboard.
+  document.getElementById('view-dashboard').classList.add('active');
   const get=id=>{const element=document.querySelector(id);const r=element.getBoundingClientRect();
    return{display:getComputedStyle(element).display,position:getComputedStyle(element).position,
     x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
