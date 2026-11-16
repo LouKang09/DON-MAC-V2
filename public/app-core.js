@@ -2269,7 +2269,7 @@
     const pages=Math.max(1,Math.ceil(rows.length/managementPageSize));
     cashiersPage=Math.min(Math.max(1,cashiersPage),pages);
     const page=rows.slice((cashiersPage-1)*managementPageSize,cashiersPage*managementPageSize);
-    $('usersBody').innerHTML=page.map(u=>`<tr><td><b>${esc(u.fullName||u.username)}</b><div class="tiny muted">${esc(u.username)}</div></td><td>${esc(u.roleLabel||u.role)}</td><td>${esc(u.branchName||'All branches')}</td><td class="${u.active?'stock-ok':'stock-low'}">${u.active?'ACTIVE':'INACTIVE'}</td><td>${u.hasWebPassword?'SET':'RESET REQUIRED'}</td><td><button class="table-btn" data-edit-user="${u.id}">Edit</button>${u.isOwner?'':`<button class="danger-link" data-delete-user="${u.id}">Delete</button>`}</td></tr>`).join('')||'<tr><td colspan="6">No staff accounts found.</td></tr>';
+    $('usersBody').innerHTML=page.map(u=>`<tr><td><b>${esc(u.fullName||u.username)}</b><div class="tiny muted">${esc(u.username)}</div><div class="tiny muted">${!u.email?'No recovery email · OTP unavailable':u.emailVerified===true?'Email verified':'Email not yet verified'}</div></td><td>${esc(u.roleLabel||u.role)}</td><td>${esc(u.branchName||'All branches')}</td><td class="${u.active?'stock-ok':'stock-low'}">${u.active?'ACTIVE':'INACTIVE'}</td><td>${u.hasWebPassword?'SET':'RESET REQUIRED'}</td><td><button class="table-btn" data-edit-user="${u.id}">Edit</button>${u.isOwner?'':`<button class="danger-link" data-delete-user="${u.id}">Delete</button>`}</td></tr>`).join('')||'<tr><td colspan="6">No staff accounts found.</td></tr>';
     $('usersBody').querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>editUser(Number(b.dataset.editUser),rows));
     $('usersBody').querySelectorAll('[data-delete-user]').forEach(b=>b.onclick=()=>deleteUser(Number(b.dataset.deleteUser)));
     renderManagementPager('usersPagination',cashiersPage,rows.length,next=>{cashiersPage=next;renderUsers();});
@@ -2340,7 +2340,7 @@
     $('newUsername').readOnly=false;$('newPassword').required=true;$('newPassword').type='password';
     $('toggleCashierPassword').setAttribute('aria-label','Show cashier password');
     $('newRole').disabled=false;$('newRole').options[1].text='Co-Owner';$('newRole').value='User';
-    $('newUserActive').disabled=false;$('newUserActive').checked=true;setCashierGrants([]);toggleUserBranch();
+    $('newUserActive').disabled=false;$('newUserActive').checked=true;setCashierGrants([]);toggleUserBranch();updateStaffEmailWarning();
   }
   function editUser(id,users){
     const u=users.find(x=>x.id===id);if(!u)return;
@@ -2352,7 +2352,7 @@
     $('newRole').options[1].text=u.isOwner?'Owner/Admin (fixed)':'Co-Owner/Admin';
     $('newUserBranch').value=String(u.branchId||'');
     $('newUserActive').checked=!!u.active;$('newUserActive').disabled=!!u.isOwner;
-    setCashierGrants(u.accessPermissions||[]);toggleUserBranch();
+    setCashierGrants(u.accessPermissions||[]);toggleUserBranch();updateStaffEmailWarning(u.emailVerified===true);
   }
   $('toggleCashierPassword').onclick=()=>{
     const input=$('newPassword');
@@ -2360,6 +2360,15 @@
     $('toggleCashierPassword').setAttribute('aria-label',input.type==='text'?'Hide cashier password':'Show cashier password');
     $('toggleCashierPassword').setAttribute('title',input.type==='text'?'Hide password':'Show password');
   };
+  function updateStaffEmailWarning(verified=false){
+    const warning=$('newUserEmailWarning'),email=$('newUserEmail').value.trim();
+    if(!warning)return;
+    warning.textContent=!email?
+      'Warning: without an email, the employee can sign in but cannot recover a forgotten password using OTP. The Owner can add an email later.':
+      verified?'This email has been verified using OTP. Changes to the email will require new verification.':
+      'Email is not yet verified. The employee must receive and successfully confirm an OTP during password recovery to verify the address.';
+  }
+  $('newUserEmail').addEventListener('input',()=>updateStaffEmailWarning());
   $('userFormClear').onclick=clearUserForm;
   $('userForm').addEventListener('submit',async e=>{
     e.preventDefault();const form=e.currentTarget;
@@ -2373,11 +2382,12 @@
         branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,
         active:$('newUserActive').checked,accessPermissions:$('newRole').value==='User'?selectedCashierGrants():[]};
       try{
+        if(!body.email&&!confirm('This employee will be created or updated without a recovery email. If they forget their password, they cannot receive an OTP until you add an email. Continue?'))return;
         if(id)await api(`/api/users/${id}`,{method:'PUT',body});
         else await api('/api/users',{method:'POST',body});
         toast(id?'Cashier updated.':'Cashier created.');
         if(id===Number(state.user?.id)){state.user=(await api('/api/auth/me')).user;applyTopbarPhoto();}
-        window.donmacChat?.refreshContacts?.();clearUserForm();await loadUsers();
+        window.donmacChat?.refreshContacts?.();clearUserForm();await loadUsers();await loadBranches();renderBranches();
       }catch(err){toast(err.message);}
     });
   });
