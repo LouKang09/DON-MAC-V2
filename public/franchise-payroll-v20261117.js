@@ -52,6 +52,10 @@
  function switchExpenseTab(tab){
   if(!user||user.role!=='Admin')return;
   expenseTab=tab==='payroll'?'payroll':'ledger';
+  if(document.querySelector('#view-expenses.active')){
+   if($('viewTitle'))$('viewTitle').textContent=expenseTab==='payroll'?'Payroll & Attendance':'Expenses Ledger';
+   if($('viewEyebrow'))$('viewEyebrow').textContent=expenseTab==='payroll'?'EMPLOYEE MANAGEMENT':'TRANSACTIONS';
+  }
   const ledger=document.querySelector('#view-expenses>.pos-finance-shell');
   if(ledger)ledger.hidden=expenseTab!=='ledger';
   const payroll=$('dmPayrollManager');
@@ -362,7 +366,16 @@
    '<button onclick="window.print()">Print / Save PDF</button></body></html>');
   page.document.close();page.focus();
  }
- function onViewChange(view){if(view==='expenses'&&user?.role==='Admin'&&entitlement?.enabled)loadTeam();}
+ function onViewChange(view){
+  if(view==='expenses'){
+   if(user?.role==='Admin'){
+    if($('viewTitle'))$('viewTitle').textContent=expenseTab==='payroll'?'Payroll & Attendance':'Expenses Ledger';
+    if($('viewEyebrow'))$('viewEyebrow').textContent=expenseTab==='payroll'?'EMPLOYEE MANAGEMENT':'TRANSACTIONS';
+    window.donmacExpenseMenu?.sync?.();
+   }
+   if(entitlement?.enabled)loadTeam();
+  }
+ }
  function onLogin(next){
   token++;user=next;reset();
   if(!next)return;
