@@ -112,8 +112,8 @@
   }
   if(p==='/api/users'&&method==='POST'){
    if(data.role!=='User')throw fail('Co-Owner provisioning must be enabled in the isolated staff service before it can be used.',403);
-   if(data.email||data.phone||data.photoData)
-    throw fail('Employee contact and photo storage is not yet enabled in the isolated staff service. Remove those fields before saving.',409);
+   if(data.phone||data.photoData)
+    throw fail('Employee photo and phone setup is not yet available during initial staff creation.',409);
    const created=await live('/api/live/cashiers','POST',data);
    if((data.accessPermissions||[]).length){
     await live('/api/live/cashiers/'+Number(created.id)+'/permissions','PUT',
