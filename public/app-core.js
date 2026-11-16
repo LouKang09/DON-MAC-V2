@@ -214,6 +214,15 @@
         if($('trendView').value==='custom'&&maxDays===1)$('trendView').value='hourly';
       }
     }
+    // Granting Inventory never permits replenishment, transfers, receiving or audit editing.
+    const inventoryReadOnly=!isAdmin;
+    for(const selector of ['#incomingSupplyPanel','.inv-operation-launch','#replenishForm','#transferForm','.inv-audit-card','#transferPlanGate']){
+      document.querySelectorAll('#view-inventory '+selector).forEach(element=>{
+        element.classList.toggle('hidden',inventoryReadOnly);
+        if(inventoryReadOnly)element.setAttribute('aria-hidden','true');
+        else element.removeAttribute('aria-hidden');
+      });
+    }
     // Hide every unapproved desktop, tablet and mobile sidebar item for cashiers.
     const cashierViews=new Set(['pos',
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
@@ -733,7 +742,9 @@
   async function loadInventory(){
     const branchId=selectedInventoryBranch();
     if(!branchId){toast('Choose an active inventory branch first.');return;}
-    const auditTask=loadMovements(),incomingTask=loadIncomingSupplies();
+    // Cashier inventory is read-only: never request stock movement/admin receiving APIs.
+    const auditTask=state.user?.role==='Admin'?loadMovements():Promise.resolve();
+    const incomingTask=state.user?.role==='Admin'?loadIncomingSupplies():Promise.resolve();
     try{
       const response=await api('/api/inventory?branchId='+encodeURIComponent(branchId));
       if(selectedInventoryBranch()!==branchId)return;
