@@ -2130,6 +2130,12 @@ async function handleApi(req,res,url){
   // routes fail closed. Admin Control's PAID subscription enables this path.
   const franchiseLive=await franchiseLiveScope.setup(db,user);
   if(franchiseLive){
+    // The Main Office supply catalog is global, but requests, royalty balances,
+    // notifications and order conversations remain scoped to the logged-in workspace.
+    // This is not a legacy POS/catalog endpoint and is safe for new franchises.
+    if(p.startsWith('/api/supply/'))return handleFranchiseSupplyApi(req,res,p,method,user);
+    // Team messages are independently scoped by chat_memberships and branch ownership.
+    if(p.startsWith('/api/chat/'))return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
     if(p.startsWith('/api/live/')){
       const response=await franchiseLiveRouter.run(db,franchiseLive,user,method,url,
         ()=>readJson(req,262144));
