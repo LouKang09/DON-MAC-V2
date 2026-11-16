@@ -953,7 +953,7 @@
       const cb=editor.clipboard;
       $(kind+'CopiedHint').textContent=cb==null?'Copy a quantity from any row.':
         'Copied '+String(cb.qty)+' '+cb.uom+' · paste numeric amount into each row’s own unit.';
-      $(kind+'PasteAll').disabled=cb==null||!selectedIds.length;
+      $(kind+'PasteAll').disabled=cb==null||![...editor.items.values()].some(value=>String(value??'').trim()==='');
       const allVisible=picker.length>0&&picker.every(i=>editor.checked.has(Number(i.id)));
       $(kind+'SelectAll').textContent=allVisible?'Deselect all':'Select all';
     }
@@ -1109,11 +1109,15 @@
       $(kind+'PasteAll').addEventListener('click',()=>{
         if(!editor.clipboard)return;
         const qty=String(editor.clipboard.qty);
-        for(const id of editor.items.keys())editor.items.set(id,qty);
+        let filled=0;
+         for(const [id,current] of editor.items.entries()){
+           if(String(current??'').trim()!=='')continue;
+           editor.items.set(id,qty);filled++;
+         }
         batchFail(kind,'');
         renderBatchEditors();
         // Units intentionally remain unchanged: e.g. 2 kg and 2 L, not conversion.
-        toast('Applied '+qty+' to all selected ingredient quantities. Each ingredient keeps its own unit.');
+        toast(filled?'Filled '+filled+' empty ingredient '+(filled===1?'quantity':'quantities')+' with '+qty+'. Existing values preserved.':'No empty quantities to fill; existing values preserved.');
       });
       $(kind+'ClearTray').addEventListener('click',()=>batchClear(kind));
     }
@@ -1398,7 +1402,19 @@
   let replenishmentRequestId=null;
   function refreshReplenishmentMode(){
     const initial=$('replenishEntryType').value==='INITIAL_STOCK';
-    $('supplySourceLabel').placeholder=initial?'e.g. Opening Inventory / Initial Stock':'Supplier or delivery source';
+    const source=$('supplySourceLabel'),remarks=$('replenishRemarks');
+    if(initial){
+      source.value='Initial Stock by Admin. Do not edit.';
+      remarks.value='Opening Stocks by Admin. Do not edit.';
+      source.readOnly=true;remarks.readOnly=true;
+      source.setAttribute('aria-readonly','true');remarks.setAttribute('aria-readonly','true');
+    }else{
+      source.readOnly=false;remarks.readOnly=false;
+      source.removeAttribute('aria-readonly');remarks.removeAttribute('aria-readonly');
+      if(source.value==='Initial Stock by Admin. Do not edit.')source.value='';
+      if(remarks.value==='Opening Stocks by Admin. Do not edit.')remarks.value='';
+    }
+    source.placeholder=initial?'Initial Stock by Admin. Do not edit.':'Supplier or delivery source';
     $('replenishEntryHint').textContent=initial?
       'Opening balance: only ingredients currently at zero can be initialized. Stock posts immediately without Accept/Reject.':
       'External supplier delivery: add to existing branch stock immediately. Branch-to-branch transfers still require acceptance and receipt.';
@@ -1426,6 +1442,7 @@
         toast(result.message||'Stock added to the selected branch.');
         replenishmentRequestId=null;
         batchClear('replenish');$('supplySourceLabel').value='';$('replenishRemarks').value='';
+        refreshReplenishmentMode();
         await Promise.allSettled([loadInventory(),loadIncomingSupplies()]);
       }catch(err){batchFail('replenish',err.message);}
     });
