@@ -6,6 +6,46 @@
   const manilaToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const num=(n,d=6)=>Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:d});
   const state={status:null,user:null,catalog:null,category:'Coffee',query:'',cart:[],promoId:null,quote:null,inventory:[],report:null,costing:null,dashboard:null,adminProducts:[],adminIngredients:[],adminPromos:[],adminPackages:[],recipeRows:[],compositionRows:[],pendingSaleRequestId:null,checkoutBusy:false,branches:[],userList:[],posBranchId:null};
+  // A user switch must invalidate ALL in-flight responses and stale UI state.
+  // Never persist customer/owner sales in browser storage.
+  const ACCOUNT_SESSION_KEY='donmac-pos-account-session-v2';
+  let sessionGeneration=0;
+  window.donmacSessionGeneration=()=>sessionGeneration;
+  function discardPreviousAccount(){
+    sessionGeneration++;
+    state.catalog=null;state.inventory=[];state.report=null;state.costing=null;state.dashboard=null;
+    state.adminProducts=[];state.adminIngredients=[];state.adminPromos=[];state.adminPackages=[];
+    state.recipeRows=[];state.compositionRows=[];state.branches=[];state.userList=[];
+    state.posBranchId=null;state.subscription=null;
+    window.__donmacDashboardData=null;
+    window.donmacFranchiseUnified=false;
+    window.donmacScopedApi=null;
+    for(const id of ['dashboardSummary','dashboardLowStock','categorySales','salesTrendChart',
+      'dashboardRecentTransactions','financeTransactionsBody','financeExpensesBody','reportTransactions',
+      'usersList','inventoryList','logsList']){
+      const el=$(id);if(el)el.replaceChildren();
+    }
+    for(const id of ['financeTransactionCount','financeTransactionTotal','financeExpenseCount',
+      'financeExpenseTotal']){const el=$(id);if(el)el.textContent='—';}
+  }
+  function signalAccountChange(){
+    try{localStorage.setItem(ACCOUNT_SESSION_KEY,
+      Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));}catch(_){}
+  }
+  function navigateWithCleanDocument(){
+    // No bfcache or old JS closure/DOM/widget instances survive a real page navigation.
+    location.replace('/');
+  }
+  window.addEventListener('storage',event=>{
+    if(event.key!==ACCOUNT_SESSION_KEY)return;
+    state.user=null;discardPreviousAccount();resetOrderState({render:false});
+    showAuth(false);navigateWithCleanDocument();
+  });
+  window.addEventListener('pageshow',event=>{
+    if(!event.persisted)return;
+    state.user=null;discardPreviousAccount();resetOrderState({render:false});
+    showAuth(false);navigateWithCleanDocument();
+  });
   const categories=['Coffee','Non Coffee','Food','Add-ons','Promos','Packages'];
   let quoteTimer=null,quoteSeq=0,recipeLoadSeq=0;
   let closeTransferEditorIfOpen=()=>{};
@@ -62,11 +102,15 @@
   }
 
   async function api(url,options={}){
+    const requestedInSession=sessionGeneration;
+    const obsolete=()=>Object.assign(new Error('Account session changed. Reload to continue.'),{status:409,code:'SESSION_CHANGED'});
     // The same Main POS interface serves established and new franchises.
     // New franchise operations are routed only to independently scoped live APIs.
     if(state.user?.liveMode && !/^\/api\/(?:auth\/|status(?:$|\?))/.test(String(url))){
       if(!window.donmacFranchiseCompat)throw new Error('Isolated POS adapter is unavailable. Refresh to retry.');
-      return window.donmacFranchiseCompat.request(url,options,state);
+      const result=await window.donmacFranchiseCompat.request(url,options,state);
+      if(sessionGeneration!==requestedInSession)throw obsolete();
+      return result;
     }
     const controller=new AbortController();
     const timeoutMs=Number(options.timeoutMs||20000);
@@ -77,12 +121,13 @@
     try{
       const r=await fetch(url,opts);let data={};
       try{data=await r.json();}catch(_){if(!r.ok)data={error:`Server returned ${r.status} without a readable response.`};}
-      if(r.status===401&&state.user){state.user=null;resetOrderState({render:false});showAuth(false);throw Object.assign(new Error('Your session expired. Please sign in again.'),{status:401});}
+      if(sessionGeneration!==requestedInSession)throw obsolete();
+      if(r.status===401&&state.user){state.user=null;discardPreviousAccount();resetOrderState({render:false});showAuth(false);throw Object.assign(new Error('Your session expired. Please sign in again.'),{status:401});}
       if(!r.ok){
         const e=new Error(data.error||`Request failed (${r.status})`);
         e.status=r.status;e.details=data.details;e.code=data.code;
         if(['SUBSCRIPTION_INACTIVE','BRANCH_INACTIVE'].includes(data.code)&&state.user){
-          state.user=null;resetOrderState({render:false});showAuth(false);
+          state.user=null;discardPreviousAccount();resetOrderState({render:false});showAuth(false);
           $('authHint').textContent=e.message;
         }
         throw e;
@@ -97,9 +142,17 @@
   // Existing signed-in terminals detect Admin Control suspension on focus and periodic sync.
   window.donmacCheckAccountAccess=async()=>{
     if(!state.user)return false;
-    try{await api('/api/auth/me');return !!state.user;}
-    catch(_){return false;}
+    try{
+      const current=state.user,result=(await api('/api/auth/me')).user;
+      if(!current||!result||Number(current.id)!==Number(result.id)||
+        !!current.liveMode!==!!result.liveMode){
+        state.user=null;discardPreviousAccount();resetOrderState({render:false});
+        showAuth(false);navigateWithCleanDocument();return false;
+      }
+      return true;
+    }catch(_){return false;}
   };
+  window.addEventListener('focus',()=>{if(state.user)window.donmacCheckAccountAccess();});
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){
     document.body.classList.remove('legacy-authenticated');
@@ -332,13 +385,47 @@
     if(state.status.setupRequired){resetOrderState({render:false});showAuth(true);return;}
     try{state.user=(await api('/api/auth/me')).user;if(state.user?.testMode){location.replace('/phase2-test.html');return;}}
     catch(err){if(err.status===401||err.status===403){state.user=null;resetOrderState({render:false});showAuth(false);if(err.status===403)$('authHint').textContent=err.message;return;}throw err;}
-    resetOrderState({render:false});showApp();
-    if(state.user?.liveMode){await loadBranches();await Promise.all([loadDevSubscription(),loadCatalog()]);}
-    else await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);
+    // Keep the app hidden until this authenticated account's own data is ready.
+    discardPreviousAccount();
+    resetOrderState({render:false});
+    await loadBranches();
+    await Promise.all([loadDevSubscription(),loadCatalog()]);
+    if(!state.user)return;
+    showApp();
     switchView(state.user.role==='User'?'pos':'dashboard');
   }
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const username=$('authUsername').value.trim(),password=$('authPassword').value;try{if(state.status?.setupRequired){await api('/api/setup',{method:'POST',body:{username,password,active:true}});state.status=await api('/api/status');}state.user=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;if(state.user?.testMode){$('authPassword').value='';location.assign('/phase2-test.html');return;}resetOrderState({render:false});showApp();if(state.user?.liveMode){await loadBranches();await Promise.all([loadDevSubscription(),loadCatalog()]);}else await Promise.all([loadBranches(),loadDevSubscription(),loadCatalog()]);switchView(state.user.role==='User'?'pos':'dashboard');$('authPassword').value='';toast(`Welcome, ${state.user.username}.`);}catch(err){if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;toast(err.message);}});});
-  $('logoutButton').onclick=async()=>{state.user=null;resetOrderState({render:false});showAuth(false);try{await api('/api/auth/logout',{method:'POST'});}catch(_){} };
+  $('authForm').addEventListener('submit',async e=>{
+    e.preventDefault();const form=e.currentTarget;
+    await withFormLock(form,async()=>{
+      const username=$('authUsername').value.trim(),password=$('authPassword').value;
+      try{
+        if(state.status?.setupRequired){
+          await api('/api/setup',{method:'POST',body:{username,password,active:true}});
+          state.status=await api('/api/status');
+        }
+        const signedIn=(await api('/api/auth/login',{method:'POST',body:{username,password}})).user;
+        // The old account's rendered sales, styles and finance module may still
+        // be in memory. NEVER mount the newly signed-in user into that document.
+        state.user=null;discardPreviousAccount();resetOrderState({render:false});showAuth(false);
+        $('authPassword').value='';signalAccountChange();
+        if(signedIn?.testMode){location.replace('/phase2-test.html');return;}
+        navigateWithCleanDocument();
+      }catch(err){
+        if(err.status===403&&/Admin Control/i.test(err.message))$('authHint').textContent=err.message;
+        toast(err.message);
+      }
+    });
+  });
+  $('logoutButton').onclick=async()=>{
+    state.user=null;discardPreviousAccount();resetOrderState({render:false});showAuth(false);
+    try{
+      await api('/api/auth/logout',{method:'POST'});
+      signalAccountChange();navigateWithCleanDocument();
+    }catch(err){
+      $('authHint').textContent='Sign out could not be confirmed. Retry before switching accounts.';
+      toast(err.message);
+    }
+  };
 
   async function refreshPosDailyCount(){
     if(!state.user)return;
