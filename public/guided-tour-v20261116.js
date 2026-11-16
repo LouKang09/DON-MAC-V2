@@ -219,6 +219,7 @@
   const showWelcome=()=>{
     if(!identity || rootApp()?.classList.contains('hidden'))return;
     createOverlay();clearPanel();mode='welcome';
+    overlay.classList.remove('dm-guide-mode-tour');ring.hidden=true;
     addHeader('WELCOME TO DON MACCHIATOS','Your interactive POS guide',
       'Learn the screens available to your account before using live transactions, inventory or reports.');
     const list=make('div','dm-guide-welcome-list');
@@ -233,6 +234,7 @@
   const showBrowser=()=>{
     if(!identity || rootApp()?.classList.contains('hidden'))return;
     createOverlay();clearPanel();mode='browser';
+    overlay.classList.remove('dm-guide-mode-tour');ring.hidden=true;
     addHeader('GUIDE LIBRARY','Explore the system','Choose a category or a specific subcategory. Only pages available to your role and granted access are listed.');
     const scroll=make('div','dm-guide-library');
     const intro=make('div','dm-guide-library-entry');
@@ -311,7 +313,7 @@
       steps=LIB[topic].steps.filter(Boolean);
     }else steps=overviewSteps();
     if(!steps.length){showBrowser();return;}
-    mode='tour';index=0;markSeen();renderStep();
+    mode='tour';overlay.classList.add('dm-guide-mode-tour');index=0;markSeen();renderStep();
   };
   const refreshNavButtons = () => {
     $('#mainNav')?.querySelectorAll('button.nav[data-view]').forEach(nav=>{
