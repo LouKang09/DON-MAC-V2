@@ -27,7 +27,7 @@
  }
  function message(text){if($('dmPayrollMessage'))$('dmPayrollMessage').textContent=text||'';}
  function reset(){
-  shift=null;entitlement=null;employees=[];previewData=null;savedSlip=null;expenseTab='ledger';
+  shift=null;entitlement=null;employees=[];previewData=null;savedSlip=null;expenseTab='ledger';loadInProgress=false;
   if($('dmExpenseTabs'))$('dmExpenseTabs').hidden=true;
   const ledger=document.querySelector('#view-expenses>.pos-finance-shell');if(ledger)ledger.hidden=false;
   $('dmAttendanceWidget')?.setAttribute('hidden','');
@@ -275,9 +275,10 @@
  }
  function printSlip(){
   if(!savedSlip){message('Save the payslip before printing so it has an issued number.');return;}
-  const name=$('dmPayrollSlipEmployee').value,period=$('dmPayrollPeriodLabel').value,
-   payday=$('dmPayrollPayDate').value,earn=rows('dmPayrollEarnings'),ded=rows('dmPayrollDeductions'),
-   gross=earn.reduce((n,x)=>n+x.amount,0),deduct=ded.reduce((n,x)=>n+x.amount,0);
+  // Print only the persisted payslip, not unsaved edits from the live editor.
+  const name=savedSlip.employeeName,period=savedSlip.periodLabel,
+   payday=savedSlip.payDate,earn=savedSlip.earnings,ded=savedSlip.deductions,
+   gross=Number(savedSlip.gross),deduct=Number(savedSlip.deductionTotal);
   const page=window.open('','_blank','width=850,height=980');
   if(!page){message('Allow pop-ups to print the payslip.');return;}
   const printTable=(title,items)=>'<h3>'+title+'</h3><table>'+
@@ -287,7 +288,7 @@
    '<header><h1>DON MACCHIATOS · PAYSLIP #'+savedSlip.payslipNo+'</h1><p><b>Employee:</b> '+esc(name)+
    '<br><b>Pay Period:</b> '+esc(period)+'<br><b>Pay Date:</b> '+esc(payday)+'</p></header>'+
    printTable('Earnings',earn)+printTable('Deductions',ded)+'<div class="net">Net Pay: '+money(gross-deduct)+'</div>'+
-   '<p><b>Notes:</b> '+esc($('dmPayrollNotes').value||'—')+'</p>'+
+   '<p><b>Notes:</b> '+esc(savedSlip.notes||'—')+'</p>'+
    '<p>Prepared from the franchise payroll system. Verify against the saved Daily Time Record.</p>'+
    '<button onclick="window.print()">Print / Save PDF</button></body></html>');
   page.document.close();page.focus();
