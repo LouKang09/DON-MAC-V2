@@ -95,7 +95,7 @@
        '<button type="button" class="link-btn" data-request-inspect="'+esc(x.id)+'">Open account (view only)</button>'+
        '<small class="application-access-note">'+
        (!x.testActive?'Login disabled':isSandbox?'Enable Main POS first':
-        x.assignedStatus==='ON_HOLD'?'Suspended':x.assignedStatus==='PAID'?'Main POS active':'Awaiting payment')+'</small>'+
+        x.assignedStatus==='ON_HOLD'?'Suspended':x.assignedStatus==='PAID'?'Live POS active':'Awaiting payment')+'</small>'+
        (isSandbox?' <button type="button" class="link-btn" data-enable-main-pos="'+esc(x.id)+'">Enable Main POS</button>':''):
        verified?'<button type="button" class="link-btn" data-request-test="'+esc(x.id)+'">Create Account</button>':
        '<span class="muted">Awaiting email verification</span>';
