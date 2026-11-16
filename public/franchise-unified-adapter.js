@@ -197,7 +197,23 @@
      lineTotal:x.total})),tender:d.tender??null,change:d.change??null,
      inventoryMovements:[],auditEvents:[]};
   }
+  if((p==='/api/reports/sales'||p==='/api/reports/costing')&&method==='GET'){
+   const requested=String(url.searchParams.get('period')||'daily');
+   const period={daily:'day',weekly:'week',monthly:'month'}[requested];
+   if(!period)throw fail('Choose Daily, Weekly, or Monthly for this isolated franchise report.',403);
+   // Server checks the cashier's grant and maximum history duration.
+   const raw=await live('/api/live/report?range='+period+'&branchId='+encodeURIComponent(scopedBranch(state)));
+   if(p==='/api/reports/costing')return{totalCost:(raw.products||[]).reduce((n,x)=>n+Number(x.costing||0),0),ingredients:[]};
+   const products=(raw.products||[]).map(x=>({name:x.name,qty:x.qty,
+    gross:x.gross,adjusted:0,actual:x.gross,costing:x.costing,net:x.net}));
+   return{period,transactionCount:raw.transactionCount,allTransactionCount:raw.transactionCount,
+    gross:products.reduce((n,x)=>n+Number(x.gross||0),0),discounts:raw.discounts||0,
+    actual:raw.actual||0,grossProfit:Number(raw.actual||0)-products.reduce((n,x)=>n+Number(x.costing||0),0),
+    refund:0,deletedCount:0,products,promos:[],transactions:[]};
+  }
   if(p==='/api/reports/cashiers'&&method==='GET'){
+   // Staff cannot enumerate other branches or private employee accounts.
+   if(state.user?.role==='User')return{cashiers:[state.user.username]};
    const r=await live('/api/live/cashiers');
    return{cashiers:(r.cashiers||[]).map(x=>x.username)};
   }
