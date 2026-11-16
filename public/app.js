@@ -116,6 +116,16 @@
     try{
       // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
       await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
+      // Shared Main Office procurement catalog; orders and conversations are
+      // still filtered by the authenticated franchise workspace on the server.
+      await loadScript('/supply-franchise.js?v=20261116-live-franchise');
+      await loadScript('/internal-chat.js?v=20261116-live-franchise');
+      window.donmacChat?.loggedIn(window.donmacChatUserId||null);
+      // The initial sidebar view may have been selected before these
+      // enhancement modules finished loading. Open its data immediately.
+      const currentView=document.querySelector('.view.active')?.id;
+      if(currentView==='view-supply')await window.donmacSupply?.open?.();
+      if(currentView==='view-chat')window.donmacChat?.refreshContacts?.();
       loadCss('posFinanceV20261107','/pos-finance.css');
       loadCss('posCatalogV1544Css','/pos-catalog-v1544.css');
       loadCss('posCategoryAdminCss','/pos-categories-admin.css');
