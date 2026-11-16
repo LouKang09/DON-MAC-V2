@@ -51,6 +51,10 @@ body.dm-tour-active{overscroll-behavior:none}
 .dm-guide-btn.primary{background:#0d6137;color:#fff;border-color:#0d6137}
 .dm-guide-btn.primary:hover,.dm-guide-btn.primary:focus-visible{background:#064d2a}
 .dm-guide-btn.muted{background:transparent;color:#5b7162}
+/* Exit is a clear, green action rather than a muted text link. */
+.dm-guide-btn.exit{background:#22824f;border-color:#22824f;color:#fff}
+.dm-guide-btn.exit:hover,.dm-guide-btn.exit:focus-visible{background:#17653e;border-color:#17653e;outline-color:#7dd1a0}
+
 .dm-guide-btn.small{flex:none;font-size:11px;padding:8px 11px}
 .dm-guide-btn:disabled{opacity:.35;cursor:not-allowed}
 .dm-guide-footnote{margin-top:15px;padding-top:11px;border-top:1px solid #e3ece4;font-size:11px;
