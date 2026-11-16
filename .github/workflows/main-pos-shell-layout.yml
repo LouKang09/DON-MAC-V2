@@ -1,0 +1,38 @@
+name: Don Mac Main POS responsive layout
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'public/index.html'
+      - 'public/main-pos-shell-layout-v20261116.css'
+      - 'public/mobile-nav-v1529.css'
+      - 'public/app.js'
+      - 'scripts/main-pos-shell-browser-test.js'
+      - '.github/workflows/main-pos-shell-layout.yml'
+  push:
+    paths:
+      - 'public/index.html'
+      - 'public/main-pos-shell-layout-v20261116.css'
+      - 'public/app.js'
+      - 'scripts/main-pos-shell-browser-test.js'
+      - '.github/workflows/main-pos-shell-layout.yml'
+jobs:
+  browser-layout:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Install headless browser test dependency
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund puppeteer-core@24
+      - name: Verify desktop, tablet, and mobile shell geometry
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          node --check public/app.js
+          node scripts/main-pos-shell-browser-test.js
