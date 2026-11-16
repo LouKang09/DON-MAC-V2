@@ -864,6 +864,11 @@
                 <fieldset id="cashierAccessControls" class="cashier-access-controls">
                   <legend>Account Access Granted</legend>
                   <p class="muted tiny">Select which additional features this cashier can use. POS access stays enabled for active Cashier accounts. Access is always limited to the assigned franchise branch.</p>
+                  <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="dashboard.view"/><span><b>Dashboard</b><small>View the assigned branch performance dashboard.</small></span></label>
+                  <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="inventory.view"/><span><b>Inventory</b><small>View stock balances only. Stock editing remains restricted.</small></span></label>
+                  <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="messages.view"/><span><b>Messages</b><small>Access branch, all-branch and permitted direct chats.</small></span></label>
+                  <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="reports.view"/><span><b>Sales Report</b><small>Read sales reports for this cashier's assigned branch.</small></span></label>
+                  <label class="cashier-access-option">Report history limit <select id="cashierReportWindow" aria-label="Cashier report history"><option value="report.window.day">1 day</option><option value="report.window.week">1 week</option><option value="report.window.month">1 month</option></select></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="transactions.view"/><span><b>View Transactions</b><small>Read the transaction ledger for the assigned branch.</small></span></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="expenses.view"/><span><b>View Expenses</b><small>Read branch expenses without changing records.</small></span></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="expenses.manage"/><span><b>Record / Edit Expenses</b><small>Enter or update daily expenses. View Expenses is granted automatically.</small></span></label>
