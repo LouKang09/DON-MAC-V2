@@ -24,6 +24,11 @@ assert.match(scope,/FROM chat_memberships m JOIN franchise_test_accounts t/);
 assert.match(scope,/subscriptionStatus:/);
 assert.match(scope,/liveEnabled:x\.subscription_status==='PAID'/);
 assert.match(scope,/FROM chat_workspace_branches w/); // require scoped owner branch
+assert.match(scope,/AS staff_count/);
+assert.match(scope,/usersCount:Number\(x\.staff_count\|\|0\)/,
+ 'Branch directory must return counted cashiers, not a hardcoded zero.');
+assert.doesNotMatch(scope.slice(scope.indexOf('async function branches('),scope.indexOf('function requireAdmin(')),/usersCount:0/,
+ 'Branch count must not regress to a placeholder.');
 assert.match(scope,/context\.cashier&&id!==context\.branchId/);
 assert.match(scope,/Only a cashier can process live transactions/);
 assert.match(catalog,/FROM branch_products WHERE workspace_id=\$1 AND branch_id=\$2/);
