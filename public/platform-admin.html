@@ -4,6 +4,7 @@
 <meta name="color-scheme" content="light">
 <title>Don Macchiatos • Platform Admin</title>
 <link rel="stylesheet" href="/platform-admin.css?v=1.0.10">
+<link rel="stylesheet" href="/platform-admin-review-v20261116.css?v=1">
 <link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1">
 <link rel="stylesheet" href="/auth-login-v1574.css?v=1.5.85">
 <link rel="stylesheet" href="/office-login-pos.css?v=1.0.0">
@@ -138,6 +139,13 @@
     <button id="phase2TestCredentialsClose" class="btn btn-secondary" type="button">Close</button>
   </div>
 </dialog>
+<dialog id="franchiseInspectorDialog" class="editor franchise-inspector-dialog" aria-label="Read-only franchise account inspection">
+ <div class="dialog-heading"><div><span class="eyebrow">ACCOUNT INSPECTION · READ ONLY</span>
+ <h2>Franchise Account Viewer</h2></div>
+ <button type="button" class="close-btn" data-close-dialog aria-label="Close">×</button></div>
+ <div id="franchiseInspectorContent" aria-live="polite"></div>
+ <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Close</button></div>
+</dialog>
 <dialog id="subscriptionDialog" class="editor">
 <form id="subscriptionForm" method="dialog">
  <div class="dialog-heading"><div><span class="eyebrow">MANUAL RECORD</span><h2>Manage Subscription</h2><p id="subscriptionOwner"></p></div>
@@ -186,6 +194,6 @@
 <p id="adminCredentialsError" class="notice error hidden" role="alert"></p>
 <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="adminCredentialsCancel">Cancel</button><button class="btn btn-main" type="submit" id="adminCredentialsSave">Save credentials</button></div>
 </form></dialog>
-<script defer src="/platform-admin.js?v=1.0.16"></script>
+<script defer src="/platform-admin.js?v=1.0.17"></script>
 <script defer src="/refresh-controls-v20261107.js?v=1"></script>
 </body></html>
