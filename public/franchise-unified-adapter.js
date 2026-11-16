@@ -204,16 +204,20 @@
    // Server checks the cashier's grant and maximum history duration.
    const raw=await live('/api/live/report?range='+period+'&branchId='+encodeURIComponent(scopedBranch(state)));
    if(p==='/api/reports/costing')return{totalCost:(raw.products||[]).reduce((n,x)=>n+Number(x.costing||0),0),ingredients:[]};
-   const products=(raw.products||[]).map(x=>({name:x.name,qty:x.qty,
-    gross:x.gross,adjusted:0,actual:x.gross,costing:x.costing,net:x.net}));
+   const totalProductGross=(raw.products||[]).reduce((n,x)=>n+Number(x.gross||0),0);
+   const ratio=totalProductGross>0?Number(raw.actual||0)/totalProductGross:0;
+   const products=(raw.products||[]).map(x=>{
+    const adjusted=Number(x.gross||0)*(1-ratio);
+    const actual=Number(x.gross||0)*ratio;
+    return{name:x.name,qty:x.qty,gross:Number(x.gross||0),
+      adjusted,actual,costing:Number(x.costing||0),net:actual-Number(x.costing||0)};
+   });
    const transactions=raw.transactions||[];
-   const active=transactions.filter(t=>t.status==='Sold');
-   const totalGross=active.reduce((n,t)=>n+Number(t.gross||0),0);
-   const deleted=transactions.filter(t=>t.status==='Voided'||t.status==='Deleted');
    return{period,transactionCount:raw.transactionCount,
-    allTransactionCount:transactions.length,gross:totalGross,discounts:raw.discounts||0,
-    actual:raw.actual||0,grossProfit:Number(raw.actual||0)-products.reduce((n,x)=>n+Number(x.costing||0),0),
-    refund:deleted.reduce((n,t)=>n+Number(t.actual||0),0),deletedCount:deleted.length,
+    allTransactionCount:raw.allTransactionCount??raw.transactionCount,
+    gross:raw.gross||0,discounts:raw.discounts||0,actual:raw.actual||0,
+    grossProfit:Number(raw.actual||0)-products.reduce((n,x)=>n+x.costing,0),
+    refund:raw.refund||0,deletedCount:raw.deletedCount||0,
     products,promos:[],transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
   }
   if(p==='/api/reports/cashiers'&&method==='GET'){
