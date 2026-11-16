@@ -28,6 +28,8 @@ assert.deepEqual(starter.products.map(x=>x.name),['Coffee Latte','Iced Tea']);
 assert.deepEqual(starter.recipes.map(x=>x.sourceProductId),[1]);
 assert.deepEqual(starter.categoryProducts.map(x=>x.sourceProductId),[1,2]);
 assert.equal(starter.addOns.length,1);
+assert.equal(starter.ingredients.length,sample.ingredients.length,
+ 'Core recipes must retain the referenced ingredient definitions.');
 assert.equal(starter.promos.length,0);
 assert.equal(starter.packages.length,0);
 assert.equal(starter.packageItems.length,0);
