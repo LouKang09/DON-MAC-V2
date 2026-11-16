@@ -134,6 +134,8 @@
   function showApp(){
     document.body.classList.add('legacy-authenticated');
     window.donmacFranchiseUnified=!!state.user?.liveMode;
+    // UI enhancements use the same tenant-scoped request bridge as the Main POS.
+    window.donmacScopedApi=(url,options={})=>api(url,options);
     const legacyApp=$('app');legacyApp.inert=false;legacyApp.removeAttribute('aria-hidden');
     window.donmacAuthenticatedRole=state.user.role;
     window.donmacPlanWidgets?.setRole?.(state.user.role);
