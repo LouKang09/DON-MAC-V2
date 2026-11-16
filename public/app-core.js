@@ -202,6 +202,18 @@
       x.classList.toggle('hidden',state.user.role!=='User'));
     const userGrants=Array.isArray(state.user.accessPermissions)?state.user.accessPermissions:[];
     const isAdmin=state.user.role==='Admin';
+    window.donmacCashierPermissions=isAdmin?[]:[...userGrants];
+    if(!isAdmin){
+      const maxDays=userGrants.includes('report.window.month')?30:userGrants.includes('report.window.week')?7:1;
+      const options={daily:1,weekly:7,monthly:30};
+      for(const option of $('reportPeriod')?.options||[])option.disabled=!options[option.value]||options[option.value]>maxDays;
+      if($('reportPeriod')?.selectedOptions[0]?.disabled)$('reportPeriod').value='daily';
+      if($('reportDate')){$('reportDate').value=manilaToday();$('reportDate').disabled=true;}
+      if($('trendView')){
+        for(const option of $('trendView').options)option.disabled=option.value==='custom'&&maxDays===1;
+        if($('trendView').value==='custom'&&maxDays===1)$('trendView').value='hourly';
+      }
+    }
     // Hide every unapproved desktop, tablet and mobile sidebar item for cashiers.
     const cashierViews=new Set(['pos',
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
