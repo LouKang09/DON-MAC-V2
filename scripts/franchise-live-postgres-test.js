@@ -8,6 +8,7 @@ const liveCatalog=require('../lib/franchise-live-catalog');
 const liveSales=require('../lib/franchise-live-sales');
 const expenses=require('../lib/franchise-live-expenses');
 const finance=require('../lib/franchise-live-finance');
+const dashboardView=require('../lib/franchise-unified-dashboard');
 const accountModes=require('../lib/franchise-account-modes');
 const incoming=require('../lib/branch-incoming-supply');
 const liveRouter=require('../lib/franchise-live-router');
@@ -254,6 +255,18 @@ async function run(){
  const financeB=await finance.transactions(db,ctxB,financeDates);
  assert.equal(financeA.total,2);assert.equal(financeB.total,0);
  assert.equal(financeA.rows[0].branch,'Cebu A');
+ // The shared dashboard chart must use exclusively this tenant's live sales,
+ // and PostgreSQL must execute its category breakdown without query errors.
+ const dashboardParams=new URLSearchParams({view:'hourly'});
+ const dashboardA=await dashboardView.dashboard(db,ctxA,dashboardParams);
+ const dashboardB=await dashboardView.dashboard(db,ctxB,dashboardParams);
+ assert(dashboardA.metrics.monthActual>0,'Franchise A dashboard must show its own live sales');
+ assert.equal(dashboardB.metrics.monthActual,0,'Franchise B must not inherit A sales');
+ assert(dashboardA.categoryTrends.find(x=>x.name==='Coffee').values.some(v=>v>0),
+  'Franchise A chart category values must be derived from its real sales');
+ assert(dashboardB.categoryTrends.every(x=>x.values.every(v=>v===0)),
+  'Franchise B chart must not include A activity');
+
  await assert.rejects(finance.transactions(db,ctxA,new URLSearchParams('branchId=201')),{status:403},
   'A foreign branch cannot be queried from the shared original finance UI');
  await assert.rejects(finance.expenses(db,ctxB,new URLSearchParams('branchId=101')),{status:403});

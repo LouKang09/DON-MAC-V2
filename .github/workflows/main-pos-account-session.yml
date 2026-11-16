@@ -1,0 +1,47 @@
+name: Main POS visual parity and account-switch privacy
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "public/app.js"
+      - "public/app-core.js"
+      - "public/pos-finance.js"
+      - "public/index.html"
+      - "lib/franchise-unified-dashboard.js"
+      - "server.js"
+      - "scripts/main-pos-account-switch-browser-test.js"
+      - ".github/workflows/main-pos-account-session.yml"
+  pull_request:
+    paths:
+      - "public/app.js"
+      - "public/app-core.js"
+      - "public/pos-finance.js"
+      - "public/index.html"
+      - "lib/franchise-unified-dashboard.js"
+      - "server.js"
+      - "scripts/main-pos-account-switch-browser-test.js"
+      - ".github/workflows/main-pos-account-session.yml"
+jobs:
+  account-parity:
+    runs-on: ubuntu-latest
+    permissions: {contents: read}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Parse modified frontend and backend
+        run: |
+          node --check public/app.js
+          node --check public/app-core.js
+          node --check public/pos-finance.js
+          node --check lib/franchise-unified-dashboard.js
+          node --check server.js
+          node --check scripts/main-pos-account-switch-browser-test.js
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Install isolated Chrome test client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund puppeteer-core@24
+      - name: Real Chrome SHARED to NEW account switch
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/main-pos-account-switch-browser-test.js

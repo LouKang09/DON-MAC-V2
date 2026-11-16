@@ -52,7 +52,7 @@ const read=p=>fs.readFileSync(p,'utf8');
  assert.match(admin,/Create Account/);
  assert.match(html,/phase2TestLoginDialog/);
  assert.match(html,/Copy Credentials/);
- assert.match(app,/location\.assign\('\/phase2-test\.html'\)/);
+ assert.doesNotMatch(app,/location\.assign\('\/phase2-test\.html'\)/);
  assert.match(app,/location\.replace\('\/phase2-test\.html'\)/);
  assert.match(portal,/phase2-test\.js/);
  const testGate=server.indexOf('const phase2Test=await franchiseTestAccess.account(db,user.id)');
