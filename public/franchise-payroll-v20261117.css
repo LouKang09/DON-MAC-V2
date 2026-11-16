@@ -1,3 +1,16 @@
+/* Hide one finance pane unequivocally; previous theme card rules displayed
+ * the ledger even while Payroll was selected. */
+#view-expenses[data-expense-mode="payroll"] > .pos-finance-shell,
+#view-expenses > .pos-finance-shell.dm-expense-pane-inactive,
+#view-expenses[data-expense-mode="ledger"] > #dmPayrollManager,
+#view-expenses > #dmPayrollManager.dm-expense-pane-inactive,
+#view-expenses > .pos-finance-shell[hidden],
+#view-expenses > #dmPayrollManager[hidden] {display:none!important;visibility:hidden!important;pointer-events:none!important}
+#view-expenses[data-expense-mode="payroll"] > #dmPayrollManager:not([hidden]){
+ display:grid!important;visibility:visible!important;pointer-events:auto!important}
+#view-expenses[data-expense-mode="ledger"] > .pos-finance-shell:not([hidden]){
+ display:block!important;visibility:visible!important;pointer-events:auto!important}
+
 /* Payroll is deliberately isolated from the POS checkout and expenses input. */
 /* Expenses subcategory selector. */
 #view-expenses>.pos-finance-shell[hidden],#dmExpenseTabs[hidden]{display:none!important}
