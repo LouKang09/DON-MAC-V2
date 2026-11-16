@@ -96,3 +96,70 @@
  .dm-payroll-row{grid-template-columns:minmax(0,1fr) 100px 28px}
  .payroll-addon-controls{grid-template-columns:1fr}
 }
+
+/* Tenant > branch > cashier > daily DTR drill-down. */
+#dmPayrollRoster.dm-payroll-roster{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.dm-payroll-branch-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;
+ background:#f7faf7;border:1px solid #d8e8dc;border-radius:11px;padding:10px 12px}
+.dm-payroll-branch-toolbar label{font-size:12px;font-weight:800;color:#225137}
+#dmPayrollBranchFilter{min-width:170px;max-width:320px;width:min(100%,270px);height:38px;
+ border:1px solid #bdd9c6;border-radius:9px;background:white;color:#1b5135;padding:7px 10px;font-weight:700}
+#dmPayrollBranchCount{font-size:11px;color:#54745e;margin-left:auto}
+.dm-payroll-branch{border:1px solid #d1e5d8;background:#fff;border-radius:13px;overflow:hidden}
+.dm-payroll-branch>summary,.dm-payroll-staff>summary,.dm-payroll-day>summary{
+ list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;min-height:53px;padding:11px 13px}
+.dm-payroll-branch>summary::-webkit-details-marker,.dm-payroll-staff>summary::-webkit-details-marker,
+.dm-payroll-day>summary::-webkit-details-marker{display:none}
+.dm-payroll-branch>summary{background:#f0f8f2;border-bottom:1px solid transparent}
+.dm-payroll-branch[open]>summary{border-bottom-color:#d7e9dd}
+.dm-payroll-branch>summary:hover{background:#e5f3e8}
+.dm-payroll-branch>summary>span:nth-child(2){flex:1;display:grid;gap:4px}
+.dm-payroll-branch>summary strong{font-size:14px;color:#1c5238}
+.dm-payroll-branch>summary small{font-size:11px;color:#64796a}
+.dm-payroll-branch-icon{font-size:22px;color:#338159;display:grid;place-items:center;width:28px}
+.dm-payroll-branch-badges{display:flex;gap:6px;flex-wrap:wrap}
+.dm-payroll-branch-badges b{font-size:10px;font-weight:750;background:#d9f2e1;color:#276b42;
+ padding:5px 7px;border-radius:20px}
+.dm-payroll-branch-badges b+ b{background:#f7edda;color:#936f29}
+.dm-payroll-branch-arrow,.dm-payroll-staff-arrow{font-size:21px;font-weight:700;color:#577662;transition:transform .2s}
+.dm-payroll-branch[open]>summary .dm-payroll-branch-arrow,
+.dm-payroll-staff[open]>summary .dm-payroll-staff-arrow{transform:rotate(180deg)}
+.dm-payroll-staff-list{padding:10px;display:grid;gap:7px}
+.dm-payroll-staff{border:1px solid #e0eae1;border-radius:11px;min-width:0;overflow:hidden}
+.dm-payroll-staff>summary{min-height:64px}
+.dm-payroll-staff>summary:hover{background:#f5faf6}
+.dm-payroll-staff[open]>summary{background:#f4faf5;border-bottom:1px solid #e0ece3}
+.dm-payroll-staff-avatar{flex:0 0 37px;width:37px;height:37px;border-radius:11px;
+ display:grid;place-items:center;background:#dfeee4;font-weight:900;color:#1d6340;font-size:15px}
+.dm-payroll-staff-name{display:grid;gap:4px;flex:1;min-width:0}
+.dm-payroll-staff-name strong{color:#23523c;font-size:13px}
+.dm-payroll-staff-name small{color:#76907c;font-size:11px}
+.dm-payroll-staff-status{font-size:10px;font-style:normal;font-weight:800;color:#1d743f;
+ border-radius:20px;background:#e0f4e6;padding:6px 10px;white-space:nowrap}
+.dm-payroll-staff-status[data-state="lunch"]{color:#8d681d;background:#fbf0d8}
+.dm-payroll-staff-status[data-state="out"]{color:#9e563a;background:#fff0e7}
+.dm-payroll-staff-status[data-state="not-in"]{color:#69746c;background:#eef0ed}
+.dm-payroll-staff-history{padding:11px 13px;display:grid;gap:9px}
+.dm-payroll-history-placeholder,.dm-payroll-empty{color:#78877b;font-size:12px;margin:0;padding:9px}
+.dm-payroll-staff-history-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-payroll-staff-history-title strong{font-size:12px;color:#28533b}
+.dm-payroll-day-list{display:grid;gap:6px;max-height:480px;overflow-y:auto}
+.dm-payroll-day{border:1px solid #dde9df;border-radius:9px;overflow:hidden}
+.dm-payroll-day>summary{min-height:38px;gap:15px;flex-wrap:wrap;font-size:11px;padding:7px 10px}
+.dm-payroll-day>summary:hover{background:#f3f9f4}
+.dm-payroll-day>summary strong{min-width:95px;color:#1e4d36}
+.dm-payroll-day>summary span:nth-child(2){flex:1;color:#5e735f}
+.dm-payroll-day>summary small{color:#39774e}
+.dm-payroll-day>summary span:last-child{font-size:17px;color:#5c8467}
+.dm-payroll-day[open]>summary{background:#f4faf5}
+.dm-payroll-day-timeline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:11px 12px;
+ border-top:1px solid #dce9df}
+.dm-payroll-day-timeline>div{display:grid;gap:5px;border-left:2px solid #a9cdb6;padding-left:10px;min-width:0}
+.dm-payroll-day-timeline b{font-size:10px;font-weight:750;color:#69796b}
+.dm-payroll-day-timeline strong{font-size:12px;color:#28543b}
+@media(max-width:700px){
+ .dm-payroll-day-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .dm-payroll-branch-badges{display:none}
+ #dmPayrollBranchCount{margin-left:0}
+ .dm-payroll-staff-status{max-width:125px;white-space:normal}
+}
