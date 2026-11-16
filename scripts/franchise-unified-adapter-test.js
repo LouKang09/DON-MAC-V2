@@ -21,6 +21,7 @@ const stubs={
  '/api/live/status':status,
  '/api/live/catalog':{branchId:901,products:[],addOns:[],promos:[],packages:[],categories:[]},
  '/api/live/manage':{products:[],ingredients:[],promos:[],packages:[]},
+ '/api/live/categories':{categories:[{name:'Coffee',builtin:true,productIds:[]},{name:'Food',builtin:true,productIds:[]}]},
  '/api/live/quote':{gross:100,actual:100,adjustment:0},
  '/api/live/checkout':{ok:true,reference:'BR-123456789012345678',actual:100},
  '/api/live/dashboard':{rangeTransactions:0,rangeActual:0,metrics:{}},
@@ -48,6 +49,20 @@ assert(scoped&&typeof scoped.request==='function');
  const state={user:{role:'Admin',liveMode:true,branchId:null},posBranchId:901};
  const catalog=await scoped.request('/api/catalog',{},state);
  assert.deepEqual([...catalog.products],[]);
+ const categoryData=await scoped.request('/api/admin/pos-categories',{},state);
+ assert.equal(categoryData.categories[1].name,'Food');
+ const categoryPost=await scoped.request('/api/admin/pos-categories',{
+  method:'POST',body:{name:'Desserts',productIds:[],active:true}},state);
+ assert.equal(categoryPost.categories.length,2);
+ const categoryCall=calls.find(x=>x.path==='/api/live/categories'&&x.method==='POST');
+ assert.equal(categoryCall.body.branchId,901,'Custom category writes must include the selected branch');
+ await scoped.request('/api/admin/pos-categories/Food',{
+  method:'PUT',body:{name:'Food',iconData:null,productIds:[],active:true}},state);
+ const iconUpdate=calls.find(x=>x.path==='/api/live/categories/Food'&&x.method==='PUT');
+ assert.equal(iconUpdate.body.branchId,901);
+ await scoped.request('/api/admin/pos-categories/Desserts',{method:'DELETE'},state);
+ assert(calls.some(x=>x.path==='/api/live/categories/Desserts'&&x.method==='DELETE'&&x.search.includes('branchId=901')));
+
  const branches=await scoped.request('/api/branches',{},state);
  assert.equal(branches.branches[0].active,true);
  assert.equal(branches.branchPricing.mayAdd,true);
