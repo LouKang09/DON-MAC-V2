@@ -8,6 +8,7 @@ on:
       - 'public/platform-admin.html'
       - 'public/supply-office.html'
       - 'scripts/office-canonical-routes-test.js'
+      - 'scripts/office-canonical-live-smoke.js'
       - '.github/workflows/office-canonical-routes.yml'
   push:
     paths:
@@ -34,3 +35,5 @@ jobs:
           node --check scripts/office-canonical-routes-test.js
       - name: URL, auth-cookie isolation, and proxy regression
         run: node scripts/office-canonical-routes-test.js
+      - name: Deployed donmacpos.com public route and auth smoke
+        run: node scripts/office-canonical-live-smoke.js
