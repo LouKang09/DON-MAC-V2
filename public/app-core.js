@@ -1249,9 +1249,11 @@
         '<td><button type="button" class="inv-audit-view" data-audit-toggle="'+esc(g.key)+'" aria-expanded="'+expanded+'" aria-label="'+(expanded?'Collapse':'View')+' '+esc(label)+' ingredient breakdown">'+(expanded?'▾ Hide':'▸ View')+'</button></td></tr>';
       if(!expanded)return summary;
       const details=g.items.map(i=>
-        '<tr><td><strong>'+esc(i.ingredient)+'</strong> <small>'+esc(String(i.uom||'').toUpperCase())+'</small></td>'+
+        '<tr><td><strong>'+esc(i.ingredient)+'</strong></td>'+
         '<td class="num '+(Number(i.quantityChange)<0?'stock-low':'stock-ok')+'">'+
         (Number(i.quantityChange)>0?'+':'')+num(i.quantityChange)+'</td>'+
+        '<td class="num">'+num(Math.abs(Number(i.quantityChange)))+'</td>'+
+        '<td class="num">'+esc(String(i.uom||'—').toUpperCase())+'</td>'+
         '<td class="num">'+num(i.balanceAfter)+'</td></tr>'
       ).join('');
       const metadata=[
@@ -1263,7 +1265,7 @@
       ].filter(Boolean).join('');
       return summary+'<tr class="inv-audit-details-row"><td colspan="7"><div class="inv-audit-detail-panel">'+
         '<div class="inv-audit-detail-title">Ingredient breakdown ('+g.items.length+')</div>'+
-        '<div class="inv-audit-details-table-wrap"><table class="inv-audit-inner-table"><thead><tr><th>Ingredient</th><th class="num">Change</th><th class="num">Balance after</th></tr></thead><tbody>'+
+        '<div class="inv-audit-details-table-wrap"><table class="inv-audit-inner-table"><thead><tr><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">UOM</th><th class="num">Balance after</th></tr></thead><tbody>'+
         details+'</tbody></table></div>'+(metadata?'<div class="inv-audit-meta">'+metadata+'</div>':'')+
         '</div></td></tr>';
     }).join('')||'<tr><td colspan="7" class="inv-audit-empty">'+(all.length?'No transactions match your search.':'No inventory movements recorded yet.')+'</td></tr>';
