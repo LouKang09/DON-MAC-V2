@@ -17,14 +17,14 @@ assert.match(html,/platform-admin\.css\?v=1\.0\.10/);
 assert.match(css,/\.application-access-note\{/);
 
 assert.match(app,/const live=created/);
-assert.match(app,/Mark Contacted/);
+assert.match(app,/create-account/); // Verified application is created in one Admin Control action
 assert.match(app,/Create Account/);
 assert.match(app,/Awaiting payment/);
 assert.match(app,/Live POS active/);
 assert.match(app,/Awaiting email verification/);
-assert.match(app,/Prepare Starter Catalog/);
-assert.match(app,/x\.stageStatus/);
-assert.match(app,/data-request-access/);
+assert.match(app,/data-review-action/); // No separate starter-catalog review step
+assert.match(app,/Open account \(view only\)/);
+assert.match(app,/test-access/);
 assert.match(app,/Disable login/);
 assert.match(app,/Suspend account/);
 assert.match(app,/Unpaid/);
@@ -35,6 +35,8 @@ assert.match(html,/franchiseInspectorDialog/);
 assert.match(html,/Copy Credentials/);
 assert.match(app,/No franchise applications received/);
 assert.match(app,/Requested/);
+assert.match(app,/nextMonthlyDate/);
+assert.match(app,/defaultBase/);
 assert.match(app,/data-request-plan/);
 assert.match(app,/openPlan\(owner\)/);
 assert.match(app,/data-review-action/);
