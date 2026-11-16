@@ -203,6 +203,7 @@
     const userGrants=Array.isArray(state.user.accessPermissions)?state.user.accessPermissions:[];
     const isAdmin=state.user.role==='Admin';
     window.donmacCashierPermissions=isAdmin?[]:[...userGrants];
+    $('reportCashierSelect')?.classList.toggle('hidden',!isAdmin);
     if(!isAdmin){
       const maxDays=userGrants.includes('report.window.month')?30:userGrants.includes('report.window.week')?7:1;
       const options={daily:1,weekly:7,monthly:30};
@@ -222,7 +223,7 @@
           if(field.value>today)field.value=today;
         }
       }
-      $('reportCashierSelect')?.classList.add('hidden');
+
     }
     // Granting Inventory never permits replenishment, transfers, receiving or audit editing.
     const inventoryReadOnly=!isAdmin;
