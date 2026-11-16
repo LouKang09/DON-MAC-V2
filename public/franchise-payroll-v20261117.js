@@ -393,7 +393,7 @@
   const header=event.target.closest('details.dm-payroll-staff > summary');
   if(!header)return;
   const detail=header.parentElement;
-  if(!detail.open)queueMicrotask(()=>{if(detail.open)loadEmployeeHistory(Number(detail.dataset.employee));});
+  if(!detail.open)setTimeout(()=>{if(detail.open)loadEmployeeHistory(Number(detail.dataset.employee));},0);
  });
  $('dmPayrollRefresh').onclick=()=>{refreshStatus();if(entitlement?.enabled)loadTeam();};
  $('dmPayrollPreview').onclick=previewPayroll;
@@ -430,5 +430,8 @@
  $('dmPayrollDtrForm').onsubmit=editDtr;
  setInterval(()=>{if(user?.role==='User'&&entitlement?.enabled)markAttendance();},1000);
  setInterval(()=>{if(user&&document.visibilityState==='visible')refreshStatus();},60000);
- window.donmacPayroll={onLogin,onLogout,onViewChange,refreshStatus};
+ window.donmacPayroll={onLogin,onLogout,onViewChange,refreshStatus,
+  open(tab){if(user?.role==='Admin')switchExpenseTab(tab);},
+  currentTab(){return expenseTab;},
+  loadRoster(){if(user?.role==='Admin'&&entitlement?.enabled)loadTeam();}};
 })();
