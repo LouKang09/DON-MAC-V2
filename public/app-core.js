@@ -155,6 +155,7 @@
   window.addEventListener('focus',()=>{if(state.user)window.donmacCheckAccountAccess();});
   function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){
+    window.donmacGuides?.onLogout?.();
     document.body.classList.remove('legacy-authenticated');
     const legacyApp=$('app');legacyApp.inert=true;legacyApp.setAttribute('aria-hidden','true');
     window.donmacAuthenticatedRole=null;window.donmacPlanWidgets?.setRole?.(null);
@@ -279,6 +280,10 @@
     applyTopbarPhoto();
     $('topbarRole').textContent=state.user.role==='Admin'
       ?(state.user.isOwner?'Owner/Admin':'Co-Owner/Admin'):'Cashier';
+    window.donmacGuides?.onLogin?.({
+      id:state.user.id, username:state.user.username, role:state.user.role,
+      workspaceId:state.user.workplaceId||state.user.workplace_id||state.user.tenantId||state.user.ownerId||'legacy'
+    });
   }
 
   function planDisplayDate(iso){
