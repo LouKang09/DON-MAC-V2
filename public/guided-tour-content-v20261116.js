@@ -39,6 +39,78 @@
         item('Audit history', 'Open the movement audit to trace who created, sent, accepted or rejected stock changes. Expand a row to inspect the ingredients within that movement.', '#view-inventory .inv-audit-card')
       ]
     },
+    'inventory:stock': {
+      label: 'Inventory • Stock monitoring', parent: 'inventory', intro: 'Read stock levels and find shortages before checkout.',
+      steps: [
+        item('Choose your stock scope', 'Owners can select an authorized branch; cashiers are limited to their assigned branch. Always verify the branch before acting on stock numbers.', '#inventoryBranch'),
+        item('Find an ingredient', 'Search by ingredient name, then use sorting and status filters. On Hand is the recorded balance, while the reorder level is the warning threshold.', '#inventorySearch'),
+        item('Review a warning', 'Investigate low, critical or zero stock before selling. Use the movement audit to identify the last adjustment or supply receipt.', '#inventoryBody')
+      ]
+    },
+    'inventory:replenish': {
+      label: 'Inventory • Replenishment', parent: 'inventory', tab: 'replenish',
+      intro: 'Add actual supplier receipts and initial opening stock using the correct flow.',
+      steps: [
+        item('Choose entry type', 'Initial Stock establishes the opening balance for a newly created branch and is restricted to Owner/Co-Owner. Supplier Replenishment is for genuine deliveries after setup.', '#replenishEntryType'),
+        item('Select receiving branch', 'Confirm the destination. A cashier can replenish only the permitted branch; an owner can select an appropriate managed branch.', '#replenishReceivingBranch'),
+        item('Select ingredients and quantities', 'Choose items, confirm each unit of measure and count. Do not mix cases with individual units or record undelivered items.', '#replenishForm'),
+        item('Record the receiver and verify', 'Enter the supplier or deliverer information and remarks where requested. Save only a real delivery, then verify the updated On Hand balance in Inventory.', '#replenishForm')
+      ]
+    },
+    'inventory:incoming': {
+      label: 'Inventory • Incoming supply', parent: 'inventory',
+      intro: 'Review incoming inter-branch stock movements and their acceptance workflow.',
+      steps: [
+        item('Review request', 'Confirm the originating branch, requesting cashier, deliverer, ingredients and quantities. Accepting a request indicates that the supply has actually arrived.', '#incomingSupplyPanel'),
+        item('Accept or reject', 'Reject incorrect, damaged or undelivered items following the available workflow. Record who delivered and ensure the quantities match physical receipt.', '#incomingSupplyPanel'),
+        item('Confirm the movement', 'After processing an incoming request, verify the receiving branch stock and consult the inventory audit if a discrepancy remains.', '#view-inventory .inv-audit-card')
+      ]
+    },
+    'inventory:transfer': {
+      label: 'Inventory • Branch transfers', parent: 'inventory',
+      intro: 'Move stock between active branches on Business plans with recorded approvals.',
+      steps: [
+        item('Business plan requirement', 'Inter-branch transfers require Business access and another active branch. A locked transfer control means the account is not currently eligible.', '#inventoryTransferTab'),
+        item('Source and destination', 'From should reflect the sending branch. Choose another active To branch, select actual available ingredients and quantities, and identify the receiver.', '#inventoryTransferTab'),
+        item('Acceptance and audit', 'The destination should accept or reject the incoming transfer after physical receipt. Check audit history and the balances of both branches.', '#view-inventory .inv-audit-card')
+      ]
+    },
+    'inventory:audit': {
+      label: 'Inventory • Movement audit', parent: 'inventory',
+      intro: 'Trace stock movements without changing the balances.',
+      steps: [
+        item('Find a stock movement', 'Use the audit filters and dates to find a transfer, replenishment or incoming request. Each movement has its own recorded details.', '#view-inventory .inv-audit-card'),
+        item('Expand the record', 'Inspect the ingredient-level breakdown, quantity, branch, timestamps, requestor and recipient. Use this information when reconciling physical and recorded stock.', '#view-inventory .inv-audit-card')
+      ]
+    },
+    'pos:checkout': {
+      label: 'POS • Checkout & payment', parent: 'pos',
+      intro: 'A safe walkthrough of order entry and payment verification.',
+      steps: [
+        item('Add an item', 'Select an available product and inspect variations, add-ons, quantity and price. The guide never creates a cart item.', '#catalogGrid'),
+        item('Choose service details', 'Select Dine In, Take Away or Order Online and enter customer or location details if applicable.', '.order-type-switch'),
+        item('Check total and discount', 'Review all order lines and legitimate discounts before starting payment. A discount changes the payable amount and sale reporting.', '.order-panel'),
+        item('Finalize only after payment', 'Confirm Cash, GCash or another supported payment channel, and verify the exact tender or reference before posting. A successful sale is saved in Transactions.', '#payButton')
+      ]
+    },
+    'reports:analysis': {
+      label: 'Sales Report • Analysis', parent: 'reports',
+      intro: 'Understand report periods, products, promotions and stock usage.',
+      steps: [
+        item('Select date range', 'Start with the period and branch you are permitted to view. Do not compare reports using different time windows.', '#reportPeriod'),
+        item('Compare products and promotions', 'Product totals show quantities and sales, while promotion tables reflect eligible discounted offers.', '#reportProducts'),
+        item('Check ingredient usage', 'Cross-reference recipe costs and ingredient use with sales activity and recorded inventory movements.', '#costingList')
+      ]
+    },
+    'supply:request': {
+      label: 'Supply Chain • Requests', parent: 'supply',
+      intro: 'Prepare procurement orders and track their approval stages.',
+      steps: [
+        item('Select supplies', 'Use the main-office list and verify the unit of measure and unit prices.', '#supplyProductsList'),
+        item('Set request details', 'Choose destination branch and priority. Review the total, urgent fee and payment requirements.', '#supplyRequestForm'),
+        item('Follow up on request', 'After a legitimate submission, track pending, on-hold, approved or denied status and coordinate using request messages.', '#supplyOrdersBody')
+      ]
+    },
     chat: {
       label: 'Messages', intro: 'Communicate with teammates using only conversations permitted for your account.',
       steps: [
