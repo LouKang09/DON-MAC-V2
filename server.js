@@ -14,6 +14,7 @@ const platformAccounts = require('./lib/platform-accounts');
 const branchPlans = require('./lib/franchise-branch-plans');
 const officePromotions = require('./lib/office-promotions');
 const platformAdminAuth = require('./lib/platform-admin-auth');
+const officeOriginProxy = require('./lib/office-origin-proxy');
 const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
 const advancedAnalytics = require('./lib/advanced-analytics');
@@ -1923,7 +1924,7 @@ async function handleOfficeApi(req,res,p,method){
     return json(res,200,await platformBilling.tenantSummary(db,'SUPPLY_OFFICE','supply-office'),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/supply/office/billing/checkout')
     return json(res,200,await platformBilling.requestCheckout(db,'SUPPLY_OFFICE','supply-office',
-      process.env.PAYMONGO_OFFICE_RETURN_URL||'https://don-mac-supply-office-production.up.railway.app/supply-office.html?billing=return'),safeHeaders({'Cache-Control':'no-store'}));
+      process.env.PAYMONGO_OFFICE_RETURN_URL||'https://donmacpos.com/supply-chain?billing=return'),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/supply/office/dashboard')return json(res,200,await supplyChain.operationsDashboard(db),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/supply/office/distributions'){
     const page=new URL(req.url,'http://localhost').searchParams.get('page');
@@ -1999,7 +2000,11 @@ async function handleFranchiseSupplyApi(req,res,p,method,user){
 async function handleApi(req,res,url){
   const p=url.pathname,method=req.method;
   if(SUPPLY_OFFICE_PORTAL && p!=='/api/health' && !p.startsWith('/api/supply/office/'))return json(res,404,{error:'Office portal only.'},safeHeaders());
-  if(p.startsWith('/api/supply/office/'))return handleOfficeApi(req,res,p,method);
+  if(p.startsWith('/api/supply/office/')){
+    // The public Main POS origin forwards only office-scoped API calls to the
+    // separately credentialed office service. Office service handles locally.
+    return SUPPLY_OFFICE_PORTAL?handleOfficeApi(req,res,p,method):officeOriginProxy.forward(req,res);
+  }
   if(maintenanceMode)return json(res,503,{error:'Database maintenance is in progress. Please retry in a moment.'},safeHeaders({'Retry-After':'2'}));
   if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION,authFeatures:{emailOtpAvailable:accountRecovery.isConfigured(),publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true,franchiseEmailOtpAvailable:franchiseEmailVerification.configured()}},safeHeaders());
   if(method==='GET'&&p==='/api/health'){const probe=await db.query('SELECT 1 AS ok');return json(res,200,{ok:Number(probe.rows[0]?.ok||0)===1,app:'coffee-pos-web',version:APP_VERSION,engine:db.engine,time:nowIso(),uptimeSeconds:Math.round(process.uptime())},safeHeaders({'Cache-Control':'no-store'}));}
@@ -2461,6 +2466,21 @@ async function main(){
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleApi(req,res,url);
+      // Human-readable canonical paths share one domain without moving the
+      // Main Office's authentication keys or databases into the POS process.
+      if(!SUPPLY_OFFICE_PORTAL&&['GET','HEAD'].includes(req.method)){
+        const entry={'/admin-control':'/platform-admin.html','/supply-chain':'/supply-office.html'};
+        if(Object.prototype.hasOwnProperty.call(entry,url.pathname)){
+          if(serveStatic(req,res,entry[url.pathname]))return;
+          return text(res,404,'Portal page is unavailable','text/plain; charset=utf-8',safeHeaders());
+        }
+        const legacy={'/platform-admin.html':'/admin-control','/supply-office.html':'/supply-chain',
+          '/admin-control/':'/admin-control','/supply-chain/':'/supply-chain'};
+        if(Object.prototype.hasOwnProperty.call(legacy,url.pathname)){
+          res.writeHead(302,safeHeaders({'Location':legacy[url.pathname]+url.search,'Cache-Control':'no-store'}));
+          res.end();return;
+        }
+      }
       // All franchises use the original Main POS page. Keep the former
       // live-portal URL as an HTTP redirect for older signup emails/links.
       if(!SUPPLY_OFFICE_PORTAL&&req.method==='GET'&&url.pathname==='/franchise-live.html'){
