@@ -83,11 +83,30 @@
  window.addEventListener('scroll',queueCheckoutClearance,{passive:true,capture:true});
  window.addEventListener('resize',queueCheckoutClearance,{passive:true});
  function updateUnread(total){
+   const unread=Math.max(0,Number(total)||0),label=unread>99?'99+':String(unread);
    for(const id of ['chatUnreadBadge','chatDesktopUnread']){
      const b=$(id);if(!b)continue;
-     b.textContent=total>99?'99+':String(total||'');
-     b.classList.toggle('hidden',!total);
-     b.setAttribute('aria-label',String(total||0)+' unread messages');
+     b.textContent=unread?label:'';
+     b.classList.toggle('hidden',!unread);
+     b.setAttribute('aria-label',String(unread)+' unread messages');
+   }
+   // Reflect the SAME server-provided unread total on both Team headings so
+   // a cashier sees incoming messages even when that group is collapsed.
+   for(const selector of ['#mainNav .dm-nav-group-toggle[data-group="team"]',
+       '#mobileMorePanel #dmMobileTeam ~ .dm-mobile-nav-group-toggle',
+       '#mobileMorePanel .dm-mobile-nav-group:has(#dmMobileTeam) > .dm-mobile-nav-group-toggle']){
+     const heading=document.querySelector(selector);
+     if(!heading)continue;
+     let badge=heading.querySelector('.dm-team-unread-count');
+     if(!badge){
+       badge=document.createElement('span');
+       badge.className='dm-team-unread-count';
+       badge.setAttribute('aria-live','polite');
+       heading.insertBefore(badge,heading.querySelector('svg:last-child'));
+     }
+     badge.hidden=!unread;badge.textContent=unread?label:'';
+     badge.title=String(unread)+' unread team messages';
+     heading.setAttribute('aria-label',unread?'Team · '+unread+' unread messages':'Team');
    }
  }
  function renderContacts(){
