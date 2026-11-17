@@ -1,0 +1,42 @@
+/* Read-only, scoped franchise System Logs. */
+#view-logs .live-system-log-controls{
+ display:flex;align-items:end;flex-wrap:wrap;gap:12px;
+ padding:12px 0 16px;border-bottom:1px solid #e0e9e2;margin-bottom:12px
+}
+#view-logs .live-system-log-controls label{
+ display:grid;gap:6px;font-size:11px;font-weight:800;color:#286345;min-width:150px
+}
+#view-logs .live-system-log-controls label:nth-child(2){flex:1;min-width:220px}
+#view-logs .live-system-log-controls select,
+#view-logs .live-system-log-controls input{
+ background:#fff;color:#233c2c;border:1px solid #cbdcce;
+ border-radius:9px;min-height:38px;padding:8px 10px;font-size:12px;
+ max-width:100%;width:100%
+}
+#view-logs .live-system-log-controls select:focus-visible,
+#view-logs .live-system-log-controls input:focus-visible{
+ outline:2px solid #23804f;outline-offset:2px
+}
+#view-logs .live-log-count{font-size:11px;color:#6d846f;flex-basis:100%}
+#view-logs .live-log-row{padding:12px 14px;margin:0 0 7px;border:1px solid #dce9df;
+ border-radius:11px;background:#fdfefd;box-shadow:0 2px 6px rgba(10,40,20,.03)}
+#view-logs .live-log-row .log-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#view-logs .live-log-row .log-meta b{color:#125b34;font-size:11px}
+#view-logs .live-log-category{display:inline-flex;align-items:center;
+ background:#e1f2e6;color:#246740;border-radius:20px;padding:4px 8px;
+ font-size:10px;font-weight:800}
+#view-logs .live-log-activity{font-size:12px;color:#34543e;
+ line-height:1.55;overflow-wrap:anywhere;margin:8px 0 0}
+#view-logs #systemLogsPagination:has(button){
+ display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;
+ padding-top:12px;font-size:12px;color:#56715b
+}
+#view-logs #systemLogsPagination button{
+ border:1px solid #cde0d1;background:#fff;border-radius:9px;
+ padding:7px 13px;color:#075d38;font-size:12px;font-weight:750;cursor:pointer
+}
+#view-logs #systemLogsPagination button:disabled{opacity:.45;cursor:default}
+@media(max-width:650px){
+ #view-logs .live-system-log-controls{align-items:stretch}
+ #view-logs .live-system-log-controls label{min-width:100%;flex:1}
+}
