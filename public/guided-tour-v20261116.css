@@ -18,7 +18,7 @@
 .app.sidebar-collapsed .sidebar #mainNav .dm-guide-nav-row>.nav{padding-right:0}
 .app.sidebar-collapsed .sidebar #mainNav .dm-guide-inline{display:none}
 .app.sidebar-collapsed .sidebar .dm-guide-launcher{font-size:0;width:44px;height:44px;text-align:center;padding:0}
-.app.sidebar-collapsed .sidebar .dm-guide-launcher:before{content:'?';font-size:22px;font-weight:900}
+.app.sidebar-collapsed .sidebar .dm-guide-launcher:before{content:'GC';font-size:14px;font-weight:900}
 body.dm-tour-active{overscroll-behavior:none}
 .dm-guide-root{position:fixed!important;inset:0!important;z-index:2147482000!important;
   pointer-events:auto;overflow:hidden;isolation:isolate}
@@ -89,3 +89,18 @@ body.dm-tour-active{overscroll-behavior:none}
 @media(prefers-reduced-motion:reduce){
  .dm-guide-ring{transition:none}
 }
+/* Guide Center is centered; the former Help slot is a notification bell. */
+.sidebar .dm-guide-launcher{text-align:center;justify-content:center}
+#whatsNewButton.dm-topbar-notification-bell{
+ position:relative;display:inline-grid;place-items:center;flex:0 0 38px;
+ width:38px;height:38px;border-radius:10px;border:1px solid #b7d8c2;
+ color:#075d38;background:#eff8f2;cursor:pointer;padding:6px}
+#whatsNewButton.dm-topbar-notification-bell:hover,
+#whatsNewButton.dm-topbar-notification-bell:focus-visible{
+ background:#d7eee0;outline:2px solid #468c60;outline-offset:2px}
+#whatsNewButton.dm-topbar-notification-bell svg{display:block}
+#whatsNewButton.dm-topbar-notification-bell #whatsNewBadge{
+ position:absolute;top:-6px;right:-12px;min-width:19px;border-radius:10px;
+ background:#ed744e;color:white;padding:2px 4px;font-size:8px;font-weight:900;
+ border:2px solid #fff}
+#whatsNewButton.dm-topbar-notification-bell #whatsNewBadge.hidden{display:none!important}
