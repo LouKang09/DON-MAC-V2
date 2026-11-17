@@ -98,3 +98,13 @@
 /* Preserve role and permission hiding even where older responsive rules use !important. */
 .app .sidebar #mainNav .nav-section.hidden,
 .app.sidebar-collapsed .sidebar #mainNav .nav-section.hidden{display:none!important}
+
+/* Unread counts remain visible on the Team group header when collapsed. */
+#mainNav .dm-team-unread-count,
+#mobileMorePanel .dm-team-unread-count{
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+ min-width:21px;min-height:21px;border-radius:10px;padding:2px 5px;
+ background:#f2b18f;color:#392d23;font-size:11px;font-weight:900;line-height:1
+}
+#mainNav .dm-team-unread-count[hidden],
+#mobileMorePanel .dm-team-unread-count[hidden]{display:none!important}
