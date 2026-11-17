@@ -20,7 +20,7 @@ assert.match(app,/button\.addEventListener\('click',\(\)=>selectPosOrderType/);
 assert.match(app,/orderType:\$\('posOrderType'\)\.value/);
 assert.match(plan,/\/api\/live\/dashboard/);
 assert.match(notifications,/\/api\/live\/office-promotions/);
-assert.match(nav,/data\.view=key==='payroll'\?'payroll':'expenses'/);
+assert.match(nav,/leaf\.dataset\.view=key==='payroll'\?'payroll':'expenses'/);
 assert.match(fs.readFileSync(path.join(root,'public/guided-tour-v20261116.js'),'utf8'),/dm-topbar-notification-bell/);
 function simulateAudit({workspaceId,branchId,snapshot=true}){
  const ref='BR-C58D16BDE4083C526C';
