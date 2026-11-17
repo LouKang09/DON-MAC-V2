@@ -1289,8 +1289,10 @@
         '<tr><td><strong>'+esc(i.ingredient)+'</strong></td>'+
         '<td class="num '+(Number(i.quantityChange)<0?'stock-low':'stock-ok')+'">'+
         (Number(i.quantityChange)>0?'+':'')+num(i.quantityChange)+'</td>'+
-        '<td class="num">'+num(Math.abs(Number(i.quantityChange)))+'</td>'+
-        '<td class="num">'+esc(String(i.uom||'—').toUpperCase())+'</td>'+
+        '<td class="num" title="'+esc(i.soldQuantity!=null?'Purchased item quantity'+(i.quantityEstimated?' (estimated using receipt items)':''):'Stock movement quantity')+'">'+
+        (i.quantityEstimated?'≈':'')+num(i.quantity??Math.abs(Number(i.quantityChange)))+'</td>'+
+        '<td class="num" title="'+esc(i.costEstimated?'Estimated from this branch’s recorded sale cost and current recipes':'Checkout-time branch ingredient cost')+'">'+
+        (i.cost==null?'—':(i.costEstimated?'≈':'')+peso(i.cost))+'</td>'+
         '<td class="num">'+num(i.balanceAfter)+'</td></tr>'
       ).join('');
       const metadata=[
@@ -1302,7 +1304,7 @@
       ].filter(Boolean).join('');
       return summary+'<tr class="inv-audit-details-row"><td colspan="7"><div class="inv-audit-detail-panel">'+
         '<div class="inv-audit-detail-title">Ingredient breakdown ('+g.items.length+')</div>'+
-        '<div class="inv-audit-details-table-wrap"><table class="inv-audit-inner-table"><thead><tr><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">UOM</th><th class="num">Balance after</th></tr></thead><tbody>'+
+        '<div class="inv-audit-details-table-wrap"><table class="inv-audit-inner-table"><thead><tr><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">Cost</th><th class="num">Balance after</th></tr></thead><tbody>'+
         details+'</tbody></table></div>'+(metadata?'<div class="inv-audit-meta">'+metadata+'</div>':'')+
         '</div></td></tr>';
     }).join('')||'<tr><td colspan="7" class="inv-audit-empty">'+(all.length?'No transactions match your search.':'No inventory movements recorded yet.')+'</td></tr>';
@@ -1688,8 +1690,9 @@
       '<td>'+esc(m.type)+'</td><td>'+esc(m.ingredient)+'</td>'+
       '<td class="num '+(m.quantityChange<0?'stock-low':'stock-ok')+'">'+
       (m.quantityChange>0?'+':'')+num(m.quantityChange)+'</td>'+
-      '<td class="num">'+num(Math.abs(Number(m.quantityChange)))+'</td>'+
-      '<td>'+esc(String(m.uom||'—').toUpperCase())+'</td>'+
+      '<td class="num">'+(m.quantityEstimated?'≈':'')+num(m.quantity??Math.abs(Number(m.quantityChange)))+'</td>'+
+      '<td class="num" title="'+esc(m.costEstimated?'Estimated from this branch’s sale cost and current recipes':'Checkout-time branch ingredient cost')+'">'+
+      (m.cost==null?'—':(m.costEstimated?'≈':'')+peso(m.cost))+'</td>'+
       '<td class="num">'+(m.balanceAfter==null?'—':num(m.balanceAfter))+'</td>'+
       '<td>'+esc(m.createdBy||'')+'</td><td>'+esc(m.remarks||'')+'</td></tr>'
     ).join('')||'<tr><td colspan="9" class="muted">No linked inventory movements were recorded for this receipt.</td></tr>';
@@ -1703,7 +1706,7 @@
       </div></div>
       <div class="transaction-section"><div class="transaction-section-head"><h3>Products Ordered</h3><span>${(d.items||[]).length} line(s)</span></div><div class="table-wrap"><table><thead><tr><th>Product / Item</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Line Total</th></tr></thead><tbody>${itemRows}</tbody></table></div></div>
       <div class="transaction-total-grid">${transactionInfo('Gross',d.gross,{money:true})}${transactionInfo('Adjustment',d.adjustment,{money:true})}${transactionInfo('Actual',d.actual,{money:true})}</div>
-      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th>UOM</th><th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div></details>
+      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">Cost</th><th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div></details>
       <details class="transaction-section transaction-details"><summary>Audit Events <span>${(d.auditEvents||[]).length} event(s)</span></summary><div class="audit-events">${auditRows}</div></details>`;
   }
   async function viewTransaction(reference){return withActionLock(`view-sale:${reference}`,async()=>{const dialog=$('transactionDialog');$('transactionReference').textContent=reference;$('transactionStatus').textContent='';$('transactionDetailBody').innerHTML='<div class="empty-state">Loading transaction details…</div>';if(!dialog.open)dialog.showModal();try{renderTransactionDetail(await api(`/api/sales/${encodeURIComponent(reference)}`));}catch(err){$('transactionDetailBody').innerHTML=`<div class="empty-state"><div><b>Unable to load transaction</b>${esc(err.message)}</div></div>`;toast(err.message);}});}
