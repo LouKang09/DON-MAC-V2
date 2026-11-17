@@ -62,3 +62,9 @@
 .advanced-reference-lock-icon{font-size:28px;color:#16774a}
 @media(max-width:880px){.plan-widget-grid{grid-template-columns:1fr}.pw-custom-grid{grid-template-columns:1fr}.advanced-reference-preview .rd-shell{min-width:0}}
 @media(max-width:540px){.pw-pair-metrics{grid-template-columns:1fr}.plan-widget-heading h3{font-size:19px}.advanced-reference-frame.is-locked{height:510px}}
+
+/* Plan cards are siblings of the Items Performance tile, not a single
+   nested grid cell. Restore the intended two-column dashboard layout. */
+#view-dashboard #planWidgetFeatureCards{display:contents}
+#view-dashboard #planWidgetFeatureCards.hidden,
+#view-dashboard #planWidgetFeatureCards[hidden]{display:none!important}
