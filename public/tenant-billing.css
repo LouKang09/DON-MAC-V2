@@ -30,3 +30,8 @@
 #tenantBilling .tenant-billing-state.paid_review,#tenantBilling .tenant-billing-state.failed{background:#ffe4e1;color:#a73d3b}
 @media(max-width:820px){#tenantBilling .tenant-billing-values{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){#tenantBilling{padding:15px}#tenantBilling .tenant-billing-values{gap:8px}#tenantBilling .tenant-billing-values strong{font-size:13px}}
+
+/* Manual payment verification is the current commercial billing policy.
+   Keep the future gateway markup unavailable on every screen size. */
+#view-account #tenantBilling,
+#view-account #tenantBilling[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
