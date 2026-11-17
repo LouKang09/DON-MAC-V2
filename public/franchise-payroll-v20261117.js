@@ -5,7 +5,7 @@
  const money=x=>'₱'+Number(x||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
  const pad=n=>String(n).padStart(2,'0');
  const manila=value=>Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',
-  year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(value))
+  year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(value===undefined||value===null?new Date():new Date(value))
   .filter(p=>p.type!=='literal').map(x=>[x.type,x.value]));
  const localDate=value=>{const p=manila(value||new Date());return p.year+'-'+p.month+'-'+p.day;};
  const localInput=value=>{if(!value)return'';const p=manila(value);return p.year+'-'+p.month+'-'+p.day+'T'+p.hour+':'+p.minute;};
