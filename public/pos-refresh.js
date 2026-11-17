@@ -33,11 +33,16 @@
       else button.removeAttribute('aria-current');
     }
   }
+  // Global controller is loaded for both account modes before enhancements.
+  // Never attach a second click listener; duplicate toggles cancel each other.
   if(sidebarToggle&&app){
-    let collapsed=false;
-    try{collapsed=localStorage.getItem('donmac.sidebar.collapsed')==='1';}catch(_){}
-    setSidebar(collapsed);
-    sidebarToggle.addEventListener('click',()=>setSidebar(!app.classList.contains('sidebar-collapsed')));
+    if(window.donmacSidebarCollapse)window.donmacSidebarCollapse.sync();
+    else{
+      let collapsed=false;
+      try{collapsed=localStorage.getItem('donmac.sidebar.collapsed')==='1';}catch(_){}
+      setSidebar(collapsed);
+      sidebarToggle.addEventListener('click',()=>setSidebar(!app.classList.contains('sidebar-collapsed')));
+    }
   }
   syncNavigationAccessibility();
   const navObserver=new MutationObserver(syncNavigationAccessibility);
