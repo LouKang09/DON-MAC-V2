@@ -269,7 +269,8 @@
       section.classList.toggle('hidden',!visible);
     });
     const moreButtons=[...document.querySelectorAll('#mobileMorePanel [data-view]')];
-    const moreAvailable=moreButtons.some(b=>!b.classList.contains('hidden'));
+    const moreAvailable=moreButtons.some(b=>!b.classList.contains('hidden'))||
+      isAdmin||userGrants.includes('messages.view');
     $('mobileMoreButton')?.classList.toggle('hidden',!moreAvailable);
     if(!moreAvailable)$('mobileMorePanel')?.classList.add('hidden');
     document.querySelectorAll('.nav-finance .nav[data-access-key]').forEach(link=>{
