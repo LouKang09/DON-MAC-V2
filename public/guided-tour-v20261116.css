@@ -91,16 +91,19 @@ body.dm-tour-active{overscroll-behavior:none}
 }
 /* Guide Center is centered; the former Help slot is a notification bell. */
 .sidebar .dm-guide-launcher{text-align:center;justify-content:center}
-#whatsNewButton.dm-topbar-notification-bell{
+#app .topbar .topbar-right #whatsNewButton.dm-topbar-notification-bell{
  position:relative;display:inline-grid;place-items:center;flex:0 0 38px;
- width:38px;height:38px;border-radius:10px;border:1px solid #b7d8c2;
- color:#075d38;background:#eff8f2;cursor:pointer;padding:6px}
-#whatsNewButton.dm-topbar-notification-bell:hover,
-#whatsNewButton.dm-topbar-notification-bell:focus-visible{
- background:#d7eee0;outline:2px solid #468c60;outline-offset:2px}
+ width:38px;height:38px;border-radius:10px;border:1px solid #58a576!important;
+ color:#ffffff!important;background:#075d38!important;cursor:pointer;padding:6px;
+ box-shadow:0 2px 8px rgba(0,0,0,.18)!important}
+#app .topbar .topbar-right #whatsNewButton.dm-topbar-notification-bell:hover,
+#app .topbar .topbar-right #whatsNewButton.dm-topbar-notification-bell:focus-visible{
+ background:#0a7848!important;outline:2px solid #a8edc0;outline-offset:2px}
 #whatsNewButton.dm-topbar-notification-bell svg{display:block}
 #whatsNewButton.dm-topbar-notification-bell #whatsNewBadge{
  position:absolute;top:-6px;right:-12px;min-width:19px;border-radius:10px;
  background:#ed744e;color:white;padding:2px 4px;font-size:8px;font-weight:900;
  border:2px solid #fff}
 #whatsNewButton.dm-topbar-notification-bell #whatsNewBadge.hidden{display:none!important}
+
+#app .topbar .topbar-right #whatsNewButton.dm-topbar-notification-bell svg{stroke:#fff!important;color:#fff!important}
