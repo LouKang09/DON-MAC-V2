@@ -61,10 +61,18 @@
   if(key==='today')return{view:'hourly',from:today,to:today,description:'Today · Philippine time'};
   if(key==='month'&&context.role==='Admin')return{view:'custom',from:today.slice(0,7)+'-01',to:today,
    description:'Current month to date · Philippine time'};
+  if(key==='month'&&context.live){
+   const days=context.permissions.includes('report.window.month')?30:
+    context.permissions.includes('report.window.week')?7:1;
+   const from=new Date(Date.parse(today+'T00:00:00Z')-(days-1)*86400000).toISOString().slice(0,10);
+   return{view:'custom',from,to:today,
+    description:'Owner-approved last '+days+' day'+(days===1?'':'s')+' · Philippine time'};
+  }
   const from=payload.from,to=payload.to;
   const sameToday=from===today&&to===today&&$('trendView')?.value==='hourly';
   return{view:sameToday?'hourly':'custom',from,to,
-   description:(key==='month'?'Owner-approved reporting period · ':'Selected dashboard period · ')+from+
+   description:(key==='alerts'?'Current ingredient stock snapshot · sales filter: ':
+    key==='month'?'Selected reporting period · ':'Selected dashboard period · ')+from+
     (to!==from?' to '+to:'')};
  }
  const value=(d,key)=>{
@@ -197,7 +205,9 @@
   const body=aggregated.map(x=>'<div class="dm-kpi-bar-row"><div><strong>'+esc(x.name)+
    '</strong><span>'+money(x.amount)+' · '+pct(x.amount,sum)+'</span></div>'+
    '<div class="dm-kpi-bar-track"><span style="width:'+(sum?100*x.amount/sum:0).toFixed(2)+'%"></span></div></div>').join('');
+  const discrepancy=!unfinished&&Math.abs(sum-number(main.rangeExpenses))>0.01;
   const note=unfinished?'Partial: first '+rows.length+' of '+total+' daily branch entries. Open Expenses Ledger for the full breakdown.':
+   discrepancy?'Expense Ledger daily category grouping differs from the dashboard date cutoff; verify totals in Expenses Ledger.':
    'Recorded expense categories for the detailed period and selected dashboard branch scope.';
   return panel('Expenses by category',sum?body:empty('No recorded expenses in this period.'),note);
  }
@@ -218,7 +228,7 @@
   try{
    const d=payload;
    let main=d;
-   if(key==='today'||key==='month'&&context.role==='Admin')
+   if(key==='today'||key==='month'&&(context.role==='Admin'||context.live))
     main=await context.request(query(period,context.selectedBranch==='all'?null:context.selectedBranch));
    if(run!==activeRequest||!valid())return;
    const isAdmin=context.role==='Admin';
