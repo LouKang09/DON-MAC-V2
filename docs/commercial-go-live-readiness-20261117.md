@@ -4,7 +4,7 @@
 
 **Existing live production deployment:** operational for the current isolated-workspace POS implementation.
 
-**Commercial onboarding at scale:** **conditional go-live**, not an unconditional final approval. The franchise owner has reported successful manual cross-account / cross-branch verification. This acceptance is treated as the verified functional baseline, but is not a replacement for backup, monitoring, billing, security and capacity checks.
+**Commercial onboarding at scale:** **conditional go-live**, not an unconditional final approval. Manual Admin Control payment verification is accepted; PayMongo activation is not a prerequisite. The franchise owner has reported successful manual cross-account / cross-branch verification. This acceptance is treated as the verified functional baseline, but is not a replacement for backup, monitoring, billing, security and capacity checks.
 
 No legacy tables or production data should be deleted as part of this milestone.
 
@@ -45,12 +45,18 @@ Current isolated System Logs covers saved sale audit events, branch inventory mo
 - Add server-side append-only entries for privileged changes, billing updates, permission changes, archive and restore actions, and user account changes.
 - Verify retention, access control, export, tamper resistance and incident traceability.
 
-### 4. Billing, subscriptions and account recovery — **NEEDS acceptance**
+### 4. Manual payments and account recovery — **MANUAL BILLING ACCEPTED FOR PILOT**
 
-- Perform end-to-end paid, unpaid, on-hold, Pro, Business, extra-branch fee and downgrade/branch-deactivation tests on test accounts.
-- Confirm OTP deliveries, approved no-email staff limitations, admin password recovery and Resend/DNS domain verification.
-- Confirm plan invoicing, refund/failed payment handling, customer support and audit trail.
-- Avoid enabling paid subscriptions for customers without a recoverable account and working support path.
+**Commercial decision (2026-11-17):** PayMongo is deferred. All franchise subscription payments are verified manually by the platform owner, then approved and renewed through Admin Control. The PayMongo application is hidden in every Main POS Account Settings page. Customer online checkout is disabled until the platform owner explicitly opts in to future PayMongo integration with `PAYMONGO_CHECKOUT_ENABLED=true` and valid API/webhook credentials. This **does not change** cashier customer checkout (Cash/GCash) or stock deduction.
+
+Required manual control per payment:
+1. Confirm externally received funds (bank/GCash or agreed payment channel), not merely a submitted screenshot.
+2. Match amount and reference to the **correct franchise workspace**, selected plan and branch fees.
+3. Set the account plan, subscription status (`PAID` / `UNPAID` / `ON_HOLD`) and next renewal date using **Admin Control**, with an auditable payment reference and remark.
+4. Retain an independent finance receipt/ledger and reconcile manual receipts to external bank statements. The legacy PayMongo invoices/verified revenue metrics do **not** automatically count manual payments.
+5. Run manual status/expiry, Pro-vs-Business, extra-branch and downgrade tests; confirm Cashier POS access is suspended on Unpaid/Hold without hiding Owner setup access.
+
+Account recovery checks remain separate: OTP delivery, employees without email, admin-initiated recovery, and production email-provider health still require verification before broad onboarding.
 
 ### 5. Scale, security, availability and commercial operations — **NEEDS testing**
 
