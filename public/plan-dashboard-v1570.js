@@ -5,6 +5,7 @@
  'use strict';
  const $=id=>document.getElementById(id);
  const root=$('planDashboardWidgets');
+ const apiBase=window.donmacFranchiseUnified?'/api/live/dashboard':'/api/dashboard';
  if(!root||window.donmacPlanWidgets)return;
  const PRO=[
   ['pro-bought-together','Frequently Bought Together'],
@@ -45,7 +46,7 @@
   if(!roleAllowed)return;
   const token=++prefsSeq;prefsLoaded=false;orderState={ids:[]};hiddenState={};
   try{
-   const resp=await fetch('/api/dashboard/widgets?plan='+encodeURIComponent(plan),
+   const resp=await fetch(apiBase+'/widgets?plan='+encodeURIComponent(plan),
     {credentials:'same-origin',cache:'no-store'});
    if(!resp.ok)throw Error('Unable to load account widget settings (HTTP '+resp.status+').');
    const saved=await resp.json();
@@ -70,7 +71,7 @@
   const status=$('planWidgetSaveState');
   if(status)status.textContent='Saving changes to your account…';
   saveQueue=saveQueue.catch(()=>{}).then(async()=>{
-    const resp=await fetch('/api/dashboard/widgets?plan='+encodeURIComponent(plan),{
+    const resp=await fetch(apiBase+'/widgets?plan='+encodeURIComponent(plan),{
       method:'PUT',credentials:'same-origin',cache:'no-store',
       headers:{'Content-Type':'application/json'},body:JSON.stringify(values)
     });
@@ -289,7 +290,7 @@
    try{
      const q=new URLSearchParams();
      if($('dashboardBranch')?.value&&$('dashboardBranch').value!=='all')q.set('branchId',$('dashboardBranch').value);
-     const r=await fetch('/api/dashboard/plan-insights?'+q.toString(),{credentials:'same-origin',cache:'no-store'});
+     const r=await fetch(apiBase+'/plan-insights?'+q.toString(),{credentials:'same-origin',cache:'no-store'});
      if(!r.ok){if(r.status===403)roleAllowed=false;throw Error('Analytics unavailable ('+r.status+').');}
      const d=await r.json();
      if(token!==seq)return;
