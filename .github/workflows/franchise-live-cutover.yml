@@ -44,6 +44,7 @@ on:
       - "scripts/franchise-live-static-regression.js"
       - "scripts/franchise-live-postgres-test.js"
       - "scripts/pos-20261117-regression-test.js"
+      - "scripts/team-notifications-logout-regression.js"
       - "scripts/franchise-live-browser-test.js"
       - "scripts/franchise-setup-before-paid-browser-test.js"
       - ".github/workflows/franchise-live-cutover.yml"
@@ -104,6 +105,8 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
       - name: POS quantity, costing, Pro insights and Payroll navigation regression
         run: node scripts/pos-20261117-regression-test.js
+      - name: Team messaging, unread badge, logout and system notifications
+        run: node scripts/team-notifications-logout-regression.js
       - name: Real PostgreSQL cross-franchise checkout and concurrency
         run: node scripts/franchise-live-postgres-test.js
       - name: Shared Main POS owner and cashier interface
