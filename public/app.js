@@ -136,10 +136,11 @@
       loadCss('posCategoryAdminCss','/pos-categories-admin.css');
       await loadScript('/pos-categories-admin.js?v=20261116-isolated');
       await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
-      // These are presentation-only enhancements (no unscoped fetches).
-      // Do not import dashboard-compact or plan-dashboard here: their legacy
-      // data calls are intentionally incompatible with isolated franchises.
+      // Live Plan analytics use the dedicated /api/live/dashboard endpoints.
+      // Never invoke the legacy global sales and product tables for a franchise.
       await loadScript('/dashboard-v1512.js');
+      loadCss('planDashboardV1570Css','/plan-dashboard-v1570.css');
+      await loadScript('/plan-dashboard-v1570.js?v=20261117-live-plan');
       await loadScript('/dashboard-experience-v1573.js?v=20261107c');
       await loadScript('/pos-finance.js?v=20261115-isolated');
       await loadScript('/refresh-controls-v20261107.js');
