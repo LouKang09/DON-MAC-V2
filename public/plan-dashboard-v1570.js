@@ -365,6 +365,9 @@
    if(nav){nav.click();const sel=$('accountPlanSelect');if(sel){sel.value='BUSINESS';sel.focus();}}
  });
  window.donmacPlanWidgets={setSubscription,setRole,render,onViewChange};
- fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
-   .then(r=>r.ok?r.json():null).then(setSubscription).catch(()=>{});
+ fetch(window.donmacFranchiseUnified?'/api/live/status':'/api/account/subscription',
+   {credentials:'same-origin',cache:'no-store'})
+   .then(r=>r.ok?r.json():null)
+   .then(d=>setSubscription(window.donmacFranchiseUnified&&d?
+    {plan:d.plan,status:d.subscriptionStatus}:d)).catch(()=>{});
 })();
