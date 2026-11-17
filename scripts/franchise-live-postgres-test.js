@@ -8,6 +8,7 @@ const liveCatalog=require('../lib/franchise-live-catalog');
 const liveSales=require('../lib/franchise-live-sales');
 const expenses=require('../lib/franchise-live-expenses');
 const finance=require('../lib/franchise-live-finance');
+const scopedSystemLogs=require('../lib/franchise-live-system-logs');
 const dashboardView=require('../lib/franchise-unified-dashboard');
 const accountModes=require('../lib/franchise-account-modes');
 const incoming=require('../lib/branch-incoming-supply');
@@ -249,6 +250,21 @@ async function run(){
  await expenses.add(db,ctxA,{branchId:101,category:'Supplies',amount:12,notes:'Owner A'});
  assert.equal((await expenses.list(db,ctxA,101)).rows.length,1);
  assert.equal((await expenses.list(db,ctxB,201)).rows.length,0);
+ // Use actual PostgreSQL query parsing / join constraints, not mocks, to
+ // verify franchise System Logs never include another owner's records.
+ const auditA=await scopedSystemLogs.list(db,ctxA,100);
+ const auditB=await scopedSystemLogs.list(db,ctxB,100);
+ assert(auditA.logs.some(x=>x.category==='Sales'&&x.reference===first.reference),
+   'Franchise A must see its own saved live checkout history');
+ assert(auditA.logs.some(x=>x.category==='Inventory'),
+   'Franchise A must see its own stock movement audit history');
+ assert(auditA.logs.some(x=>x.category==='Expenses'),
+   'Franchise A must see its own expense entries');
+ assert.equal(auditB.logs.length,0,
+   'Franchise B must never see franchise A checkout, inventory or expense history');
+ await assert.rejects(scopedSystemLogs.list(db,ctxCashierA,100),{status:403},
+   'Cashiers cannot enumerate owner-level System Logs');
+
  // The existing transaction and expense screens now use scoped SQL.
  const financeDates=new URLSearchParams({start:'2020-01-01',end:'2030-12-31'});
  const financeA=await finance.transactions(db,ctxA,financeDates);
