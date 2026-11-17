@@ -12,7 +12,7 @@ async function run(){
  const dom=new JSDOM(html,{url:'https://donmacpos.com'});
  const doc=dom.window.document,section=doc.getElementById('tenantBilling');
  assert(section,'Preserve dormant future gateway markup without activating it.');
- assert(section.hidden&&section.inert,'Online billing section must be hidden and inert in every account.');
+ assert(section.hasAttribute('hidden')&&section.hasAttribute('inert'),'Online billing section must be hidden and inert in every account.');
  assert.equal(section.getAttribute('aria-hidden'),'true');
  assert.match(css,/#view-account #tenantBilling\[hidden\]\{display:none!important/);
  assert(!app.includes("loadScript('/tenant-billing-ui.js"),'Do not load dormant gateway UI for legacy accounts');
