@@ -112,11 +112,11 @@
   const metricLabel=key==='orders'?'Completed orders':key==='alerts'?'Low-stock count':
     key==='expenses'?'Expenses':key==='discount'?'Discounts':'Net revenue';
   let html='<div class="dm-kpi-table-scroll"><table><thead><tr><th>Branch</th><th>'+esc(metricLabel)+
-   '</th><th>'+ (key==='alerts'?'Ingredients':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
+   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'?'Net revenue':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
   for(const row of rows){
    const d=row.data;
-   const extras=key==='alerts'?count(d.metrics?.inventoryCount):count(key==='today'?d.metrics?.todayTransactions:
-    key==='month'?d.metrics?.monthTransactions:d.rangeTransactions);
+   const extras=key==='alerts'?count(d.metrics?.inventoryCount):key==='orders'?money(d.rangeActual):
+    count(key==='today'?d.metrics?.todayTransactions:key==='month'?d.metrics?.monthTransactions:d.rangeTransactions);
    html+='<tr'+(row.selected?' class="dm-kpi-selected-branch"':'')+'><th scope="row">'+esc(row.name)+
     (row.selected?' <span class="dm-kpi-current">Selected</span>':'')+'</th><td class="dm-kpi-number">'+
     (financial?money(value(d,key)):count(value(d,key)))+'</td><td class="dm-kpi-number">'+extras+
