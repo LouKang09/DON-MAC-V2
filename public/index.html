@@ -783,6 +783,13 @@
     <div class="table-wrap"><table class="pos-finance-table expenses-table"><thead><tr><th>Date</th><th>Branch</th><th>Rent</th><th>Stocks</th><th>Salary</th><th>Transportation</th><th>Electricity</th><th>Ice</th><th>Water</th><th>Misc</th><th>Total</th><th>Notes</th><th>Action</th></tr></thead><tbody id="financeExpensesBody"><tr><td colspan="13">Select Expenses to load records.</td></tr></tbody></table></div><nav id="financeExpensePages" class="pos-finance-pagination"></nav>
   </div>
 
+
+</section>
+<section id="view-payroll" class="view admin-only" aria-label="Payroll & Attendance">
+ <nav id="dmPayrollTabs" class="dm-expense-tabs" aria-label="Expense subcategories">
+  <button type="button" data-expense-tab="ledger" aria-pressed="false">Expenses Ledger</button>
+  <button type="button" data-expense-tab="payroll" class="active" aria-pressed="true">Payroll &amp; Attendance</button>
+ </nav>
  <section id="dmPayrollManager" class="dm-payroll-manager admin-only" aria-label="Franchise payroll and attendance" hidden>
   <header class="dm-payroll-header"><div><span class="eyebrow">EMPLOYEE PAYROLL &amp; TIME RECORDS</span><h2>Payroll &amp; Attendance</h2><p>15th / month-end cutoffs · employee pay rates · audited daily time records · editable payslips</p></div>
    <button type="button" id="dmPayrollRefresh" class="primary">Refresh Payroll</button></header>
