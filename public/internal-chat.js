@@ -90,19 +90,24 @@
      b.classList.toggle('hidden',!unread);
      b.setAttribute('aria-label',String(unread)+' unread messages');
    }
-   // Reflect the SAME server-provided unread total on both Team headings so
-   // a cashier sees incoming messages even when that group is collapsed.
-   for(const selector of ['#mainNav .dm-nav-group-toggle[data-group="team"]',
-       '#mobileMorePanel #dmMobileTeam ~ .dm-mobile-nav-group-toggle',
-       '#mobileMorePanel .dm-mobile-nav-group:has(#dmMobileTeam) > .dm-mobile-nav-group-toggle']){
-     const heading=document.querySelector(selector);
+   // The collapsible Team header has an inline SVG as a DIRECT child.
+   // Never insertBefore() a nested SVG, or the exception prevents the
+   // conversation list from loading and interrupts the logout reset path.
+   const headings=[
+     document.querySelector('#mainNav .dm-nav-group-toggle[data-group="team"]'),
+     document.querySelector('#mobileMorePanel .dm-mobile-nav-group:has(#dmMobileTeam) > .dm-mobile-nav-group-toggle')
+   ];
+   for(const heading of headings){
      if(!heading)continue;
-     let badge=heading.querySelector('.dm-team-unread-count');
+     let badge=heading.querySelector(':scope > .dm-team-unread-count');
      if(!badge){
        badge=document.createElement('span');
        badge.className='dm-team-unread-count';
        badge.setAttribute('aria-live','polite');
-       heading.insertBefore(badge,heading.querySelector('svg:last-child'));
+       const tail=Array.from(heading.children).find(node=>
+         node.classList.contains('dm-nav-group-chevron')||
+         node.classList.contains('dm-mobile-nav-arrow'))||null;
+       heading.insertBefore(badge,tail);
      }
      badge.hidden=!unread;badge.textContent=unread?label:'';
      badge.title=String(unread)+' unread team messages';
@@ -133,7 +138,9 @@
      const directContacts=(data.people||[]).filter(c=>
        window.donmacAuthenticatedRole!=='User'||c.role==='Admin');
      state.contacts=[...groupItems,...directContacts];
-     updateUnread(data.unreadTotal||0);renderContacts();
+     // The roster must render even if an optional sidebar badge fails.
+     try{updateUnread(data.unreadTotal||0);}catch(error){console.warn('Team badge:',error);}
+     renderContacts();
      if(state.selected&&contactById(state.selected))renderHeader();
      if(state.selected&&!contactById(state.selected)){
        state.selected=0;state.messages=[];renderHeader();renderMessages();
