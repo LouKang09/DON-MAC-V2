@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.26-sidebar-system-logs-20261117';
+  const VERSION = '1.6.27-manual-subscription-20261117';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -161,7 +161,8 @@
 
       // Supply Chain initializes independently of optional dashboard/chat layers.
       await loadScript('/supply-franchise.js?v=1.5.79');
-      await loadScript('/tenant-billing-ui.js?v=1');
+      // Subscription payments are manually verified through Admin Control.
+      // Do not initialize the dormant PayMongo customer checkout.
       await loadScript('/pos-finance.js?v=20261107c');
       await loadScript('/pos-quickpay-v1556.js');
       window.donmacSupply?.refreshNotices?.();
