@@ -83,8 +83,14 @@
     if($('posCustomerName'))$('posCustomerName').value='';
     if($('posTableLabel'))$('posTableLabel').value='';
     if($('posOrderType'))$('posOrderType').value='Dine In';
-    document.querySelectorAll('[data-order-type]').forEach(b=>b.classList.toggle('active',b.dataset.orderType==='Dine In'));
-    if($('posTableWrap'))$('posTableWrap').classList.remove('hidden');
+    document.querySelectorAll('[data-order-type]').forEach(b=>{
+      const active=b.dataset.orderType==='Dine In';
+      b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+    });
+    if($('posTableWrap')){
+      $('posTableWrap').hidden=false;$('posTableWrap').classList.remove('hidden');
+      $('posTableWrap').removeAttribute('aria-hidden');
+    }
     if($('changePreview'))$('changePreview').textContent='Change: '+peso(0);
     if($('modalDue'))$('modalDue').textContent=peso(0);
     if($('quoteMessage'))$('quoteMessage').textContent='';
@@ -755,6 +761,31 @@
   function quotePayload(){return{items:state.cart.map(x=>({kind:x.kind,id:x.id,qty:x.qty})),promoId:state.promoId,senior:{enabled:$('seniorEnabled').checked,name:$('seniorName').value.trim(),id:$('seniorId').value.trim()}};}
   async function refreshQuote(){const seq=++quoteSeq,gross=localGross();$('grossAmount').textContent=peso(gross);$('payButton').disabled=true;state.quote=null;if(!state.cart.length){$('adjustmentAmount').textContent=peso(0);$('actualAmount').textContent=peso(0);$('payButton').textContent='Pay ₱0.00';$('quoteMessage').textContent='';return;}const stock=cartStock();if(!stock.ok){$('adjustmentAmount').textContent='—';$('actualAmount').textContent='—';$('payButton').textContent='Stock unavailable';$('quoteMessage').textContent=stock.message;return;}try{const quote=await api('/api/quote',{method:'POST',body:quotePayload()});if(seq!==quoteSeq)return;state.quote=quote;$('grossAmount').textContent=peso(quote.gross);$('adjustmentAmount').textContent=peso(quote.adjustment);$('actualAmount').textContent=peso(quote.actual);$('payButton').textContent=`Pay ${peso(quote.actual)}`;$('payButton').disabled=false;$('quoteMessage').textContent='';}catch(err){if(seq!==quoteSeq)return;$('adjustmentAmount').textContent='—';$('actualAmount').textContent='—';$('payButton').textContent='Complete Order';$('quoteMessage').textContent=err.message;if(err.status===409)await updateCatalogAvailability();}}
   function renderAll(){renderTabs();renderPromo();renderCatalog();renderOrder();clearTimeout(quoteTimer);quoteTimer=setTimeout(refreshQuote,80);}let availabilityInFlight=null;async function updateCatalogAvailability(){if(availabilityInFlight)return availabilityInFlight;availabilityInFlight=(async()=>{try{const latest=await api('/api/catalog');if(!state.user)return;state.catalog=latest;renderCatalog();renderOrder();if(state.cart.length){const status=cartStock();if(!status.ok){state.quote=null;$('payButton').disabled=true;$('payButton').textContent='Stock unavailable';$('quoteMessage').textContent=status.message;}else if(!state.quote&&String($('quoteMessage').textContent).toLowerCase().includes('stock')){clearTimeout(quoteTimer);quoteTimer=setTimeout(refreshQuote,80);}}}catch(_){}})();try{return await availabilityInFlight}finally{availabilityInFlight=null}}
+  // Order type is a checkout selection, not a presentation-only pill. Keep
+  // the active button, hidden form value and table-number field in sync.
+  const orderTypeButtons=[...document.querySelectorAll('#view-pos .order-type-switch [data-order-type]')];
+  function selectPosOrderType(value){
+    if(!['Dine In','Take Away','Order Online'].includes(value))return;
+    const selected=$('posOrderType');selected.value=value;
+    orderTypeButtons.forEach(button=>{
+      const active=button.dataset.orderType===value;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    const table=$('posTableWrap');
+    if(table){
+      const dine=value==='Dine In';
+      table.classList.toggle('hidden',!dine);
+      table.hidden=!dine;
+      table.setAttribute('aria-hidden',String(!dine));
+      if(!dine&&$('posTableLabel'))$('posTableLabel').value='';
+    }
+  }
+  for(const button of orderTypeButtons){
+    button.addEventListener('click',()=>selectPosOrderType(button.dataset.orderType));
+    button.setAttribute('aria-pressed',String(button.dataset.orderType===$('posOrderType').value));
+  }
+  selectPosOrderType($('posOrderType').value);
   $('searchBox').addEventListener('input',e=>{state.query=e.target.value;renderCatalog();});$('clearCart').onclick=clearCart;
   $('seniorEnabled').onchange=()=>{if($('seniorEnabled').checked&&state.promoId){$('seniorEnabled').checked=false;toast('Senior Citizen discount cannot be combined with a promo.');return;}$('seniorFields').classList.toggle('hidden',!$('seniorEnabled').checked);refreshQuote();};$('seniorName').oninput=()=>{clearTimeout(quoteTimer);quoteTimer=setTimeout(refreshQuote,300);};$('seniorId').oninput=()=>{clearTimeout(quoteTimer);quoteTimer=setTimeout(refreshQuote,300);};
   $('payButton').onclick=()=>{if(!state.quote||state.checkoutBusy)return;state.pendingSaleRequestId=state.pendingSaleRequestId||(globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`);$('paymentMode').value='Cash';$('cashTender').value=Number(state.quote.actual||0).toFixed(2);$('gcashReference').value='';renderPaymentFields();$('paymentDialog').showModal();};$('paymentClose').onclick=()=>{if(!state.checkoutBusy)$('paymentDialog').close();};$('paymentDialog').addEventListener('cancel',e=>{if(state.checkoutBusy)e.preventDefault();});$('paymentMode').onchange=renderPaymentFields;$('cashTender').oninput=renderPaymentFields;
