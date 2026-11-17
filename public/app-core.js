@@ -1256,8 +1256,8 @@
     const query=normalize(auditUI.query),all=auditUI.groups;
     const groupType=g=>{
       const value=String(g.type||'').toUpperCase();
-      if(value==='SALE')return 'sale';
-      if(value==='SALE_REVERSAL')return 'reversal';
+      if(value==='SALE'||value==='LIVE_SALE')return 'sale';
+      if(value==='SALE_REVERSAL'||value==='LIVE_SALE_REVERSAL')return 'reversal';
       if(value==='REPLENISH')return 'replenish';
       if(value==='TRANSFER')return 'transfer';
       return 'other';
@@ -1296,7 +1296,12 @@
         (i.cost==null?'—':(i.costEstimated?'≈':'')+peso(i.cost))+'</td>'+
         '<td class="num">'+num(i.balanceAfter)+'</td></tr>'
       ).join('');
+      const impact=g.type==='LIVE_SALE'&&g.items.some(i=>i.cost!=null)?
+        g.items.reduce((sum,i)=>sum+Number(i.cost||0),0):null;
+      const costEstimated=g.items.some(i=>i.costEstimated);
       const metadata=[
+        impact==null?'':'<span><b>Ingredient cost for this sale:</b> '+
+         (costEstimated?'≈':'')+peso(impact)+(costEstimated?' · historical allocation':'')+'</span>',
         g.reference?'<span><b>Reference:</b> '+esc(g.reference)+'</span>':'',
         g.branch?'<span><b>Destination:</b> '+esc(g.branch)+'</span>':'',
         g.deliveredBy?'<span><b>Delivered by:</b> '+esc(g.deliveredBy)+'</span>':'',
@@ -1707,7 +1712,12 @@
       </div></div>
       <div class="transaction-section"><div class="transaction-section-head"><h3>Products Ordered</h3><span>${(d.items||[]).length} line(s)</span></div><div class="table-wrap"><table><thead><tr><th>Product / Item</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Line Total</th></tr></thead><tbody>${itemRows}</tbody></table></div></div>
       <div class="transaction-total-grid">${transactionInfo('Gross',d.gross,{money:true})}${transactionInfo('Adjustment',d.adjustment,{money:true})}${transactionInfo('Actual',d.actual,{money:true})}</div>
-      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">Cost</th><th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div></details>
+      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">Cost</th><th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div>${(d.inventoryMovements||[]).some(m=>m.type==='LIVE_SALE'&&m.cost!=null)?
+        '<div class="inv-audit-meta"><b>Total ingredient cost:</b> '+
+        ((d.inventoryMovements||[]).some(m=>m.costEstimated)?'≈':'')+
+        peso((d.inventoryMovements||[]).filter(m=>m.type==='LIVE_SALE').reduce((n,m)=>n+Number(m.cost||0),0))+
+        ((d.inventoryMovements||[]).some(m=>m.costEstimated)?' · allocated from stored receipt total':'')+'</div>':''}
+      </details>
       <details class="transaction-section transaction-details"><summary>Audit Events <span>${(d.auditEvents||[]).length} event(s)</span></summary><div class="audit-events">${auditRows}</div></details>`;
   }
   async function viewTransaction(reference){return withActionLock(`view-sale:${reference}`,async()=>{const dialog=$('transactionDialog');$('transactionReference').textContent=reference;$('transactionStatus').textContent='';$('transactionDetailBody').innerHTML='<div class="empty-state">Loading transaction details…</div>';if(!dialog.open)dialog.showModal();try{renderTransactionDetail(await api(`/api/sales/${encodeURIComponent(reference)}`));}catch(err){$('transactionDetailBody').innerHTML=`<div class="empty-state"><div><b>Unable to load transaction</b>${esc(err.message)}</div></div>`;toast(err.message);}});}
