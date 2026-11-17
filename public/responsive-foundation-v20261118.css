@@ -1,0 +1,198 @@
+/*
+ * Don Macchiatos responsive foundation — 2026-11-18
+ *
+ * Complement the existing POS, Admin, Supply Office and franchise breakpoints
+ * instead of replacing their tested mobile navigation/checkout behaviors.
+ * Use % and minmax() for fluid regions, rem for readable typography, and
+ * dynamic viewport units for browser-chrome-aware fullscreen sections.
+ */
+:root {
+  --dm-layout-gutter: clamp(0.75rem, 1.8vw, 1.75rem);
+  --dm-card-gap: clamp(0.625rem, 1.15vw, 1.125rem);
+  --dm-text-body: clamp(0.8125rem, 0.78rem + 0.13vw, 0.9375rem);
+  --dm-text-label: clamp(0.75rem, 0.73rem + 0.09vw, 0.875rem);
+  --dm-text-heading: clamp(1rem, 0.95rem + 0.35vw, 1.375rem);
+}
+
+/* Do not change the root font-size: rem must respect browser text zoom. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+:is(#app, #platformApp, .office-app, .live-app):not(.hidden) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+:is(#app, #platformApp, .office-app, .live-app):not(.hidden)
+  :is(main, .main, .content, .office-main, .live-main) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Prevent intrinsically wide components from stretching the screen. */
+#app > main.main > .view,
+#app main.main :is(.section-grid, .dashboard-grid, .dashboard-summary, .pos-layout),
+#platformApp :is(.metrics, .main-card, .toolbar),
+.office-app :is(.office-page, .stats, .panel),
+.live-app :is(.content, .stats, .panel, .pos-layout) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+#app main.main :is(.card, .catalog-panel, .order-panel, .wide-card),
+#platformApp :is(.metric, .main-card),
+.office-app :is(.stat, .panel),
+.live-app :is(.stat, .panel, .product-picker) {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* Preserve nested table scrolling, rather than forcing page-wide scrollbars. */
+:is(#app, #platformApp, .office-app, .live-app)
+  :is(.table-wrap, .table-scroll) {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+:is(#app, #platformApp, .office-app, .live-app)
+  :is(input, select, textarea) {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* Text changes are deliberately scoped; icon geometry and compact POS actions
+ * retain their established sizes. rem respects OS/browser accessibility settings. */
+#app main.main :is(.card-head h3, .order-head h3, .form-card h3),
+#platformApp .section-header h2,
+.office-app .panel-head h2,
+.live-app .panel h2 {
+  font-size: var(--dm-text-heading);
+  line-height: 1.3;
+}
+#app #view-dashboard .dashboard-summary .dash-summary-label,
+#app #view-dashboard .dashboard-summary .dash-gross-net,
+#platformApp .metric span,
+.office-app .stat small,
+.live-app .stat span {
+  font-size: var(--dm-text-label);
+  line-height: 1.4;
+}
+#app main.main :is(.form-card label, .report-filters label),
+#platformApp :is(.toolbar label, .filter),
+.office-app :is(.filters label, .panel label),
+.live-app .panel label {
+  font-size: var(--dm-text-body);
+}
+#app main.main .product-card h4,
+.live-app .product-tile h3 {
+  font-size: clamp(0.8125rem, 0.8rem + 0.15vw, 1rem);
+  line-height: 1.35;
+}
+
+/* Desktop and tablet: dynamic viewport height compensates for browser UI.
+ * Retain the existing collapsed-sidebar grid and scrolling model. */
+@media screen and (min-width: 700px) {
+  #app:not(.hidden) { height: 100vh; height: 100dvh; min-height: 0; }
+  #app > .sidebar { height: 100vh; height: 100dvh; max-height: 100dvh; }
+  #app > main.main {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  #app > main.main > .view {
+    width: 100%;
+    padding-inline: var(--dm-layout-gutter);
+  }
+  #platformApp:not(.hidden),
+  .office-app:not(.hidden),
+  .live-app:not(.hidden) { min-height: 100vh; min-height: 100dvh; }
+  #platformApp > .sidebar,
+  .office-app > .office-side,
+  .live-app > .live-sidebar {
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+}
+
+/* Desktop POS: the checkout column scales with the content area.
+ * Tablet-specific checkout constraints remain governed by existing styles. */
+@media screen and (min-width: 1181px) {
+  #app #view-pos .pos-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 31%);
+    gap: var(--dm-card-gap);
+  }
+}
+
+/* Phones: dynamic height keeps the content scrollport below browser controls.
+ * Do not touch the fixed mobile-bottom-nav or its account access rules. */
+@media screen and (max-width: 699px) {
+  #app:not(.hidden) {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  #app > main.main {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #app > main.main > .view {
+    min-width: 0;
+    width: 100%;
+    padding-inline: clamp(0.625rem, 3.5vw, 1rem);
+  }
+  #app main.main :is(input, select, textarea),
+  #platformApp :is(input, select, textarea),
+  .office-app :is(input, select, textarea),
+  .live-app :is(input, select, textarea) {
+    font-size: 1rem; /* Avoid automatic iOS zoom on field focus. */
+  }
+  #app main.main :is(.report-toolbar, .catalog-tools, .card-head) { min-width: 0; }
+}
+
+/* Admin and Supply Office switch at 720px, unlike the POS at 699px. */
+@media screen and (max-width: 720px) {
+  #platformApp .content main,
+  .office-app .office-main,
+  .live-app .live-main .content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding-inline: clamp(0.75rem, 3.5vw, 1.25rem);
+  }
+  #platformApp .page-heading h1,
+  .office-app .office-top h1,
+  .live-app .section-heading h1 {
+    font-size: clamp(1.375rem, 4.3vw, 1.875rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  :is(#platformApp, .office-app, .live-app) :is(.metrics, .stats) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Restore predictable paper/PDF layouts: do not constrain print to the viewport. */
+@media print {
+  #app:not(.hidden),
+  #app > main.main,
+  #app > .sidebar,
+  #platformApp:not(.hidden),
+  .office-app:not(.hidden),
+  .live-app:not(.hidden) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
