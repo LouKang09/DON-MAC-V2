@@ -43,6 +43,7 @@ on:
       - "public/platform-admin.js"
       - "scripts/franchise-live-static-regression.js"
       - "scripts/franchise-live-postgres-test.js"
+      - "scripts/pos-20261117-regression-test.js"
       - "scripts/franchise-live-browser-test.js"
       - "scripts/franchise-setup-before-paid-browser-test.js"
       - ".github/workflows/franchise-live-cutover.yml"
@@ -86,6 +87,10 @@ jobs:
           node --check lib/franchise-live-finance.js
           node --check public/pos-finance.js
           node --check lib/franchise-live-router.js
+          node --check lib/franchise-live-plan-dashboard.js
+          node --check lib/franchise-audit-cost-attribution.js
+          node --check public/franchise-payroll-v20261117.js
+          node --check public/nav-hierarchy-v20261117.js
           node --check public/app.js
           node --check lib/franchise-test-access.js
           node --check scripts/franchise-setup-before-paid-browser-test.js
@@ -97,6 +102,8 @@ jobs:
           node scripts/franchise-main-pos-promotion-test.js
       - name: Install PostgreSQL and DOM test dependencies
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund jsdom
+      - name: POS quantity, costing, Pro insights and Payroll navigation regression
+        run: node scripts/pos-20261117-regression-test.js
       - name: Real PostgreSQL cross-franchise checkout and concurrency
         run: node scripts/franchise-live-postgres-test.js
       - name: Shared Main POS owner and cashier interface
