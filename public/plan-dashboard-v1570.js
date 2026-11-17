@@ -291,7 +291,9 @@
      const q=new URLSearchParams();
      if($('dashboardBranch')?.value&&$('dashboardBranch').value!=='all')q.set('branchId',$('dashboardBranch').value);
      const r=await fetch(apiBase+'/plan-insights?'+q.toString(),{credentials:'same-origin',cache:'no-store'});
-     if(!r.ok){if(r.status===403)roleAllowed=false;throw Error('Analytics unavailable ('+r.status+').');}
+     if(!r.ok)throw Error(r.status===403?
+      'Dashboard insights are unavailable until the subscription is active. Refresh after Admin Control approval.':
+      'Analytics unavailable ('+r.status+').');
      const d=await r.json();
      if(token!==seq)return;
      analytics=d;loading=false;
