@@ -5,6 +5,10 @@ data/*.db-shm
 data/*.db-wal
 data/runtime.json
 backups/*.sqlite
+# Local PostgreSQL recovery archives must not be committed
+*.dump
+*.pgdump
+*.backup
 
 # Never commit local, production or machine-specific environment secrets.
 # Patterns without a slash apply to nested directories too.
