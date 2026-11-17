@@ -176,3 +176,12 @@
  #dmPayrollBranchCount{margin-left:0}
  .dm-payroll-staff-status{max-width:125px;white-space:normal}
 }
+
+/* Payroll is a separate top-level route, never a card inside Expenses. */
+#view-payroll > #dmPayrollManager[hidden],
+#view-payroll > #dmPayrollManager.dm-expense-pane-inactive,
+#view-payroll #dmPayrollTabs[hidden]{display:none!important}
+#view-payroll > #dmPayrollManager:not([hidden]){
+ display:grid!important;visibility:visible!important;pointer-events:auto!important;
+}
+#view-payroll > #dmPayrollTabs{display:flex;margin-bottom:12px}
