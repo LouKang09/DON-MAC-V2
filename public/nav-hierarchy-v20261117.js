@@ -40,16 +40,18 @@
    ['ledger','Expenses Ledger','all'],['payroll','Payroll & Attendance','admin']
   ]){
    const leaf=document.createElement('button');
-   leaf.type='button';leaf.className='dm-expense-leaf';
-   leaf.dataset.expenseSubitem=key;leaf.textContent=label;
-   if(role==='admin')leaf.dataset.expenseAdmin='true';
+   leaf.type='button';leaf.className='nav dm-expense-leaf';
+   leaf.dataset.expenseSubitem=key;
+   leaf.dataset.view=key==='payroll'?'payroll':'expenses';
+   leaf.textContent=label;
+   if(role==='admin'){
+    leaf.dataset.expenseAdmin='true';leaf.classList.add('admin-only');
+   }
    leaf.addEventListener('click',event=>{
     event.stopPropagation();
     if(key==='payroll'&&window.donmacAuthenticatedRole!=='Admin')return;
-    expense.click();
-    window.donmacPayroll?.open?.(key);
     openExpense(true);
-    updateLeaf();
+    requestAnimationFrame(updateLeaf);
    });
    leaves.appendChild(leaf);
   }
@@ -62,10 +64,10 @@
    row.classList.toggle('is-open',open);
   }
   function updateLeaf(){
-   const active=nav.querySelector('.nav[data-view="expenses"].active');
+   const activeView=document.querySelector('.view.active')?.id;
    leaves.querySelectorAll('.dm-expense-leaf').forEach(el=>{
-    const chosen=active&&window.donmacPayroll?.currentTab?.()===el.dataset.expenseSubitem;
-    el.classList.toggle('active',!!chosen);
+    const chosen=activeView==='view-'+el.dataset.view;
+    el.classList.toggle('active',chosen);
     if(chosen)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
    });
   }
@@ -74,8 +76,7 @@
    openExpense(true);
    // Main heading selects the existing Expenses Ledger. The separate leaf
    // "Payroll & Attendance" is the only direct route to the payroll tab.
-   window.donmacPayroll?.open?.('ledger');
-   updateLeaf();
+   requestAnimationFrame(updateLeaf);
   });
   window.donmacExpenseMenu={expand:openExpense,sync:updateLeaf};
   openExpense(false);
