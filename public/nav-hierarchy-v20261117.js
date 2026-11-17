@@ -110,6 +110,16 @@
    header.onclick=()=>{pane.hidden=!pane.hidden;header.setAttribute('aria-expanded',String(!pane.hidden));};
    wrap.append(header,pane);
    mobilePanel.appendChild(wrap);
+   if(def.name==='Team'){
+    const messages=document.createElement('button');
+    messages.type='button';messages.className='dm-mobile-expense-payroll';
+    messages.dataset.mobileChatEntry='true';messages.textContent='Messages';
+    messages.onclick=()=>{
+     $('mobileMoreClose')?.click();
+     window.donmacChat?.open?.();
+    };
+    pane.appendChild(messages);
+   }
    def.views.forEach(view=>{
     const button=mobilePanel.querySelector('.mobile-more-item[data-view="'+view+'"]');
     if(button)pane.appendChild(button);
@@ -129,7 +139,13 @@
   });
   const syncMobile=()=>{
    for(const group of mobileGroups){
-    const hasVisible=[...group.querySelectorAll('.mobile-more-item')].some(x=>!x.classList.contains('hidden'));
+    const chat=group.querySelector('[data-mobile-chat-entry]');
+    const canMessage=window.donmacAuthenticatedRole==='Admin'||
+      (window.donmacAuthenticatedRole==='User'&&
+       (window.donmacCashierPermissions||[]).includes('messages.view'));
+    if(chat)chat.hidden=!canMessage;
+    const hasVisible=[...group.querySelectorAll('.mobile-more-item')].some(x=>!x.classList.contains('hidden'))||
+      !!(chat&&!chat.hidden);
     group.hidden=!hasVisible;
    }
    const sub=mobilePanel.querySelector('[data-mobile-payroll]');
