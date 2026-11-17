@@ -25,7 +25,12 @@
  const system=$('franchiseSystemTab'),promotions=$('franchisePromoTab');
  function systemUpdates(){
   const existing=$('whatsNewDialog');
-  if(!existing){system.innerHTML='<p>System updates are currently unavailable.</p>';return;}
+  if(!existing){
+   const version=$('appVersion')?.textContent?.trim()||'Current release';
+   system.innerHTML='<div class="dm-notif-version">Current POS version: '+esc(version)+'</div>'+
+    '<p class="dm-notif-empty">No additional release notes have been published for this account.</p>';
+   return;
+  }
   const sections=[...existing.querySelectorAll('.update-section,.version-history-section')].map(e=>e.outerHTML);
   system.innerHTML='<div class="dm-notif-version">Current system updates and release notes</div>'+sections.join('');
  }
@@ -64,14 +69,14 @@
   if(!window.donmacAuthenticatedRole)return;
   lastPoll=Date.now();
   try{
-   const response=await fetch('/api/office-promotions',{credentials:'same-origin',cache:'no-store'});
+   const response=await fetch(window.donmacFranchiseUnified?'/api/live/office-promotions':'/api/office-promotions',{credentials:'same-origin',cache:'no-store'});
    if(!response.ok)throw Error('Promotions could not be loaded.');
    const r=await response.json();campaigns=r.campaigns||[];loaded=true;renderPromos();
    if(tab==='promotions'&&modal.open){
-     localStorage.setItem('dm_seen_office_campaigns',campaigns.filter(c=>c.active).map(c=>c.id).join(','));
+     localStorage.setItem(('dm_seen_office_campaigns_user_'+String(window.donmacChatUserId||'unknown')),campaigns.filter(c=>c.active).map(c=>c.id).join(','));
    }
    const keys=campaigns.filter(x=>x.active&&Date.parse(x.endsAt)>Date.now()).map(x=>x.id).join(',');
-   const prev=localStorage.getItem('dm_seen_office_campaigns');
+   const prev=localStorage.getItem(('dm_seen_office_campaigns_user_'+String(window.donmacChatUserId||'unknown')));
    if(prev!==keys&&keys){
     const badge=$('whatsNewBadge');
     if(badge){badge.classList.remove('hidden');badge.textContent='NEW';}
@@ -89,7 +94,7 @@
    loadPromos(true);
    const badge=$('whatsNewBadge');
    if(badge){badge.classList.add('hidden');}
-   localStorage.setItem('dm_seen_office_campaigns',campaigns.map(x=>x.id).join(','));
+   localStorage.setItem(('dm_seen_office_campaigns_user_'+String(window.donmacChatUserId||'unknown')),campaigns.map(x=>x.id).join(','));
   }
  }
  function install(){
