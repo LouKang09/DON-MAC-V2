@@ -1646,7 +1646,16 @@
     $('transactionReference').textContent=d.reference||'Transaction Details';
     $('transactionStatus').textContent=d.status||'';$('transactionStatus').className=`transaction-status ${d.status==='Deleted'?'deleted':'sold'}`;
     const itemRows=(d.items||[]).map(i=>{const components=i.components?.length?`<div class="component-list"><b>Package contents:</b>${i.components.map(c=>`<span>${num(c.qty,2)} × ${esc(c.name)}</span>`).join('')}</div>`:'';return`<tr><td><b>${esc(i.name)}</b><div class="tiny muted">${esc(i.type)}${i.excludeFromCosting?' · Excluded from costing':''}</div>${components}</td><td class="num">${num(i.qty,2)}</td><td class="num">${peso(i.unitPrice)}</td><td class="num">${peso(i.lineTotal)}</td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">No item lines were recorded.</td></tr>';
-    const movementRows=(d.inventoryMovements||[]).map(m=>`<tr><td>${esc(formatDateTimeDetailed(m.createdAt))}</td><td>${esc(m.type)}</td><td>${esc(m.ingredient)}</td><td>${esc(String(m.uom||'').toUpperCase())}</td><td class="num ${m.quantityChange<0?'stock-low':'stock-ok'}">${m.quantityChange>0?'+':''}${num(m.quantityChange)}</td><td class="num">${m.balanceAfter==null?'—':num(m.balanceAfter)}</td><td>${esc(m.createdBy||'')}</td><td>${esc(m.remarks||'')}</td></tr>`).join('')||'<tr><td colspan="8" class="muted">No web inventory movements were recorded for this transaction. Imported Excel transactions may not have per-sale stock movements.</td></tr>';
+    const movementRows=(d.inventoryMovements||[]).map(m=>
+      '<tr><td>'+esc(formatDateTimeDetailed(m.createdAt))+'</td>'+
+      '<td>'+esc(m.type)+'</td><td>'+esc(m.ingredient)+'</td>'+
+      '<td class="num '+(m.quantityChange<0?'stock-low':'stock-ok')+'">'+
+      (m.quantityChange>0?'+':'')+num(m.quantityChange)+'</td>'+
+      '<td class="num">'+num(Math.abs(Number(m.quantityChange)))+'</td>'+
+      '<td>'+esc(String(m.uom||'—').toUpperCase())+'</td>'+
+      '<td class="num">'+(m.balanceAfter==null?'—':num(m.balanceAfter))+'</td>'+
+      '<td>'+esc(m.createdBy||'')+'</td><td>'+esc(m.remarks||'')+'</td></tr>'
+    ).join('')||'<tr><td colspan="9" class="muted">No linked inventory movements were recorded for this receipt.</td></tr>';
     const auditRows=(d.auditEvents||[]).map(e=>`<div class="audit-event"><div><b>${esc(e.status||'Event')}</b><span>${esc(formatDateTimeDetailed(e.createdAt))}</span></div><p>${esc(e.activity||'')}</p>${e.actor?`<small>Actor: ${esc(e.actor)}</small>`:''}${e.remark?`<small> · ${esc(e.remark)}</small>`:''}</div>`).join('')||'<div class="muted tiny">No matching system-log event was recorded.</div>';
     $('transactionDetailBody').innerHTML=`
       <div class="transaction-section"><h3>Transaction Information</h3><div class="transaction-info-grid">
@@ -1657,7 +1666,7 @@
       </div></div>
       <div class="transaction-section"><div class="transaction-section-head"><h3>Products Ordered</h3><span>${(d.items||[]).length} line(s)</span></div><div class="table-wrap"><table><thead><tr><th>Product / Item</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Line Total</th></tr></thead><tbody>${itemRows}</tbody></table></div></div>
       <div class="transaction-total-grid">${transactionInfo('Gross',d.gross,{money:true})}${transactionInfo('Adjustment',d.adjustment,{money:true})}${transactionInfo('Actual',d.actual,{money:true})}</div>
-      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th>UOM</th><th class="num">Change</th><th class="num">Balance</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div></details>
+      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th>UOM</th><th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div></details>
       <details class="transaction-section transaction-details"><summary>Audit Events <span>${(d.auditEvents||[]).length} event(s)</span></summary><div class="audit-events">${auditRows}</div></details>`;
   }
   async function viewTransaction(reference){return withActionLock(`view-sale:${reference}`,async()=>{const dialog=$('transactionDialog');$('transactionReference').textContent=reference;$('transactionStatus').textContent='';$('transactionDetailBody').innerHTML='<div class="empty-state">Loading transaction details…</div>';if(!dialog.open)dialog.showModal();try{renderTransactionDetail(await api(`/api/sales/${encodeURIComponent(reference)}`));}catch(err){$('transactionDetailBody').innerHTML=`<div class="empty-state"><div><b>Unable to load transaction</b>${esc(err.message)}</div></div>`;toast(err.message);}});}
