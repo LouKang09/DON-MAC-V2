@@ -95,7 +95,7 @@
    // conversation list from loading and interrupts the logout reset path.
    const headings=[
      document.querySelector('#mainNav .dm-nav-group-toggle[data-group="team"]'),
-     document.querySelector('#mobileMorePanel .dm-mobile-nav-group:has(#dmMobileTeam) > .dm-mobile-nav-group-toggle')
+     document.getElementById('dmMobileTeam')?.closest('.dm-mobile-nav-group')?.querySelector(':scope > .dm-mobile-nav-group-toggle')
    ];
    for(const heading of headings){
      if(!heading)continue;
