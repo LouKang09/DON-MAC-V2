@@ -1,0 +1,237 @@
+/*
+ * Don Macchiatos POS — notification actions, matched header pills, and
+ * comfortable semi-width desktop/tablet navigation (2026-11-18).
+ * Presentation-only: no permission, routing, checkout, or tenant data changes.
+ */
+
+/* Notification actions: both tabs and the close control now share the brand
+   palette, with visibly different selected/hover/focus states. */
+body .dm-notifications-dialog .dm-notifications-heading #franchiseNotificationClose {
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 2.5rem;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  padding: 0 !important;
+  border: 1px solid #147749 !important;
+  border-radius: 0.75rem !important;
+  background: #087146 !important;
+  color: #fff !important;
+  font-size: 1.5rem !important;
+  font-weight: 500;
+  line-height: 1;
+  box-shadow: 0 0.2rem 0.65rem rgba(7, 93, 56, 0.13);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+body .dm-notifications-dialog .dm-notifications-heading #franchiseNotificationClose:hover {
+  background: #05532f !important;
+  box-shadow: 0 0.3rem 0.8rem rgba(7, 93, 56, 0.22);
+}
+body .dm-notifications-dialog .dm-notification-tabs {
+  gap: 0.7rem;
+}
+body .dm-notifications-dialog .dm-notification-tabs button {
+  min-width: 0;
+  min-height: 2.85rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #148453 !important;
+  border-radius: 0.7rem !important;
+  background: #138452 !important;
+  color: #fff !important;
+  font-size: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+  font-weight: 800;
+  line-height: 1.3;
+  box-shadow: 0 0.15rem 0.4rem rgba(7, 93, 56, 0.1);
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+body .dm-notifications-dialog .dm-notification-tabs button.active {
+  background: #075d38 !important;
+  border-color: #075d38 !important;
+  box-shadow: inset 0 -0.17rem 0 rgba(0,0,0,0.17), 0 0.2rem 0.55rem rgba(7,93,56,0.18);
+}
+body .dm-notifications-dialog .dm-notification-tabs button:not(.active):hover {
+  background: #0b6c41 !important;
+}
+body .dm-notifications-dialog .dm-notification-tabs button:focus-visible,
+body .dm-notifications-dialog .dm-notifications-heading #franchiseNotificationClose:focus-visible {
+  outline: 3px solid #78dba4 !important;
+  outline-offset: 2px !important;
+}
+body .dm-notifications-dialog .dm-notification-tabs button #franchisePromoCount:not(:empty) {
+  display: inline-block;
+  padding: 0.12rem 0.4rem;
+  margin-left: 0.3rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.23);
+  color: #fff;
+}
+@media (max-width: 560px) {
+  body .dm-notifications-dialog .dm-notification-tabs { gap: 0.4rem; }
+  body .dm-notifications-dialog .dm-notification-tabs button {
+    padding-inline: 0.45rem;
+    font-size: 0.7rem !important;
+  }
+}
+
+/* The plan label and account button have matching outer geometry, without
+   turning the read-only plan indicator into an interactive dropdown. */
+@media screen and (min-width: 700px) {
+  html body #app .topbar .topbar-right .account-plan-top-control,
+  html body #app .topbar .topbar-right #topbarProfileButton {
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: clamp(10.4rem, 12.2vw, 12rem) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 2.9rem !important;
+    min-height: 2.9rem !important;
+    padding: 0.35rem 0.65rem !important;
+    margin: 0 !important;
+    border: 1.5px solid rgba(184, 232, 201, 0.72) !important;
+    border-radius: 999px !important;
+    background: rgba(7, 72, 44, 0.74) !important;
+    color: #fff !important;
+    line-height: 1.15 !important;
+    box-shadow: 0 0.16rem 0.45rem rgba(0, 27, 12, 0.09) !important;
+    white-space: nowrap !important;
+  }
+  html body #app .topbar .topbar-right .account-plan-top-control {
+    gap: 0.3rem !important;
+    font-size: 0.75rem !important;
+    text-align: center;
+  }
+  html body #app .topbar .topbar-right .account-plan-top-control strong {
+    font-size: inherit !important;
+    font-weight: 850;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  html body #app .topbar .topbar-right #topbarProfileButton {
+    justify-content: flex-start !important;
+    gap: 0.45rem !important;
+    padding-left: 0.35rem !important;
+    cursor: pointer;
+  }
+  html body #app .topbar .topbar-right #topbarProfileButton .topbar-avatar {
+    flex: 0 0 2rem !important;
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+  html body #app .topbar .topbar-right #topbarProfileButton .topbar-profile-text {
+    flex: 1 1 auto !important;
+    width: auto;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  html body #app .topbar .topbar-right #topbarProfileButton .topbar-profile-chevron {
+    flex: 0 0 0.75rem !important;
+    width: 0.75rem;
+    margin-left: auto;
+  }
+  html body #app .topbar .topbar-right #topbarProfileButton:hover {
+    background: #0b7549 !important;
+  }
+}
+@media screen and (min-width: 700px) and (max-width: 1150px) {
+  html body #app .topbar .topbar-right .account-plan-top-control,
+  html body #app .topbar .topbar-right #topbarProfileButton {
+    width: clamp(8.5rem, 12vw, 9.7rem) !important;
+  }
+  /* The descriptive phrase is still exposed as an accessible label; show the
+     useful plan value where the header has limited horizontal space. */
+  html body #app .topbar .topbar-right .account-plan-top-control {
+    font-size: 0 !important;
+    gap: 0 !important;
+  }
+  html body #app .topbar .topbar-right .account-plan-top-control strong {
+    font-size: 0.76rem !important;
+  }
+}
+
+/* Full sidebar at semi-width desktop/tablet sizes: give nested navigation,
+   readable labels, and in-row help controls space without squeezing the main. */
+@media screen and (min-width: 700px) {
+  html body #app:not(.hidden):not(.sidebar-collapsed) {
+    grid-template-columns: clamp(14.1rem, 19vw, 16rem) minmax(0, 1fr) !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0.85rem 0.75rem 1rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 0.12rem !important;
+    gap: clamp(0.65rem, 1vw, 1rem) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items {
+    margin-left: 0.62rem !important;
+    padding-left: 0.58rem !important;
+    gap: 0.3rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-nav-group-toggle {
+    box-sizing: border-box !important;
+    min-height: 2.7rem !important;
+    padding: 0.55rem 0.6rem !important;
+    font-size: 0.8rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items > .nav,
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items > .dm-expense-menu > .nav {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 2.65rem !important;
+    padding: 0.6rem 0.58rem !important;
+    gap: 0.5rem !important;
+    font-size: 0.79rem !important;
+    line-height: 1.28 !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items .nav .nav-icon {
+    flex: 0 0 1.15rem !important;
+    width: 1.15rem !important;
+    height: 1.15rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .nav .nav-label {
+    min-width: 0 !important;
+    font-size: 0.79rem !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-guide-nav-row > .nav {
+    padding-right: 2.25rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-guide-inline {
+    right: 0.35rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-team-unread-count {
+    flex-shrink: 0 !important;
+  }
+}
+@media screen and (min-width: 700px) and (max-width: 900px) {
+  html body #app:not(.hidden):not(.sidebar-collapsed) {
+    grid-template-columns: clamp(13.25rem, 25vw, 14.2rem) minmax(0, 1fr) !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar {
+    padding-inline: 0.55rem !important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items {
+    margin-left: 0.4rem !important;
+    padding-left: 0.45rem !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body .dm-notifications-dialog .dm-notification-tabs button,
+  body .dm-notifications-dialog .dm-notifications-heading #franchiseNotificationClose {
+    transition: none;
+  }
+}
