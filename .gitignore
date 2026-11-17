@@ -1,8 +1,22 @@
+# Dependencies and local runtime
 node_modules/
 data/*.db
 data/*.db-shm
 data/*.db-wal
 data/runtime.json
 backups/*.sqlite
+
+# Never commit local, production or machine-specific environment secrets.
+# Patterns without a slash apply to nested directories too.
 .env
+.env.*
+.envrc
+!.env.example
+!.env.sample
+!.env.template
+!.env.*.example
+!.env.*.sample
+!.env.*.template
+
+# Private credentials / local OS files
 .DS_Store
