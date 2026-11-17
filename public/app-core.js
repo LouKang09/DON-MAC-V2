@@ -2568,7 +2568,85 @@
 
   function formatDateTime(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}).format(d);}
   function formatDateTimeDetailed(v){if(!v)return'';const s=String(v);if(!/[zZ]|[+-]\d\d:\d\d$/.test(s))return s.replace('T',' ');const d=new Date(s);return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'medium'}).format(d);}
-  async function loadLogs(){try{const d=await api('/api/system-logs?limit=500');$('logsList').innerHTML=d.logs.map(l=>`<div class="log-row"><div class="log-meta"><b>${esc(l.status||'LOG')}</b><span>${esc(l.actor||'')}</span><span>${esc(formatDateTime(l.createdAt))}</span>${l.remark?`<span>· ${esc(l.remark)}</span>`:''}</div><pre>${esc(l.activity)}</pre></div>`).join('')||'<div class="empty-state">No system logs.</div>';}catch(err){toast(err.message);}}
+  // The new franchise keeps its own read-only System Logs view. The older
+  // shared-account filter layer remains independent and unchanged.
+  const liveLogView={rows:[],page:1,filter:'All',search:'',limit:500,truncated:false};
+  function ensureLiveLogControls(){
+    if($('liveSystemLogControls'))return;
+    const controls=document.createElement('div');
+    controls.id='liveSystemLogControls';controls.className='live-system-log-controls';
+    controls.innerHTML='<label>Category <select id="liveLogCategory" aria-label="Filter system log category">'+
+      '<option value="All">All categories</option>'+
+      '<option value="Sales">Sales</option>'+
+      '<option value="Inventory">Inventory</option>'+
+      '<option value="Expenses">Expenses</option></select></label>'+
+      '<label>Search <input id="liveLogSearch" type="search" placeholder="Search activity, branch, actor or reference" autocomplete="off"></label>'+
+      '<span id="liveLogCount" class="live-log-count" role="status"></span>';
+    $('logsList').before(controls);
+    $('liveLogCategory').addEventListener('change',e=>{
+      liveLogView.filter=e.target.value;liveLogView.page=1;renderLiveLogs();
+    });
+    $('liveLogSearch').addEventListener('input',e=>{
+      liveLogView.search=e.target.value.trim().toLowerCase();
+      liveLogView.page=1;renderLiveLogs();
+    });
+  }
+  function renderLiveLogs(){
+    const source=liveLogView.rows;
+    const matching=source.filter(log=>
+      (liveLogView.filter==='All'||log.category===liveLogView.filter)&&
+      (!liveLogView.search||
+       [log.category,log.status,log.actor,log.activity,log.remark,log.reference]
+        .join(' ').toLowerCase().includes(liveLogView.search)));
+    const pageSize=10,pages=Math.max(1,Math.ceil(matching.length/pageSize));
+    liveLogView.page=Math.max(1,Math.min(liveLogView.page,pages));
+    const entries=matching.slice((liveLogView.page-1)*pageSize,liveLogView.page*pageSize);
+    $('logsList').innerHTML=entries.map(l=>
+      '<article class="log-row live-log-row"><div class="log-meta"><b>'+esc(l.status||'LOG')+'</b>'+
+      '<span class="live-log-category">'+esc(l.category||'Other')+'</span>'+
+      '<span>'+esc(l.actor||'')+'</span><span>'+esc(formatDateTime(l.createdAt))+'</span>'+
+      (l.remark?'<span>· '+esc(l.remark)+'</span>':'')+'</div>'+
+      '<p class="live-log-activity">'+esc(l.activity||'')+'</p></article>'
+    ).join('')||'<div class="empty-state">No matching events in this franchise’s recorded audit history.</div>';
+    $('liveLogCount').textContent=matching.length+' matching event(s) · '+
+      source.length+' recent recorded events'+(liveLogView.truncated?' · limited history':'');
+    const pagination=$('systemLogsPagination');
+    pagination.replaceChildren();
+    const previous=document.createElement('button'),next=document.createElement('button');
+    previous.type='button';next.type='button';
+    previous.textContent='Previous';next.textContent='Next';
+    previous.disabled=liveLogView.page<=1;next.disabled=liveLogView.page>=pages;
+    const position=document.createElement('span');
+    position.textContent='Page '+liveLogView.page+' of '+pages;
+    previous.onclick=()=>{liveLogView.page--;renderLiveLogs();};
+    next.onclick=()=>{liveLogView.page++;renderLiveLogs();};
+    pagination.append(previous,position,next);
+  }
+  async function loadLogs(){
+    try{
+      const d=await api('/api/system-logs?limit=500');
+      if(state.user?.liveMode){
+        ensureLiveLogControls();
+        liveLogView.rows=Array.isArray(d.logs)?d.logs:[];
+        liveLogView.truncated=Boolean(d.truncated);
+        renderLiveLogs();
+      }else{
+        $('logsList').innerHTML=(d.logs||[]).map(l=>
+          '<div class="log-row"><div class="log-meta"><b>'+esc(l.status||'LOG')+
+          '</b><span>'+esc(l.actor||'')+'</span><span>'+esc(formatDateTime(l.createdAt))+
+          '</span>'+(l.remark?'<span>· '+esc(l.remark)+'</span>':'')+
+          '</div><pre>'+esc(l.activity)+'</pre></div>'
+        ).join('')||'<div class="empty-state">No system logs.</div>';
+      }
+    }catch(err){
+      if(state.user?.liveMode){
+        $('logsList').innerHTML='<div class="empty-state">'+
+          'Unable to load this franchise’s system history: '+esc(err.message)+
+          '. Use Refresh to retry.</div>';
+      }
+      toast(err.message);
+    }
+  }
   $('cashiersTableRefresh').onclick=loadUsers;
   $('branchesTableRefresh').onclick=async()=>{try{await loadBranches();}catch(err){toast(err.message);}};
   $('refreshLogs').onclick=loadLogs;
