@@ -472,15 +472,30 @@
       }
     });
   });
+  let signOutInProgress=false;
   $('logoutButton').onclick=async()=>{
-    state.user=null;discardPreviousAccount();resetOrderState({render:false});showAuth(false);
+    if(signOutInProgress)return;
+    signOutInProgress=true;
+    const controls=[$('logoutButton'),$('mobileSignOutButton')].filter(Boolean);
+    controls.forEach(node=>{node.disabled=true;node.setAttribute('aria-busy','true');});
     try{
-      await api('/api/auth/logout',{method:'POST'});
-      signalAccountChange();navigateWithCleanDocument();
+      // Revoke the server session BEFORE clearing local app state: this
+      // guarantees the request is not cancelled by a browser-state reset.
+      await api('/api/auth/logout',{method:'POST',timeoutMs:15000});
     }catch(err){
-      $('authHint').textContent='Sign out could not be confirmed. Retry before switching accounts.';
-      toast(err.message);
+      signOutInProgress=false;
+      controls.forEach(node=>{node.disabled=false;node.removeAttribute('aria-busy');});
+      toast('Unable to sign out: '+err.message);
+      return;
     }
+    state.user=null;
+    // View cleanup is best effort. A broken optional dashboard/chat module
+    // must never prevent a successful server-side logout and clean reload.
+    try{discardPreviousAccount();}catch(error){console.warn('Account cleanup:',error);}
+    try{resetOrderState({render:false});}catch(error){console.warn('Checkout cleanup:',error);}
+    try{showAuth(false);}catch(error){console.warn('Sign-out display cleanup:',error);}
+    signalAccountChange();
+    navigateWithCleanDocument();
   };
 
   async function refreshPosDailyCount(){
