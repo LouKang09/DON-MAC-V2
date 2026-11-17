@@ -144,6 +144,7 @@
       await loadScript('/dashboard-experience-v1573.js?v=20261107c');
       await loadScript('/pos-finance.js?v=20261115-isolated');
       await loadScript('/refresh-controls-v20261107.js');
+      await loadScript('/notifications-campaigns-v20261108.js?v=20261117-live-bell');
       const view=document.querySelector('.view.active')?.id;
       if(view==='view-transactions'||view==='view-expenses')window.donmacFinance?.open(view.slice(5));
     }catch(err){scopedFinanceStarted=false;console.error('Isolated finance display:',err);}
