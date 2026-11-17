@@ -225,6 +225,11 @@
    const r=await live('/api/live/cashiers');
    return{cashiers:(r.cashiers||[]).map(x=>x.username)};
   }
+  if(p==='/api/system-logs'&&method==='GET'){
+   const limit=Number(url.searchParams.get('limit')||200);
+   return live('/api/live/system-logs?limit='+
+     encodeURIComponent(Number.isFinite(limit)?Math.min(Math.max(Math.trunc(limit),1),500):200));
+  }
   // DO NOT add a catch-all proxy or return fake empty data. An incomplete
   // feature must be unavailable rather than show someone else's records.
   throw fail('This Main POS function has not yet been migrated to your isolated franchise data. It remains disabled to protect other accounts.',403);
