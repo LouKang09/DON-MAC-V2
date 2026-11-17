@@ -41,7 +41,7 @@ async function setup(){
  await pool.query('CREATE SCHEMA '+schema);
  await db.exec('CREATE TABLE users(id BIGSERIAL PRIMARY KEY,username TEXT NOT NULL,login_username TEXT,'+
   'password_hash TEXT,role TEXT NOT NULL,active BOOLEAN NOT NULL,branch_id BIGINT,'+
-  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT,email TEXT,phone TEXT,profile_photo TEXT)');
+  'created_at TEXT,full_name TEXT,owner_scope_id BIGINT,email TEXT,email_verified_at TEXT,phone TEXT,profile_photo TEXT)');
  await db.exec('CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id BIGINT)');
  await db.exec('CREATE TABLE branches(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,active BOOLEAN NOT NULL,address TEXT,'+
   'city TEXT,province TEXT,postal_code TEXT,country TEXT,phone TEXT,description TEXT)');
