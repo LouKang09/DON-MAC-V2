@@ -292,7 +292,7 @@
     addHeader('WELCOME TO DON MACCHIATOS','Your interactive POS guide',
       'Learn the screens available to your account before using live transactions, inventory or reports.');
     const list=make('div','dm-guide-welcome-list');
-    ['Short overview of every permitted sidebar section','Detailed step-by-step tours for each section and subcategory','Safe, read-only guidance with background clicks and scrolling disabled','Reopen any guide later using the Help buttons'].forEach(t=>list.appendChild(make('p','', '✓  '+t)));
+    ['Short overview of every permitted sidebar section','Detailed step-by-step tours for each section and subcategory','Safe, read-only guidance with background clicks and scrolling disabled','Reopen any guide later using Guide Center'].forEach(t=>list.appendChild(make('p','', '✓  '+t)));
     panel.appendChild(list);
     const actions=make('div','dm-guide-actions');
     addButton(actions,'Start system tour',()=>start('overview'),'primary');
@@ -330,11 +330,11 @@
   const overviewSteps = () => {
     const available=topicsAvailable().filter(key=>!LIB[key].parent);
     const a=[
-      {title:'Welcome to your workspace',body:'This tour introduces only the modules that your role can access. Use the question-mark icons next to sidebar sections or the Help button to revisit detailed walkthroughs.',target:'#mainNav'},
+      {title:'Welcome to your workspace',body:'This tour introduces only the modules that your role can access. Use Guide Center in the sidebar to revisit detailed walkthroughs.',target:'#mainNav'},
       {title:'Navigate by category',body:'Select a sidebar category to open its workspace. Managers see management tools; cashiers only see POS and specifically granted features.',target:'#mainNav'}
     ];
     available.forEach(key=>a.push({title:LIB[key].label,body:LIB[key].intro + ' Open the detailed '+LIB[key].label+' guide at any time for step-by-step instructions.',target:'#mainNav button.nav[data-view="'+key+'"]'}));
-    a.push({title:'Rewatch guides at any time',body:'Click Guide Center in the left panel, the Help button near the top of the page, or a section’s ? control. Guides never change business data.',target:'#dmGuideSidebarOpen'});
+    a.push({title:'Rewatch guides at any time',body:'Click Guide Center in the left panel or a section’s guided-tour control. Guides never change business data.',target:'#dmGuideSidebarOpen'});
     return a;
   };
   const renderStep=()=>{
@@ -410,7 +410,7 @@
     if(!$('#dmGuideSidebarOpen')){
       const sidebar=$('.sidebar .sidebar-bottom');
       if(sidebar){
-        const b=make('button','dm-guide-launcher','?  Guide Center');
+        const b=make('button','dm-guide-launcher','Guide Center');
         b.id='dmGuideSidebarOpen';b.type='button';
         b.setAttribute('aria-label','Open Guide Center');
         b.title='View step-by-step guides';
@@ -418,14 +418,22 @@
         sidebar.insertBefore(b,sidebar.firstChild);
       }
     }
-    if(!$('#dmGuideTopbarOpen')){
+    // Replace the duplicate topbar Help launcher with the original
+    // notifications bell. Guide Center remains accessible in the sidebar.
+    $('#dmGuideTopbarOpen')?.remove();
+    if(!$('#whatsNewButton')){
       const area=$('.topbar-right');
       if(area){
-        const b=make('button','dm-guide-topbar-launcher','?  Help');
-        b.id='dmGuideTopbarOpen';b.type='button';
-        b.setAttribute('aria-label','Open interactive user guides');
-        b.addEventListener('click',showBrowser);
-        area.insertBefore(b,area.firstChild);
+        const bell=make('button','dm-topbar-notification-bell','');
+        bell.id='whatsNewButton';bell.type='button';
+        bell.title='System Updates and Promotions';
+        bell.setAttribute('aria-label','Open notifications: System Updates and Promotions');
+        bell.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" '+
+         'fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" '+
+         'stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0'+
+         'c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>'+
+         '<span id="whatsNewBadge" class="update-badge hidden" aria-label="New notifications">NEW</span>';
+        area.insertBefore(bell,area.firstChild);
       }
     }
     refreshNavButtons();generated=true;
