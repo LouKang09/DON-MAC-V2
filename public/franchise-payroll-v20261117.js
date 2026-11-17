@@ -30,6 +30,7 @@
   shift=null;entitlement=null;employees=[];branches=[];previewData=null;savedSlip=null;expenseTab='ledger';loadInProgress=false;
   if($('dmPayrollBranchFilter'))$('dmPayrollBranchFilter').value='all';
   if($('dmExpenseTabs'))$('dmExpenseTabs').hidden=true;
+  if($('dmPayrollTabs'))$('dmPayrollTabs').hidden=true;
   const area=$('view-expenses');
   if(area)area.dataset.expenseMode='ledger';
   const pane=$('dmPayrollManager');
@@ -55,37 +56,37 @@
   if($('dmPayrollDtrDialog')?.open)$('dmPayrollDtrDialog').close();
   message('');
  }
- function switchExpenseTab(tab){
+ function switchExpenseTab(tab,navigate=true){
   if(!user||user.role!=='Admin')return;
   expenseTab=tab==='payroll'?'payroll':'ledger';
-  if(document.querySelector('#view-expenses.active')){
+  const destination=expenseTab==='payroll'?'payroll':'expenses';
+  if(navigate&&!document.getElementById('view-'+destination)?.classList.contains('active'))
+   window.donmacNavigateView?.(destination);
+  // These are independent top-level pages; the Expenses Ledger cannot be
+  // displayed on the Payroll route by an old theme or finance enhancement.
+  const payroll=$('dmPayrollManager');
+  if(payroll){
+   const visible=expenseTab==='payroll';
+   payroll.hidden=!visible;payroll.inert=!visible;
+   payroll.classList.toggle('dm-expense-pane-inactive',!visible);
+   payroll.setAttribute('aria-hidden',String(!visible));
+  }
+  const ledger=document.querySelector('#view-expenses>.pos-finance-shell');
+  if(ledger){ledger.hidden=false;ledger.inert=false;ledger.classList.remove('dm-expense-pane-inactive');}
+  if(document.querySelector('#view-'+destination+'.active')){
    if($('viewTitle'))$('viewTitle').textContent=expenseTab==='payroll'?'Payroll & Attendance':'Expenses Ledger';
    if($('viewEyebrow'))$('viewEyebrow').textContent=expenseTab==='payroll'?'EMPLOYEE MANAGEMENT':'TRANSACTIONS';
   }
-  const parent=$('view-expenses');
-  if(parent)parent.dataset.expenseMode=expenseTab;
-  const ledger=document.querySelector('#view-expenses>.pos-finance-shell');
-  if(ledger){
-   ledger.hidden=expenseTab!=='ledger';
-   ledger.classList.toggle('dm-expense-pane-inactive',expenseTab!=='ledger');
-   ledger.inert=expenseTab!=='ledger';
-   ledger.setAttribute('aria-hidden',String(expenseTab!=='ledger'));
+  for(const id of ['dmExpenseTabs','dmPayrollTabs']){
+   $(id)?.querySelectorAll('[data-expense-tab]').forEach(button=>{
+    const selected=button.dataset.expenseTab===expenseTab;
+    button.classList.toggle('active',selected);
+    button.setAttribute('aria-pressed',String(selected));
+   });
   }
-  const payroll=$('dmPayrollManager');
-  if(payroll){
-   payroll.hidden=expenseTab!=='payroll';
-   payroll.classList.toggle('dm-expense-pane-inactive',expenseTab!=='payroll');
-   payroll.inert=expenseTab!=='payroll';
-   payroll.setAttribute('aria-hidden',String(expenseTab!=='payroll'));
-  }
-  $('dmExpenseTabs')?.querySelectorAll('[data-expense-tab]').forEach(button=>{
-   const selected=button.dataset.expenseTab===expenseTab;
-   button.classList.toggle('active',selected);
-   button.setAttribute('aria-pressed',String(selected));
-  });
+  window.donmacExpenseMenu?.sync?.();
   if(expenseTab==='payroll'){
-   if(!entitlement)refreshStatus();
-   else if(entitlement.enabled)loadTeam();
+   if(!entitlement)refreshStatus();else if(entitlement.enabled)loadTeam();
   }
  }
  function markAttendance(){
@@ -385,21 +386,17 @@
   page.document.close();page.focus();
  }
  function onViewChange(view){
-  if(view==='expenses'){
-   if(user?.role==='Admin'){
-    if($('viewTitle'))$('viewTitle').textContent=expenseTab==='payroll'?'Payroll & Attendance':'Expenses Ledger';
-    if($('viewEyebrow'))$('viewEyebrow').textContent=expenseTab==='payroll'?'EMPLOYEE MANAGEMENT':'TRANSACTIONS';
-    window.donmacExpenseMenu?.sync?.();
-   }
-   if(entitlement?.enabled)loadTeam();
-  }
+  if(user?.role!=='Admin')return;
+  if(view==='payroll')switchExpenseTab('payroll',false);
+  else if(view==='expenses')switchExpenseTab('ledger',false);
  }
  function onLogin(next){
   token++;user=next;reset();
   if(!next)return;
   if(next.role==='Admin'){
    $('dmExpenseTabs').hidden=false;
-   switchExpenseTab('ledger');
+   $('dmPayrollTabs').hidden=false;
+   switchExpenseTab('ledger',false);
   }
   refreshStatus();
  }
@@ -411,6 +408,7 @@
   const b=e.target.closest('[data-attendance-action]');if(b)takeAction(b.dataset.attendanceAction);
  });
  $('dmExpenseTabs').addEventListener('click',event=>{const button=event.target.closest('[data-expense-tab]');if(button)switchExpenseTab(button.dataset.expenseTab);});
+ $('dmPayrollTabs').addEventListener('click',event=>{const button=event.target.closest('[data-expense-tab]');if(button)switchExpenseTab(button.dataset.expenseTab);});
  $('dmPayrollBranchFilter').addEventListener('change',renderBranchRoster);
  $('dmPayrollRoster').addEventListener('click',event=>{
   const previewButton=event.target.closest('[data-roster-preview]');
