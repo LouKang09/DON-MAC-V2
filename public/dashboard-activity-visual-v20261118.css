@@ -1,0 +1,187 @@
+/* Don Mac POS — graph-style KPI activity across all dashboard breakdowns. */
+#dmKpiDetail .dm-activity-panel {
+  box-sizing:border-box;
+  display:block;
+  min-width:0;
+  padding:clamp(1rem,1.5vw,1.65rem)!important;
+  background:#fff!important;
+  border:1px solid #d9e9de!important;
+}
+#dmKpiDetail .dm-activity-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:1rem 1.5rem;
+  padding:0 .15rem .45rem;
+}
+#dmKpiDetail .dm-activity-head > div:first-child {min-width:0;flex:1 1 13rem;}
+#dmKpiDetail .dm-activity-head h3 {
+  color:#1a2e24!important;
+  font-size:clamp(1rem,1.3vw,1.25rem)!important;
+  line-height:1.3!important;
+  font-weight:750!important;
+  text-shadow:none!important;
+  margin:0 0 .35rem!important;
+  padding:0!important;
+  background:transparent!important;
+}
+#dmKpiDetail .dm-activity-subtitle {
+  color:#697a71!important;
+  font-size:.81rem;
+  line-height:1.45;
+  max-width:54rem;
+  margin:0!important;
+}
+#dmKpiDetail .dm-activity-controls {
+  display:flex;
+  align-items:flex-end;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:clamp(.65rem,1.6vw,1.45rem);
+  margin-left:auto;
+}
+#dmKpiDetail .dm-activity-controls label {
+  display:grid;
+  gap:.2rem;
+  min-width:8.3rem;
+  color:#5b6b61;
+  font-weight:750;
+  font-size:.72rem;
+}
+#dmKpiDetail .dm-activity-controls select {
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  min-width:8.3rem;
+  height:2.3rem;
+  padding:.38rem 1.95rem .38rem .55rem;
+  border:0;
+  border-bottom:1px solid #a9bdb0;
+  border-radius:0;
+  background:#fff;
+  color:#17291e!important;
+  font-size:.9rem!important;
+  font-weight:600;
+  line-height:1.2;
+  cursor:pointer;
+  box-shadow:none!important;
+  accent-color:#075d38;
+}
+#dmKpiDetail .dm-activity-controls select:hover {
+  background:#f0f9f3!important;
+  border-bottom:2px solid #148750;
+}
+#dmKpiDetail .dm-activity-controls select:focus-visible {
+  outline:2px solid #1b9157!important;
+  outline-offset:3px!important;
+  border-bottom-color:#075d38;
+}
+#dmKpiDetail .dm-activity-range {
+  margin:.25rem .15rem 0;
+  color:#657b6a;
+  font-size:.75rem;
+  font-variant-numeric:tabular-nums;
+}
+#dmKpiDetail .dm-activity-plot {
+  min-height:22rem;
+  width:100%;
+  min-width:0;
+  color:#264432;
+}
+#dmKpiDetail .dm-activity-plot > .dm-kpi-loading,
+#dmKpiDetail .dm-activity-plot > .dm-kpi-empty{
+  margin:1.5rem .5rem;
+}
+#dmKpiDetail .dm-activity-scroll {
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:#a1c9ab #eef6f0;
+}
+#dmKpiDetail .dm-activity-scroll:focus-visible {
+  outline:2px solid #1b9157;
+  outline-offset:-3px;
+}
+#dmKpiDetail .dm-activity-svg {
+  display:block;
+  width:100%;
+  min-width:43rem;
+  height:auto;
+  background:#fff;
+  user-select:none;
+  -webkit-user-select:none;
+}
+#dmKpiDetail .dm-activity-grid-line {
+  stroke:#e3e9e5;
+  stroke-width:1.15px;
+  vector-effect:non-scaling-stroke;
+}
+#dmKpiDetail .dm-activity-axis {
+  stroke:#d3ddd6;
+  stroke-width:1.2px;
+  vector-effect:non-scaling-stroke;
+}
+#dmKpiDetail .dm-activity-y-label {
+  fill:#405b49;
+  font:13px system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+#dmKpiDetail .dm-activity-x-label {
+  fill:#27402f;
+  font:13px system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+#dmKpiDetail .dm-activity-line {
+  stroke:#7ac64a;
+  stroke-width:2.7px;
+  stroke-linejoin:round;
+  stroke-linecap:round;
+  fill:none;
+  vector-effect:non-scaling-stroke;
+}
+#dmKpiDetail .dm-activity-marker {
+  fill:#fff;
+  stroke:#7ac64a;
+  stroke-width:2.7px;
+  vector-effect:non-scaling-stroke;
+  cursor:crosshair;
+}
+#dmKpiDetail .dm-activity-marker:hover,
+#dmKpiDetail .dm-activity-marker:focus {
+  fill:#0a6940;
+  stroke:#075d38;
+  stroke-width:3.4px;
+}
+#dmKpiDetail .dm-activity-bar {
+  fill:#59a96d;
+  stroke:#238256;
+  stroke-width:.8px;
+  vector-effect:non-scaling-stroke;
+  cursor:crosshair;
+}
+#dmKpiDetail .dm-activity-bar:hover,
+#dmKpiDetail .dm-activity-bar:focus {
+  fill:#075d38;
+  stroke:#054b2c;
+}
+@media(max-width:690px) {
+  #dmKpiDetail .dm-activity-head {flex-direction:column;align-items:stretch;gap:.75rem;}
+  #dmKpiDetail .dm-activity-head > div:first-child{flex:auto;}
+  #dmKpiDetail .dm-activity-controls {width:100%;margin:0;justify-content:space-between;gap:.65rem;}
+  #dmKpiDetail .dm-activity-controls label {min-width:0;flex:1 1 8rem;}
+  #dmKpiDetail .dm-activity-controls select{min-width:0;}
+  #dmKpiDetail .dm-activity-svg{width:52rem;min-width:52rem;}
+}
+@media(prefers-reduced-motion:reduce){
+  #dmKpiDetail .dm-activity-marker,#dmKpiDetail .dm-activity-bar {transition:none!important;}
+}
+@media print{
+  #dmKpiDetail .dm-activity-scroll{overflow:visible!important;}
+  #dmKpiDetail .dm-activity-svg{min-width:0!important;width:100%!important;}
+  #dmKpiDetail .dm-activity-controls{display:none!important;}
+}
