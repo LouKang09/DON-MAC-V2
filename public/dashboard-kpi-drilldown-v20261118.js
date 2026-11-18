@@ -143,17 +143,171 @@
    Math.max(1,Math.min(100,100*x.amount/Math.max(1,total))).toFixed(2)+'%"></span></div></div>').join('');
   return panel('Menu category breakdown',bars,note);
  }
+
+ // The headline activity visual applies to all seven dashboard drill-downs.
+ // Only the permitted, signed-in branch scope is fetched. Expenses and stock
+ // have no historical hourly series, so those pages show contextual net sales.
+ let chosenChartType='line',activityLoadSequence=0;
+ const addDays=(day,delta)=>new Date(Date.parse(day+'T00:00:00Z')+delta*86400000).toISOString().slice(0,10);
+ function activityDates(period,interval){
+  const latest=period.to;
+  if(interval==='hourly')return{view:'custom',from:latest,to:latest};
+  if(period.from!==period.to)return{view:'custom',from:period.from,to:period.to};
+  const maxDays=context.role==='Admin'||!context.live?30:
+   context.permissions.includes('report.window.month')?30:
+   context.permissions.includes('report.window.week')?7:1;
+  const today=payload.today||period.to;
+  const earliest=addDays(today,1-maxDays);
+  const proposed=addDays(latest,-29);
+  return{view:'custom',from:context.role==='Admin'||!context.live?proposed:
+   (proposed<earliest?earliest:proposed),to:latest};
+ }
  function timelinePanel(d,key){
-  if(['expenses','alerts'].includes(key))return'';
-  const points=(d.trend||[]).map(x=>({label:x.label,n:key==='orders'?number(x.transactions):number(x.actual),
-   orders:number(x.transactions)}));
-  if(!points.length)return'';
-  const max=Math.max(1,...points.map(x=>x.n));
-  const rows=points.map(x=>'<div class="dm-kpi-mini-bar"><span>'+esc(x.label)+'</span>'+
-   '<div class="dm-kpi-bar-track"><span style="width:'+Math.max(0.8,100*x.n/max).toFixed(2)+'%"></span></div>'+
-   '<strong>'+(key==='orders'?count(x.n):money(x.n))+'</strong></div>').join('');
-  return panel((d.grain==='hourly'?'Hourly':'Daily')+' sales activity',rows,
-   'Completed '+(key==='orders'?'order counts':'net sales')+' for the displayed period; scroll for all intervals.');
+  const defaultInterval=d.grain==='daily'?'daily':'hourly';
+  const isContext=key==='expenses'||key==='alerts';
+  const displayLabel=key==='orders'?'Completed orders':key==='discount'?'Discounts':
+   isContext?'Net sales (context)':'Gross sales';
+  return '<section class="dm-kpi-panel dm-activity-panel" aria-label="Sales activity chart">'+
+   '<div class="dm-activity-head"><div><h3 id="dmActivitySeriesName">'+esc(displayLabel)+'</h3>'+
+   '<p class="dm-activity-subtitle" id="dmActivityDescription">'+
+   (isContext?'Completed POS sales context; not historical expenses or stock alerts.':
+    'Completed POS sales from the selected dashboard branch scope.')+'</p></div>'+
+   '<div class="dm-activity-controls">'+
+   '<label for="dmActivityType">Chart Type<select id="dmActivityType" aria-label="Chart type">'+
+   '<option value="line"'+(chosenChartType==='line'?' selected':'')+'>Line</option>'+
+   '<option value="bar"'+(chosenChartType==='bar'?' selected':'')+'>Bar</option></select></label>'+
+   '<label for="dmActivityInterval">Interval<select id="dmActivityInterval" aria-label="Sales activity interval">'+
+   '<option value="hourly"'+(defaultInterval==='hourly'?' selected':'')+'>Hourly</option>'+
+   '<option value="daily"'+(defaultInterval==='daily'?' selected':'')+'>Daily</option></select></label>'+
+   '</div></div><p class="dm-activity-range" id="dmActivityRange" aria-live="polite"></p>'+
+   '<div id="dmActivityPlot" class="dm-activity-plot" aria-live="polite">'+
+   '<p class="dm-kpi-loading">Loading sales activity…</p></div>'+
+   '</section>';
+ }
+ const axisLabel=(n,monetary)=>monetary?money(n):count(n);
+ function svgChart(d,key,interval,chartType){
+  const isOrders=key==='orders',isDiscount=key==='discount';
+  const availableGross=(d.trend||[]).every(x=>Number.isFinite(Number(x.gross)));
+  const availableDiscount=(d.trend||[]).every(x=>Number.isFinite(Number(x.discount)));
+  const useGross=!isOrders&&!isDiscount&&key!=='expenses'&&key!=='alerts'&&availableGross;
+  const useDiscount=isDiscount&&availableDiscount;
+  const field=isOrders?'transactions':useDiscount?'discount':useGross?'gross':'actual';
+  const seriesLabel=isOrders?'Completed orders':useDiscount?'Discounts':
+   useGross?'Gross sales':'Net sales';
+  let trend=Array.isArray(d.trend)?d.trend:[];
+  let points=trend.map(x=>({name:String(x.label||''),value:Math.max(0,number(x[field]))}));
+  if(interval==='daily'&&d.grain==='hourly'){
+   const sum=points.reduce((acc,x)=>acc+x.value,0);
+   points=[{name:d.to||'',value:sum}];
+  }
+  if(interval==='daily'&&d.grain==='daily'){
+   points=points.map((point,i)=>{
+    const iso=addDays(d.from,i);
+    const date=new Date(iso+'T00:00:00Z');
+    return {...point,name:new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',timeZone:'UTC'}).format(date)};
+   });
+  }
+  return{points,field,seriesLabel,unitIsMoney:!isOrders};
+ }
+ function drawActivityChart(dataset,key,interval,type){
+  const plot=$('dmActivityPlot'),seriesName=$('dmActivitySeriesName'),label=$('dmActivityRange');
+  if(!plot||!seriesName||!label)return;
+  const {points,field,seriesLabel,unitIsMoney}=svgChart(dataset,key,interval,type);
+  seriesName.textContent=seriesLabel;
+  const dateFrom=dataset.from||'',dateTo=dataset.to||'';
+  label.textContent=(interval==='hourly'?'Hourly · '+dateTo:
+   'Daily · '+dateFrom+(dateTo!==dateFrom?' to '+dateTo:''))+
+   ' · '+(context.selectedBranch==='all'?'All permitted branches':
+    context.branches.find(b=>String(b.id)===String(context.selectedBranch))?.name||'Selected branch')+
+   ((key==='expenses'||key==='alerts')?' · contextual completed sales':'');
+  if(!points.length){plot.innerHTML=empty('No recorded sales activity for this period.');return;}
+  const w=Math.max(960,points.length*40+140),h=360,L=104,R=30,T=44,B=89;
+  const left=L,right=w-R,top=T,bottom=h-B,available=bottom-top;
+  const vals=points.map(x=>x.value),maximum=Math.max(0,...vals);
+  const zeroOnly=maximum===0;
+  const max=zeroOnly?1:maximum*1.12;
+  const xAt=i=>points.length===1?(left+right)/2:left+(right-left)*i/(points.length-1);
+  const yAt=v=>zeroOnly?top+available/2:bottom-v/max*available;
+  const grid=[];
+  if(zeroOnly){
+   const y=yAt(0);
+   grid.push('<line class="dm-activity-grid-line" x1="'+left+'" y1="'+y+'" x2="'+right+'" y2="'+y+'"/>');
+   grid.push('<text class="dm-activity-y-label" x="'+(left-14)+'" y="'+(y+4)+'" text-anchor="end">'+
+    esc(axisLabel(0,unitIsMoney))+'</text>');
+  }else{
+   for(let j=0;j<=4;j++){
+    const value=max*j/4,y=bottom-available*j/4;
+    grid.push('<line class="dm-activity-grid-line" x1="'+left+'" y1="'+y.toFixed(2)+
+     '" x2="'+right+'" y2="'+y.toFixed(2)+'"/>');
+    grid.push('<text class="dm-activity-y-label" x="'+(left-14)+'" y="'+(y+4).toFixed(2)+
+     '" text-anchor="end">'+esc(axisLabel(value,unitIsMoney))+'</text>');
+   }
+  }
+  grid.push('<line class="dm-activity-axis" x1="'+left+'" y1="'+bottom+'" x2="'+right+'" y2="'+bottom+'"/>');
+  const marks=[];
+  const labelStep=Math.max(1,Math.ceil(points.length/32));
+  for(let i=0;i<points.length;i++){
+   const p=points[i],x=xAt(i),y=yAt(p.value);
+   const tooltip=esc(p.name+' · '+axisLabel(p.value,unitIsMoney));
+   if(type==='bar'){
+    const bw=Math.max(10,Math.min(29,(right-left)/Math.max(1,points.length)*.58));
+    const chartBottom=zeroOnly?top+available/2:bottom;
+    const barY=Math.min(y,chartBottom),barH=Math.max(2,Math.abs(chartBottom-y));
+    marks.push('<rect class="dm-activity-bar" x="'+(x-bw/2).toFixed(2)+'" y="'+barY.toFixed(2)+
+     '" width="'+bw.toFixed(2)+'" height="'+barH.toFixed(2)+'" rx="3">'+
+     '<title>'+tooltip+'</title></rect>');
+   }else{
+    marks.push('<circle class="dm-activity-marker" cx="'+x.toFixed(2)+'" cy="'+y.toFixed(2)+
+     '" r="3.4"><title>'+tooltip+'</title></circle>');
+   }
+   if(i%labelStep===0||i===points.length-1){
+    marks.push('<text class="dm-activity-x-label" text-anchor="end" transform="translate('+
+     (x+4).toFixed(2)+' '+(bottom+21)+') rotate(-48)">'+esc(p.name)+'</text>');
+   }
+  }
+  const line=type==='line'?'<polyline class="dm-activity-line" points="'+points.map((p,i)=>
+   xAt(i).toFixed(2)+','+yAt(p.value).toFixed(2)).join(' ')+'"/>':'';
+  // When every value is zero, the same green horizontal line shown in the reference
+  // remains visible rather than fabricating a nonzero scale.
+  const alt=(interval==='hourly'?'Hourly':'Daily')+' '+seriesLabel+
+   ': '+points.map(p=>p.name+' '+axisLabel(p.value,unitIsMoney)).join('; ');
+  plot.innerHTML='<div class="dm-activity-scroll" tabindex="0" aria-label="Scrollable sales chart">'+
+   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+
+   '" width="'+w+'" height="'+h+'" class="dm-activity-svg" role="img" aria-label="'+esc(alt)+'">'+
+   grid.join('')+line+marks.join('')+'</svg></div>';
+ }
+ async function mountActivityChart(main,period,key,run){
+  const plot=$('dmActivityPlot'),type=$('dmActivityType'),interval=$('dmActivityInterval');
+  if(!plot||!type||!interval||!valid())return;
+  // The chart never changes the KPI card's own reporting dates or branch filters.
+  // A single selected day displays hourly sales; Daily automatically expands to
+  // the preceding 30 calendar days, or the cashier's shorter allowed window.
+  let currentData=null,sequence=0;
+  async function load(){
+   const fetchId=++sequence,requestId=++activityLoadSequence;
+   const mode=interval.value,range=activityDates(period,mode);
+   plot.innerHTML='<p class="dm-kpi-loading">Loading '+esc(mode)+' sales activity…</p>';
+   try{
+    const canReuse=main.from===range.from&&main.to===range.to&&
+      ((mode==='hourly'&&main.grain==='hourly')||(mode==='daily'&&main.grain==='daily'));
+    const data=canReuse?main:await context.request(query(range,context.selectedBranch==='all'?null:context.selectedBranch));
+    if(fetchId!==sequence||requestId!==activityLoadSequence||run!==activeRequest||!valid())return;
+    currentData=data;drawActivityChart(data,key,mode,type.value);
+   }catch(error){
+    if(fetchId!==sequence||requestId!==activityLoadSequence||run!==activeRequest||!valid())return;
+    plot.innerHTML=empty('Sales activity unavailable: '+(error.message||'Please retry.'));
+   }
+  }
+  type.addEventListener('change',()=>{
+   if(type.value!=='bar'&&type.value!=='line')return;
+   chosenChartType=type.value;
+   if(currentData)drawActivityChart(currentData,key,interval.value,type.value);
+  });
+  interval.addEventListener('change',()=>{
+   if(!['hourly','daily'].includes(interval.value))return;
+   load();
+  });
+  await load();
  }
  function recentPanel(d){
   const data=d.recentTransactions||[];
@@ -266,11 +420,13 @@
    else{
     if(key==='expenses')body+=await expenseCategoryPanel(main,period,run);
     if(run!==activeRequest||!valid())return;
-    body+=categoryPanel(main,key)+timelinePanel(main,key);
+    body+=categoryPanel(main,key);
     if(['revenue','orders','today','month','discount'].includes(key))body+=recentPanel(main);
    }
    if(run!==activeRequest||!valid())return;
+   body+=timelinePanel(main,key);
    content.innerHTML=body;
+   await mountActivityChart(main,period,key,run);
   }catch(error){
    if(run!==activeRequest||!valid())return;
    content.innerHTML=panel('Unable to load the breakdown',empty(error.message||'Please retry.'),
