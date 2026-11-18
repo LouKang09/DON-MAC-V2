@@ -224,33 +224,24 @@
   const w=Math.max(960,points.length*40+140),h=360,L=104,R=30,T=44,B=89;
   const left=L,right=w-R,top=T,bottom=h-B,available=bottom-top;
   const vals=points.map(x=>x.value),maximum=Math.max(0,...vals);
-  const zeroOnly=maximum===0;
-  // Orders are discrete quantities, not currency. Always show a readable
-  // integer Y-axis (0, 1, 2, 3, 4 for an empty period) instead of a lone 0
-  // halfway up the chart. Money-only empty charts keep their centered baseline.
-  const integerTickStep=unitIsMoney?0:(()=>{
+  // Every KPI chart uses the same five horizontal levels, including
+  // periods with zero transactions. Counts stay whole numbers and monetary
+  // amounts retain their Philippine peso formatting.
+  const tickStep=(()=>{
    const target=Math.max(1,Math.ceil(maximum/4));
    const power=Math.pow(10,Math.floor(Math.log10(target)));
    return [1,2,5,10].map(n=>n*power).find(n=>n>=target)||target;
   })();
-  const max=unitIsMoney?(zeroOnly?1:maximum*1.12):integerTickStep*4;
-  const centerZeroLine=unitIsMoney&&zeroOnly;
+  const max=tickStep*4;
   const xAt=i=>points.length===1?(left+right)/2:left+(right-left)*i/(points.length-1);
-  const yAt=v=>centerZeroLine?top+available/2:bottom-v/max*available;
+  const yAt=v=>bottom-v/max*available;
   const grid=[];
-  if(centerZeroLine){
-   const y=yAt(0);
-   grid.push('<line class="dm-activity-grid-line" x1="'+left+'" y1="'+y+'" x2="'+right+'" y2="'+y+'"/>');
-   grid.push('<text class="dm-activity-y-label" x="'+(left-14)+'" y="'+(y+4)+'" text-anchor="end">'+
-    esc(axisLabel(0,unitIsMoney))+'</text>');
-  }else{
-   for(let j=0;j<=4;j++){
-    const value=unitIsMoney?max*j/4:integerTickStep*j,y=bottom-available*j/4;
-    grid.push('<line class="dm-activity-grid-line" x1="'+left+'" y1="'+y.toFixed(2)+
-     '" x2="'+right+'" y2="'+y.toFixed(2)+'"/>');
-    grid.push('<text class="dm-activity-y-label" x="'+(left-14)+'" y="'+(y+4).toFixed(2)+
-     '" text-anchor="end">'+esc(axisLabel(value,unitIsMoney))+'</text>');
-   }
+  for(let j=0;j<=4;j++){
+   const value=tickStep*j,y=bottom-available*j/4;
+   grid.push('<line class="dm-activity-grid-line" x1="'+left+'" y1="'+y.toFixed(2)+
+    '" x2="'+right+'" y2="'+y.toFixed(2)+'"/>');
+   grid.push('<text class="dm-activity-y-label" x="'+(left-14)+'" y="'+(y+4).toFixed(2)+
+    '" text-anchor="end">'+esc(axisLabel(value,unitIsMoney))+'</text>');
   }
   grid.push('<line class="dm-activity-axis" x1="'+left+'" y1="'+bottom+'" x2="'+right+'" y2="'+bottom+'"/>');
   const marks=[];
@@ -260,7 +251,7 @@
    const tooltip=esc(p.name+' · '+axisLabel(p.value,unitIsMoney));
    if(type==='bar'){
     const bw=Math.max(10,Math.min(29,(right-left)/Math.max(1,points.length)*.58));
-    const chartBottom=centerZeroLine?top+available/2:bottom;
+    const chartBottom=bottom;
     const barY=Math.min(y,chartBottom),barH=Math.max(2,Math.abs(chartBottom-y));
     marks.push('<rect class="dm-activity-bar" x="'+(x-bw/2).toFixed(2)+'" y="'+barY.toFixed(2)+
      '" width="'+bw.toFixed(2)+'" height="'+barH.toFixed(2)+'" rx="3">'+
