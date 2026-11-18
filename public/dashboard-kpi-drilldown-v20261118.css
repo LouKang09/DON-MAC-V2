@@ -11,7 +11,7 @@ html body #app #view-dashboard #dashboardSummary .dm-kpi-button {
   font:inherit!important;
   cursor:pointer!important;
   outline-offset:3px!important;
-  padding-right:2.7rem!important;
+  padding-right:3.4rem!important;
   transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease!important;
 }
 html body #app #view-dashboard #dashboardSummary .dm-kpi-button:hover {
@@ -24,30 +24,44 @@ html body #app #view-dashboard #dashboardSummary .dm-kpi-button:focus-visible {
   border-color:#1b9157!important;
 }
 html body #app #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow {
-  position:absolute!important;right:.65rem!important;bottom:.65rem!important;
-  display:grid!important;place-items:center!important;flex:none!important;
-  width:1.85rem!important;height:1.85rem!important;
-  border-radius:.6rem!important;background:#e1f3e8!important;
-  border:1px solid #b9d9c5!important;color:#075d38!important;
-  transition:background-color 160ms ease,transform 160ms ease,color 160ms ease!important;
+  position:absolute!important;right:.75rem!important;bottom:.75rem!important;
+  display:grid!important;place-items:center!important;align-content:center!important;
+  justify-content:center!important;flex:none!important;
+  box-sizing:border-box!important;
+  width:2.25rem!important;height:2.25rem!important;
+  min-width:2.25rem!important;min-height:2.25rem!important;
+  margin:0!important;padding:0!important;
+  border-radius:.72rem!important;background:#075d38!important;
+  border:1px solid #075d38!important;color:#ffffff!important;
+  box-shadow:0 .2rem .55rem rgba(7,93,56,.24)!important;
+  transition:background-color 160ms ease,box-shadow 160ms ease,transform 160ms ease!important;
   pointer-events:none!important;
 }
 html body #app #view-dashboard #dashboardSummary .dm-kpi-button:hover .dm-kpi-arrow,
 html body #app #view-dashboard #dashboardSummary .dm-kpi-button:focus-visible .dm-kpi-arrow{
-  background:#075d38!important;color:#fff!important;border-color:#075d38!important;
+  background:#0a824b!important;color:#fff!important;border-color:#0a824b!important;
+  box-shadow:0 .3rem .8rem rgba(7,93,56,.38)!important;
   transform:translateX(2px)!important;
 }
 #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow svg{
-  display:block!important;width:1.1rem!important;height:1.1rem!important;
+  display:block!important;flex:0 0 1.25rem!important;
+  width:1.25rem!important;height:1.25rem!important;
+  min-width:1.25rem!important;min-height:1.25rem!important;
+  margin:auto!important;padding:0!important;
+  stroke:#fff!important;stroke-width:2.5!important;
+  transform:none!important;
+}
+#view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow svg path{
+  stroke:#fff!important;fill:none!important;
 }
 #view-dashboard #dashboardSummary .dm-kpi-button .dash-card-main{min-width:0!important;}
 #view-dashboard #dashboardSummary .dm-kpi-button .dash-gross-net{
   margin-right:.3rem!important;flex-shrink:1!important;
 }
 @media(max-width:520px) {
- html body #app #view-dashboard #dashboardSummary .dm-kpi-button{padding-right:2.75rem!important;}
+ html body #app #view-dashboard #dashboardSummary .dm-kpi-button{padding-right:3.3rem!important;}
  html body #app #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow{
-  right:.55rem!important;bottom:.55rem!important;
+  right:.65rem!important;bottom:.65rem!important;
  }
 }
 
