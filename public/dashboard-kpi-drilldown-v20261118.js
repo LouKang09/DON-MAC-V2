@@ -367,7 +367,7 @@
  }
  async function open(key,source){
   if(!titles[key]||!valid())return;
-  if(source)previousFocus=source;
+  if(source){previousFocus=source;chosenChartType='line';}
   const run=++activeRequest;
   current=key;
   const period=selectedPeriod(key);
