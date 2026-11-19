@@ -152,40 +152,81 @@
   const desired=Math.max(1,Math.ceil(max/4)),order=Math.pow(10,Math.floor(Math.log10(desired)));
   return [1,2,5,10].map(x=>x*order).find(x=>x>=desired)||desired;
  };
- function chart(rows,kind='net',type='line',large=false){
-  const values=rows.map(r=>Math.max(0,num(r[kind]))),high=Math.max(0,...values),step=niceStep(high);
-  const max=step*4,w=large?1120:900,h=large?390:250;
-  const l=large?105:92,r=23,t=22,b=large?91:69,plotW=w-l-r,plotH=h-t-b;
+ const branchColors=['#7ac64a','#e7b53a','#ec6a77','#4285c3','#9a71cb','#28a0a1','#d78d49','#758d57','#cf64a1','#559fa0'];
+ const monthShort=x=>{
+  const d=new Date(x+'-01T00:00:00Z');
+  return new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',month:'short',year:'2-digit'}).format(d);
+ };
+ function chart(rows,kind='net',type='line',large=false,branchSeries=[]){
+  if(!rows?.length)return'<p class="dm-bs-chart-empty">No monthly sales records were returned.</p>';
+  const compare=branchSeries.length>1;
+  const monthIndex=new Map(rows.map((r,i)=>[r.month,i]));
+  const plots=compare?branchSeries.map((s,i)=>{
+   const lookup=new Map((s.months||[]).map(m=>[m.month,m]));
+   return{name:String(s.name||'Branch'),color:branchColors[i%branchColors.length],
+    values:rows.map(m=>Math.max(0,num(lookup.get(m.month)?.[kind]))),id:s.id};
+  }):[{name:branchSeries[0]?.name||'Net sales',color:'#7ac64a',
+    values:rows.map(m=>Math.max(0,num(m[kind])))}];
+  const maxValue=Math.max(0,...plots.flatMap(s=>s.values));
+  const step=niceStep(maxValue),max=step*4,w=large?1120:1000,h=large?368:318;
+  // Match KPI drill-down: five horizontal gridlines and a fully visible
+  // diagonal X axis, including labels on narrow screen sizes.
+  const l=108,r=30,t=43,b=105,plotW=w-l-r,plotH=h-t-b,bottom=h-b;
   const x=i=>l+(rows.length===1?plotW/2:i*plotW/(rows.length-1));
-  const y=v=>t+plotH*(1-v/max);
-  const monetary=kind!=='orders',amount=v=>monetary?peso(v):fmt(v);
+  const y=v=>bottom-(num(v)/max)*plotH;
+  const isMoney=kind!=='orders';
+  const amount=v=>isMoney?peso(v):fmt(v);
   const grid=[];
   for(let tick=0;tick<=4;tick++){
-   const yy=y(tick*step);
-   grid.push('<line x1="'+l+'" y1="'+yy.toFixed(2)+'" x2="'+(w-r)+'" y2="'+yy.toFixed(2)+
-    '" stroke="#dcebe0" stroke-width="1"/>');
-   grid.push('<text x="'+(l-12)+'" y="'+(yy+4).toFixed(2)+'" text-anchor="end" '+
-    'fill="#355643" font-size="12">'+esc(amount(tick*step))+'</text>');
+   const yy=bottom-tick*plotH/4;
+   grid.push('<line class="dm-bs-grid-line" x1="'+l+'" y1="'+yy.toFixed(2)+
+    '" x2="'+(w-r)+'" y2="'+yy.toFixed(2)+'"/>');
+   grid.push('<text class="dm-bs-y-label" x="'+(l-14)+'" y="'+(yy+4).toFixed(2)+
+    '" text-anchor="end">'+esc(amount(tick*step))+'</text>');
   }
+  grid.push('<line class="dm-bs-axis" x1="'+l+'" y1="'+bottom+'" x2="'+(w-r)+'" y2="'+bottom+'"/>');
   const marks=[];
-  const barWidth=Math.min(46,plotW/Math.max(1,rows.length)*.5);
-  if(type==='line'){
-   marks.push('<polyline points="'+values.map((v,i)=>x(i).toFixed(2)+','+y(v).toFixed(2)).join(' ')+
-    '" stroke="#19804d" stroke-width="2.7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>');
+  const bw=Math.max(2,Math.min(25,plotW/Math.max(1,rows.length)*.6/plots.length));
+  const groupedWidth=bw*plots.length;
+  for(let j=0;j<plots.length;j++){
+   const series=plots[j],color=series.color;
+   if(type==='line'){
+    const poly=series.values.map((v,i)=>x(i).toFixed(2)+','+y(v).toFixed(2)).join(' ');
+    marks.push('<polyline class="dm-bs-line" points="'+poly+'" stroke="'+color+'"/>');
+   }
+   for(let i=0;i<rows.length;i++){
+    const xx=x(i),value=series.values[i],yy=y(value);
+    const hover=esc(series.name+' · '+dateMonth(rows[i].month)+' · '+amount(value));
+    if(type==='bar'){
+     const xbar=xx-groupedWidth/2+bw*j;
+     marks.push('<rect class="dm-bs-bar" x="'+xbar.toFixed(2)+'" y="'+yy.toFixed(2)+
+      '" width="'+bw.toFixed(2)+'" height="'+Math.max(2,bottom-yy).toFixed(2)+
+      '" rx="2.5" fill="'+color+'"><title>'+hover+'</title></rect>');
+    }else{
+     marks.push('<circle class="dm-bs-marker" cx="'+xx.toFixed(2)+'" cy="'+yy.toFixed(2)+
+      '" r="3.4" stroke="'+color+'"><title>'+hover+'</title></circle>');
+    }
+   }
   }
   for(let i=0;i<rows.length;i++){
-   const xx=x(i),yy=y(values[i]),desc=esc(dateMonth(rows[i].month)+' · '+amount(values[i]));
-   marks.push(type==='line'
-    ?'<circle cx="'+xx.toFixed(2)+'" cy="'+yy.toFixed(2)+'" r="4.7" fill="#fff" stroke="#178a51" stroke-width="2.5"><title>'+desc+'</title></circle>'
-    :'<rect x="'+(xx-barWidth/2).toFixed(2)+'" y="'+yy.toFixed(2)+'" width="'+barWidth.toFixed(2)+
-      '" height="'+Math.max(2,t+plotH-yy).toFixed(2)+'" rx="3" fill="#168251"><title>'+desc+'</title></rect>');
-   marks.push('<text x="'+xx.toFixed(2)+'" y="'+(h-20)+'" text-anchor="end" transform="rotate(-45 '+xx.toFixed(2)+' '+(h-20)+
-    ')" fill="#3e5c49" font-size="12">'+esc(dateMonth(rows[i].month))+'</text>');
+   marks.push('<text class="dm-bs-x-label" text-anchor="end" transform="translate('+
+    (x(i)+3).toFixed(2)+' '+(bottom+24).toFixed(2)+') rotate(-48)">'+esc(monthShort(rows[i].month))+'</text>');
   }
-  const alt=esc('Historical '+kind+' by month; '+rows.map(r=>dateMonth(r.month)+' '+amount(r[kind])).join('; '));
-  return '<div class="dm-bs-chart-scroll"'+(large?' tabindex="0"':'')+' aria-label="Historical monthly chart, scroll to view">'+
-   '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" role="img" aria-label="'+alt+'">'+
+  const accessibility=compare?plots.map(p=>p.name).join(', '):'Selected branch';
+  const svg='<div class="dm-bs-chart-scroll"'+(large?' tabindex="0"':'')+
+   ' aria-label="Monthly sales chart; swipe or scroll horizontally on small screens">'+
+   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+
+   '" width="'+w+'" height="'+h+'" class="dm-bs-activity-svg" role="img" aria-label="'+
+   esc('Historical '+kind+' by month for '+accessibility)+'">'+
    grid.join('')+marks.join('')+'</svg></div>';
+  const legend=compare?'<div class="dm-bs-legend" aria-label="Sales by branch">'+
+   plots.map(p=>'<span class="dm-bs-legend-entry"><i aria-hidden="true" style="background-color:'+
+    p.color+'"></i>'+esc(p.name)+'</span>').join('')+'</div>':
+   '<div class="dm-bs-legend" aria-label="Chart legend"><span class="dm-bs-legend-entry">'+
+   '<i aria-hidden="true" style="background-color:#7ac64a"></i>'+
+   esc(kind==='orders'?'Completed orders':kind==='gross'?'Gross sales':
+    kind==='discount'?'Discounts':'Net sales')+'</span></div>';
+  return '<div class="dm-bs-chart-frame">'+svg+legend+'</div>';
  }
  function chartTable(months){
   return '<div class="dm-bs-table-scroll"><table><thead><tr><th>Month</th><th>Gross sales</th><th>Net sales</th>'+
