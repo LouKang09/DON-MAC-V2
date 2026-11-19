@@ -280,7 +280,11 @@
   if(!main||!history)return;
   const branches=data.branchesPerformance||[],summaryData=data.summary||{};
   const branchCount=branches.length;
-  const rows=branches.map((b,i)=>'<tr><td><strong>'+esc(b.name)+'</strong></td><td>'+fmt(b.orders)+
+  const branchIndex=new Map((data.branchMonthly||[]).map((b,i)=>[String(b.id),i]));
+  const rows=branches.map((b,i)=>'<tr><td><span class="dm-bs-branch-name">'+
+   '<i class="dm-bs-branch-dot" aria-hidden="true" style="background-color:'+
+   branchColors[(branchIndex.get(String(b.id))??0)%branchColors.length]+'"></i>'+
+   '<strong>'+esc(b.name)+'</strong></span></td><td>'+fmt(b.orders)+
    '</td><td>'+peso(b.gross)+'</td><td>'+peso(b.net)+'</td><td>'+peso(b.expenses)+
    '</td><td>'+(!summaryData.net?'0.0%':(100*num(b.net)/num(summaryData.net)).toFixed(1)+'%')+'</td></tr>').join('');
   main.innerHTML='<div class="dm-bs-heading">'+
