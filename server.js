@@ -19,6 +19,7 @@ const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
 const advancedAnalytics = require('./lib/advanced-analytics');
 const businessStoreDetail = require('./lib/business-store-detail');
+const dashboardFinancials = require('./lib/dashboard-financial-metrics');
 const franchiseRequests = require('./lib/public-franchise-requests');
 const franchiseEmailVerification = require('./lib/franchise-email-verification');
 const franchiseStaging = require('./lib/franchise-tenant-staging');
@@ -1409,7 +1410,7 @@ async function dashboardData(params={},branchId=null,user=null){
       ...(branchId==null?{}:{branchId})}).then(x=>x.grandTotal)
       .catch(error=>{console.warn('Dashboard expenses unavailable:',error.message);return null;}):
     Promise.resolve(null);
-  const [trendRows,rangeTotalsR,totalExpenses]=await Promise.all([
+  const [trendRows,rangeTotalsR,totalExpenses,ingredientCost]=await Promise.all([
     db.query('SELECT s.id,s.sold_at,s.gross,s.actual,si.line_total,si.is_add_on,si.is_package,p.category '+
       'FROM sales s JOIN sale_items si ON si.sale_id=s.id LEFT JOIN products p ON p.id=si.product_id '+
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
@@ -1418,7 +1419,8 @@ async function dashboardData(params={},branchId=null,user=null){
       'COALESCE(SUM(s.discount_amount),0) AS discount FROM sales s '+
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
       branchClause,trendArgs),
-    expensePromise
+    expensePromise,
+    dashboardFinancials.legacyIngredientCost(db,workspace,branchId,startUtc,endUtc)
   ]);
   const rangeTotals=rangeTotalsR.rows[0]||{};
   const categoryNames=['Coffee','Non Coffee','Food','Add-ons','Packages','Other'];
@@ -1499,6 +1501,9 @@ async function dashboardData(params={},branchId=null,user=null){
     lowStockCount:inv.filter(x=>x.low).length,inventoryCount:inv.length},
     ...trendResult,rangeGross:money(Number(rangeTotals.gross||0)),
     rangeDiscount:money(Number(rangeTotals.discount||0)),rangeExpenses:totalExpenses,
+    rangeStoreExpenses:ingredientCost,rangeStoreExpensesBasis:'current_recipe_estimate',
+    rangeDepositExpenses:totalExpenses,
+    rangeDepositedSales:dashboardFinancials.depositedSales(trendResult.rangeActual,totalExpenses),
     branchId,categoryTrends,performanceProducts,
     topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:null})),
     lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount})),recentTransactions};
