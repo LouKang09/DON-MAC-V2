@@ -124,8 +124,12 @@
     count(key==='today'?d.metrics?.todayTransactions:key==='month'?d.metrics?.monthTransactions:d.rangeTransactions);
    html+='<tr'+(row.selected?' class="dm-kpi-selected-branch"':'')+'><th scope="row">'+esc(row.name)+
     (row.selected?' <span class="dm-kpi-current">Selected</span>':'')+'</th><td class="dm-kpi-number">'+
-    (financial?money(value(d,key)):count(value(d,key)))+'</td><td class="dm-kpi-number">'+extras+
-    '</td><td class="dm-kpi-number">'+pct(value(d,key),total)+'</td></tr>';
+    ((key==='deposited'&&d.rangeDepositedSales==null)||
+      (key==='expenses'&&d.rangeStoreExpenses==null)?'Not available':
+     financial?money(value(d,key)):count(value(d,key)))+'</td><td class="dm-kpi-number">'+extras+
+    '</td><td class="dm-kpi-number">'+
+    ((key==='deposited'&&d.rangeDepositedSales==null)||
+     (key==='expenses'&&d.rangeStoreExpenses==null)?'—':pct(value(d,key),total))+'</td></tr>';
   }
   html+='</tbody></table></div>';
   return html;
