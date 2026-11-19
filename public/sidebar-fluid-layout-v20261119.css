@@ -1,0 +1,303 @@
+/* Don Mac POS — responsive desktop/tablet sidebar and dashboard
+ * Overrides obsolete 700–1180px "narrow rail" rules after async CSS loads.
+ * Sidebar state is still driven exclusively by sidebar-collapse-core.js.
+ * Phones <700px retain the existing bottom navigation implementation. */
+@media screen and (min-width:700px) {
+  html body #app:not(.hidden):not(.sidebar-collapsed) {
+    display:grid!important;
+    grid-template-columns:clamp(12.5rem,19.5vw,15.25rem) minmax(0,1fr)!important;
+    width:100%!important;min-width:0!important;
+  }
+  html body #app:not(.hidden).sidebar-collapsed {
+    display:grid!important;
+    grid-template-columns:4.875rem minmax(0,1fr)!important;
+    width:100%!important;min-width:0!important;
+  }
+  html body #app > main.main {
+    grid-column:2!important;grid-row:1!important;
+    min-width:0!important;max-width:100%!important;
+    width:100%!important;
+    overflow-x:hidden!important;
+  }
+  html body #app > .sidebar {
+    box-sizing:border-box!important;
+    grid-column:1!important;grid-row:1!important;
+    min-width:0!important;width:100%!important;
+    height:100vh!important;height:100dvh!important;
+    max-height:100dvh!important;
+    display:flex!important;flex-direction:column!important;
+    overflow:hidden!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar {
+    padding:.75rem .65rem .9rem!important;
+    align-items:stretch!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar .sidebar-brand.sidebar-controls {
+    box-sizing:border-box!important;
+    display:flex!important;align-items:center!important;
+    justify-content:flex-end!important;
+    flex:0 0 3.3rem!important;
+    min-height:3.3rem!important;
+    margin:0 0 .35rem!important;
+    padding:0 .15rem!important;
+    width:100%!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #sidebarToggle {
+    position:static!important;
+    display:grid!important;place-items:center!important;
+    flex:0 0 2.5rem!important;
+    width:2.5rem!important;height:2.5rem!important;
+    min-width:2.5rem!important;min-height:2.5rem!important;
+    margin:0!important;padding:0!important;
+    border-radius:.7rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav {
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    flex:1 1 auto!important;
+    width:100%!important;min-width:0!important;
+    min-height:0!important;
+    gap:clamp(.55rem,1vh,.9rem)!important;
+    padding:.1rem .12rem .65rem!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    scrollbar-width:thin!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav > .nav-section {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    flex:0 0 auto!important;
+    min-width:0!important;width:100%!important;
+    gap:.25rem!important;
+    margin:0!important;padding:0!important;
+  }
+  /* The old .nav-section-label {display:block!important} puts every group
+     icon ABOVE its label. Force the actual button into a horizontal flex row. */
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .nav-section > .dm-nav-group-toggle {
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    box-sizing:border-box!important;
+    width:100%!important;max-width:100%!important;
+    min-width:0!important;min-height:2.65rem!important;
+    height:auto!important;
+    padding:.55rem .5rem!important;
+    margin:0!important;
+    gap:.45rem!important;
+    text-align:left!important;
+    white-space:nowrap!important;
+    font-size:clamp(.77rem,.72rem + .1vw,.85rem)!important;
+    line-height:1.25!important;
+    letter-spacing:normal!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-nav-group-icon {
+    display:grid!important;place-items:center!important;
+    flex:0 0 1.16rem!important;
+    width:1.16rem!important;height:1.16rem!important;
+    min-width:1.16rem!important;
+    margin:0!important;padding:0!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-nav-group-icon svg {
+    display:block!important;width:1.08rem!important;
+    height:1.08rem!important;max-width:100%!important;
+    flex:none!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-nav-group-name {
+    display:block!important;flex:1 1 auto!important;
+    width:auto!important;min-width:0!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    text-align:left!important;
+    line-height:1.25!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-nav-group-chevron {
+    display:block!important;flex:0 0 1rem!important;
+    width:1rem!important;height:1rem!important;
+    margin:0 0 0 auto!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-team-unread-count {
+    margin:0 .05rem!important;
+    flex:0 0 auto!important;
+    font-size:.68rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items {
+    box-sizing:border-box!important;
+    width:calc(100% - .55rem)!important;
+    min-width:0!important;
+    margin:0 0 0 .55rem!important;
+    padding:0 0 .1rem .5rem!important;
+    border-left:1px solid #42624c!important;
+    align-items:stretch!important;
+    gap:.25rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items > .nav,
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items > .dm-expense-menu > .nav {
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    min-width:0!important;width:100%!important;max-width:100%!important;
+    min-height:2.6rem!important;height:auto!important;
+    margin:0!important;
+    padding:.5rem .5rem!important;
+    gap:.47rem!important;
+    line-height:1.25!important;
+    font-size:.78rem!important;
+    text-align:left!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items .nav > .nav-icon {
+    display:block!important;
+    flex:0 0 1.16rem!important;
+    width:1.16rem!important;height:1.16rem!important;
+    min-width:1.16rem!important;
+    margin:0!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items .nav > .nav-label {
+    display:block!important;
+    flex:1 1 auto!important;
+    min-width:0!important;width:auto!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;
+    overflow-wrap:normal!important;word-break:normal!important;
+    writing-mode:horizontal-tb!important;text-align:left!important;
+    font-size:.77rem!important;line-height:1.35!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items .dm-guide-nav-row > .nav{
+    padding-right:2.05rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-guide-inline{
+    right:.22rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar .sidebar-bottom{
+    flex:0 0 auto!important;
+    width:100%!important;min-width:0!important;
+    margin:0!important;
+    padding:.7rem .1rem 0!important;
+    align-items:stretch!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar .sidebar-bottom :is(#dmGuideSidebarOpen,#logoutButton){
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;max-width:100%!important;
+    min-height:2.5rem!important;
+    margin:0!important;
+    padding:.5rem!important;
+    justify-content:center!important;
+  }
+  /* Collapsed mode has only a 78px-wide icon rail. Keep every control
+     centered; never let expanded labels occupy that rail. */
+  html body #app.sidebar-collapsed > .sidebar {
+    width:100%!important;
+    padding:.7rem .4rem!important;
+    align-items:center!important;
+  }
+  html body #app.sidebar-collapsed > .sidebar #mainNav {
+    width:100%!important;min-width:0!important;
+    display:flex!important;align-items:center!important;
+    overflow-x:hidden!important;overflow-y:auto!important;
+    scrollbar-width:none!important;
+  }
+  html body #app.sidebar-collapsed > .sidebar #mainNav .nav-section,
+  html body #app.sidebar-collapsed > .sidebar #mainNav .dm-menu-group-items{
+    width:100%!important;min-width:0!important;
+    align-items:center!important;
+  }
+  html body #app.sidebar-collapsed > .sidebar #mainNav .dm-nav-group-toggle {
+    display:none!important;
+  }
+  html body #app.sidebar-collapsed > .sidebar #mainNav .nav[data-view] {
+    margin-inline:auto!important;
+    width:2.75rem!important;min-width:2.75rem!important;
+    max-width:2.75rem!important;
+  }
+  html body #app.sidebar-collapsed > .sidebar .sidebar-bottom {
+    width:100%!important;align-items:center!important;
+  }
+  html body #app.sidebar-collapsed > .sidebar .sidebar-bottom :is(#dmGuideSidebarOpen,#logoutButton){
+    width:2.75rem!important;min-width:2.75rem!important;max-width:2.75rem!important;
+  }
+  /* Adapt grid columns to the actual remaining dashboard width, not merely
+     viewport breakpoints. This works in BOTH sidebar states. */
+  html body #app #view-dashboard .dashboard-summary {
+    display:grid!important;
+    width:100%!important;min-width:0!important;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,19.5rem),1fr))!important;
+    gap:clamp(.65rem,1.2vw,1rem)!important;
+  }
+  html body #app #view-dashboard .dashboard-grid,
+  html body #app #view-dashboard .dashboard-grid.lower,
+  html body #app #view-dashboard .dashboard-hero-grid,
+  html body #app #view-dashboard .dashboard-insights-grid {
+    width:100%!important;
+    min-width:0!important;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr))!important;
+    gap:clamp(.75rem,1.2vw,1.15rem)!important;
+  }
+  html body #app #view-dashboard .dashboard-summary .summary-card {
+    min-width:0!important;
+    width:100%!important;max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  html body #app #view-dashboard :is(.dashboard-statistics-card,.dashboard-category-card) {
+    min-width:0!important;
+    width:100%!important;
+  }
+  html body #app #view-dashboard .dashboard-chart-head{
+    flex-wrap:wrap!important;
+    gap:.65rem!important;
+  }
+  html body #app #view-dashboard .dashboard-chart-filters{
+    min-width:0!important;
+    max-width:100%!important;
+    flex-wrap:wrap!important;
+  }
+}
+@media screen and (min-width:700px) and (max-width:900px) {
+  html body #app:not(.hidden):not(.sidebar-collapsed) {
+    grid-template-columns:clamp(11.75rem,23.5vw,12.75rem) minmax(0,1fr)!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar{
+    padding-inline:.5rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-nav-group-toggle{
+    gap:.3rem!important;padding-inline:.35rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items{
+    width:calc(100% - .3rem)!important;
+    margin-left:.3rem!important;padding-left:.35rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items > .nav,
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-menu-group-items > .dm-expense-menu > .nav{
+    padding-inline:.34rem!important;gap:.35rem!important;
+  }
+  html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .nav .nav-label{
+    font-size:.72rem!important;
+  }
+}
+@media screen and (max-width:699px) {
+  /* Below 700px, preserve the existing phone bottom bar and More drawer.
+     Dashboard cards may stack naturally instead of becoming 160px columns. */
+  html body #app #view-dashboard .dashboard-summary{
+    display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,18.5rem),1fr))!important;
+    width:100%!important;min-width:0!important;gap:.6rem!important;
+  }
+  html body #app #view-dashboard .dashboard-grid,
+  html body #app #view-dashboard .dashboard-grid.lower,
+  html body #app #view-dashboard .dashboard-hero-grid,
+  html body #app #view-dashboard .dashboard-insights-grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;min-width:0!important;
+  }
+}
+@media print{
+  html body #app #view-dashboard .dashboard-summary,
+  html body #app #view-dashboard .dashboard-grid{
+    break-inside:avoid;
+  }
+}
