@@ -145,18 +145,18 @@
  }
  function operations(d){
   const m=d.movementSummary,s=d.summary;
-  return title('Operations','Recorded movement ledger and shared ingredient stock balances.')+
+  return title('Operations','Recorded inventory movements and stock balances for the permitted franchise branches.')+
    kpis([['Stock transfers',fmt(m.transfer),'Saved inventory transfer entries'],
     ['Replenishments',fmt(m.replenish),'Saved replenishment entries'],
     ['Sale stock movements',fmt(m.sale),'Tracked sale deduction entries'],
-    ['Low stock ingredients',fmt(s.stockAlertCount),'Shared active ingredient stock']])+
+    ['Low stock ingredients',fmt(s.stockAlertCount),'Active ingredients in the permitted inventory scope']])+
    '<div class="rd-section-grid">'+panel('Ingredient stock attention',lines(d.stockAlerts,
     ['Ingredient','On hand','Threshold'],x=>'<tr><td>'+esc(x.name)+'</td><td>'+fmt(x.stock)+' '+esc(x.uom)+
     '</td><td>'+fmt(x.threshold)+'</td></tr>'))+
     panel('Recent inventory movements',lines(d.movements.slice(0,12),
      ['Date','Movement','Ingredient','Qty'],x=>'<tr><td>'+esc(date(x.date))+'</td><td>'+esc(x.type)+
      '</td><td>'+esc(x.ingredient)+'</td><td>'+fmt(x.qty)+' '+esc(x.uom)+'</td></tr>'))+'</div>'+
-   note('Inventory stock is shared between locations; movement counts describe saved ledger entries, not branch-level stock.');
+   note(d.sourceNotes?.stock||'Stock balances and movements reflect saved inventory records for the selected scope.');
  }
  function staff(d){
   const s=d.summary,a=d.daily;
@@ -178,7 +178,7 @@
  }
  function alerts(d){
   return title('Alerts & Action Center','Current low-stock thresholds and recorded sales exceptions.')+
-   kpis([['Low stock ingredients',fmt(d.summary.stockAlertCount),'Shared inventory thresholds'],
+   kpis([['Low stock ingredients',fmt(d.summary.stockAlertCount),'Recorded low-stock thresholds'],
     ['Voided transactions',fmt(d.summary.voided),'Selected period',d.daily.map(x=>x.voided)],
     ['Branches reviewed',fmt(d.branchesPerformance.length),'Selected franchise locations'],
     ['Attention entries',fmt(d.alerts.length),'Items in this action center']])+
