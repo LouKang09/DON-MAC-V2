@@ -545,6 +545,7 @@
     window.donmacChat?.onViewChange(view);
     if(view==='pos'){refreshPosDailyCount();requestAnimationFrame(syncCategoryRowNeighbors);}
     window.donmacPlanWidgets?.onViewChange(view);
+    window.donmacBusinessStore?.onViewChange?.(view);
     window.donmacPayroll?.onViewChange?.(view);
     if(view==='dashboard')loadDashboard();
     if(view==='inventory'){
