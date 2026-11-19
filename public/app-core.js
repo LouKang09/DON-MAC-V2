@@ -336,7 +336,10 @@
     $('accountPlanPill').closest('.account-plan-top-control')?.setAttribute('aria-label','Account Type: '+planLabel);
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
     renderAccountBranchPricing(sub);
-    $('saveAccountPlan').disabled=!admin||!!state.user?.liveMode;
+    // Owners can REQUEST a plan change on isolated accounts too; Admin Control
+    // alone decides whether to approve it. Live mode is not a reason to lock this form.
+    $('accountPlanSelect').disabled=!admin;
+    $('saveAccountPlan').disabled=!admin;
     $('accountPlanName').textContent=business?'Business':'Pro';
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
     $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
@@ -345,8 +348,10 @@
     $('accountPaymentStatus').textContent='Payment status: '+label;
     $('accountPaymentStatus').dataset.status=sub.status;
     $('accountPlanMessage').textContent=sub.pendingPlan?
-      'Requested '+(sub.pendingPlan.plan==='BUSINESS'?'Business':'Pro')+' plan · awaiting Admin Control approval.':
-      'Plan updates are reviewed by Admin Control. Only Admin Control changes payment status.';
+      'Requested '+(sub.pendingPlan.plan==='BUSINESS'?'Business':'Pro')+
+      ' plan · awaiting Admin Control approval. Your current '+(business?'Business':'Pro')+
+      ' subscription stays unchanged until approved.':
+      'Choose a different plan and click Update Plan to send a request. Admin Control alone approves the new plan and verifies payment.';
     $('transferPlanGate').classList.toggle('hidden',business);
     $('transferUpgradeInformation')?.classList.add('hidden');
     $('inventoryTransferTab').disabled=!business;
