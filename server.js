@@ -18,6 +18,7 @@ const officeOriginProxy = require('./lib/office-origin-proxy');
 const platformBilling = require('./lib/platform-billing');
 const posFinance = require('./lib/pos-finance');
 const advancedAnalytics = require('./lib/advanced-analytics');
+const businessStoreDetail = require('./lib/business-store-detail');
 const franchiseRequests = require('./lib/public-franchise-requests');
 const franchiseEmailVerification = require('./lib/franchise-email-verification');
 const franchiseStaging = require('./lib/franchise-tenant-staging');
@@ -2043,6 +2044,10 @@ async function handleApi(req,res,url){
     const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();
     await db.query('DELETE FROM sessions WHERE user_id=$1 OR expires_at<$2',[Number(u.id),nowIso()]);
     await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),Number(u.id),expires,nowIso()]);
+    // Read-only Business analytics audit: do not block a valid login if the
+    // optional reporting write fails. The session remains the auth authority.
+    await businessStoreDetail.recordLogin(db,u,req.headers['user-agent']).catch(error=>
+      console.warn('[Store Performance login audit unavailable]',error.message));
     const owner=await initialOwnerId(u.id);
     const liveCandidate=franchiseCandidate;
     const liveMode=!!liveCandidate;
@@ -2285,6 +2290,10 @@ async function handleApi(req,res,url){
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/dashboard/activity'){const h=await historicalSales.policy(db,user);return json(res,200,await dashboardActivity(user,{...Object.fromEntries(url.searchParams),historyCutoff:h.cutoffUtc}),safeHeaders());}
+  if(method==='GET'&&p==='/api/dashboard/store-detail'){
+    return json(res,200,await businessStoreDetail.legacy(db,user),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/advanced/analytics'){
     return json(res,200,await advancedAnalytics.read(db,user,Object.fromEntries(url.searchParams)),
       safeHeaders({'Cache-Control':'no-store'}));
@@ -2481,7 +2490,8 @@ async function main(){
    const changed=await franchiseTestAccess.promoteTest1OnLaunch(db).catch(error=>({status:'blocked',reason:error.message}));
    console.log('[Authorized test1 Main POS activation]',JSON.stringify(changed));
   }
-  await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await franchisePayrollEntitlement.migrate(db);await franchiseAttendance.migrate(db);await franchisePayrollLedger.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await franchisePayrollEntitlement.migrate(db);await franchiseAttendance.migrate(db);await franchisePayrollLedger.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);
+  await businessStoreDetail.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
