@@ -1,0 +1,130 @@
+/* Don Mac POS · plan indicator
+   Keep the actual plan name visible; display "Account Type" only as a
+   hover/focus hint. This is a read-only indicator, not a selector. */
+html body #app .topbar .topbar-right .account-plan-top-control {
+  position: relative !important;
+  overflow: visible !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  gap: 0 !important;
+  background: linear-gradient(135deg, #075d38 0%, #0a7547 100%) !important;
+  border: 1.5px solid rgba(166, 230, 188, .78) !important;
+  border-radius: 999px !important;
+  color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 2px 8px rgba(0,39,23,.13) !important;
+  cursor: help;
+  white-space: nowrap !important;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background .22s ease, border-color .22s ease,
+              box-shadow .22s ease, transform .22s ease !important;
+}
+html body #app .topbar .topbar-right .account-plan-top-control #accountPlanPill {
+  display: block !important;
+  flex: 0 1 auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  font-size: .78rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .005em;
+  line-height: 1.2 !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+  text-overflow: clip !important;
+  text-align: center !important;
+}
+html body #app .topbar .topbar-right .account-plan-top-control:is(:hover, :focus-visible, :focus) {
+  background: linear-gradient(125deg, #087b47 0%, #199461 55%, #0b7046 100%) !important;
+  border-color: #c4f7d3 !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    0 0 0 3px rgba(144,229,176,.16),
+    0 7px 20px rgba(3,55,30,.28) !important;
+  transform: translateY(-2px);
+  z-index: 10;
+}
+html body #app .topbar .topbar-right .account-plan-top-control:focus-visible {
+  outline: 2px solid #d4ffe0 !important;
+  outline-offset: 3px !important;
+}
+/* Position the hint BELOW the header: on laptops, the pill sits too close
+   to the top of the screen to place a readable tooltip above it. */
+html body #app .topbar .topbar-right .account-plan-top-control::after {
+  content: attr(data-account-tooltip);
+  position: absolute;
+  top: calc(100% + .72rem);
+  left: 50%;
+  transform: translate(-50%, -.28rem) scale(.96);
+  transform-origin: top center;
+  z-index: 50;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 11rem;
+  padding: .53rem .8rem;
+  border-radius: .62rem;
+  border: 1px solid rgba(190,243,210,.42);
+  background: linear-gradient(145deg,#123d29,#0b5b37);
+  color: #fff;
+  font: 750 .72rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: .02em;
+  box-shadow: 0 .5rem 1.2rem rgba(0,35,20,.3);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+}
+html body #app .topbar .topbar-right .account-plan-top-control::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + .3rem);
+  left: 50%;
+  transform: translate(-50%, -.22rem);
+  z-index: 51;
+  border: .46rem solid transparent;
+  border-top-width: 0;
+  border-bottom-color: #123d29;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+}
+html body #app .topbar .topbar-right .account-plan-top-control:is(:hover,:focus-visible,:focus)::before,
+html body #app .topbar .topbar-right .account-plan-top-control:is(:hover,:focus-visible,:focus)::after {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+@media (min-width:700px) and (max-width:1150px) {
+  html body #app .topbar .topbar-right .account-plan-top-control #accountPlanPill {
+    font-size: .73rem !important;
+  }
+}
+@media (max-width:699px) {
+  html body #app .topbar .topbar-right .account-plan-top-control {
+    padding-inline: .55rem !important;
+  }
+  html body #app .topbar .topbar-right .account-plan-top-control #accountPlanPill {
+    font-size: .67rem !important;
+  }
+}
+@media (max-width:400px) {
+  html body #app .topbar .topbar-right .account-plan-top-control {
+    padding-inline: .4rem !important;
+  }
+  html body #app .topbar .topbar-right .account-plan-top-control #accountPlanPill {
+    font-size: .61rem !important;
+    letter-spacing: -.02em;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  html body #app .topbar .topbar-right .account-plan-top-control,
+  html body #app .topbar .topbar-right .account-plan-top-control::before,
+  html body #app .topbar .topbar-right .account-plan-top-control::after {
+    transition: none !important;
+  }
+}
