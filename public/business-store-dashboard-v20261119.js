@@ -19,7 +19,8 @@
  const monthsOf=day=>Array.from({length:12},(_,i)=>new Date(Date.UTC(Number(day.slice(0,4)),Number(day.slice(5,7))-12+i,1))
   .toISOString().slice(0,7));
  const session=()=>window.donmacSessionGeneration?.()??0;
- let plan=null,admin=false,sessionKey=session(),selectedBranch='all',days=30,metric='net',chartType='line';
+ let plan=null,admin=false,sessionKey=session(),selectedBranch='all',days=30,interval='monthly',chartType='line';
+ const trendCache=new Map();let trendRequest=0,trendLoading=false,trendError='';
  let view='closed',data=null,signature='',run=0,origin=null;
  let breakdown=null,breakdownState='idle',breakdownError='',breakdownRequest=0;
  const expandedRows=new Set();
@@ -52,11 +53,12 @@
   const stamp=session(),prior=plan?.plan+'|'+plan?.status+'|'+admin+'|'+sessionKey;
   plan=next;admin=isAdmin===true;sessionKey=stamp;
   const changed=prior!==plan?.plan+'|'+plan?.status+'|'+admin+'|'+sessionKey;
-  if(changed){data=null;signature='';run++;if(view!=='closed')close(false);}
+  if(changed){data=null;signature='';trendRequest++;trendCache.clear();run++;if(view!=='closed')close(false);}
   sync();
  }
  function close(focus){
-  run++;breakdownRequest++;view='closed';data=null;signature='';
+  run++;breakdownRequest++;trendRequest++;trendCache.clear();trendLoading=false;trendError='';
+  view='closed';data=null;signature='';
   breakdown=null;breakdownState='idle';breakdownError='';expandedRows.clear();
   root.classList.remove('dm-business-store-open');
   detail.classList.add('hidden');detail.replaceChildren();
@@ -156,14 +158,28 @@
   return [1,2,5,10].map(x=>x*order).find(x=>x>=desired)||desired;
  };
  const branchColors=['#7ac64a','#e7b53a','#ec6a77','#4285c3','#9a71cb','#28a0a1','#d78d49','#758d57','#cf64a1','#559fa0'];
- const monthShort=x=>{
-  const d=new Date(x+'-01T00:00:00Z');
-  return new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',month:'short',year:'2-digit'}).format(d);
+ const periodLabel=(bucket,grain='monthly')=>{
+  if(grain==='yearly')return String(bucket).slice(0,4);
+  const date=grain==='daily'?bucket:bucket+'-01';
+  const d=new Date(date+'T00:00:00Z');
+  if(!Number.isFinite(d.getTime()))return String(bucket);
+  return new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',
+   day:grain==='daily'?'2-digit':undefined,month:'short',
+   year:grain==='monthly'?'2-digit':undefined}).format(d);
  };
- function chart(rows,kind='net',type='line',large=false,branchSeries=[]){
+ const fullPeriodLabel=(bucket,grain='monthly')=>{
+  if(grain==='yearly')return String(bucket).slice(0,4);
+  if(grain==='daily'){
+   const dt=new Date(bucket+'T00:00:00Z');
+   return Number.isFinite(dt.getTime())?new Intl.DateTimeFormat('en-GB',{
+    timeZone:'UTC',day:'numeric',month:'long',year:'numeric'}).format(dt):String(bucket);
+  }
+  return dateMonth(bucket);
+ };
+ function chart(rows,kind='net',type='line',large=false,branchSeries=[],grain='monthly'){
   if(!rows?.length)return'<p class="dm-bs-chart-empty">No monthly sales records were returned.</p>';
   const compare=branchSeries.length>1;
-  const monthIndex=new Map(rows.map((r,i)=>[r.month,i]));
+  // Labels and hover values follow the selected date grain.
   const plots=compare?branchSeries.map((s,i)=>{
    const lookup=new Map((s.months||[]).map(m=>[m.month,m]));
    return{name:String(s.name||'Branch'),color:branchColors[i%branchColors.length],
@@ -199,7 +215,7 @@
    }
    for(let i=0;i<rows.length;i++){
     const xx=x(i),value=series.values[i],yy=y(value);
-    const hover=esc(series.name+' · '+dateMonth(rows[i].month)+' · '+amount(value));
+    const hover=esc(series.name+' · '+fullPeriodLabel(rows[i].month,grain)+' · '+amount(value));
     if(type==='bar'){
      const xbar=xx-groupedWidth/2+bw*j;
      marks.push('<rect class="dm-bs-bar" x="'+xbar.toFixed(2)+'" y="'+yy.toFixed(2)+
@@ -213,14 +229,14 @@
   }
   for(let i=0;i<rows.length;i++){
    marks.push('<text class="dm-bs-x-label" text-anchor="end" transform="translate('+
-    (x(i)+3).toFixed(2)+' '+(bottom+24).toFixed(2)+') rotate(-48)">'+esc(monthShort(rows[i].month))+'</text>');
+    (x(i)+3).toFixed(2)+' '+(bottom+24).toFixed(2)+') rotate(-48)">'+esc(periodLabel(rows[i].month,grain))+'</text>');
   }
   const accessibility=compare?plots.map(p=>p.name).join(', '):'Selected branch';
   const svg='<div class="dm-bs-chart-scroll"'+(large?' tabindex="0"':'')+
    ' aria-label="Monthly sales chart; swipe or scroll horizontally on small screens">'+
    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+
    '" width="'+w+'" height="'+h+'" class="dm-bs-activity-svg" role="img" aria-label="'+
-   esc('Historical '+kind+' by month for '+accessibility)+'">'+
+   esc('Historical '+kind+' by '+(grain==='daily'?'day':grain==='yearly'?'year':'month')+' for '+accessibility)+'">'+
    grid.join('')+marks.join('')+'</svg></div>';
   const legend=compare?'<div class="dm-bs-legend" aria-label="Sales by branch">'+
    plots.map(p=>'<span class="dm-bs-legend-entry"><i aria-hidden="true" style="background-color:'+
@@ -409,7 +425,8 @@
   try{
    const loaded=await readStore();
    if(token!==run||session()!==stamp||!eligible()||view==='closed')return;
-   data=loaded;signature=key;breakdown=null;breakdownState='idle';breakdownError='';
+   data=loaded;signature=key;trendRequest++;trendCache.clear();trendLoading=false;trendError='';
+   breakdown=null;breakdownState='idle';breakdownError='';
    expandedRows.clear();drawFrame();renderStore();
   }catch(error){
    if(token!==run||session()!==stamp||!eligible()||view==='closed')return;
