@@ -433,6 +433,15 @@
   $('subscriptionOwner').textContent=owner.ownerUsername+' · Workspace #'+owner.workspaceId+
    (owner.pendingPlan?' · Requested '+owner.pendingPlan.plan+' plan (awaiting review)':'');
   $('subPlan').value=owner.pendingPlan?.plan||owner.subscription?.plan||'PRO';
+  // An existing plan may only be changed to the specific tier requested by
+  // the owner. Admin Control remains free to verify payments and renewals.
+  // Initial account setup (no subscription record) can still choose a tier.
+  $('subPlan').disabled=!!owner.subscription;
+  $('subPlan').title=owner.pendingPlan?
+   'Owner-requested plan, awaiting Admin Control approval.':
+   owner.subscription?
+   'To change this plan, the owner must first request it in Account Settings.':
+   'Select the initial subscription plan.';
   $('subStatus').value=owner.subscription?.status||'UNPAID';
   $('subAmount').value=owner.subscription?.baseAmount??owner.subscription?.amount??defaultBase($('subPlan').value);
   $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||nextMonthlyDate();
@@ -476,6 +485,8 @@
   selected={kind:'office'};
   billingFilter={kind:'SUPPLY_OFFICE',id:'supply-office',label:'Supply Chain / Main Office'};billingPage=1;reloadBilling();
   $('subscriptionOwner').textContent='Supply Chain / Main Office · Independent tenant';
+  $('subPlan').disabled=false;
+  $('subPlan').title='Select the Supply Chain plan.';
   $('subPlan').value=officeSubscription?.plan||'PRO';
   $('subStatus').value=officeSubscription?.status||'UNPAID';
   $('subAmount').value=officeSubscription?.amount??defaultBase($('subPlan').value);
