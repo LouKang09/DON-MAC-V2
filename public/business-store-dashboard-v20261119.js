@@ -343,6 +343,64 @@
   }
   const holder=$('dmBsMonthlyTable');if(holder)holder.innerHTML=monthTable();
  }
+
+ const periodTitle=grain=>grain==='daily'?'Daily sales activity':
+  grain==='yearly'?'Yearly sales activity':'Monthly sales activity';
+ const periodCaption=grain=>grain==='daily'?'Last 30 days · net sales by branch':
+  grain==='yearly'?'Current and previous calendar year · net sales by branch':
+  'Last 12 calendar months · net sales by branch';
+ const trendKey=(grain=interval)=>signature+'|'+selectedBranch+'|'+grain;
+ function historicalSeries(){
+  if(interval==='monthly')return{rows:data?.months||[],branchSeries:data?.branchMonthly||[]};
+  return trendCache.get(trendKey())||null;
+ }
+ function historicalChartMarkup(){
+  const series=historicalSeries();
+  if(!series){
+   if(trendError)return '<p class="dm-bs-chart-message" role="alert">'+esc(trendError)+
+    ' <button type="button" class="dm-bs-refresh" data-bs-trend-retry>Retry</button></p>';
+   return '<p class="dm-bs-chart-message">Loading '+esc(interval)+' net sales…</p>';
+  }
+  return chart(series.rows||[],'net',chartType,true,series.branchSeries||[],interval);
+ }
+ function redrawHistoricalChart(){
+  const heading=$('dmBsChartHeading'),caption=$('dmBsChartCaption');
+  if(heading)heading.textContent=periodTitle(interval);
+  if(caption)caption.textContent=periodCaption(interval);
+  const holder=$('dmBsFullChart');
+  if(holder)holder.innerHTML=historicalChartMarkup();
+ }
+ async function loadHistoricalSeries(){
+  if(!eligible()||view!=='history')return;
+  if(interval==='monthly'||trendCache.has(trendKey())){
+   trendLoading=false;trendError='';redrawHistoricalChart();return;
+  }
+  if(trendLoading)return;
+  const selectedInterval=interval,selectedBranchId=selectedBranch,
+   expectedSignature=signature,stamp=session(),token=++trendRequest;
+  trendLoading=true;trendError='';redrawHistoricalChart();
+  const params=new URLSearchParams({interval:selectedInterval});
+  if(selectedBranchId!=='all')params.set('branchId',selectedBranchId);
+  const path=window.donmacFranchiseUnified?
+   '/api/live/dashboard/store-trends?':'/api/dashboard/store-trends?';
+  try{
+   const series=await fetchJson(path+params);
+   if(token!==trendRequest||session()!==stamp||expectedSignature!==signature||
+    !eligible()||view!=='history'||selectedInterval!==interval||
+    selectedBranchId!==selectedBranch)return;
+   if(series.interval!==selectedInterval||!Array.isArray(series.rows)||
+     !Array.isArray(series.branchSeries))throw Error('Invalid historical sales response.');
+   trendCache.set(trendKey(selectedInterval),series);
+  }catch(error){
+   if(token!==trendRequest||session()!==stamp||expectedSignature!==signature||
+    !eligible()||view!=='history'||selectedInterval!==interval)return;
+   trendError=error.message||'Unable to load sales for this interval.';
+  }finally{
+   if(token===trendRequest&&view==='history'&&selectedInterval===interval){
+    trendLoading=false;redrawHistoricalChart();
+   }
+  }
+ }
  function renderHistory(){
   if(!data)return;
   const history=$('dmBsHistory'),main=$('dmBsMain');
@@ -357,19 +415,21 @@
    tile('12-month gross sales',peso(sum('gross')))+tile('Completed orders',fmt(sum('orders')))+
    tile('Total discounts',peso(sum('discount')))+'</div>'+
    '<section class="dm-bs-panel dm-bs-history-panel"><div class="dm-bs-chart-head"><div>'+
-   '<h3>Monthly sales activity</h3><p>Interactive values from completed POS transactions</p></div>'+
+   '<h3 id="dmBsChartHeading">'+periodTitle(interval)+'</h3>'+
+   '<p id="dmBsChartCaption">'+periodCaption(interval)+'</p></div>'+
    '<div class="dm-bs-controls"><label>Chart Type<select data-bs-chart-type>'+
    '<option value="line"'+(chartType==='line'?' selected':'')+'>Line</option>'+
    '<option value="bar"'+(chartType==='bar'?' selected':'')+'>Bar</option></select></label>'+
-   '<label>Metric<select data-bs-metric>'+
-   [['net','Net sales'],['gross','Gross sales'],['discount','Discounts'],['orders','Orders']].map(([k,v])=>
-    '<option value="'+k+'"'+(metric===k?' selected':'')+'>'+v+'</option>').join('')+
-   '</select></label></div></div><div id="dmBsFullChart">'+chart(months,metric,chartType,true,data.branchMonthly||[])+'</div></section>'+
+   '<label>Period<select data-bs-interval aria-label="Sales time interval">'+
+   [['daily','Daily'],['monthly','Monthly'],['yearly','Yearly']].map(([k,v])=>
+    '<option value="'+k+'"'+(interval===k?' selected':'')+'>'+v+'</option>').join('')+
+   '</select></label></div></div><div id="dmBsFullChart">'+historicalChartMarkup()+'</div></section>'+
    '<section class="dm-bs-panel"><h3>Month-by-month breakdown</h3>'+
    '<p>Expand any branch to see its expense inputs, staffing, login, stock and transaction details.</p>'+
    '<div id="dmBsMonthlyTable">'+monthTable()+'</div></section>';
   main.hidden=true;history.hidden=false;view='history';
   void loadMonthDetails();
+  void loadHistoricalSeries();
  }
  function renderStore(){
   if(!data)return;
