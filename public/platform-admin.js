@@ -442,6 +442,11 @@
    owner.subscription?
    'To change this plan, the owner must first request it in Account Settings.':
    'Select the initial subscription plan.';
+  $('subPlanRequestNotice').textContent=owner.pendingPlan?
+   'Owner requested '+owner.pendingPlan.plan+'. You may approve that exact tier while verifying its payment and renewal.':
+   owner.subscription?
+   'No pending owner request. You may update payment status, billing amount, and renewal date, but not switch the plan.':
+   'Initial subscription setup: select the plan and verify payment in Admin Control.';
   $('subStatus').value=owner.subscription?.status||'UNPAID';
   $('subAmount').value=owner.subscription?.baseAmount??owner.subscription?.amount??defaultBase($('subPlan').value);
   $('subNextPaymentDate').value=owner.subscription?.nextPaymentDate||nextMonthlyDate();
@@ -487,6 +492,7 @@
   $('subscriptionOwner').textContent='Supply Chain / Main Office · Independent tenant';
   $('subPlan').disabled=false;
   $('subPlan').title='Select the Supply Chain plan.';
+  $('subPlanRequestNotice').textContent='Supply Office plan is managed separately.';
   $('subPlan').value=officeSubscription?.plan||'PRO';
   $('subStatus').value=officeSubscription?.status||'UNPAID';
   $('subAmount').value=officeSubscription?.amount??defaultBase($('subPlan').value);
