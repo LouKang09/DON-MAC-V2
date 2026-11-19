@@ -114,6 +114,10 @@
     if(scopedFinanceStarted || !window.donmacFranchiseUnified || !isVisible(document.getElementById('app')))return;
     scopedFinanceStarted=true;
     try{
+      // The live shell skips the legacy enhancement chain. The Business
+      // Analytics renderer must be initialized here; otherwise the static
+      // upgrade lock remains even on paid Business accounts.
+      await loadScript('/advanced-analytics-v20261108.js?v=20261120-live-business');
       // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
       await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
       // The original Main POS shell still needs the matching enhancement styles.
