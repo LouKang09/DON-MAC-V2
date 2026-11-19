@@ -301,3 +301,32 @@
     break-inside:avoid;
   }
 }
+
+
+/* KPI / Store Performance navigation takes precedence over responsive grid
+ * display rules. The selector intentionally outranks #app #view-dashboard
+ * .dashboard-summary and .dashboard-grid display:grid!important so opening
+ * any card REPLACES the overview instead of appending a second panel below.
+ * Applies in expanded, collapsed, mid-sized and mobile layouts. */
+html body #app #view-dashboard.dm-kpi-detail-open > :not(#dmKpiDetail) {
+  display:none!important;
+}
+html body #app #view-dashboard.dm-business-store-open > :not(#dmBusinessStoreDetail) {
+  display:none!important;
+}
+/* The active detail fills the available dashboard content width. Keep the
+ * original .hidden behavior fully authoritative on close/back. */
+html body #app #view-dashboard.dm-kpi-detail-open > #dmKpiDetail:not(.hidden),
+html body #app #view-dashboard.dm-business-store-open > #dmBusinessStoreDetail:not(.hidden) {
+  display:grid!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  grid-column:1/-1;
+  align-content:start;
+}
+html body #app #view-dashboard > #dmKpiDetail.hidden,
+html body #app #view-dashboard > #dmBusinessStoreDetail.hidden {
+  display:none!important;
+}
