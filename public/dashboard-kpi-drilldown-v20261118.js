@@ -12,7 +12,7 @@
  const pct=(n,d)=>d>0?(100*Number(n||0)/d).toFixed(1)+'%':'0.0%';
  const number=x=>Number(x||0);
  const titles={revenue:'Total Revenue',orders:'Orders',today:'Today Sales',month:'Month Revenue',
-  expenses:'Total Expenses',discount:'Discount',alerts:'Low Stock Alerts'};
+  expenses:'Store Expenses',deposited:'Deposited Sales',discount:'Discount',alerts:'Low Stock Alerts'};
  const expenses=['rent','stocks','salary','transportation','electricity','ice','water','misc'];
  const detail=document.createElement('section');
  detail.id='dmKpiDetail';detail.className='dm-kpi-detail hidden';
@@ -78,7 +78,7 @@
  const value=(d,key)=>{
   const m=d?.metrics||{};
   return number(({revenue:d?.rangeActual,orders:d?.rangeTransactions,today:m.todayActual,
-   month:m.monthActual,expenses:d?.rangeExpenses,discount:d?.rangeDiscount,
+   month:m.monthActual,expenses:d?.rangeStoreExpenses,deposited:d?.rangeDepositedSales,discount:d?.rangeDiscount,
    alerts:m.lowStockCount})[key]);
  };
  function overview(d,key){
@@ -88,7 +88,9 @@
    ['Net revenue',money(d.rangeActual)],
    ['Gross revenue',money(d.rangeGross)],
    ['Discounts',money(d.rangeDiscount)],
-   ['Recorded expenses',d.rangeExpenses==null?'Not available':money(d.rangeExpenses)],
+   ['Staff-entered expenses',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses)],
+   ['Store Expenses · sold ingredients',d.rangeStoreExpenses==null?'Not available':money(d.rangeStoreExpenses)],
+   ['Deposited Sales · calculated',d.rangeDepositedSales==null?'Not available':money(d.rangeDepositedSales)],
    ['Low-stock ingredients',count(m.lowStockCount)],
    ['Ingredients monitored',count(m.inventoryCount)]
   ];
@@ -99,23 +101,26 @@
     ['Today completed orders',count(m.todayTransactions)],['Average today order',money(m.todayTransactions?m.todayActual/m.todayTransactions:0)]],
    month:[['Period net revenue',money(m.monthActual)],['Period gross revenue',money(m.monthGross)],
     ['Period orders',count(m.monthTransactions)],['Average period order',money(m.monthTransactions?m.monthActual/m.monthTransactions:0)]],
-   expenses:[5,2,0,['Expenses / net revenue',pct(d.rangeExpenses,d.rangeActual)]],
+   expenses:[6,2,0,['Ingredient cost / net sales',pct(d.rangeStoreExpenses,d.rangeActual)]],
+   deposited:[7,2,5,0,['Staff expenses / net sales',pct(d.rangeDepositExpenses,d.rangeActual)]],
    discount:[4,3,2,['Discount rate / gross',pct(d.rangeDiscount,d.rangeGross)],0],
-   alerts:[6,7,['Alert rate',pct(m.lowStockCount,m.inventoryCount)]]
+   alerts:[8,9,['Alert rate',pct(m.lowStockCount,m.inventoryCount)]]
   };
   const items=(special[key]||[]).map(x=>typeof x==='number'?metrics[x]:x);
   return '<div class="dm-kpi-tiles">'+items.map(([n,v])=>box(n,v)).join('')+'</div>';
  }
  function branchTable(rows,key,total){
   if(!rows.length)return empty('No branch comparisons are available for the selected period.');
-  const financial=['revenue','today','month','expenses','discount'].includes(key);
+  const financial=['revenue','today','month','expenses','deposited','discount'].includes(key);
   const metricLabel=key==='orders'?'Completed orders':key==='alerts'?'Low-stock count':
-    key==='expenses'?'Expenses':key==='discount'?'Discounts':'Net revenue';
+    key==='expenses'?'Store Expenses':key==='deposited'?'Deposited Sales':
+    key==='discount'?'Discounts':'Net revenue';
   let html='<div class="dm-kpi-table-scroll"><table><thead><tr><th>Branch</th><th>'+esc(metricLabel)+
-   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'?'Net revenue':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
+   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'?'Net revenue':key==='deposited'?'Staff expenses':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
   for(const row of rows){
    const d=row.data;
    const extras=key==='alerts'?count(d.metrics?.inventoryCount):key==='orders'?money(d.rangeActual):
+    key==='deposited'?(d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses)):
     count(key==='today'?d.metrics?.todayTransactions:key==='month'?d.metrics?.monthTransactions:d.rangeTransactions);
    html+='<tr'+(row.selected?' class="dm-kpi-selected-branch"':'')+'><th scope="row">'+esc(row.name)+
     (row.selected?' <span class="dm-kpi-current">Selected</span>':'')+'</th><td class="dm-kpi-number">'+
@@ -126,7 +131,7 @@
   return html;
  }
  function categoryPanel(d,key){
-  if(['expenses','alerts'].includes(key))return'';
+  if(['expenses','deposited','alerts'].includes(key))return'';
   let amounts=(d.categoryTrends||[]).map(x=>({
    name:x.name,amount:(x.values||[]).reduce((s,v)=>s+number(v),0)
   })).filter(x=>x.amount>0);
@@ -164,13 +169,13 @@
  }
  function timelinePanel(d,key){
   const defaultInterval=d.grain==='daily'?'daily':'hourly';
-  const isContext=key==='expenses'||key==='alerts';
+  const isContext=key==='expenses'||key==='deposited'||key==='alerts';
   const displayLabel=key==='orders'?'Completed orders':key==='discount'?'Discounts':
    isContext?'Net sales (context)':'Gross sales';
   return '<section class="dm-kpi-panel dm-activity-panel" aria-label="Sales activity chart">'+
    '<div class="dm-activity-head"><div><h3 id="dmActivitySeriesName">'+esc(displayLabel)+'</h3>'+
    '<p class="dm-activity-subtitle" id="dmActivityDescription">'+
-   (isContext?'Completed POS sales context; not historical expenses or stock alerts.':
+   (isContext?'Completed POS net sales for context; not a historical cost or deposit series.':
     'Completed POS sales from the selected dashboard branch scope.')+'</p></div>'+
    '<div class="dm-activity-controls">'+
    '<label for="dmActivityType">Chart Type<select id="dmActivityType" aria-label="Chart type">'+
@@ -189,7 +194,7 @@
   const isOrders=key==='orders',isDiscount=key==='discount';
   const availableGross=(d.trend||[]).every(x=>Number.isFinite(Number(x.gross)));
   const availableDiscount=(d.trend||[]).every(x=>Number.isFinite(Number(x.discount)));
-  const useGross=!isOrders&&!isDiscount&&key!=='expenses'&&key!=='alerts'&&availableGross;
+  const useGross=!isOrders&&!isDiscount&&key!=='expenses'&&key!=='deposited'&&key!=='alerts'&&availableGross;
   const useDiscount=isDiscount&&availableDiscount;
   const field=isOrders?'transactions':useDiscount?'discount':useGross?'gross':'actual';
   const seriesLabel=isOrders?'Completed orders':useDiscount?'Discounts':
@@ -219,7 +224,7 @@
    'Daily · '+dateFrom+(dateTo!==dateFrom?' to '+dateTo:''))+
    ' · '+(context.selectedBranch==='all'?'All permitted branches':
     context.branches.find(b=>String(b.id)===String(context.selectedBranch))?.name||'Selected branch')+
-   ((key==='expenses'||key==='alerts')?' · contextual completed sales':'');
+   ((key==='expenses'||key==='deposited'||key==='alerts')?' · contextual completed sales':'');
   if(!points.length){plot.innerHTML=empty('No recorded sales activity for this period.');return;}
   const w=Math.max(960,points.length*40+140),h=360,L=104,R=30,T=44,B=89;
   const left=L,right=w-R,top=T,bottom=h-B,available=bottom-top;
@@ -331,6 +336,21 @@
   return panel('Ingredients needing attention',body,
    'Alert totals include all monitored ingredients; the dashboard returns up to ten example ingredients per branch.');
  }
+ function ingredientCostPanel(d){
+  const estimate=d.rangeStoreExpensesBasis==='current_recipe_estimate';
+  const note=estimate?'Estimated ingredient cost of completed sales based on CURRENT recipes and ingredient prices; legacy receipts have no immutable historical ingredient-cost snapshots.':
+   'Ingredient costs consumed by completed sales from saved receipt and unit-cost snapshots. Not inventory purchases or the operating expense ledger.';
+  return panel('Cost of ingredients sold','<div class="dm-kpi-tiles">'+
+   box('Sold ingredient cost',d.rangeStoreExpenses==null?'Not available':money(d.rangeStoreExpenses))+
+   box('Completed POS orders',count(d.rangeTransactions))+'</div>',note);
+ }
+ function depositFormulaPanel(d){
+  return panel('Deposited Sales calculation','<div class="dm-kpi-tiles">'+
+   box('Completed net revenue',money(d.rangeActual))+
+   box('Staff-entered expenses',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
+   box('Deposited Sales',d.rangeDepositedSales==null?'Not available':money(d.rangeDepositedSales))+
+   '</div>','Formula: completed net POS revenue minus saved expense ledger entries for the selected reporting period. This is a calculated expectation, not a confirmed bank deposit or shift reconciliation.');
+ }
  async function expenseCategoryPanel(main,period,run){
   if(context.role!=='Admin'&&!context.permissions.includes('expenses.view'))
    return panel('Expense categories',empty('Open Expenses Ledger to view detailed spending when your account has permission.'),
@@ -418,10 +438,14 @@
     'Branch data could not be retrieved; missing rows are excluded from the comparison total.');
    if(key==='alerts')body+=stockPanel(rows,main);
    else{
-    if(key==='expenses')body+=await expenseCategoryPanel(main,period,run);
+    if(key==='expenses')body+=ingredientCostPanel(main);
+    if(key==='deposited'){
+     body+=depositFormulaPanel(main);
+     body+=await expenseCategoryPanel(main,period,run);
+    }
     if(run!==activeRequest||!valid())return;
     body+=categoryPanel(main,key);
-    if(['revenue','orders','today','month','discount'].includes(key))body+=recentPanel(main);
+    if(['revenue','orders','today','month','discount','deposited'].includes(key))body+=recentPanel(main);
    }
    if(run!==activeRequest||!valid())return;
    body+=timelinePanel(main,key);
