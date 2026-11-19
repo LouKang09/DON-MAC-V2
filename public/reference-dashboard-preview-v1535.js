@@ -11,8 +11,7 @@
  const color=['#12664b','#009f78','#67d9ac','#ee6961','#bd3a43','#8e6246','#f5a64f','#a98ae9'];
  const sections=[
   ['dashboard','Dashboard','▦'],['financials','Financials','▤'],
-  ['store','Store Performance','▣'],['sales','Sales & Menu','▥'],
-  ['customers','Customers','♧'],['operations','Operations','⚒'],
+  ['sales','Sales & Menu','▥'],['operations','Operations','⚒'],
   ['staff','Staff & Labour','♙'],['alerts','Alerts','⚑']
  ];
  const state={section:'dashboard',branch:0,ranking:'top',disabled:new Set()};
@@ -181,7 +180,7 @@
      list.map((e,i)=>'<div><span class="rd-alert-dot '+(i<2?'urgent':'')+'"></span><strong>'+e[0]+'</strong><span>'+e[1]+'</span><p>'+e[2]+'</p></div>').join('')+
      '</div><p class="rd-note">All alerts shown here are fictional sample entries. This preview does not trigger notifications.</p></article>';
  }
- const renderers={dashboard,financials,store:storePerformance,sales,customers,operations,staff,alerts};
+ const renderers={dashboard,financials,sales,operations,staff,alerts};
  function render(){
    const title=sections.find(s=>s[0]===state.section)?.[1]||'Dashboard';
    return '<section class="rd-shell" data-rd-root aria-label="Reference-inspired dashboard concept">'+
