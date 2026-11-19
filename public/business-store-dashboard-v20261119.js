@@ -423,7 +423,7 @@
    '<label>Period<select data-bs-interval aria-label="Sales time interval">'+
    [['daily','Daily'],['monthly','Monthly'],['yearly','Yearly']].map(([k,v])=>
     '<option value="'+k+'"'+(interval===k?' selected':'')+'>'+v+'</option>').join('')+
-   '</select></label></div></div><div id="dmBsFullChart">'+historicalChartMarkup()+'</div></section>'+
+   '</select></label></div></div><div id="dmBsFullChart" aria-live="polite">'+historicalChartMarkup()+'</div></section>'+
    '<section class="dm-bs-panel"><h3>Month-by-month breakdown</h3>'+
    '<p>Expand any branch to see its expense inputs, staffing, login, stock and transaction details.</p>'+
    '<div id="dmBsMonthlyTable">'+monthTable()+'</div></section>';
