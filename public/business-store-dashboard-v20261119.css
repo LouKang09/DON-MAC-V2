@@ -319,3 +319,18 @@
   gap:.45rem .7rem;
  }
 }
+
+#view-dashboard #dmBusinessStoreDetail .dm-bs-branch-name{
+ display:inline-flex;
+ align-items:center;
+ gap:.55rem;
+ min-width:0;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-branch-dot{
+ display:inline-block;
+ flex:0 0 .7rem;
+ width:.7rem;
+ height:.7rem;
+ border-radius:50%;
+ border:1px solid rgba(0,0,0,.08);
+}
