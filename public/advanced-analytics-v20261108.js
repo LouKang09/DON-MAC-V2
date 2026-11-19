@@ -126,18 +126,6 @@
      panel('Payment method share',donut(d.paymentMix))+'</div>'+
    panel('Monthly financial trend',comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Expenses'}]));
  }
- function store(d){
-  const branches=d.branchesPerformance,s=d.summary;
-  return title('Store performance','Compare actual completed transactions across registered branches.')+
-   kpis([['Branches in view',fmt(branches.length),'Registered franchise locations'],
-    ['Top branch',branches[0]?.name||'—','Highest recorded net sales'],
-    ['Combined net sales',peso(s.net),'All selected locations',d.daily.map(x=>x.net)],
-    ['Voided / cancelled',fmt(s.voided),'Recorded cancelled transactions',d.daily.map(x=>x.voided)]])+
-   '<div class="rd-section-grid">'+panel('Branch leaderboard',ranking(branches,x=>x.name,x=>x.net,15))+
-   panel('Branch sales and expenses',lines(branches,['Location','Orders','Net sales','Expenses'],x=>
-    '<tr><td><strong>'+esc(x.name)+'</strong></td><td>'+fmt(x.orders)+'</td><td>'+peso(x.net)+'</td><td>'+peso(x.expenses)+'</td></tr>'))+'</div>'+
-   panel('Historical sales by month',comparisonChart(d.months,[{key:'net',name:'Net sales'}]));
- }
  function sales(d){
   const s=d.summary,a=d.daily;
   return title('Sales & Menu','Purchased item quantities and sales channels from completed orders.')+
@@ -151,17 +139,6 @@
    panel('Branch product comparison',lines(d.branchProducts.slice(0,20),
     ['Branch','Menu item','Units','Line subtotal'],x=>'<tr><td>'+esc(x.branch)+'</td><td>'+esc(x.name)+
     '</td><td>'+fmt(x.qty)+'</td><td>'+peso(x.amount)+'</td></tr>'));
- }
- function customers(d){
-  const s=d.summary;
-  return title('Customers','Only customer names actually recorded on completed transactions.')+
-   kpis([['Identified customers',fmt(s.recordedCustomers),'Distinct recorded names'],
-    ['Returning names',fmt(s.repeatCustomers),'Names appearing in multiple orders'],
-    ['Named orders',fmt(s.namedOrders),'All completed orders with a name'],
-    ['Completed orders',fmt(s.orders),'Includes anonymous transactions',d.daily.map(x=>x.orders)]])+
-   panel('Customer purchases · recorded names',
-    lines(d.namedCustomers,['Customer name','Orders','Net spend'],x=>'<tr><td><strong>'+esc(x.name)+
-    '</strong></td><td>'+fmt(x.orders)+'</td><td>'+peso(x.net)+'</td></tr>'));
  }
  function operations(d){
   const m=d.movementSummary,s=d.summary;
