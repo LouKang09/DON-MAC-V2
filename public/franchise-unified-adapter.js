@@ -88,7 +88,12 @@
    return live('/api/live/branches/'+Number(branchEdit[1]),'PUT',data);
   if(branchEdit&&method==='DELETE')
    return live('/api/live/branches/'+Number(branchEdit[1]),'DELETE');
-  if(p==='/api/account/subscription'&&method==='GET')return subscription(await status());
+  if(p==='/api/account/subscription'&&method==='GET')
+   return live('/api/live/account/subscription');
+  // Owners submit plan changes; only Admin Control can approve them. Do not
+  // force live franchises through the legacy/global catalog routes.
+  if(p==='/api/account/subscription/update-plan'&&method==='POST')
+   return live('/api/live/account/subscription/request-plan','POST',data);
   if(p==='/api/inventory'&&method==='GET')
    return live('/api/live/inventory'+qs(selected()));
   if(p==='/api/inventory/movements'&&method==='GET')
