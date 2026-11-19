@@ -334,3 +334,228 @@
  border-radius:50%;
  border:1px solid rgba(0,0,0,.08);
 }
+
+
+/* Month-first nested report: one table, branch drill-downs on demand. */
+#view-dashboard #dmBusinessStoreDetail .dm-bs-monthly-scroll{
+ max-width:100%;width:100%;
+ overflow-x:auto;
+ -webkit-overflow-scrolling:touch;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table{
+ min-width:56rem;
+ border-collapse:separate;
+ border-spacing:0;
+ width:100%;
+ font-size:.82rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table thead th{
+ position:sticky;top:0;z-index:2;
+ background:#eef6f0;
+ color:#265c3d;
+ font-weight:850;
+ letter-spacing:.025em;
+ padding:.85rem .75rem;
+ white-space:nowrap;
+ border-bottom:1px solid #cce3d3;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table .dm-bs-month-header th,
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table .dm-bs-month-header td{
+ background:#f0f7f1;
+ border-top:1px solid #c7dfd0;
+ border-bottom:1px solid #dbeade;
+ padding:.77rem .75rem;
+ font-weight:850;
+ color:#12462c;
+ white-space:nowrap;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-month-hint{
+ display:block;
+ margin-top:.12rem;
+ color:#688475;
+ font-size:.67rem;
+ font-weight:600;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table .dm-bs-month-branch th,
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table .dm-bs-month-branch td{
+ background:#fff;
+ border-bottom:1px solid #ebf2ed;
+ padding:.65rem .75rem;
+ color:#244a34;
+ font-weight:550;
+ font-variant-numeric:tabular-nums;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table .dm-bs-month-branch:hover th,
+#view-dashboard #dmBusinessStoreDetail .dm-bs-grouped-table .dm-bs-month-branch:hover td{
+ background:#f6fbf7;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand{
+ display:inline-flex;
+ align-items:center;
+ gap:.55rem;
+ padding:.36rem .5rem;
+ border:1px solid transparent;
+ border-radius:.55rem;
+ background:transparent;
+ color:#075d38;
+ font-size:.81rem;
+ font-weight:800;
+ cursor:pointer;
+ text-align:left;
+ white-space:normal;
+ transition:background-color .15s ease,color .15s ease,border-color .15s ease;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand:hover,
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand:focus-visible{
+ background:#e6f5eb;
+ border-color:#a7d5b6;
+ color:#06502d;
+ outline:2px solid #65c68b;
+ outline-offset:1px;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand-icon{
+ display:grid;
+ place-items:center;
+ width:1.6rem;
+ height:1.6rem;
+ min-width:1.6rem;
+ border-radius:.42rem;
+ background:#075d38;
+ color:#fff;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand-icon svg{
+ display:block;width:.95rem;height:.95rem;
+ transition:transform .15s ease;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand[aria-expanded="true"] .dm-bs-expand-icon svg{
+ transform:rotate(180deg);
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expand-action{
+ background:#e7f4eb;
+ padding:.43rem .65rem;
+ border-color:#c5e1cd;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expanded-row[hidden]{display:none!important}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expanded-row > td{
+ background:#f6fbf7;
+ border-bottom:2px solid #b5dbbf;
+ padding:clamp(.85rem,1.3vw,1.4rem);
+ white-space:normal;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expanded-content{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:1.05rem;
+ width:100%;
+ min-width:0;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expanded-title h4{
+ margin:0 0 .2rem;
+ color:#10492d;
+ font-size:1rem;
+ font-weight:850;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expanded-title p{
+ color:#607a67;
+ font-size:.76rem;
+ margin:0;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-breakdown{
+ border:1px solid #d5e8da;
+ border-radius:.8rem;
+ background:#fff;
+ padding:1rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-breakdown h5{
+ font-size:.87rem;
+ font-weight:850;
+ color:#135332;
+ margin:0 0 .8rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-grid{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:.75rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-grid > div{
+ display:grid;
+ gap:.23rem;
+ border-bottom:1px solid #e1eee5;
+ padding:.25rem .2rem .5rem;
+ min-width:0;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-grid > div span,
+#view-dashboard #dmBusinessStoreDetail .dm-bs-stat-card > span{
+ color:#5b7963;
+ font-size:.73rem;
+ font-weight:700;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-grid > div strong{
+ color:#145636;
+ font-size:.95rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-total{
+ display:flex;
+ align-items:center;
+ justify-content:flex-end;
+ gap:1rem;
+ padding-top:.75rem;
+ margin:.65rem 0 0;
+ border-top:1px solid #c7dfcd;
+ color:#315a3e;
+ font-weight:750;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-expense-total strong{
+ color:#075d38;
+ font-size:1.08rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-stat-grid{
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:.75rem;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-stat-card{
+ display:grid;
+ gap:.23rem;
+ min-width:0;
+ padding:.82rem .95rem;
+ border-radius:.75rem;
+ border:1px solid #dceee1;
+ background:#fff;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-stat-card strong{
+ font-size:1.08rem;
+ font-weight:850;
+ color:#075d38;
+ font-variant-numeric:tabular-nums;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-stat-card small{
+ color:#738476;
+ font-size:.68rem;
+ font-weight:500;
+ white-space:normal;
+}
+#view-dashboard #dmBusinessStoreDetail .dm-bs-record-note,
+#view-dashboard #dmBusinessStoreDetail .dm-bs-muted{
+ font-size:.74rem;
+ line-height:1.5;
+ color:#697e6e;
+ margin:0;
+}
+@media(max-width:1000px){
+ #view-dashboard #dmBusinessStoreDetail .dm-bs-stat-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ #view-dashboard #dmBusinessStoreDetail .dm-bs-expense-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+}
+@media(max-width:560px){
+ #view-dashboard #dmBusinessStoreDetail .dm-bs-stat-grid,
+ #view-dashboard #dmBusinessStoreDetail .dm-bs-expense-grid{
+  grid-template-columns:minmax(0,1fr);
+ }
+ #view-dashboard #dmBusinessStoreDetail .dm-bs-expense-total{
+  justify-content:space-between;
+ }
+}
