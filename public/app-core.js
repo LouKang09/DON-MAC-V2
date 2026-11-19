@@ -1768,7 +1768,10 @@
      {title:'Orders',value:num(d.rangeTransactions,0),caption:'Completed · selected range',glyph:'orders'},
      {title:'Today Sales',value:peso(d.metrics.todayActual),gross:peso(d.metrics.todayGross),net:peso(d.metrics.todayActual),caption:'Today · completed sales',glyph:'today'},
      {title:state.user?.role==='User'?'Allowed Period Revenue':'Month Revenue',value:peso(d.metrics.monthActual),gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
-     {title:'Total Expenses',value:d.rangeExpenses==null?'—':peso(d.rangeExpenses),caption:d.rangeExpenses==null?'Owner / Co-Owner only':'Selected range · expense ledger',glyph:'expense'},
+     {title:'Store Expenses',value:d.rangeStoreExpenses==null?'—':peso(d.rangeStoreExpenses),
+       caption:d.rangeStoreExpensesBasis==='current_recipe_estimate'?'Selected range · recipe-cost estimate':'Selected range · ingredients sold',glyph:'expense'},
+     {title:'Deposited Sales',value:d.rangeDepositedSales==null?'—':peso(d.rangeDepositedSales),
+       caption:d.rangeDepositedSales==null?'Expenses unavailable · cannot calculate':'Net sales − staff-entered expenses',glyph:'deposited'},
      {title:'Discount',value:peso(d.rangeDiscount),caption:'Selected range · completed sales',glyph:'discount'},
      {title:'Low Stock Alerts',value:num(d.metrics.lowStockCount,0),caption:'Ingredients needing attention',glyph:'alert'}
    ];
@@ -1778,10 +1781,11 @@
      today:'<path d="M3 20h18M6 17v-5M12 17V7M18 17V4"/>',
      month:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M8 17h6"/>',
      expense:'<path d="M3 6h18v14H3zM6 10h12M6 14h5M14 15l2 2 4-4"/>',
+     deposited:'<rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M7 4h10v4M12 10v7m-3-3 3 3 3-3"/>',
      discount:'<path d="M3 11V4h7l11 11-7 7L3 11z"/><circle cx="7.5" cy="8" r="1.3"/>',
      alert:'<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.4h.01"/>'
    };
-   const metricKeys=['revenue','orders','today','month','expenses','discount','alerts'];
+   const metricKeys=['revenue','orders','today','month','expenses','deposited','discount','alerts'];
    $('dashboardSummary').innerHTML=statCards.map((c,i)=>'<button type="button" class="summary-card dm-kpi-button'+(c.gross?' dash-financial-card':'')+'" data-dm-kpi="'+metricKeys[i]+'" aria-label="View '+esc(c.title)+' breakdown">'+
       '<div class="dash-card-main"><div class="dash-summary-label"><span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+statIcons[c.glyph]+'</svg></span><span>'+esc(c.title)+'</span></div>'+
       '<strong>'+c.value+'</strong><small>'+esc(c.caption)+'</small></div>'+
