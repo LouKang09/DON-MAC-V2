@@ -235,6 +235,20 @@
     '</td><td>'+peso(x.discount)+'</td><td>'+fmt(x.orders)+'</td></tr>').join('')+
    '</tbody></table></div>';
  }
+ function branchMonthTable(){
+  if(!Array.isArray(data?.branchMonthly)||data.branchMonthly.length<2)return '';
+  const rows=data.branchMonthly.flatMap(b=>(b.months||[]).map(m=>({
+   name:b.name,month:m.month,net:m.net,gross:m.gross,discount:m.discount,orders:m.orders
+  })));
+  rows.sort((a,b)=>b.month.localeCompare(a.month)||a.name.localeCompare(b.name));
+  return '<section class="dm-bs-panel"><h3>Monthly performance per branch</h3>'+
+   '<p>Each monthly figure comes from recorded sales at that branch, not an allocated share of the combined total.</p>'+
+   '<div class="dm-bs-table-scroll"><table><thead><tr><th>Month</th><th>Branch</th>'+
+   '<th>Gross sales</th><th>Net sales</th><th>Discounts</th><th>Orders</th></tr></thead><tbody>'+
+   rows.map(x=>'<tr><td>'+esc(dateMonth(x.month))+'</td><th>'+esc(x.name)+'</th>'+
+    '<td>'+peso(x.gross)+'</td><td>'+peso(x.net)+'</td><td>'+peso(x.discount)+'</td>'+
+    '<td>'+fmt(x.orders)+'</td></tr>').join('')+'</tbody></table></div></section>';
+ }
  function renderHistory(){
   if(!data)return;
   const history=$('dmBsHistory'),main=$('dmBsMain');
@@ -256,8 +270,8 @@
    '<label>Metric<select data-bs-metric>'+
    [['net','Net sales'],['gross','Gross sales'],['discount','Discounts'],['orders','Orders']].map(([k,v])=>
     '<option value="'+k+'"'+(metric===k?' selected':'')+'>'+v+'</option>').join('')+
-   '</select></label></div></div><div id="dmBsFullChart">'+chart(months,metric,chartType,true)+'</div></section>'+
-   '<section class="dm-bs-panel"><h3>Month-by-month breakdown</h3>'+chartTable(months)+'</section>';
+   '</select></label></div></div><div id="dmBsFullChart">'+chart(months,metric,chartType,true,data.branchMonthly||[])+'</div></section>'+
+   '<section class="dm-bs-panel"><h3>Month-by-month breakdown</h3>'+chartTable(months)+'</section>'+branchMonthTable();
   main.hidden=true;history.hidden=false;view='history';
  }
  function renderStore(){
@@ -290,10 +304,10 @@
    '<tbody>'+(rows||'<tr><td colspan="6">No branch sales recorded.</td></tr>')+
    '</tbody></table></div></section>'+
    '<section class="dm-bs-panel"><div class="dm-bs-chart-head"><div><h3>Historical Sales by Month</h3>'+
-   '<p>Net sales across the last 12 calendar months</p></div><button type="button" class="dm-bs-open-history" data-bs-history>'+
+   '<p>Net sales by branch across the last 12 calendar months</p></div><button type="button" class="dm-bs-open-history" data-bs-history>'+
    'View full breakdown <span aria-hidden="true">→</span></button></div>'+
    '<button type="button" class="dm-bs-history-preview" data-bs-history aria-label="Open full Historical Sales by Month breakdown">'+
-   chart(data.months||[],'net','line',false)+'</button></section>';
+   chart(data.months||[],'net','line',false,data.branchMonthly||[])+'</button></section>';
   history.hidden=true;main.hidden=false;view='store';
  }
  function drawFrame(){
@@ -347,7 +361,7 @@
    if(el.matches('[data-bs-chart-type]'))chartType=el.value==='bar'?'bar':'line';
    else if(['net','gross','discount','orders'].includes(el.value))metric=el.value;
    const holder=$('dmBsFullChart');
-   if(holder&&data)holder.innerHTML=chart(data.months||[],metric,chartType,true);
+   if(holder&&data)holder.innerHTML=chart(data.months||[],metric,chartType,true,data.branchMonthly||[]);
   }
  });
  window.donmacBusinessStore={setSubscription,sync,clear,onViewChange};
