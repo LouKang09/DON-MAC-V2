@@ -505,9 +505,11 @@
   if(target&&summary.contains(target)){event.preventDefault();open(target);}
  });
  detail.addEventListener('click',event=>{
-  const target=event.target.closest('[data-bs-back],[data-bs-refresh],[data-bs-history],[data-bs-history-back],[data-bs-expand]');
+  const target=event.target.closest('[data-bs-back],[data-bs-refresh],[data-bs-history],[data-bs-history-back],[data-bs-expand],[data-bs-trend-retry]');
   if(!target||!eligible())return;
-  if(target.hasAttribute('data-bs-expand')){
+  if(target.hasAttribute('data-bs-trend-retry')){
+   trendError='';trendLoading=false;void loadHistoricalSeries();
+  }else if(target.hasAttribute('data-bs-expand')){
    const key=target.dataset.bsExpand;
    if(!/^\d{4}-\d{2}\|\d+$/.test(key))return;
    if(expandedRows.has(key))expandedRows.delete(key);else expandedRows.add(key);
@@ -525,11 +527,15 @@
   }else if(el.matches('[data-bs-days]')){
    const n=Number(el.value);if(![7,30,90].includes(n))return;
    days=n;data=null;load(true);
-  }else if(el.matches('[data-bs-chart-type],[data-bs-metric]')){
-   if(el.matches('[data-bs-chart-type]'))chartType=el.value==='bar'?'bar':'line';
-   else if(['net','gross','discount','orders'].includes(el.value))metric=el.value;
-   const holder=$('dmBsFullChart');
-   if(holder&&data)holder.innerHTML=chart(data.months||[],metric,chartType,true,data.branchMonthly||[]);
+  }else if(el.matches('[data-bs-chart-type]')){
+   chartType=el.value==='bar'?'bar':'line';
+   redrawHistoricalChart();
+  }else if(el.matches('[data-bs-interval]')){
+   if(!['daily','monthly','yearly'].includes(el.value))return;
+   interval=el.value;
+   // Old requests must never overwrite a newer interval or changed branch.
+   trendRequest++;trendLoading=false;trendError='';
+   void loadHistoricalSeries();
   }
  });
  window.donmacBusinessStore={setSubscription,sync,clear,onViewChange};
