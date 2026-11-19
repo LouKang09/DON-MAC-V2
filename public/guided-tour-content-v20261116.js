@@ -170,10 +170,10 @@
       ]
     },
     advanced: {
-      label: 'Advanced Report / Inventory Management', intro: 'Understand Pro versus Business features and the advanced analytics available for eligible subscriptions.',
+      label: 'Advanced Analytics', intro: 'Understand Pro versus Business features and the advanced analytics available for eligible subscriptions.',
       steps: [
         item('Plan comparison', 'Pro contains core sales and inventory tools. Business adds inter-branch transfer and the dedicated advanced analytics workspace.', '#advancedPlanComparison'),
-        item('Business analytics', 'When your plan allows, open the financial, branch, menu, customer, cashier and operations views. Locked previews are not live records.', '#advancedReferenceSection'),
+        item('Business analytics', 'When your plan allows, open the financial, menu, cashier and operations views. Locked previews are not live records.', '#advancedReferenceSection'),
         item('Branch comparisons', 'Check selected branches and dates carefully. Avoid comparing figures from different time windows or mixing gross with net revenue.', '#advancedReferenceContent'),
         item('Restricted features', 'If a feature is locked by your plan, request an authorized upgrade through Account Settings. The guide cannot grant access.', '#advancedReferenceLock')
       ]
