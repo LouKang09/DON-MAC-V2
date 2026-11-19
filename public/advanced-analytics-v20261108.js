@@ -17,7 +17,10 @@
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const date=x=>{const d=new Date(x);return Number.isNaN(d.getTime())?String(x||'—'):new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(d);};
  let subscription=null,model=null,section='dashboard',branch='all',days='30',busy=false,requestId=0,lastLoad=0,error='';
- const business=()=>window.donmacAuthenticatedRole==='Admin'&&subscription?.plan==='BUSINESS'&&subscription?.status==='PAID'&&subscription?.configured;
+ // Payment status and plan are authoritative. "configured" is an optional
+ // setup/legacy UI flag and must not keep an already-paid Business owner locked.
+ const business=()=>window.donmacAuthenticatedRole==='Admin'&&
+  subscription?.plan==='BUSINESS'&&subscription?.status==='PAID';
  const empty=message=>'<div class="aa-empty">'+esc(message)+'</div>';
  const note=message=>'<p class="aa-data-note">'+esc(message)+'</p>';
  const title=(heading,description)=>'<div class="rd-section-title"><div><h3>'+esc(heading)+'</h3><p>'+esc(description)+'</p></div><span class="aa-recorded-label">POS RECORDS</span></div>';
@@ -212,7 +215,9 @@
   try{
    const params=new URLSearchParams({days});
    if(branch!=='all')params.set('branchId',branch);
-   const response=await fetch('/api/advanced/analytics?'+params,{credentials:'same-origin',cache:'no-store'});
+   const path=window.donmacFranchiseUnified===true?
+    '/api/live/advanced/analytics?':'/api/advanced/analytics?';
+   const response=await fetch(path+params,{credentials:'same-origin',cache:'no-store'});
    const data=await response.json().catch(()=>({}));
    if(!response.ok)throw Error(data.error||'Unable to load advanced analytics.');
    if(token!==requestId)return;
@@ -238,8 +243,12 @@
  function open(){
   if(business()){load();return;}
   if(!subscription){
+   const generation=window.donmacSessionGeneration?.();
    fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
-    .then(r=>r.ok?r.json():null).then(setSubscription).catch(()=>{});
+    .then(r=>r.ok?r.json():null)
+    .then(next=>{
+     if(generation===window.donmacSessionGeneration?.()&&next)setSubscription(next);
+    }).catch(()=>{});
   }
  }
  let hoverTip=null;
@@ -292,8 +301,10 @@
   model=null;lastLoad=0;load(true);
  });
  window.donmacAdvancedAnalytics={setSubscription,open,refresh:()=>{lastLoad=0;return load(true);}};
+ const initialGeneration=window.donmacSessionGeneration?.();
  fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
-  .then(r=>r.ok?r.json():null).then(sub=>{if(sub)setSubscription(sub);})
+  .then(r=>r.ok?r.json():null)
+  .then(sub=>{if(sub&&initialGeneration===window.donmacSessionGeneration?.())setSubscription(sub);})
   .catch(()=>{});
  if($('view-advanced')?.classList.contains('active'))open();
 })();
