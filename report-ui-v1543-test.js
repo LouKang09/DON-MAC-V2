@@ -78,7 +78,10 @@ assert(onboardingSource.includes('Do not send a password'));
 assert(onboardingSource.includes('public_franchise_requests'));
 assert(!onboardingSource.includes('INSERT INTO users'), 'Do not activate unsafe accounts');
 
-assert(html.includes('Account Type: <strong id="accountPlanPill">'));
+assert(html.includes('<strong id="accountPlanPill">Pro Plan User</strong>'));
+assert(html.includes('data-account-tooltip="Account Type"'));
+assert(!html.includes('Account Type: <strong id="accountPlanPill">'));
+assert(core.includes("'Account Type: '+planLabel"), 'Plan accessibility label follows subscription changes');
 assert(css.includes('.plan-history-table td.plan-days-cell'));
 assert(html.includes('<th>Remark</th>'));
 assert(html.includes('<option value="all">All</option>'));
