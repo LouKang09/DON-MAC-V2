@@ -16,7 +16,7 @@
   return m.year+'-'+m.month+'-'+m.day;
  };
  const dayOffset=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
- const monthsOf=day=>Array.from({length:12},(_,i)=>new Date(Date.UTC(Number(day.slice(0,4)),Number(day.slice(5,7))-11+i,1))
+ const monthsOf=day=>Array.from({length:12},(_,i)=>new Date(Date.UTC(Number(day.slice(0,4)),Number(day.slice(5,7))-12+i,1))
   .toISOString().slice(0,7));
  const session=()=>window.donmacSessionGeneration?.()??0;
  let plan=null,admin=false,sessionKey=session(),selectedBranch='all',days=30,metric='net',chartType='line';
@@ -163,7 +163,7 @@
     ')" fill="#3e5c49" font-size="12">'+esc(dateMonth(rows[i].month))+'</text>');
   }
   const alt=esc('Historical '+kind+' by month; '+rows.map(r=>dateMonth(r.month)+' '+amount(r[kind])).join('; '));
-  return '<div class="dm-bs-chart-scroll" tabindex="0" aria-label="Historical monthly chart, scroll to view">'+
+  return '<div class="dm-bs-chart-scroll"'+(large?' tabindex="0"':'')+' aria-label="Historical monthly chart, scroll to view">'+
    '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" role="img" aria-label="'+alt+'">'+
    grid.join('')+marks.join('')+'</svg></div>';
  }
