@@ -77,7 +77,7 @@
    if(selectedBranch!=='all')q.set('branchId',selectedBranch);
    const r=await fetchJson('/api/advanced/analytics?'+q.toString());
    return {period:r.period,months:r.months||[],branches:r.branches||[],
-    selectedBranch,branchesPerformance:r.branchesPerformance||[],summary:r.summary||{},
+    selectedBranch,branchesPerformance:r.branchesPerformance||[],branchMonthly:r.branchMonthly||[],summary:r.summary||{},
     complete:r.complete!==false,source:'Recorded franchise transactions and expense entries'};
   }
   // Live franchise data can ONLY be read via authenticated workspace-scoped routes.
@@ -94,33 +94,53 @@
    if(branchId)q.set('branchId',String(branchId));
    return '/api/live/dashboard?'+q;
   };
-  // Only one annual series query plus selected-period / branch comparison.
+  // The aggregate monthly series and comparisons share authenticated queries.
+  // Each visible branch additionally gets its own 12-month report; a combined
+  // monthly total cannot be apportioned to branches without inventing data.
+  const inScope=branches.filter(b=>!selected||Number(b.id)===Number(selected.id));
   const [year,period,...separate]=await Promise.all([
    fetchJson(query(historyStart,today,selected?.id)),
    fetchJson(query(start,today,selected?.id)),
-   ...branches.filter(b=>!selected||Number(b.id)===Number(selected.id))
-    .map(b=>fetchJson(query(start,today,b.id)))
+   ...inScope.map(b=>fetchJson(query(start,today,b.id)))
   ]);
-  const map=new Map(months.map(m=>[m,{month:m,net:0,gross:0,discount:0,orders:0}]));
-  const daily=Array.isArray(year.trend)?year.trend:[];
-  for(let i=0;i<daily.length;i++){
-   const point=daily[i],day=dayOffset(year.from,i),record=map.get(day.slice(0,7));
-   if(!record)continue;
-   record.net+=num(point.actual);record.gross+=num(point.gross);record.discount+=num(point.discount);
-   record.orders+=num(point.transactions);
+  const monthRows=monthlyRollup(year,months);
+  const branchMonthly=[];
+  // Bounded requests avoid loading every branch at once for larger franchises.
+  for(let i=0;i<inScope.length;i+=4){
+   const batch=inScope.slice(i,i+4);
+   const series=await Promise.all(batch.map(async b=>{
+    const annual=selected&&Number(selected.id)===Number(b.id)?year:
+     await fetchJson(query(historyStart,today,b.id));
+    return{id:Number(b.id),name:String(b.name),months:monthlyRollup(annual,months)};
+   }));
+   branchMonthly.push(...series);
   }
-  const monthRows=[...map.values()].map(m=>Object.fromEntries(Object.entries(m).map(([key,value])=>
-   [key,typeof value==='number'?Math.round(value*100)/100:value])));
-  const ranked=branches.filter(b=>!selected||Number(b.id)===Number(selected.id)).map((b,i)=>({
+  const ranked=inScope.map((b,i)=>({
    id:Number(b.id),name:String(b.name),net:num(separate[i].rangeActual),
    gross:num(separate[i].rangeGross),expenses:num(separate[i].rangeExpenses),
    orders:num(separate[i].rangeTransactions)
   })).sort((a,b)=>b.net-a.net);
-  return {period:{days,start,end:today},months:monthRows,branches,selectedBranch,
+  return {period:{days,start,end:today},months:monthRows,branchMonthly,branches,selectedBranch,
    branchesPerformance:ranked,complete:true,
    summary:{net:num(period.rangeActual),gross:num(period.rangeGross),
     expenses:num(period.rangeExpenses),orders:num(period.rangeTransactions),
     voided:0},source:'Workspace-isolated live POS sales and branch expense totals'};
+ }
+ // Aggregate saved, date-scoped hourly/daily sales without mixing franchise data.
+ function monthlyRollup(report,months){
+  const map=new Map(months.map(month=>[month,{month,net:0,gross:0,discount:0,orders:0}]));
+  const points=Array.isArray(report?.trend)?report.trend:[];
+  for(let i=0;i<points.length;i++){
+   const day=dayOffset(report.from,i),rec=map.get(day.slice(0,7));
+   if(!rec)continue;
+   const p=points[i];
+   rec.net+=num(p.actual);rec.gross+=num(p.gross);
+   rec.discount+=num(p.discount);rec.orders+=num(p.transactions);
+  }
+  return [...map.values()].map(m=>({
+   month:m.month,net:Math.round(m.net*100)/100,gross:Math.round(m.gross*100)/100,
+   discount:Math.round(m.discount*100)/100,orders:m.orders
+  }));
  }
  const tile=(label,value,hint='')=>'<div class="dm-bs-metric"><span>'+esc(label)+'</span><strong>'+esc(value)+
   '</strong>'+(hint?'<small>'+esc(hint)+'</small>':'')+'</div>';
