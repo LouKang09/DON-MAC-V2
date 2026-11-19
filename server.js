@@ -2294,6 +2294,10 @@ async function handleApi(req,res,url){
     return json(res,200,await businessStoreDetail.legacy(db,user),
       safeHeaders({'Cache-Control':'no-store'}));
   }
+  if(method==='GET'&&p==='/api/dashboard/store-trends'){
+    return json(res,200,await businessStoreDetail.legacyTrends(db,user,Object.fromEntries(url.searchParams)),
+      safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/advanced/analytics'){
     return json(res,200,await advancedAnalytics.read(db,user,Object.fromEntries(url.searchParams)),
       safeHeaders({'Cache-Control':'no-store'}));
