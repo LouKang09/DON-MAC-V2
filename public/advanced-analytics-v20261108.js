@@ -6,8 +6,7 @@
  if(!root||!frame||window.donmacAdvancedAnalytics)return;
  const sections=[
   ['dashboard','Dashboard','▦'],['financials','Financials','▤'],
-  ['store','Store Performance','▣'],['sales','Sales & Menu','▥'],
-  ['customers','Customers','♧'],['operations','Operations','⚒'],
+  ['sales','Sales & Menu','▥'],['operations','Operations','⚒'],
   ['staff','Staff & Labour','♙'],['alerts','Alerts','⚑']
  ];
  const navSvg={"dashboard":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/><rect x=\"13.5\" y=\"3\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/><rect x=\"3\" y=\"13.5\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/><rect x=\"13.5\" y=\"13.5\" width=\"7.5\" height=\"7.5\" rx=\"1.7\"/></svg>","financials":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M15 9c-1-1.3-5-1.3-5 .7 0 2.2 4.9 1 4.9 3.7 0 2.2-4.1 2.3-5.3.8M12 6v12\"/></svg>","store":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 9 12 4l9 5-9 5-9-5Z\"/><path d=\"M4 13v7h16v-7M9 20v-5h6v5\"/></svg>","sales":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.8 20.5h16.4M6.2 16.5v-5M11.8 16.5v-9M17.4 16.5V4\"/><path d=\"M5.2 16.5h2M10.8 16.5h2M16.4 16.5h2\"/></svg>","customers":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M17.2 19.5v-1.8a3.6 3.6 0 0 0-3.6-3.6H8a3.6 3.6 0 0 0-3.6 3.6v1.8\"/><circle cx=\"10.8\" cy=\"7.5\" r=\"3.2\"/><path d=\"M20.5 19.5v-1.8a3.6 3.6 0 0 0-2.7-3.5M16.1 4.3a3.1 3.1 0 0 1 0 6\"/></svg>","operations":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m12 2.75 9 5.15-9 5.15-9-5.15 9-5.15Z\"/><path d=\"M3 7.9v8.3l9 5.1 9-5.1V7.9M12 13.05v8.25\"/></svg>","staff":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M17.2 19.5v-1.8a3.6 3.6 0 0 0-3.6-3.6H8a3.6 3.6 0 0 0-3.6 3.6v1.8\"/><circle cx=\"10.8\" cy=\"7.5\" r=\"3.2\"/><path d=\"M20.5 19.5v-1.8a3.6 3.6 0 0 0-2.7-3.5M16.1 4.3a3.1 3.1 0 0 1 0 6\"/></svg>","alerts":"<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3 2.5 20.5h19L12 3Z\"/><path d=\"M12 9v5M12 17.2h.01\"/></svg>"};
@@ -205,7 +204,7 @@
     ['Attention entries',fmt(d.alerts.length),'Items in this action center']])+
    panel('Recorded exceptions',alertRows(d.alerts));
  }
- const views={dashboard,financials,store,sales,customers,operations,staff,alerts};
+ const views={dashboard,financials,sales,operations,staff,alerts};
  function showModel(){
   if(!model){root.innerHTML=empty(error||'Loading advanced analytics…');return;}
   const d=model;
