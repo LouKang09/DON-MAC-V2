@@ -268,7 +268,7 @@
    '<div class="dm-bs-expense-breakdown"><h5>Expenses by category</h5>'+
    '<div class="dm-bs-expense-grid">'+expenseNames.map(([key,label])=>
     '<div><span>'+esc(label)+'</span><strong>'+peso(cat[key]||0)+'</strong></div>').join('')+
-   '</div><p class="dm-bs-expense-total">Total Store Expenses <strong>'+
+   '</div><p class="dm-bs-expense-total">Total Operating Expenses <strong>'+
     peso(rec.storeExpenses)+'</strong></p></div>'+
    '<div class="dm-bs-stat-grid">'+
    detailCard('Ingredient cost of sales',statistic(rec.ingredientCost,true),
@@ -282,7 +282,7 @@
    detailCard('Other device logins',statistic(rec.webLogins),'Web/other detected devices')+
    detailCard('All recorded branch logins',statistic(rec.totalRecordedLogins),
     'Since login event tracking began; excludes earlier logins')+
-   '</div><p class="dm-bs-record-note">Store Expenses totals the expense-ledger fields above, including Stocks. It does not automatically include ingredient usage cost again. Login totals only cover recorded, branch-assigned successful sign-ins; mobile web cannot be distinguished reliably from a native POS app.</p></div>';
+   '</div><p class="dm-bs-record-note">Operating Expenses totals the entered expense-ledger fields above, including Stocks purchases. Sold-ingredient cost is separate and appears in the Dashboard Store Expenses KPI. Login totals only cover recorded, branch-assigned successful sign-ins; mobile web cannot be distinguished reliably from a native POS app.</p></div>';
  }
  function monthTable(){
   if(!data)return'<p class="dm-bs-muted">No reporting data.</p>';
@@ -291,7 +291,7 @@
   const cols=7;
   const header='<div class="dm-bs-table-scroll dm-bs-monthly-scroll"><table class="dm-bs-grouped-table">'+
    '<thead><tr><th>Month / Branch</th><th>Gross Sales</th><th>Net Sales</th>'+
-   '<th>Store Expenses</th><th>Discounts</th><th>Orders</th><th>Details</th></tr></thead><tbody>';
+   '<th>Operating Expenses</th><th>Discounts</th><th>Orders</th><th>Details</th></tr></thead><tbody>';
   let body='';
   for(const month of [...(data.months||[])].reverse()){
    const active=groups.filter(b=>(b.months||[]).some(x=>x.month===month.month));
