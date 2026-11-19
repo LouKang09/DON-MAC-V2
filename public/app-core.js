@@ -19,6 +19,7 @@
     state.posBranchId=null;state.subscription=null;
     window.__donmacDashboardData=null;
     window.donmacDashboardDrilldown?.clear?.();
+    window.donmacBusinessStore?.clear?.();
     window.donmacFranchiseUnified=false;
     window.donmacScopedApi=null;
     for(const id of ['dashboardSummary','dashboardLowStock','categorySales','salesTrendChart',
@@ -365,6 +366,7 @@
     $('advancedUpgradeButton').classList.toggle('hidden',business);
     window.donmacAdvancedAnalytics?.setSubscription(sub);
     window.donmacPlanWidgets?.setSubscription(sub);
+    window.donmacBusinessStore?.setSubscription?.(sub,admin);
     const history=Array.isArray(sub.history)?sub.history:[],totalPages=Math.max(1,Math.ceil(history.length/SUBSCRIPTION_ROWS_PER_PAGE));
     subscriptionHistoryPage=Math.max(1,Math.min(totalPages,subscriptionHistoryPage));
     const start=(subscriptionHistoryPage-1)*SUBSCRIPTION_ROWS_PER_PAGE;
@@ -535,7 +537,7 @@
       if(!authorized)view='pos';
     }
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Report / Inventory Management'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger'],payroll:['EMPLOYEE MANAGEMENT','Payroll & Attendance']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Analytics'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger'],payroll:['EMPLOYEE MANAGEMENT','Payroll & Attendance']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
     $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
@@ -1786,6 +1788,7 @@
    const max=Math.max(1,...d.categorySales.map(x=>x.amount));
    $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
    window.__donmacDashboardData=d;
+   window.donmacBusinessStore?.sync?.();
    window.donmacDashboardDrilldown?.sync?.(d,{request:api,branches:state.branches,
      role:state.user?.role||'',permissions:state.user?.accessPermissions||[],
      live:!!state.user?.liveMode,session:sessionGeneration,
