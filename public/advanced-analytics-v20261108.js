@@ -21,6 +21,8 @@
  // setup/legacy UI flag and must not keep an already-paid Business owner locked.
  const business=()=>window.donmacAuthenticatedRole==='Admin'&&
   subscription?.plan==='BUSINESS'&&subscription?.status==='PAID';
+ const subscriptionPath=()=>window.donmacFranchiseUnified===true?
+  '/api/live/account/subscription':'/api/account/subscription';
  const empty=message=>'<div class="aa-empty">'+esc(message)+'</div>';
  const note=message=>'<p class="aa-data-note">'+esc(message)+'</p>';
  const title=(heading,description)=>'<div class="rd-section-title"><div><h3>'+esc(heading)+'</h3><p>'+esc(description)+'</p></div><span class="aa-recorded-label">POS RECORDS</span></div>';
@@ -244,7 +246,7 @@
   if(business()){load();return;}
   if(!subscription){
    const generation=window.donmacSessionGeneration?.();
-   fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
+   fetch(subscriptionPath(),{credentials:'same-origin',cache:'no-store'})
     .then(r=>r.ok?r.json():null)
     .then(next=>{
      if(generation===window.donmacSessionGeneration?.()&&next)setSubscription(next);
@@ -302,7 +304,7 @@
  });
  window.donmacAdvancedAnalytics={setSubscription,open,refresh:()=>{lastLoad=0;return load(true);}};
  const initialGeneration=window.donmacSessionGeneration?.();
- fetch('/api/account/subscription',{credentials:'same-origin',cache:'no-store'})
+ fetch(subscriptionPath(),{credentials:'same-origin',cache:'no-store'})
   .then(r=>r.ok?r.json():null)
   .then(sub=>{if(sub&&initialGeneration===window.donmacSessionGeneration?.())setSubscription(sub);})
   .catch(()=>{});
