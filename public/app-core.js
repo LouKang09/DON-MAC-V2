@@ -331,7 +331,9 @@
   function renderDevSubscription(){
     const sub=state.subscription;if(!sub)return;
     const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
-    $('accountPlanPill').textContent=(business?'Business':'Pro')+' Plan User';
+    const planLabel=(business?'Business':'Pro')+' Plan User';
+    $('accountPlanPill').textContent=planLabel;
+    $('accountPlanPill').closest('.account-plan-top-control')?.setAttribute('aria-label','Account Type: '+planLabel);
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
     renderAccountBranchPricing(sub);
     $('saveAccountPlan').disabled=!admin||!!state.user?.liveMode;
