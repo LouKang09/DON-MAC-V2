@@ -21,6 +21,8 @@
  const session=()=>window.donmacSessionGeneration?.()??0;
  let plan=null,admin=false,sessionKey=session(),selectedBranch='all',days=30,metric='net',chartType='line';
  let view='closed',data=null,signature='',run=0,origin=null;
+ let breakdown=null,breakdownState='idle',breakdownError='',breakdownRequest=0;
+ const expandedRows=new Set();
  const detail=document.createElement('section');
  detail.id='dmBusinessStoreDetail';detail.className='dm-business-store-detail hidden';
  detail.setAttribute('aria-label','Business Store Performance breakdown');
@@ -54,7 +56,8 @@
   sync();
  }
  function close(focus){
-  run++;view='closed';data=null;signature='';
+  run++;breakdownRequest++;view='closed';data=null;signature='';
+  breakdown=null;breakdownState='idle';breakdownError='';expandedRows.clear();
   root.classList.remove('dm-business-store-open');
   detail.classList.add('hidden');detail.replaceChildren();
   if(focus&&origin?.isConnected)origin.focus();
@@ -228,26 +231,101 @@
     kind==='discount'?'Discounts':'Net sales')+'</span></div>';
   return '<div class="dm-bs-chart-frame">'+svg+legend+'</div>';
  }
- function chartTable(months){
-  return '<div class="dm-bs-table-scroll"><table><thead><tr><th>Month</th><th>Gross sales</th><th>Net sales</th>'+
-   '<th>Discounts</th><th>Orders</th></tr></thead><tbody>'+
-   months.map(x=>'<tr><th>'+esc(dateMonth(x.month))+'</th><td>'+peso(x.gross)+'</td><td>'+peso(x.net)+
-    '</td><td>'+peso(x.discount)+'</td><td>'+fmt(x.orders)+'</td></tr>').join('')+
-   '</tbody></table></div>';
+ const expenseNames=[
+  ['stocks','Stocks / ingredient purchases'],['rent','Rent'],['salary','Salary'],
+  ['transportation','Transportation'],['electricity','Electricity'],
+  ['ice','Ice'],['water','Water'],['misc','Miscellaneous']
+ ];
+ const statistic=(value,amount=false)=>value==null?'Not available':amount?peso(value):fmt(value);
+ function detailCard(label,value,help){
+  return '<div class="dm-bs-stat-card"><span>'+esc(label)+'</span><strong>'+
+   esc(String(value))+'</strong>'+(help?'<small>'+esc(help)+'</small>':'')+'</div>';
  }
- function branchMonthTable(){
-  if(!Array.isArray(data?.branchMonthly)||data.branchMonthly.length<2)return '';
-  const rows=data.branchMonthly.flatMap(b=>(b.months||[]).map(m=>({
-   name:b.name,month:m.month,net:m.net,gross:m.gross,discount:m.discount,orders:m.orders
-  })));
-  rows.sort((a,b)=>b.month.localeCompare(a.month)||a.name.localeCompare(b.name));
-  return '<section class="dm-bs-panel"><h3>Monthly performance per branch</h3>'+
-   '<p>Each monthly figure comes from recorded sales at that branch, not an allocated share of the combined total.</p>'+
-   '<div class="dm-bs-table-scroll"><table><thead><tr><th>Month</th><th>Branch</th>'+
-   '<th>Gross sales</th><th>Net sales</th><th>Discounts</th><th>Orders</th></tr></thead><tbody>'+
-   rows.map(x=>'<tr><td>'+esc(dateMonth(x.month))+'</td><th>'+esc(x.name)+'</th>'+
-    '<td>'+peso(x.gross)+'</td><td>'+peso(x.net)+'</td><td>'+peso(x.discount)+'</td>'+
-    '<td>'+fmt(x.orders)+'</td></tr>').join('')+'</tbody></table></div></section>';
+ function branchDetails(month,branch){
+  const rec=breakdown?.rows?.find(r=>r.month===month&&String(r.branchId)===String(branch.id));
+  if(breakdownState==='loading'&&!rec)return'<p class="dm-bs-muted">Loading branch figures…</p>';
+  if(!rec)return'<p class="dm-bs-muted">'+esc(breakdownError||'Detailed branch metrics are unavailable.')+'</p>';
+  const cat=rec.expenseCategories||{};
+  return '<div class="dm-bs-expanded-content">'+
+   '<div class="dm-bs-expanded-title"><h4>'+esc(branch.name)+' — '+esc(dateMonth(month))+'</h4>'+
+   '<p>Saved expense inputs and recorded activity for this branch. Staffing and stock alerts are current snapshots.</p></div>'+
+   '<div class="dm-bs-expense-breakdown"><h5>Expenses by category</h5>'+
+   '<div class="dm-bs-expense-grid">'+expenseNames.map(([key,label])=>
+    '<div><span>'+esc(label)+'</span><strong>'+peso(cat[key]||0)+'</strong></div>').join('')+
+   '</div><p class="dm-bs-expense-total">Total Store Expenses <strong>'+
+    peso(rec.storeExpenses)+'</strong></p></div>'+
+   '<div class="dm-bs-stat-grid">'+
+   detailCard('Ingredient cost of sales',statistic(rec.ingredientCost,true),
+    'Historical recipe / sale-item cost snapshots; separate from purchased stock')+
+   detailCard('Active employees',statistic(rec.employees),'Current active cashiers assigned to this branch')+
+   detailCard('Stock alerts',statistic(rec.lowStock),'Current below-threshold ingredients')+
+   detailCard('Voided transactions',statistic(rec.voided),'Original sale date falls in this month')+
+   detailCard('Deleted transactions',statistic(rec.deleted),'Original sale date falls in this month')+
+   detailCard('Successful logins · month',statistic(rec.loginCount),'Recorded from 19 Nov 2026 onward')+
+   detailCard('Mobile-device logins',statistic(rec.mobileLogins),'Mobile device detected, including mobile web')+
+   detailCard('Other device logins',statistic(rec.webLogins),'Web/other detected devices')+
+   detailCard('All recorded branch logins',statistic(rec.totalRecordedLogins),
+    'Since login event tracking began; excludes earlier logins')+
+   '</div><p class="dm-bs-record-note">Store Expenses totals the expense-ledger fields above, including Stocks. It does not automatically include ingredient usage cost again. Login totals only cover recorded, branch-assigned successful sign-ins; mobile web cannot be distinguished reliably from a native POS app.</p></div>';
+ }
+ function monthTable(){
+  if(!data)return'<p class="dm-bs-muted">No reporting data.</p>';
+  const details=new Map((breakdown?.rows||[]).map(r=>[String(r.month)+'|'+String(r.branchId),r]));
+  const groups=data.branchMonthly||[];
+  const cols=7;
+  const header='<div class="dm-bs-table-scroll dm-bs-monthly-scroll"><table class="dm-bs-grouped-table">'+
+   '<thead><tr><th>Month / Branch</th><th>Gross Sales</th><th>Net Sales</th>'+
+   '<th>Store Expenses</th><th>Discounts</th><th>Orders</th><th>Details</th></tr></thead><tbody>';
+  let body='';
+  for(const month of [...(data.months||[])].reverse()){
+   const active=groups.filter(b=>(b.months||[]).some(x=>x.month===month.month));
+   const expenseTotals=active.map(b=>details.get(month.month+'|'+b.id)?.storeExpenses);
+   const expenseKnown=expenseTotals.length>0&&expenseTotals.every(x=>x!=null);
+   const expenseSum=expenseKnown?expenseTotals.reduce((sum,x)=>sum+num(x),0):null;
+   body+='<tr class="dm-bs-month-header"><th scope="row">'+esc(dateMonth(month.month))+
+    '<span class="dm-bs-month-hint">All selected branches</span></th><td>'+peso(month.gross)+
+    '</td><td>'+peso(month.net)+'</td><td>'+statistic(expenseSum,true)+'</td><td>'+
+    peso(month.discount)+'</td><td>'+fmt(month.orders)+'</td><td>—</td></tr>';
+   for(const branch of active){
+    const value=branch.months.find(m=>m.month===month.month)||{};
+    const rowKey=month.month+'|'+branch.id;
+    const rec=details.get(rowKey);
+    const opened=expandedRows.has(rowKey);
+    const id='dm-bs-detail-'+rowKey.replace(/[^a-zA-Z0-9-]/g,'-');
+    body+='<tr class="dm-bs-month-branch"><th scope="row">'+
+     '<button type="button" class="dm-bs-expand" data-bs-expand="'+esc(rowKey)+
+     '" aria-expanded="'+opened+'" aria-controls="'+id+'" aria-label="Expand '+esc(branch.name)+
+     ' expenses and activity for '+esc(dateMonth(month.month))+'">'+
+     '<span class="dm-bs-expand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></span>'+
+     '<span>'+esc(branch.name)+'</span></button></th>'+
+     '<td>'+peso(value.gross)+'</td><td>'+peso(value.net)+'</td><td>'+
+     statistic(rec?.storeExpenses,true)+'</td><td>'+peso(value.discount)+'</td><td>'+
+     fmt(value.orders)+'</td><td><button type="button" class="dm-bs-expand dm-bs-expand-action" data-bs-expand="'+
+     esc(rowKey)+'" aria-expanded="'+opened+'" aria-controls="'+id+'">'+(opened?'Hide':'View')+'</button></td></tr>'+
+     '<tr id="'+id+'" class="dm-bs-expanded-row" data-bs-expanded-row="'+esc(rowKey)+'"'+
+     (opened?'':' hidden')+'><td colspan="'+cols+'">'+branchDetails(month.month,branch)+'</td></tr>';
+   }
+  }
+  return header+body+'</tbody></table></div>';
+ }
+ async function loadMonthDetails(){
+  if(!eligible()||view!=='history'||breakdownState==='loading')return;
+  if(breakdownState==='ready'&&breakdown)return;
+  const token=++breakdownRequest,stamp=session(),expected=signature;
+  breakdownState='loading';breakdownError='';
+  const content=$('dmBsMonthlyTable');
+  if(content)content.innerHTML=monthTable();
+  try{
+   const api=window.donmacFranchiseUnified?
+    '/api/live/dashboard/store-detail':'/api/dashboard/store-detail';
+   const result=await fetchJson(api);
+   if(token!==breakdownRequest||stamp!==session()||expected!==signature||!eligible()||view!=='history')return;
+   breakdown=result;breakdownState='ready';
+  }catch(error){
+   if(token!==breakdownRequest||stamp!==session()||expected!==signature||view!=='history')return;
+   breakdownState='error';breakdownError=error.message||'Unable to fetch branch details.';
+  }
+  const holder=$('dmBsMonthlyTable');if(holder)holder.innerHTML=monthTable();
  }
  function renderHistory(){
   if(!data)return;
@@ -271,8 +349,11 @@
    [['net','Net sales'],['gross','Gross sales'],['discount','Discounts'],['orders','Orders']].map(([k,v])=>
     '<option value="'+k+'"'+(metric===k?' selected':'')+'>'+v+'</option>').join('')+
    '</select></label></div></div><div id="dmBsFullChart">'+chart(months,metric,chartType,true,data.branchMonthly||[])+'</div></section>'+
-   '<section class="dm-bs-panel"><h3>Month-by-month breakdown</h3>'+chartTable(months)+'</section>'+branchMonthTable();
+   '<section class="dm-bs-panel"><h3>Month-by-month breakdown</h3>'+
+   '<p>Expand any branch to see its expense inputs, staffing, login, stock and transaction details.</p>'+
+   '<div id="dmBsMonthlyTable">'+monthTable()+'</div></section>';
   main.hidden=true;history.hidden=false;view='history';
+  void loadMonthDetails();
  }
  function renderStore(){
   if(!data)return;
@@ -328,7 +409,8 @@
   try{
    const loaded=await readStore();
    if(token!==run||session()!==stamp||!eligible()||view==='closed')return;
-   data=loaded;signature=key;drawFrame();renderStore();
+   data=loaded;signature=key;breakdown=null;breakdownState='idle';breakdownError='';
+   expandedRows.clear();drawFrame();renderStore();
   }catch(error){
    if(token!==run||session()!==stamp||!eligible()||view==='closed')return;
    detail.innerHTML='<div class="dm-bs-heading"><button class="dm-bs-back" type="button" data-bs-back>← Back to Dashboard</button>'+
@@ -346,9 +428,14 @@
   if(target&&summary.contains(target)){event.preventDefault();open(target);}
  });
  detail.addEventListener('click',event=>{
-  const target=event.target.closest('[data-bs-back],[data-bs-refresh],[data-bs-history],[data-bs-history-back]');
+  const target=event.target.closest('[data-bs-back],[data-bs-refresh],[data-bs-history],[data-bs-history-back],[data-bs-expand]');
   if(!target||!eligible())return;
-  if(target.hasAttribute('data-bs-back'))close(true);
+  if(target.hasAttribute('data-bs-expand')){
+   const key=target.dataset.bsExpand;
+   if(!/^\d{4}-\d{2}\|\d+$/.test(key))return;
+   if(expandedRows.has(key))expandedRows.delete(key);else expandedRows.add(key);
+   const holder=$('dmBsMonthlyTable');if(holder)holder.innerHTML=monthTable();
+  }else if(target.hasAttribute('data-bs-back'))close(true);
   else if(target.hasAttribute('data-bs-refresh')){data=null;load(true);}
   else if(target.hasAttribute('data-bs-history')){renderHistory();}
   else if(target.hasAttribute('data-bs-history-back')){renderStore();}
