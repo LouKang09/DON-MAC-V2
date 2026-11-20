@@ -140,7 +140,7 @@
    try{result=await api('/api/payroll/attendance/'+action,'POST',{});}
    catch(error){
     if(action==='time-out'&&error.status===409 &&
-       window.confirm('Early Time Out warning: you have not completed the scheduled 9 AM–6 PM shift. Continue clocking out?'))
+       await window.donmacPrompt.confirm('Early Time Out warning: you have not completed the scheduled 9 AM–6 PM shift. Continue clocking out?'))
      result=await api('/api/payroll/attendance/time-out','POST',{confirmEarly:true});
     else throw error;
    }
@@ -329,7 +329,7 @@
  async function savedAction(id,remove){
   const slip=(window.__donmacPayrollSavedList||[]).find(x=>x.id===id);if(!slip)return;
   if(remove){
-   if(!window.confirm('Delete payslip #'+slip.payslipNo+'? Audit history is preserved.'))return;
+   if(!await window.donmacPrompt.confirm('Delete payslip #'+slip.payslipNo+'? Audit history is preserved.'))return;
    try{await api('/api/payroll/slips/'+id,'DELETE');renderSaved((await api('/api/payroll/slips')).slips||[]);}
    catch(error){message(error.message);}return;
   }
@@ -357,10 +357,10 @@
    lunchStart:toISO($('dmPayrollDtrLunchStart').value),lunchEnd:toISO($('dmPayrollDtrLunchEnd').value),
    reason:$('dmPayrollDtrReason').value};
   try{await api('/api/payroll/records/'+id,'PATCH',body);$('dmPayrollDtrDialog').close();await previewPayroll();await loadTeam();}
-  catch(error){window.alert(error.message);}
+  catch(error){await window.donmacPrompt.notify(error.message,{variant:'error'});}
  }
  async function closeDtr(id){
-  const reason=window.prompt('Supervisor Time Out: enter a detailed reason (at least 5 characters).');
+  const reason=await window.donmacPrompt.input('Supervisor Time Out: enter a detailed reason (at least 5 characters).',{title:'Supervisor Time Out',inputLabel:'Reason for Time Out',minLength:5,confirmText:'Submit Reason'});
   if(!reason)return;
   try{await api('/api/payroll/records/'+id+'?action=close','POST',{reason});await previewPayroll();await loadTeam();}
   catch(error){message(error.message);}
@@ -435,9 +435,9 @@
  };
  $('dmPayrollAddEarning').onclick=()=>addRow('dmPayrollEarnings');
  $('dmPayrollAddDeduction').onclick=()=>addRow('dmPayrollDeductions');
- $('dmPayrollRecalculate').onclick=()=>{
+ $('dmPayrollRecalculate').onclick=async()=>{
   if(!previewData)return;
-  if(!window.confirm('Replace the unsaved earnings and deductions in the editor with the current DTR calculation?'))return;
+  if(!await window.donmacPrompt.confirm('Replace the unsaved earnings and deductions in the editor with the current DTR calculation?'))return;
   showRows('dmPayrollEarnings',previewData.earnings);
   showRows('dmPayrollDeductions',previewData.deductions);total();message('Recalculated from DTR. Save to update the payslip.');
  };
