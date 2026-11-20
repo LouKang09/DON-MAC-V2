@@ -40,3 +40,18 @@
 #view-supply .supply-appeal-message{margin:15px 0;padding:13px 16px;background:#edf5ed;border:1px solid #c7dfcc;border-radius:11px;color:#27623d;font-size:12px;font-weight:800}
 #view-supply .supply-status.appeal_review{background:#e7eaf9;color:#444e9c}
 @media(max-width:720px){#view-supply .supply-appeal-form button{justify-self:stretch}}
+
+/* Requested supplies pagination: green Previous / Next buttons. */
+#view-supply #supplyProductPages button {
+  background:#075d38!important;color:#fff!important;
+  border:1px solid #075d38!important;border-radius:9px!important;
+  padding:.55rem .9rem!important;min-height:2.15rem!important;
+  font-size:.75rem!important;font-weight:800!important;
+  cursor:pointer;transition:background .15s ease,box-shadow .15s ease;
+}
+#view-supply #supplyProductPages button:hover:not(:disabled),
+#view-supply #supplyProductPages button:focus-visible:not(:disabled){
+  background:#08764a!important;border-color:#08764a!important;
+  box-shadow:0 2px 8px rgba(7,93,56,.18);
+}
+#view-supply #supplyProductPages button:disabled{opacity:.4!important;cursor:not-allowed!important;}
