@@ -20,6 +20,7 @@ const posFinance = require('./lib/pos-finance');
 const advancedAnalytics = require('./lib/advanced-analytics');
 const businessStoreDetail = require('./lib/business-store-detail');
 const dashboardFinancials = require('./lib/dashboard-financial-metrics');
+const inventoryIngredientUsage = require('./lib/inventory-ingredient-usage');
 const franchiseRequests = require('./lib/public-franchise-requests');
 const franchiseEmailVerification = require('./lib/franchise-email-verification');
 const franchiseStaging = require('./lib/franchise-tenant-staging');
@@ -2259,6 +2260,18 @@ async function handleApi(req,res,url){
     const workspace=await workspaceIdForUser(user.id);
     return json(res,200,{items:await branchCatalogRead.inventory(db,workspace,selected),branchId:selected,isolated:true},
       safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='GET'&&p==='/api/inventory/usage-summary'){
+    const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
+    if(branchId==null)throw Object.assign(new Error('Choose an authorized inventory branch.'),{status:400});
+    const workspaceId=await workspaceIdForUser(user.id);
+    if(!workspaceId)throw Object.assign(new Error('Franchise workspace not found.'),{status:403});
+    const branch=(await db.query('SELECT b.id,b.name FROM chat_workspace_branches w '+
+      'JOIN branches b ON b.id=w.branch_id WHERE w.workspace_id=$1 AND b.id=$2',
+      [workspaceId,branchId])).rows[0];
+    if(!branch)throw Object.assign(new Error('This branch is outside your franchise.'),{status:403});
+    return json(res,200,await inventoryIngredientUsage.legacy(db,workspaceId,branch,
+      Object.fromEntries(url.searchParams)),safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/inventory/movements')
     return json(res,200,{items:await branchIncomingSupply.movements(db,user,url.searchParams.get('branchId'),url.searchParams.get('limit'))},
