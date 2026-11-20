@@ -8,7 +8,7 @@
  const state={me:null,branchId:null,catalog:null,inventory:[],manage:null,cart:[],
    quote:null,quoteSeq:0,checkoutId:null,stockId:null,salesPage:1,salesTotal:0,view:'overview'};
  let loadingCatalog=false,quoteTimer=0,refreshLock=false;
- function notice(message,error=false){const n=$('notice');n.textContent=message||'';n.classList.toggle('error',error)}
+ function notice(message,error=false){const n=$('notice');n.textContent=message||'';n.classList.toggle('error',error);if(message&&window.donmacPrompt&&!/^(loading|checking|refreshing|connecting)\b/i.test(message))void window.donmacPrompt.notify(message,{variant:error?'error':undefined});}
  async function api(path,options={}){
   const r=await fetch(path,{credentials:'same-origin',cache:'no-store',
    headers:{...(options.body?{'Content-Type':'application/json'}:{})},...options});
