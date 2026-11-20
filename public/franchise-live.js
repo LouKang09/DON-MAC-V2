@@ -250,7 +250,8 @@
    '<div class="receipt-lines">'+data.items.map(x=>'<div><span>'+escape(x.name)+' × '+x.qty+
     '</span><strong>'+money(x.total)+'</strong></div>').join('')+'</div>'+
    '<p class="receipt-total">'+money(data.actual)+'</p>'+
-   (isOwner()&&data.status==='Sold'?'<div class="form-actions"><button type="button" class="ghost" data-void="'+escape(data.reference)+'">Void receipt</button></div>':'');
+   (permits('transactions.view')&&data.status==='Sold'?'<div class="form-actions"><button type="button" class="ghost dm-void-action" data-void="'+escape(data.reference)+'" data-dm-icon="trash2" title="Void" aria-label="Void receipt"><svg class="dm-ua-native" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg> Void</button></div>':'');
+  window.donmacAnimatedIcons?.refresh?.();
   $('receiptDialog').showModal();
  }
  async function loadManage(){
@@ -522,8 +523,13 @@
   $('receiptClose').addEventListener('click',()=>$('receiptDialog').close());
   $('receiptContent').addEventListener('click',async e=>{
    const b=e.target.closest('[data-void]');if(!b)return;
-   if(!await window.donmacPrompt.confirm('Void this real receipt and restore its ingredient stock?'))return;
-   try{await post('transactions/'+b.dataset.void+'/void',{restoreStock:true,branchId:state.branchId});
+   const reason=await window.donmacPrompt.input('Why are you voiding receipt '+b.dataset.void+'?',{
+    title:'Void Transaction',inputLabel:'Reason (required)',minLength:5,maxLength:500,
+    placeholder:'Enter a reason for voiding this sale',confirmText:'Review Void',cancelText:'No',variant:'danger'});
+   if(reason===null)return;
+   if(!await window.donmacPrompt.confirm('Void this receipt, restore its ingredient stock, and record reason: '+reason+'?',{
+    title:'Confirm Void',confirmText:'Yes, Void',cancelText:'No',variant:'danger'}))return;
+   try{await post('transactions/'+b.dataset.void+'/void',{restoreStock:true,branchId:state.branchId,reason});
     $('receiptDialog').close();notice('Receipt voided and isolated stock restored.');
     await refreshAll();
    }catch(err){notice(err.message,true)}
