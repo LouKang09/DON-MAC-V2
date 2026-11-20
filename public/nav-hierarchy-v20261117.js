@@ -73,7 +73,8 @@
   }
   caret.onclick=event=>{event.stopPropagation();openExpense(leaves.hidden);};
   expense.addEventListener('click',()=>{
-   openExpense(true);
+   // Click the Expenses row to expand/collapse its children without a caret.
+   openExpense(leaves.hidden);
    // Main heading selects the existing Expenses Ledger. The separate leaf
    // "Payroll & Attendance" is the only direct route to the payroll tab.
    requestAnimationFrame(updateLeaf);
