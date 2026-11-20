@@ -210,7 +210,7 @@ $('officeCampaignRefresh').onclick=load;
 $('officeCampaignRows').addEventListener('click',async e=>{
  const deactivate=e.target.closest('[data-campaign-deactivate]'),participants=e.target.closest('[data-campaign-participants]');
  if(deactivate){
-  if(!confirm('Deactivate the Main Office promo button for all franchises? Selling will stop immediately.'))return;
+  if(!await window.donmacPrompt.confirm('Deactivate the Main Office promo button for all franchises? Selling will stop immediately.'))return;
   deactivate.disabled=true;
   try{await api('promotions/'+deactivate.dataset.campaignDeactivate+'/deactivate',{method:'POST'});
    $('officeCampaignFeedback').textContent='Campaign deactivated. Franchise buttons will disappear when refreshed.';
