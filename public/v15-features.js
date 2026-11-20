@@ -51,7 +51,8 @@
       button.type = 'button';
       button.className = 'whats-new-button';
       button.setAttribute('aria-label', 'Open system updates');
-      button.innerHTML = '<span class="whats-new-icon">◉</span><span class="whats-new-label">What\'s New</span><span id="whatsNewBadge" class="update-badge hidden">NEW</span>';
+      button.innerHTML = '<svg class="dm-ua-native" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span class="whats-new-label">What\'s New</span><span id="whatsNewBadge" class="update-badge hidden">NEW</span>';
+      button.dataset.dmIcon='notification';
       const live = $('liveSyncStatus');
       if (live && live.nextSibling) top.insertBefore(button, live.nextSibling); else top.prepend(button);
     }
