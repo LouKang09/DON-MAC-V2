@@ -178,7 +178,12 @@
  }
  const t=today();
  start.max=t;end.max=t;start.value=isoAdd(t,-29);end.value=t;
- const onBranch=()=>{lastKey='';void load(true)};
+ const onBranch=()=>{
+  lastKey='';
+  // The replenish form updates inventoryBranch.value in another change
+  // handler. A microtask observes that final branch, not the previous one.
+  queueMicrotask(()=>void load(true));
+ };
  branch?.addEventListener('change',onBranch);
  $('replenishReceivingBranch')?.addEventListener('change',onBranch);
  period.addEventListener('change',()=>{
