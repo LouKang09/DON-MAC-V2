@@ -253,6 +253,7 @@
     }
     // Hide every unapproved desktop, tablet and mobile sidebar item for cashiers.
     const cashierViews=new Set(['pos',
+      ...(window.donmacAttendanceEligible===true?['attendance']:[]),
       ...(userGrants.includes('transactions.view')?['transactions']:[]),
       ...(userGrants.includes('expenses.view')?['expenses']:[]),
       ...(userGrants.includes('dashboard.view')?['dashboard']:[]),
@@ -262,7 +263,7 @@
     document.querySelectorAll('#app button[data-view]').forEach(button=>{
       // Reuse every existing Owner sidebar view in the SAME Main POS layout.
       // Requests from NEW workspaces remain isolated by the API adapter and server.
-      const allowed=isAdmin?button.dataset.view!=='pos':cashierViews.has(button.dataset.view);
+      const allowed=isAdmin?button.dataset.view!=='pos'&&button.dataset.view!=='attendance':cashierViews.has(button.dataset.view);
       button.classList.toggle('hidden',!allowed);
       button.disabled=!allowed;
       button.setAttribute('aria-hidden',String(!allowed));
@@ -531,11 +532,17 @@
   }
   function switchView(view){
     if(view==='pos'&&state.user?.role!=='User')view='dashboard';
+    // Cashier timekeeping is a mobile-only paid payroll entitlement.
+    if(view==='attendance'&&!(state.user?.role==='User'&&window.donmacAttendanceEligible===true&&
+      window.matchMedia('(max-width:699px)').matches))
+      view=state.user?.role==='User'?'pos':'dashboard';
     // Do not restrict an Owner's visible Main POS screens by franchise age.
     // Cashier navigation remains permission-gated below.
     if(state.user?.role==='User'){
       const grants=state.user.accessPermissions||[];
       const authorized=view==='pos'||
+        (view==='attendance'&&window.donmacAttendanceEligible===true&&
+         window.matchMedia('(max-width:699px)').matches)||
         (view==='transactions'&&grants.includes('transactions.view'))||
         (view==='expenses'&&grants.includes('expenses.view'))||
         (view==='dashboard'&&grants.includes('dashboard.view'))||
@@ -545,7 +552,7 @@
       if(!authorized)view='pos';
     }
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
-    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Analytics'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger'],payroll:['EMPLOYEE MANAGEMENT','Payroll & Attendance']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
+    const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Analytics'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger'],attendance:['TIMEKEEPING','Time & Attendance'],payroll:['EMPLOYEE MANAGEMENT','Payroll & Attendance']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
     $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
     updatePosDateTime();
