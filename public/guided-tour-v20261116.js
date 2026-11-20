@@ -395,8 +395,11 @@
         wrap=make('div','dm-guide-nav-row');
         nav.parentNode.insertBefore(wrap,nav);
         wrap.appendChild(nav);
-        const guide=make('button','dm-guide-inline','?');
-        guide.type='button';
+        const guide=make('button','dm-guide-inline','');
+        guide.type='button';guide.dataset.dmIcon='info';
+        guide.innerHTML='<svg class="dm-ua-native" viewBox="0 0 24 24" width="17" height="17" '+
+          'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+
+          '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>';
         guide.dataset.guideFor=nav.dataset.view;
         guide.title='View '+LIB[nav.dataset.view].label+' guide';
         guide.setAttribute('aria-label','View '+LIB[nav.dataset.view].label+' guide');
@@ -425,7 +428,7 @@
       const area=$('.topbar-right');
       if(area){
         const bell=make('button','dm-topbar-notification-bell','');
-        bell.id='whatsNewButton';bell.type='button';
+        bell.id='whatsNewButton';bell.type='button';bell.dataset.dmIcon='notification';
         bell.title='System Updates and Promotions';
         bell.setAttribute('aria-label','Open notifications: System Updates and Promotions');
         bell.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" '+
@@ -436,7 +439,9 @@
         area.insertBefore(bell,area.firstChild);
       }
     }
+    $('#whatsNewButton')?.setAttribute('data-dm-icon','notification');
     refreshNavButtons();generated=true;
+    window.donmacAnimatedIcons?.refresh?.();
   };
   const onLogin = user => {
     if(!user || user.id===undefined || !rootApp() || rootApp().classList.contains('hidden'))return;
@@ -444,6 +449,7 @@
     const changed=identity!==key;
     if(changed && overlay)finish(false);
     identity=key;
+    document.body.classList.toggle('dm-cashier-navigation',user.role==='User');
     loginSequence++;
     clearTimeout(welcomeDelay);
     createLaunchers();
@@ -463,6 +469,7 @@
     clearTimeout(welcomeDelay);
     if(overlay)finish(false);
     identity='';
+    document.body.classList.remove('dm-cashier-navigation');
   };
   // Recover safely from auth transitions and from account switches outside this module.
   new MutationObserver(()=>{
