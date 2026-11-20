@@ -11,7 +11,21 @@
   button.classList.add('dm-refresh');
   button.title='Refresh';button.setAttribute('aria-label','Refresh');
   button.setAttribute('data-tooltip','Refresh');
-  button.replaceChildren();
+  // Do not delete an already-mounted Lottie element. A static SVG remains
+  // available whenever the animation has not loaded or reduced motion is set.
+  if(!button.querySelector(':scope > .dm-ua-icon,:scope > .dm-ua-native')){
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('width','23');svg.setAttribute('height','23');
+    svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');
+    svg.setAttribute('stroke-width','2.1');svg.setAttribute('stroke-linecap','round');
+    svg.setAttribute('aria-hidden','true');
+    svg.classList.add('dm-ua-native');
+    svg.innerHTML='<path d="M20 7v5h-5M4 17v-5h5"/><path d="M5 10a8 8 0 0 1 13-4l2 6M4 14a8 8 0 0 0 13 4l-2-6"/>';
+    button.replaceChildren(svg);
+  }
+  button.dataset.dmIcon='refresh';
+  window.donmacIconControls?.refresh?.();
   return button;
  }
  function makeRefresh(action){
