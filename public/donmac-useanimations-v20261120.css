@@ -229,8 +229,10 @@ body.dm-cashier-navigation #app #mainNav .dm-expense-menu > .nav {
 #app #supplyNotificationsButton:hover .dm-ua-context svg,
 #app #supplyNotificationsButton:focus-visible .dm-ua-context svg,
 #app #supplyNotificationsButton.has-unread .dm-ua-context svg,
+#app #supplyNotificationsButton.is-ringing .dm-ua-context svg,
 #app #supplyNotificationsButton:hover > .dm-ua-native,
-#app #supplyNotificationsButton.has-unread > .dm-ua-native {
+#app #supplyNotificationsButton.has-unread > .dm-ua-native,
+#app #supplyNotificationsButton.is-ringing > .dm-ua-native {
   animation:dm-supply-bell-ring 1.05s ease-in-out 2;
 }
 @media(prefers-reduced-motion:reduce) {
