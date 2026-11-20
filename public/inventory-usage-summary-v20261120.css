@@ -1,0 +1,251 @@
+/* Don Mac POS · Ingredients Usage Summary, scoped to inventory only. */
+#view-inventory .inv-usage-summary{
+ min-width:0;max-width:100%;padding:clamp(1rem,1.5vw,1.35rem);
+ margin:0 0 clamp(1rem,1.4vw,1.25rem);
+ box-sizing:border-box;border:1px solid #d7e5da;
+ border-radius:1rem;background:#fff;
+ box-shadow:0 4px 18px rgba(11,65,37,.065);
+}
+#view-inventory .inv-usage-summary [hidden]{display:none!important}
+#view-inventory .inv-usage-head{
+ display:flex;align-items:flex-start;justify-content:space-between;
+ flex-wrap:wrap;gap:1.1rem;
+}
+#view-inventory .inv-usage-head h3{
+ margin:.22rem 0 .4rem;font-size:clamp(1.05rem,1.2vw,1.35rem);
+ font-weight:850;color:#104b2f;
+}
+#view-inventory .inv-usage-head .muted{
+ max-width:58rem;margin:.3rem 0;font-size:.81rem;line-height:1.5;
+}
+#view-inventory .inv-usage-controls,
+#view-inventory .inv-usage-custom{
+ display:flex;align-items:end;gap:.65rem;flex-wrap:wrap;
+}
+#view-inventory .inv-usage-controls label,
+#view-inventory .inv-usage-custom label,
+#view-inventory .inv-usage-search{
+ display:flex;flex-direction:column;min-width:0;gap:.3rem;
+ font-size:.73rem;font-weight:760;color:#376149;
+}
+#view-inventory .inv-usage-controls select,
+#view-inventory .inv-usage-custom input,
+#view-inventory .inv-usage-search input{
+ min-width:9rem;min-height:2.45rem;
+ border:1px solid #bdd8c6;border-radius:.6rem;
+ padding:.48rem .7rem;font-size:.79rem;
+ background:#fff;color:#114a2d;box-sizing:border-box;
+}
+#view-inventory .inv-usage-controls select:focus-visible,
+#view-inventory .inv-usage-custom input:focus-visible,
+#view-inventory .inv-usage-search input:focus-visible{
+ outline:2px solid #138a62;outline-offset:2px;
+}
+#view-inventory #inventoryUsageApply{
+ min-height:2.45rem;padding:.52rem 1.05rem;
+ border-radius:.6rem;background:#075d38;
+ font-weight:800;font-size:.77rem;
+}
+#view-inventory #inventoryUsageApply:is(:hover,:focus-visible){
+ background:#0b804b;box-shadow:0 .22rem .55rem rgba(5,91,53,.18);
+}
+#view-inventory .inv-usage-custom{
+ margin:.9rem 0 .1rem;padding:.85rem;
+ background:#f6faf7;border:1px solid #e0eee3;border-radius:.72rem;
+}
+#view-inventory .inv-usage-custom>span{
+ color:#6d8073;font-size:.7rem;padding-bottom:.5rem;
+}
+#view-inventory .inv-usage-feedback{
+ margin:.85rem 0 0;padding:.75rem .9rem;
+ background:#f5f9f6;border:1px solid #dce9df;
+ border-radius:.65rem;font-size:.78rem;color:#53715d;
+}
+#view-inventory .inv-usage-feedback.is-error{
+ color:#a34330;background:#fff7f4;border-color:#f1d0c8;
+}
+#view-inventory .inv-usage-kpis{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:clamp(.58rem,1vw,.9rem);margin:1rem 0;
+}
+#view-inventory .inv-usage-stat{
+ display:flex;flex-direction:column;gap:.35rem;
+ padding:.9rem 1rem;min-width:0;
+ background:linear-gradient(150deg,#f8fcf9,#f1f7f2);
+ border:1px solid #d9e9dd;border-radius:.78rem;
+}
+#view-inventory .inv-usage-stat>span{
+ font-size:.75rem;font-weight:780;color:#315c43;
+}
+#view-inventory .inv-usage-stat strong{
+ font-size:clamp(1.18rem,2vw,1.7rem);line-height:1.25;
+ font-weight:900;color:#075d38;font-variant-numeric:tabular-nums;
+ overflow-wrap:anywhere;
+}
+#view-inventory .inv-usage-stat:nth-child(2) strong{color:#167a50}
+#view-inventory .inv-usage-stat small{
+ font-size:.69rem;line-height:1.35;color:#607c67;
+}
+#view-inventory .inv-usage-chart-container{
+ background:#fff;border:1px solid #d8e8dc;border-radius:.85rem;
+ padding:1rem;min-width:0;margin-bottom:1.1rem;
+}
+#view-inventory .inv-usage-chart-title{
+ display:flex;flex-wrap:wrap;justify-content:space-between;
+ align-items:center;gap:.65rem;margin-bottom:.75rem;
+}
+#view-inventory .inv-usage-chart-title strong{color:#174d32;font-size:.86rem}
+#view-inventory .inv-usage-chart-title span{color:#648371;font-size:.73rem}
+#view-inventory .inv-usage-plot-scroll{width:100%;overflow:auto;scrollbar-width:thin}
+#view-inventory .inv-usage-plot-scroll svg{
+ display:block;width:100%;height:auto;max-height:18rem;overflow:visible;
+}
+#view-inventory .inv-usage-legend{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+ gap:1rem;margin:.7rem 0 .2rem;font-size:.73rem;color:#476b55;
+}
+#view-inventory .inv-usage-legend span{
+ display:inline-flex;align-items:center;gap:.4rem;
+}
+#view-inventory .inv-usage-legend i{
+ display:inline-block;width:.6rem;height:.6rem;border-radius:50%;
+}
+#view-inventory .inv-usage-tile-chart{
+ display:grid;gap:.73rem;padding:.5rem .2rem .6rem;
+}
+#view-inventory .inv-usage-tile-row{
+ display:grid;grid-template-columns:minmax(6rem,11rem) minmax(1rem,1fr) auto;
+ align-items:center;gap:.75rem;
+}
+#view-inventory .inv-usage-tile-row span{
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ color:#3e6451;font-size:.77rem;font-weight:700;
+}
+#view-inventory .inv-usage-tile-row b{
+ font-size:.76rem;color:#1b4e32;font-variant-numeric:tabular-nums;
+}
+#view-inventory .inv-usage-bar-track{
+ width:100%;height:.7rem;overflow:hidden;border-radius:999px;
+ background:#edf2ef;
+}
+#view-inventory .inv-usage-bar-track i{
+ display:block;height:100%;min-width:0;border-radius:999px;
+}
+#view-inventory .inv-usage-pie-layout{
+ display:flex;align-items:center;justify-content:center;
+ flex-wrap:wrap;gap:clamp(1rem,4vw,3rem);padding:.65rem;
+}
+#view-inventory .inv-usage-pie{
+ width:clamp(10rem,24vw,14rem);aspect-ratio:1;
+ border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
+ box-shadow:0 4px 13px rgba(9,72,38,.08);
+}
+#view-inventory .inv-usage-pie>div{
+ width:71%;height:71%;background:#fff;border-radius:50%;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:.2rem;text-align:center;padding:.4rem;box-sizing:border-box;
+}
+#view-inventory .inv-usage-pie strong{
+ color:#075d38;font-size:clamp(.93rem,1.5vw,1.22rem);
+ overflow-wrap:anywhere;
+}
+#view-inventory .inv-usage-pie small{font-size:.65rem;color:#6c8473}
+#view-inventory .inv-usage-pie-legend{
+ width:min(100%,22rem);display:grid;gap:.55rem;
+}
+#view-inventory .inv-usage-pie-legend>div{
+ display:grid;grid-template-columns:.7rem minmax(0,1fr) auto;
+ gap:.55rem;align-items:center;font-size:.73rem;
+ color:#3d6b53;
+}
+#view-inventory .inv-usage-pie-legend i{
+ display:block;width:.65rem;height:.65rem;border-radius:3px;
+}
+#view-inventory .inv-usage-pie-legend span{
+ overflow-wrap:anywhere;
+}
+#view-inventory .inv-usage-pie-legend b{color:#214e32}
+#view-inventory .inv-usage-empty{
+ color:#759080;font-size:.8rem;text-align:center;
+ padding:2.2rem 1rem;margin:0;
+}
+#view-inventory .inv-usage-table-head{
+ display:flex;align-items:end;justify-content:space-between;
+ gap:.75rem;flex-wrap:wrap;margin:.4rem 0 .85rem;
+}
+#view-inventory .inv-usage-table-head h4{
+ margin:0 0 .3rem;color:#174d32;font-size:1.02rem;
+}
+#view-inventory .inv-usage-table-head p{
+ margin:0;font-size:.73rem;
+}
+#view-inventory .inv-usage-table-scroll{
+ max-height:34rem;width:100%;min-width:0;
+ overflow:auto;border:1px solid #d9e6dc;
+ border-radius:.7rem;scrollbar-width:thin;
+}
+#view-inventory .inv-usage-table{
+ border-collapse:separate;border-spacing:0;width:100%;
+ min-width:47rem;font-size:.79rem;
+}
+#view-inventory .inv-usage-table th{
+ text-align:left;position:sticky;top:0;z-index:1;
+ background:#f2f7f3;color:#466750;
+ text-transform:uppercase;font-size:.66rem;font-weight:850;
+ letter-spacing:.03em;padding:.8rem;
+ border-bottom:1px solid #d6e8db;
+ white-space:nowrap;
+}
+#view-inventory .inv-usage-table td{
+ padding:.78rem;border-bottom:1px solid #e9f0eb;
+ color:#2a5440;vertical-align:middle;
+}
+#view-inventory .inv-usage-table tbody tr:last-child td{border-bottom:0}
+#view-inventory .inv-usage-table tbody tr:hover td{background:#f8fcf8}
+#view-inventory .inv-usage-table th.num,
+#view-inventory .inv-usage-table td.num{
+ text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+#view-inventory .inv-usage-table td strong{
+ display:block;color:#0a5030;font-weight:850;
+}
+#view-inventory .inv-usage-estimated{
+ display:block;margin:.2rem 0 0;color:#aa691e;font-size:.66rem;
+}
+#view-inventory .inv-usage-detail summary{
+ cursor:pointer;color:#07603b;font-weight:790;
+ white-space:nowrap;list-style-position:inside;
+}
+#view-inventory .inv-usage-detail summary:hover{color:#0e9a5c}
+#view-inventory .inv-usage-detail-list{
+ display:grid;gap:.55rem;padding:.7rem;margin-top:.55rem;
+ background:#f3faf5;border:1px solid #d5e8d9;border-radius:.55rem;
+ min-width:18rem;
+}
+#view-inventory .inv-usage-detail-list>div{
+ display:grid;grid-template-columns:minmax(0,1fr) auto auto;
+ align-items:center;gap:.65rem;color:#42674f;font-size:.72rem;
+}
+#view-inventory .inv-usage-detail-list b{font-weight:850;color:#0a663f}
+#view-inventory .inv-usage-notes{
+ color:#607a67;font-size:.72rem;line-height:1.55;
+ margin:.7rem 0 0;
+}
+@media(max-width:800px){
+ #view-inventory .inv-usage-kpis{grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))}
+ #view-inventory .inv-usage-controls{width:100%}
+ #view-inventory .inv-usage-controls label{flex:1 1 9rem}
+ #view-inventory .inv-usage-controls select{width:100%;min-width:0}
+ #view-inventory .inv-usage-controls button{flex:0 0 auto}
+}
+@media(max-width:490px){
+ #view-inventory .inv-usage-controls button{flex:1 1 100%}
+ #view-inventory .inv-usage-chart-container{padding:.65rem}
+ #view-inventory .inv-usage-tile-row{
+  grid-template-columns:minmax(5.5rem,8rem) minmax(1rem,1fr) auto;
+  gap:.35rem;
+ }
+ #view-inventory .inv-usage-tile-row span{font-size:.68rem}
+ #view-inventory .inv-usage-tile-row b{font-size:.66rem}
+ #view-inventory .inv-usage-stat{padding:.65rem}
+}
