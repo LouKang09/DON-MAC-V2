@@ -156,7 +156,7 @@
    if(!application||!application.testUserId)return;
    const message={DISABLE_LOGIN:'Disable login and revoke sessions for ',SUSPEND:'Suspend cashier selling for ',
     UNPAID:'Mark subscription unpaid for ',ENABLE_LOGIN:'Re-enable login for '}[action];
-   if(!message||!window.confirm(message+application.username+'?'))return;
+   if(!message||!await window.donmacPrompt.confirm(message+application.username+'?'))return;
    select.disabled=true;
    try{
      if(action==='DISABLE_LOGIN'||action==='ENABLE_LOGIN'){
@@ -200,7 +200,7 @@
    }
    const activate=event.target.closest('button[data-request-test]');
    if(activate){
-     if(!window.confirm('Create a franchise account for this verified applicant? Its independent starter catalog begins with zero stock. Admin Control must assign a Paid subscription before real checkout is enabled. One-time credentials will be shown once.'))return;
+     if(!await window.donmacPrompt.confirm('Create a franchise account for this verified applicant? Its independent starter catalog begins with zero stock. Admin Control must assign a Paid subscription before real checkout is enabled. One-time credentials will be shown once.'))return;
      activate.disabled=true;
      try{
        const data=await api('franchise-requests/'+activate.dataset.requestTest+'/create-account',{method:'POST',body:'{}'});
@@ -217,13 +217,13 @@
    if(enableMain){
      const target=franchiseSignupRequests.find(x=>x.id===enableMain.dataset.enableMainPos);
      if(!target||target.dataMode==='NEW')return;
-     if(!window.confirm('Enable the normal Main POS for '+target.username+'? Its existing independent franchise data is retained. No other account data will be used. Sign in again after enabling; cashier selling still requires Admin Control to mark the plan Paid.'))return;
+     if(!await window.donmacPrompt.confirm('Enable the normal Main POS for '+target.username+'? Its existing independent franchise data is retained. No other account data will be used. Sign in again after enabling; cashier selling still requires Admin Control to mark the plan Paid.'))return;
      enableMain.disabled=true;
      try{
        const updated=await api('franchise-requests/'+enableMain.dataset.enableMainPos+'/enable-main-pos',{
          method:'POST',body:'{}'});
        await reloadFranchiseRequests();
-       window.alert(updated.username+' now uses the normal Main POS at https://donmacpos.com/. Sign in again to test.');
+       await window.donmacPrompt.notify(updated.username+' now uses the normal Main POS at https://donmacpos.com/. Sign in again to test.',{variant:'success',title:'Main POS Enabled'});
      }catch(e){error('franchiseRequestsMessage',e.message)}
      finally{enableMain.disabled=false}
      return;
@@ -231,7 +231,7 @@
    const access=event.target.closest('button[data-request-access]');
    if(access){
      const enabled=access.dataset.requestAccess==='true';
-     if(!window.confirm(enabled?'Re-enable this franchise login?':'Disable this franchise login immediately and revoke its active sessions?'))return;
+     if(!await window.donmacPrompt.confirm(enabled?'Re-enable this franchise login?':'Disable this franchise login immediately and revoke its active sessions?'))return;
      access.disabled=true;
      try{
        await api('franchise-requests/'+access.dataset.requestId+'/test-access',{
@@ -251,7 +251,7 @@
        const message='Prepare a separate starter catalog with '+(counts.coffee||0)+' Coffee products, '+
          (counts.nonCoffee||0)+' Non Coffee products, '+(counts.ingredients||0)+
          ' ingredients, and zero opening stock? Product descriptions, prices and images are copied; no franchise transactions or stock are copied. No login will be created.';
-       if(!window.confirm(message))return;
+       if(!await window.donmacPrompt.confirm(message))return;
        await api('franchise-requests/'+prepare.dataset.requestPrepare+'/prepare',{
          method:'POST',body:JSON.stringify({confirmation:'APPROVE STARTER CATALOG'})
        });
@@ -263,7 +263,7 @@
    const button=event.target.closest('button[data-request-status]');
    if(!button)return;
    const status=button.dataset.requestStatus;
-   if(status==='REJECTED'&&!window.confirm('Decline this unactivated franchise application?'))return;
+   if(status==='REJECTED'&&!await window.donmacPrompt.confirm('Decline this unactivated franchise application?'))return;
    button.disabled=true;
    try{
      await api('franchise-requests/'+button.dataset.requestId,{
@@ -542,7 +542,7 @@
   const active=$('userActive').checked;
   let confirmOwner=false;
   if(user.isOwner&&!active&&user.active){
-   confirmOwner=window.confirm('Deactivate this franchise Owner? This does NOT disable their branch staff accounts. Continue?');
+   confirmOwner=await window.donmacPrompt.confirm('Deactivate this franchise Owner? This does NOT disable their branch staff accounts. Continue?');
    if(!confirmOwner)return;
   }
   const button=$('saveUser');button.disabled=true;error('userError','');
