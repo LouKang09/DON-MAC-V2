@@ -162,8 +162,14 @@
  $('financeTransactionsBody').addEventListener('click',async event=>{
   const button=event.target.closest('button[data-void-ref]');
   if(!button||button.disabled||!window.donmacFranchiseUnified)return;
+  // Owners may inspect the row, but only cashiers can void a completed sale.
+  if(window.donmacAuthenticatedRole!=='User'){
+   await window.donmacPrompt.notify('Voiding transactions is allowed only for cashiers.',{
+    title:'Cashier-Only Action',variant:'warning'});
+   return;
+  }
   const ref=button.dataset.voidRef,branchId=button.dataset.voidBranch;
-  if(!/^BR-[A-F0-9]{18}$/.test(ref)||!/^\\d+$/.test(branchId))return;
+  if(!/^BR-[A-F0-9]{18}$/.test(ref)||!/^\d+$/.test(branchId))return;
   const reason=await window.donmacPrompt.input('Why are you voiding receipt '+ref+'? This action is permanently recorded.',{
    title:'Void Transaction',inputLabel:'Reason (required)',placeholder:'Enter the reason for voiding this sale',
    minLength:5,maxLength:500,confirmText:'Review Void',cancelText:'No',variant:'danger'});
