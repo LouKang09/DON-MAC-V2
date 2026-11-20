@@ -161,8 +161,9 @@
     }catch(_){return false;}
   };
   window.addEventListener('focus',()=>{if(state.user)window.donmacCheckAccountAccess();});
-  function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
+  function toast(msg){if(window.donmacPrompt){void window.donmacPrompt.notify(String(msg));return;}const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3500);}
   function showAuth(setupRequired){
+    window.donmacPrompt?.reset();
     window.donmacGuides?.onLogout?.();
     window.donmacPayroll?.onLogout?.();
     document.body.classList.remove('legacy-authenticated');
@@ -767,7 +768,7 @@
   setInterval(()=>{if(posVisible())updateCatalogAvailability().catch(()=>{});},10000);
   window.addEventListener('focus',()=>{if(posVisible())updateCatalogAvailability().catch(()=>{});});
   document.addEventListener('visibilitychange',()=>{if(posVisible())updateCatalogAvailability().catch(()=>{});});
-  function selectPromo(id){if(state.promoId===id){cancelPromo();return;}if(state.cart.length&&!confirm('Selecting a promo will clear the current order. Continue?'))return;state.cart=[];state.promoId=id;$('seniorEnabled').checked=false;$('seniorFields').classList.add('hidden');$('seniorName').value='';$('seniorId').value='';state.pendingSaleRequestId=null;state.category='Coffee';renderAll();}
+  async function selectPromo(id){if(state.promoId===id){cancelPromo();return;}if(state.cart.length&&!await window.donmacPrompt.confirm('Selecting a promo will clear the current order. Continue?'))return;state.cart=[];state.promoId=id;$('seniorEnabled').checked=false;$('seniorFields').classList.add('hidden');$('seniorName').value='';$('seniorId').value='';state.pendingSaleRequestId=null;state.category='Coffee';renderAll();}
   function cancelPromo(){state.promoId=null;state.cart=[];state.pendingSaleRequestId=null;renderAll();}
   function addItem(kind,id){if(kind==='officePromo'){
     const p=(state.catalog.officePromos||[]).find(p=>p.id===id);
@@ -1430,7 +1431,7 @@
     if(!button||button.disabled)return;
     const requestId=Number(button.dataset.incomingId),action=button.dataset.incomingAction;
     if(!requestId||!['accept','reject','receive'].includes(action))return;
-    if(action==='reject'&&!confirm('Reject incoming supply #'+requestId+'? No stock will be changed.'))return;
+    if(action==='reject'&&!await window.donmacPrompt.confirm('Reject incoming supply #'+requestId+'? No stock will be changed.'))return;
     const deliveredBy=action==='receive'?
       $('incomingSupplyList').querySelector('input[data-incoming-delivered="'+requestId+'"]')?.value.trim():'';
     if(action==='receive'&&!deliveredBy){toast('Enter who delivered the incoming supplies.');return;}
@@ -1956,7 +1957,7 @@
     productImageStatus(p.imageData?'Current photo loaded. Choose a replacement or remove it.':'No photo saved for this product yet.');
     photoFormState();
   }
-  async function archiveProduct(id){return withActionLock(`archive-product:${id}`,async()=>{const p=state.adminProducts.find(x=>x.id===id);if(!p||!confirm(`Archive ${p.name}? It will disappear from the POS but historical sales remain.`))return;try{await api(`/api/admin/products/${id}`,{method:'DELETE'});toast('Product archived.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
+  async function archiveProduct(id){return withActionLock(`archive-product:${id}`,async()=>{const p=state.adminProducts.find(x=>x.id===id);if(!p||!await window.donmacPrompt.confirm(`Archive ${p.name}? It will disappear from the POS but historical sales remain.`))return;try{await api(`/api/admin/products/${id}`,{method:'DELETE'});toast('Product archived.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
   $('productImageRemove').onclick=()=>{
     imageProcessingToken++;imageBusy=false;imageInvalid=false;
     $('productImageFile').value='';showProductPhoto(null);
@@ -2066,7 +2067,7 @@
   catalogRenders.ingredients=renderAdminIngredients;
   function clearIngredientForm(){$('ingredientEditId').value='';$('ingredientName').value='';$('ingredientUom').value='';$('ingredientThreshold').value='0';$('ingredientActive').checked=true;$('ingredientFormTitle').textContent='New Ingredient';}
   function editIngredient(id){const i=state.adminIngredients.find(x=>x.id===id);if(!i)return;$('ingredientEditId').value=id;$('ingredientName').value=i.name;$('ingredientUom').value=i.uom;$('ingredientThreshold').value=i.lowStockThreshold;$('ingredientActive').checked=i.active;$('ingredientFormTitle').textContent=`Update ${i.name}`;}
-  async function archiveIngredient(id){return withActionLock(`archive-ingredient:${id}`,async()=>{const i=state.adminIngredients.find(x=>x.id===id);if(!i||!confirm(`Archive ${i.name}? This is allowed only when no recipe uses it.`))return;try{await api(`/api/admin/ingredients/${id}`,{method:'DELETE'});toast('Ingredient archived.');await loadAdminAll();await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});}
+  async function archiveIngredient(id){return withActionLock(`archive-ingredient:${id}`,async()=>{const i=state.adminIngredients.find(x=>x.id===id);if(!i||!await window.donmacPrompt.confirm(`Archive ${i.name}? This is allowed only when no recipe uses it.`))return;try{await api(`/api/admin/ingredients/${id}`,{method:'DELETE'});toast('Ingredient archived.');await loadAdminAll();await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});}
   $('ingredientFormClear').onclick=clearIngredientForm;$('ingredientForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('ingredientEditId').value||0),body={name:$('ingredientName').value.trim(),uom:$('ingredientUom').value.trim(),lowStockThreshold:Number($('ingredientThreshold').value||0),active:$('ingredientActive').checked};try{if(id)await api(`/api/admin/ingredients/${id}`,{method:'PUT',body});else await api('/api/admin/ingredients',{method:'POST',body});toast(id?'Ingredient updated.':'Ingredient added.');clearIngredientForm();await loadAdminAll();await loadInventory();await loadCatalog();}catch(err){toast(err.message);}});});
 
   async function loadRecipe(){const id=Number($('recipeProduct').value||state.adminProducts.find(x=>x.active)?.id||0);if(!id){state.recipeRows=[];renderRecipe();return;}const seq=++recipeLoadSeq;try{const d=await api(`/api/admin/products/${id}/recipe`);if(seq!==recipeLoadSeq||Number($('recipeProduct').value)!==id)return;state.recipeRows=d.items.map(x=>({...x}));renderRecipe();}catch(err){if(seq===recipeLoadSeq)toast(err.message);}}
@@ -2083,14 +2084,14 @@
   catalogRenders.promos=renderAdminPromos;
   function clearPromoForm(){$('promoEditId').value='';$('promoName').value='';$('promoInclusion').value='';$('promoPrice').value='';$('promoFood').value='';$('promoCoffee').value='';$('promoActive').checked=true;}
   function editPromo(id){const p=state.adminPromos.find(x=>x.id===id);if(!p)return;$('promoEditId').value=id;$('promoName').value=p.name;$('promoInclusion').value=p.inclusion;$('promoPrice').value=p.price;$('promoFood').value=p.foodLimit;$('promoCoffee').value=p.coffeeLimit;$('promoActive').checked=p.active;}
-  async function archivePromo(id){return withActionLock(`archive-promo:${id}`,async()=>{const p=state.adminPromos.find(x=>x.id===id);if(!p||!confirm(`Disable ${p.name}?`))return;try{await api(`/api/admin/promos/${id}`,{method:'DELETE'});toast('Promo disabled.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
+  async function archivePromo(id){return withActionLock(`archive-promo:${id}`,async()=>{const p=state.adminPromos.find(x=>x.id===id);if(!p||!await window.donmacPrompt.confirm(`Disable ${p.name}?`))return;try{await api(`/api/admin/promos/${id}`,{method:'DELETE'});toast('Promo disabled.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
   $('promoFormClear').onclick=clearPromoForm;$('promoForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('promoEditId').value||0),body={name:$('promoName').value.trim(),inclusion:$('promoInclusion').value.trim(),price:Number($('promoPrice').value),foodLimit:Number($('promoFood').value),coffeeLimit:Number($('promoCoffee').value),active:$('promoActive').checked};try{if(id)await api(`/api/admin/promos/${id}`,{method:'PUT',body});else await api('/api/admin/promos',{method:'POST',body});toast(id?'Promo updated.':'Promo added.');clearPromoForm();await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});});
 
   function renderAdminPackages(){$('adminPackagesBody').innerHTML=catalogPage('packages',state.adminPackages).map(p=>`<tr><td><b>${esc(p.name)}</b></td><td class="num">${peso(p.price)}</td><td>${p.items.length?`${p.items.length} product type(s)`:'<span class="stock-low">REQUIRED</span>'}</td><td class="${p.active?'stock-ok':'stock-low'}">${p.active?'ACTIVE':'DISABLED'}</td><td><button class="table-btn" data-edit-package="${p.id}">Edit</button>${p.active?`<button class="danger-link" data-archive-package="${p.id}">Disable</button>`:''}</td></tr>`).join('');$('adminPackagesBody').querySelectorAll('[data-edit-package]').forEach(b=>b.onclick=()=>editPackage(Number(b.dataset.editPackage)));$('adminPackagesBody').querySelectorAll('[data-archive-package]').forEach(b=>b.onclick=()=>archivePackage(Number(b.dataset.archivePackage)));}
   catalogRenders.packages=renderAdminPackages;
   function clearPackageForm(){$('packageEditId').value='';$('packageName').value='';$('packagePrice').value='';$('packageActive').checked=true;}
   function editPackage(id){const p=state.adminPackages.find(x=>x.id===id);if(!p)return;$('packageEditId').value=id;$('packageName').value=p.name;$('packagePrice').value=p.price;$('packageActive').checked=p.active;$('compositionPackage').value=String(id);loadComposition();}
-  async function archivePackage(id){return withActionLock(`archive-package:${id}`,async()=>{const p=state.adminPackages.find(x=>x.id===id);if(!p||!confirm(`Disable ${p.name}?`))return;try{await api(`/api/admin/packages/${id}`,{method:'DELETE'});toast('Package disabled.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
+  async function archivePackage(id){return withActionLock(`archive-package:${id}`,async()=>{const p=state.adminPackages.find(x=>x.id===id);if(!p||!await window.donmacPrompt.confirm(`Disable ${p.name}?`))return;try{await api(`/api/admin/packages/${id}`,{method:'DELETE'});toast('Package disabled.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
   $('packageFormClear').onclick=clearPackageForm;$('packageForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('packageEditId').value||0),body={name:$('packageName').value.trim(),price:Number($('packagePrice').value),active:$('packageActive').checked};try{if(id)await api(`/api/admin/packages/${id}`,{method:'PUT',body});else await api('/api/admin/packages',{method:'POST',body});toast(id?'Package updated.':'Package added.');clearPackageForm();await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});});
   function loadComposition(){const id=Number($('compositionPackage').value),p=state.adminPackages.find(x=>x.id===id);state.compositionRows=(p?.items||[]).map(x=>({...x}));renderComposition();}
   function renderComposition(){$('compositionList').innerHTML=state.compositionRows.map((r,i)=>`<div class="mini-row catalog-comp-row"><span><b>${esc(r.name)}</b></span><label>Qty <input class="catalog-inline-quantity" aria-label="Quantity for ${esc(r.name)}" type="number" min="1" step="1" value="${Number(r.qty)}" data-comp-qty="${i}" /></label><button class="danger-link" data-remove-comp="${i}">Remove</button></div>`).join('')||'<div class="muted tiny">No products assigned yet.</div>';$('compositionList').querySelectorAll('[data-remove-comp]').forEach(b=>b.onclick=()=>{state.compositionRows.splice(Number(b.dataset.removeComp),1);renderComposition();});window.DonMacCatalogBatch?.refresh('composition');}
@@ -2233,7 +2234,7 @@
   });
 
   $('createBackup').onclick=()=>withActionLock('create-backup',async()=>{try{const d=await api('/api/backups',{method:'POST',timeoutMs:60000});toast(`Backup created: ${d.name}`);await loadBackups();}catch(err){toast(err.message);}});
-  async function restoreBackup(name){return withActionLock(`restore-backup:${name}`,async()=>{if(!confirm(`Restore ${name}? This will replace the current SQLite database.`))return;if(!confirm('Final warning: a pre-restore backup will be created automatically. Continue with restore?'))return;try{await api(`/api/backups/${encodeURIComponent(name)}/restore`,{method:'POST',timeoutMs:60000});alert('Database restored. Please sign in again.');location.reload();}catch(err){toast(err.message);}});}
+  async function restoreBackup(name){return withActionLock(`restore-backup:${name}`,async()=>{if(!await window.donmacPrompt.confirm(`Restore ${name}? This will replace the current SQLite database.`))return;if(!await window.donmacPrompt.confirm('Final warning: a pre-restore backup will be created automatically. Continue with restore?'))return;try{await api(`/api/backups/${encodeURIComponent(name)}/restore`,{method:'POST',timeoutMs:60000});await window.donmacPrompt.notify('Database restored. Please sign in again.',{variant:'success',title:'Database Restored'});location.reload();}catch(err){toast(err.message);}});}
 
   function branchOptions(list,selected,includeAll=false,allLabel='All branches'){
    return (includeAll?'<option value="all">'+esc(allLabel)+'</option>':'')+list.map(b=>`<option value="${b.id}" ${String(b.id)===String(selected)?'selected':''}>${esc(b.name)}${b.active?'':' (inactive)'}</option>`).join('');
@@ -2385,7 +2386,7 @@
 
   async function deleteBranch(id){
    return withActionLock('delete-branch:'+id,async()=>{
-     const b=state.branches.find(x=>x.id===id);if(!b||!confirm('Delete '+b.name+'? If this branch has users or sales, disable it instead.'))return;
+     const b=state.branches.find(x=>x.id===id);if(!b||!await window.donmacPrompt.confirm('Delete '+b.name+'? If this branch has users or sales, disable it instead.'))return;
      try{await api('/api/branches/'+id,{method:'DELETE'});toast('Branch deleted.');clearBranchForm();await loadBranches();await loadUsers();}catch(err){toast(err.message);}
    });
   }
@@ -2429,7 +2430,7 @@
 
   async function deleteUser(id){
    return withActionLock('delete-user:'+id,async()=>{
-     const u=state.userList.find(x=>x.id===id);if(!u||!confirm('Delete '+u.username+'? Cashiers with transaction history must be deactivated instead.'))return;
+     const u=state.userList.find(x=>x.id===id);if(!u||!await window.donmacPrompt.confirm('Delete '+u.username+'? Cashiers with transaction history must be deactivated instead.'))return;
      try{await api('/api/users/'+id,{method:'DELETE'});toast('Cashier deleted.');clearUserForm();await loadUsers();}catch(err){toast(err.message);}
    });
   }
@@ -2577,7 +2578,7 @@
         branchId:$('newRole').value==='User'?Number($('newUserBranch').value):null,
         active:$('newUserActive').checked,accessPermissions:$('newRole').value==='User'?selectedCashierGrants():[]};
       try{
-        if(!body.email&&!confirm('This employee will be created or updated without a recovery email. If they forget their password, they cannot receive an OTP until you add an email. Continue?'))return;
+        if(!body.email&&!await window.donmacPrompt.confirm('This employee will be created or updated without a recovery email. If they forget their password, they cannot receive an OTP until you add an email. Continue?'))return;
         if(id)await api(`/api/users/${id}`,{method:'PUT',body});
         else await api('/api/users',{method:'POST',body});
         toast(id?'Cashier updated.':'Cashier created.');
