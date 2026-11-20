@@ -112,7 +112,7 @@
       'Voided '+esc(r.voidedAt?when(r.voidedAt):'at an earlier date')+
       '<span>By: '+esc(r.voidedBy||'Not recorded')+'</span>'+
       '<span>Reason: '+esc(r.voidReason||'Not recorded for this receipt')+'</span></small>':'';
-     const action=window.donmacFranchiseUnified&&r.status==='Sold'?
+     const action=r.status==='Sold'?
       '<button type="button" class="dm-void-action" data-void-ref="'+esc(r.reference)+'" data-void-branch="'+esc(r.branchId)+'" '+
       'data-dm-icon="trash2" title="Void" aria-label="Void transaction '+esc(r.reference)+'">'+
       '<svg class="dm-ua-native" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">'+
@@ -161,11 +161,16 @@
  }
  $('financeTransactionsBody').addEventListener('click',async event=>{
   const button=event.target.closest('button[data-void-ref]');
-  if(!button||button.disabled||!window.donmacFranchiseUnified)return;
+  if(!button||button.disabled)return;
   // Owners may inspect the row, but only cashiers can void a completed sale.
   if(window.donmacAuthenticatedRole!=='User'){
    await window.donmacPrompt.notify('Voiding transactions is allowed only for cashiers.',{
     title:'Cashier-Only Action',variant:'warning'});
+   return;
+  }
+  if(!window.donmacFranchiseUnified){
+   await window.donmacPrompt.notify('Voiding this legacy receipt is unavailable here. Only isolated franchise sales can be voided.',{
+    title:'Void Not Available',variant:'warning'});
    return;
   }
   const ref=button.dataset.voidRef,branchId=button.dataset.voidBranch;
