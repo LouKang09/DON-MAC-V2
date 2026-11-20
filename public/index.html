@@ -45,6 +45,8 @@
   <link rel="stylesheet" href="/account-plan-pill-hover-v20261119.css?v=1" />
   <link rel="stylesheet" href="/sidebar-fluid-layout-v20261119.css?v=2" />
   <link rel="stylesheet" href="/inventory-usage-summary-v20261120.css?v=1" />
+  <link rel="stylesheet" href="/donmac-unified-prompts-v20261120.css?v=1" />
+  <script src="/donmac-unified-prompts-v20261120.js?v=2"></script>
 </head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
@@ -1159,9 +1161,9 @@
       </footer>
     </div>
   </dialog>
-  <dialog id="paymentDialog"><form id="paymentForm" class="modal-card"><button type="button" class="modal-close" id="paymentClose">×</button><p class="eyebrow">CHECKOUT</p><h2>Complete Payment</h2><div class="amount-due"><span>Amount Due</span><strong id="modalDue">₱0.00</strong></div><label>Mode of Payment<select id="paymentMode"><option>Cash</option><option>GCash</option></select></label><label id="tenderWrap">Cash Tender<input id="cashTender" type="number" min="0" step="0.01" /></label><label id="referenceWrap" class="hidden">GCash Reference<input id="gcashReference" maxlength="150" /></label><div id="changePreview" class="change-preview">Change: ₱0.00</div><button id="paymentSubmit" class="primary big" type="submit">Confirm Payment</button></form></dialog>
-  <dialog id="receiptDialog"><div class="modal-card receipt-card"><div class="success-icon">✓</div><p class="eyebrow">PAYMENT COMPLETE</p><h2>Sale Recorded</h2><p id="receiptText" class="receipt-text"></p><button id="receiptClose" class="primary big">New Order</button></div></dialog>
-  <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
+  <dialog id="paymentDialog"><form id="paymentForm" class="modal-card"><button type="button" class="modal-close" id="paymentClose">×</button><div class="dm-checkout-head"><span class="dm-checkout-icon" aria-hidden="true">▣</span><div class="dm-checkout-copy"><span class="dm-checkout-eyebrow">POS CHECKOUT</span><h2>Complete Payment</h2></div></div><div class="amount-due"><span>Amount Due</span><strong id="modalDue">₱0.00</strong></div><label>Mode of Payment<select id="paymentMode"><option>Cash</option><option>GCash</option></select></label><label id="tenderWrap">Cash Tender<input id="cashTender" type="number" min="0" step="0.01" /></label><label id="referenceWrap" class="hidden">GCash Reference<input id="gcashReference" maxlength="150" /></label><div id="changePreview" class="change-preview">Change: ₱0.00</div><button id="paymentSubmit" class="primary big" type="submit">Confirm Payment</button></form></dialog>
+  <dialog id="receiptDialog"><div class="modal-card receipt-card"><div class="dm-checkout-head"><span class="dm-checkout-icon" aria-hidden="true">✓</span><div class="dm-checkout-copy"><span class="dm-checkout-eyebrow">PAYMENT COMPLETE</span><h2>Sale Recorded</h2></div></div><div class="success-icon">✓</div><p id="receiptText" class="receipt-text"></p><button id="receiptClose" class="primary big">New Order</button></div></dialog>
+  <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="dm-checkout-head"><span class="dm-checkout-icon" aria-hidden="true">▤</span><div class="dm-checkout-copy"><span class="dm-checkout-eyebrow">TRANSACTION AUDIT</span><h2>Transaction Details</h2></div></div><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
   <script src="/auth-login-v1574.js?v=1.6.10"></script>
