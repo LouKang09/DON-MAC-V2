@@ -54,7 +54,7 @@
    mark('chevronRight',btn,btn.querySelector(':scope > svg'));
   });
   // Keep Replenish/Transfer symbols in their exact original card/button positions.
-  [['replenish','plusCircle'],['transfer','refresh']].forEach(([type,name])=>{
+  [['replenish','plusCircle']].forEach(([type,name])=>{
    const card=document.querySelector('#view-inventory .inv-operation-'+type);
    const top=card?.querySelector('.inv-operation-top');
    mark(name,top,top?.querySelector(':scope > svg'));
