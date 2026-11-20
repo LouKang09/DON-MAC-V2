@@ -16,7 +16,7 @@
  const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const date=x=>{const d=new Date(x);return Number.isNaN(d.getTime())?String(x||'—'):new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(d);};
- let subscription=null,model=null,section='dashboard',branch='all',days='30',busy=false,requestId=0,lastLoad=0,error='';
+ let subscription=null,model=null,section='dashboard',branch='all',days='30',chartType='line',busy=false,requestId=0,lastLoad=0,error='';
  // Payment status and plan are authoritative. "configured" is an optional
  // setup/legacy UI flag and must not keep an already-paid Business owner locked.
  const business=()=>window.donmacAuthenticatedRole==='Admin'&&
@@ -107,16 +107,88 @@
      esc(x.name+': '+peso(x[field])+' ('+percent(x[field],sum)+')')+'"><i style="background:'+tones[i%tones.length]+'"></i>'+
      '<span>'+esc(x.name)+'</span><strong>'+esc(percent(x[field],sum))+'</strong></div>').join('')+'</div></div>';
  }
+ const cardColors={gross:'#128351',cost:'#de9343',net:'#2685a3'};
+ function branchTrend(card){
+  const rows=Array.isArray(card.days)?card.days:[];
+  if(!rows.length)return empty('No daily sales records for this period.');
+  const values=rows.flatMap(row=>[Number(row.gross||0),Number(row.ingredientCost||0),Number(row.net||0)]);
+  if(!values.some(v=>v!==0))return'<div class="aa-branch-no-activity">No completed sales during this period</div>';
+  const width=300,height=94,left=5,right=5,top=8,bottom=12;
+  const chartH=height-top-bottom,chartW=width-left-right;
+  const max=Math.max(1,...values),y=v=>top+chartH-(Math.max(0,Number(v)||0)/max)*chartH;
+  const x=i=>left+(rows.length===1?chartW/2:i*chartW/(rows.length-1));
+  const keys=[['gross','Gross sales'],['ingredientCost','Ingredient cost'],['net','Net sales']];
+  const guides=[0,.5,1].map(p=>'<line x1="'+left+'" y1="'+y(p*max).toFixed(1)+
+   '" x2="'+(width-right)+'" y2="'+y(p*max).toFixed(1)+
+   '" stroke="#e2eee6" stroke-width="1"/>').join('');
+  const paths=keys.map(([key,label])=>{
+   const points=rows.map((r,i)=>x(i).toFixed(1)+','+y(r[key]).toFixed(1)).join(' ');
+   const c=cardColors[key];
+   return '<polyline points="'+points+'" fill="none" stroke="'+c+
+    '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+
+    '<title>'+esc(label+' trend for '+card.name)+'</title></polyline>';
+  }).join('');
+  return '<div class="aa-branch-spark" role="img" aria-label="'+esc(card.name+
+   ' daily trend of gross sales, ingredient cost, and net sales')+
+   '"><svg viewBox="0 0 '+width+' '+height+'" preserveAspectRatio="none">'+guides+paths+'</svg></div>'+
+   '<div class="aa-branch-legend"><span><i class="gross"></i>Gross</span>'+
+   '<span><i class="cost"></i>Ingredients</span><span><i class="net"></i>Net</span></div>';
+ }
+ function branchTiles(card){
+  const entries=[['gross','Gross sales'],['ingredientCost','Ingredients'],['net','Net sales']];
+  const highest=Math.max(1,...entries.map(([key])=>Number(card[key]||0)));
+  return '<div class="aa-branch-tiles" role="img" aria-label="'+esc(card.name+' gross sales '+
+   peso(card.gross)+', ingredient costs '+peso(card.ingredientCost)+', net sales '+peso(card.net))+'">'+
+   entries.map(([key,label])=>'<div class="aa-branch-tile-row"><span>'+label+'</span>'+
+    '<div class="aa-branch-tile-track"><i class="'+key+
+    '" style="width:'+(Math.min(100,Math.max(0,Number(card[key]||0)/highest*100))).toFixed(2)+
+    '%"></i></div><b>'+peso(card[key])+'</b></div>').join('')+'</div>';
+ }
+ function branchPie(card){
+  const net=Math.max(0,Number(card.net||0)),cost=Math.max(0,Number(card.ingredientCost||0));
+  if(net===0&&cost===0)return'<div class="aa-branch-no-activity">No sales or ingredient cost recorded</div>';
+  // A pie is only meaningful for additive slices: ingredient cost and
+  // the remainder of NET revenue, never gross + cost + net (overlapping).
+  const part=net>0?Math.min(100,cost/net*100):100;
+  const left=Math.max(0,net-cost);
+  return '<div class="aa-branch-pie-layout">'+
+   '<div class="aa-branch-pie" role="img" aria-label="'+esc('Ingredient cost '+
+    (net>0?(cost/net*100).toFixed(1)+'% of net sales':'against no net sales'))+
+    '" style="--aa-pie-angle:'+part.toFixed(2)+'%">'+
+   '<div><strong>'+esc(net>0?(cost/net*100).toFixed(1)+'%':'N/A')+
+   '</strong><small>Ingredient / net</small></div></div>'+
+   '<div class="aa-branch-pie-legend"><span><i class="cost"></i>Ingredients <b>'+
+    peso(cost)+'</b></span><span><i class="net"></i>Remaining net <b>'+peso(left)+'</b></span>'+
+    (cost>net?'<small class="aa-branch-cost-warning">Ingredient cost exceeds net sales</small>':'')+
+   '</div></div>';
+ }
+ function branchCard(card,i){
+  const selectedType=chartType==='pie'?'Cost share':chartType==='tile'?'Value comparison':'Daily trend';
+  const chart=chartType==='pie'?branchPie(card):chartType==='tile'?branchTiles(card):branchTrend(card);
+  return '<article class="aa-branch-card" aria-label="'+esc(card.name)+' sales performance">'+
+   '<div class="aa-branch-card-heading"><div class="aa-branch-card-name">'+
+   '<span class="aa-branch-card-icon" aria-hidden="true">'+navIcon('store')+'</span>'+
+   '<div><span class="aa-branch-card-eyebrow">BRANCH PERFORMANCE</span>'+
+   '<h4>'+esc(card.name)+'</h4></div></div>'+
+   '<span class="aa-branch-orders">'+fmt(card.orders||0)+' orders</span></div>'+
+   '<div class="aa-branch-financial-grid">'+
+    '<div><span>Gross Sales</span><strong>'+peso(card.gross)+'</strong></div>'+
+    '<div><span>Ingredients Sold Cost</span><strong>'+peso(card.ingredientCost)+'</strong></div>'+
+    '<div><span>Net Sales</span><strong>'+peso(card.net)+'</strong></div>'+
+   '</div>'+
+   '<div class="aa-branch-mini-head"><span>'+selectedType+'</span>'+
+    '<span>'+esc(days)+' days</span></div>'+chart+'</article>';
+ }
  function dashboard(d){
-  const s=d.summary,a=d.daily;
-  return title('Business overview','Completed sales and recorded expenses for the selected dates.')+
-   kpis([['Net sales',peso(s.net),fmt(s.orders)+' completed orders',a.map(x=>x.net)],
-    ['Recorded expenses',peso(s.expenses),'From saved expense entries',a.map(x=>x.expenses)],
-    ['Operating balance',peso(s.operatingBalance),'Net sales less recorded expenses',a.map(x=>x.operatingBalance)],
-    ['Average ticket',peso(s.avgTicket),'Net sales per completed order',a.map(x=>x.avgTicket)]])+
-   '<div class="rd-section-grid">'+panel('Monthly net sales and expenses',
-     comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Recorded expenses'}]))+
-    panel('Branch sales ranking',ranking(d.branchesPerformance,x=>x.name,x=>x.net))+'</div>'+
+  const branches=Array.isArray(d.branchCards)?d.branchCards:[];
+  return title('Branch performance overview','Actual completed POS sales and cost of ingredients consumed, separated by branch.')+
+   (branches.length?
+     '<div class="aa-branches-grid">'+branches.map(branchCard).join('')+'</div>':
+     empty('No permitted branches are available for this reporting period.'))+
+   note(d.ingredientCostNote||'Sold ingredient costs come from transaction costing; they are separate from staff-entered operating expenses.')+
+   '<div class="rd-section-grid">'+panel('Monthly net sales and operating expenses',
+    comparisonChart(d.months,[{key:'net',name:'Net sales'},{key:'expenses',name:'Operating expenses'}]))+
+    panel('Branch net sales ranking',ranking(d.branchesPerformance,x=>x.name,x=>x.net))+'</div>'+
     panel('Recent attention items',alertRows(d.alerts.slice(0,8)));
  }
  function financials(d){
@@ -194,7 +266,12 @@
    d.branches.map(b=>'<option value="'+b.id+'" '+(String(b.id)===branch?'selected':'')+'>'+esc(b.name)+'</option>').join('')+
    '</select></label><label>Period <select data-aa-days>'+
    [7,30,90].map(n=>'<option value="'+n+'" '+(String(n)===days?'selected':'')+'>'+n+' days</option>').join('')+
-   '</select></label><button type="button" data-aa-refresh aria-label="Refresh Advanced Analytics">↻ Refresh</button></div>';
+   '</select></label>'+(section==='dashboard'?
+    '<label>Chart Type <select data-aa-chart-type aria-label="Branch chart type">'+
+    [['line','Line'],['tile','Tile'],['pie','Pie']].map(([value,label])=>
+     '<option value="'+value+'"'+(chartType===value?' selected':'')+'>'+label+'</option>').join('')+
+    '</select></label>':'')+
+   '<button type="button" data-aa-refresh aria-label="Refresh Advanced Analytics">↻ Refresh</button></div>';
   const notice=!d.complete?'<p class="aa-warning" role="status">High-volume record limit reached. The figures below reflect only the retrieved data; use the full reports for an exact uncapped total.</p>':'';
   const markup='<section class="rd-shell dm-advanced-shell" data-aa-root>'+
    '<aside class="rd-sidebar"><nav aria-label="Advanced sections">'+sections.map(s=>
@@ -297,6 +374,10 @@
  });
  root.addEventListener('change',event=>{
   const target=event.target;
+  if(target.matches('[data-aa-chart-type]')){
+   if(!['line','tile','pie'].includes(target.value))return;
+   chartType=target.value;showModel();return;
+  }
   if(target.matches('[data-aa-branch]'))branch=target.value;
   else if(target.matches('[data-aa-days]'))days=target.value;
   else return;
