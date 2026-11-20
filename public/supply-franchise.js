@@ -296,7 +296,7 @@ $('supplyNotificationsButton').onclick=async()=>{
  button.classList.remove('is-ringing');
  void button.offsetWidth;
  button.classList.add('is-ringing');
- setTimeout(()=>button.classList.remove('is-ringing'),1150);
+ setTimeout(()=>button.classList.remove('is-ringing'),2250);
  const opening=panel.classList.contains('hidden');
  panel.classList.toggle('hidden',!opening);
  button.setAttribute('aria-expanded',String(opening));
