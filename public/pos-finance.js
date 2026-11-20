@@ -106,11 +106,24 @@
     bindBranchOptions($('financeTransactionBranch'),data.branches||[],true);
     $('financeTransactionCount').textContent=Number(data.total||0).toLocaleString('en-PH');
     $('financeTransactionTotal').textContent=peso(data.salesTotal);
-    $('financeTransactionsBody').innerHTML=(data.rows||[]).map(r=>
-     '<tr><td>'+esc(when(r.date))+'</td><td><strong>'+esc(r.reference)+'</strong></td>'+
-     '<td>'+esc(r.branch)+'</td><td>'+esc(r.cashier)+'</td><td>'+esc(r.payment)+'</td>'+
-     '<td>'+esc(r.orderType||'—')+'</td><td>'+esc(r.status)+'</td><td>'+peso(r.amount)+'</td></tr>'
-    ).join('')||'<tr><td colspan="8">No matching POS transactions.</td></tr>';
+    $('financeTransactionsBody').innerHTML=(data.rows||[]).map(r=>{
+     const voided=r.status==='Voided'||r.status==='Deleted';
+     const footprint=voided?'<small class="dm-void-footprint">'+
+      'Voided '+esc(r.voidedAt?when(r.voidedAt):'at an earlier date')+
+      '<span>By: '+esc(r.voidedBy||'Not recorded')+'</span>'+
+      '<span>Reason: '+esc(r.voidReason||'Not recorded for this receipt')+'</span></small>':'';
+     const action=window.donmacFranchiseUnified&&r.status==='Sold'?
+      '<button type="button" class="dm-void-action" data-void-ref="'+esc(r.reference)+'" data-void-branch="'+esc(r.branchId)+'" '+
+      'data-dm-icon="trash2" title="Void" aria-label="Void transaction '+esc(r.reference)+'">'+
+      '<svg class="dm-ua-native" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">'+
+      '<path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Void</span></button>':
+      '<span class="dm-void-unavailable" title="Voided transactions remain in the audit ledger">—</span>';
+     return '<tr><td>'+esc(when(r.date))+'</td><td><strong>'+esc(r.reference)+'</strong></td>'+
+      '<td>'+esc(r.branch)+'</td><td>'+esc(r.cashier)+'</td><td>'+esc(r.payment)+'</td>'+
+      '<td>'+esc(r.orderType||'—')+'</td><td class="dm-void-status"><strong>'+esc(voided?'Voided':r.status)+'</strong>'+footprint+'</td>'+
+      '<td>'+peso(r.amount)+'</td><td>'+action+'</td></tr>';
+    }).join('')||'<tr><td colspan="9">No matching POS transactions.</td></tr>';
+    window.donmacAnimatedIcons?.refresh?.();
     renderPager('financeTransactionPages',Math.max(1,Math.ceil(Number(data.total||0)/10)),kind);
    }else{
     bindBranchOptions($('financeExpenseBranch'),data.branches||[],false);
@@ -136,7 +149,7 @@
    }
   }catch(err){
    if(!sessionStillValid())return;
-   if(kind==='transactions')$('financeTransactionsBody').innerHTML='<tr><td colspan="8">'+esc(err.message)+'</td></tr>';
+   if(kind==='transactions')$('financeTransactionsBody').innerHTML='<tr><td colspan="9">'+esc(err.message)+'</td></tr>';
    else message(err.message,true);
   }finally{
    state[kind].loading=false;
@@ -146,6 +159,27 @@
    }
   }
  }
+ $('financeTransactionsBody').addEventListener('click',async event=>{
+  const button=event.target.closest('button[data-void-ref]');
+  if(!button||button.disabled||!window.donmacFranchiseUnified)return;
+  const ref=button.dataset.voidRef,branchId=button.dataset.voidBranch;
+  if(!/^BR-[A-F0-9]{18}$/.test(ref)||!/^\\d+$/.test(branchId))return;
+  const reason=await window.donmacPrompt.input('Why are you voiding receipt '+ref+'? This action is permanently recorded.',{
+   title:'Void Transaction',inputLabel:'Reason (required)',placeholder:'Enter the reason for voiding this sale',
+   minLength:5,maxLength:500,confirmText:'Review Void',cancelText:'No',variant:'danger'});
+  if(reason===null)return;
+  if(!await window.donmacPrompt.confirm('Void '+ref+' and restore the ingredients to this branch? Reason: '+reason,{
+   title:'Confirm Void',confirmText:'Yes, Void',cancelText:'No',variant:'danger'}))return;
+  button.disabled=true;
+  try{
+   await api('/api/live/transactions/'+encodeURIComponent(ref)+'/void',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({branchId,restoreStock:true,reason})});
+   await window.donmacPrompt.notify('Receipt '+ref+' was voided. The cashier, reason and void time are recorded.',{variant:'success'});
+   await load('transactions');
+  }catch(error){await window.donmacPrompt.notify(error.message,{variant:'error'});}
+  finally{button.disabled=false;}
+ });
  $('financeTransactionRefresh').onclick=()=>load('transactions');
  $('financeExpenseRefresh').onclick=()=>load('expenses');
  let transactionSearchTimer=null;
