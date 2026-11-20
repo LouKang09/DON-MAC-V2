@@ -20,7 +20,7 @@
   success:'ACTION COMPLETED',info:'DON MAC POS'};
  const classify=(message,confirmation=false)=>{
   const m=String(message||'');
-  if(confirmation&&/\b(delete|delet|remove|archive|restore|void|revoke|deactivat|disable|reject|decline|overturn|suspend|clear|replace)\b/i.test(m))return'danger';
+  if(confirmation&&/\b(delet(?:e|ion)?|remov(?:e|al)?|archiv\w*|restor\w*|void\w*|revok\w*|deactivat\w*|disabl\w*|reject\w*|declin\w*|overturn\w*|suspend\w*|clear|replac\w*)\b/i.test(m))return'danger';
   if(/\b(error|failed|failure|unable|could not|invalid|insufficient|unavailable|expired|cannot|can't|forbidden|denied|unauthorized)\b/i.test(m))return'error';
   if(/\b(must|required|please enter|before|warning|not enough|not found|missing|need to|not allowed|cannot|continue\?)\b/i.test(m))return'warning';
   if(/\b(success|created|completed|saved|recorded|updated|approved|submitted|sent|refreshed|verified|ready|up to date)\b/i.test(m))return'success';
