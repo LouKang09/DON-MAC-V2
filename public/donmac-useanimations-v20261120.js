@@ -96,17 +96,18 @@
       nav.querySelectorAll('button.dm-nav-group-toggle').forEach(button => {
         const name=button.textContent?.trim().toLowerCase()?.replace(/\d+/g,'').trim();
         const svg=button.querySelector('.dm-nav-group-icon > svg');
-        install(button,groupMap[name],svg,'dm-ua-icon dm-ua-group');
+        install(button,name==='management'&&window.donmacAuthenticatedRole==='User'?'info':groupMap[name],svg,'dm-ua-icon dm-ua-group');
       });
     }
     for (const [id,name] of Object.entries(actions)) {
       const button=document.getElementById(id);
       install(button,name,button?.querySelector(':scope > svg'),'dm-ua-icon dm-ua-action');
     }
-    // Dynamic finance, cart and guide controls use the existing icon bundles.
-    document.querySelectorAll('button[data-dm-icon]').forEach(button=>{
-      install(button,button.dataset.dmIcon,
-        button.querySelector(':scope > svg.dm-ua-native'),'dm-ua-icon dm-ua-context');
+    // Dynamic buttons, inline KPI symbols and Advanced Analytics nav glyphs.
+    document.querySelectorAll('[data-dm-icon]').forEach(el=>{
+      install(el,el.dataset.dmIcon,
+        el.querySelector(':scope > svg.dm-ua-native,:scope > img.dm-ua-native,:scope > span.dm-ua-native'),
+        'dm-ua-icon dm-ua-context');
     });
   }
   function scheduleScan(){
@@ -124,24 +125,26 @@
       scan();
     });
   }
-  document.addEventListener('pointerover',e=>{
+  const targets=e=>{
     const el=e.target.closest?.('.dm-ua-mounted');
-    if(!el || el.contains(e.relatedTarget))return;
-    play(el);
+    if(el)return [el];
+    const parent=e.target.closest?.('button');
+    return parent?[...parent.querySelectorAll('[data-dm-icon].dm-ua-mounted')]:[];
+  };
+  document.addEventListener('pointerover',e=>{
+    for(const el of targets(e))if(!el.contains(e.relatedTarget))play(el);
   },true);
   document.addEventListener('pointerout',e=>{
-    const el=e.target.closest?.('.dm-ua-mounted');
-    if(!el || el.contains(e.relatedTarget))return;
-    reset(el);
+    for(const el of targets(e))if(!el.contains(e.relatedTarget))reset(el);
   },true);
-  document.addEventListener('focusin',e=>{
-    const el=e.target.closest?.('.dm-ua-mounted');if(el)play(el);
-  },true);
-  document.addEventListener('focusout',e=>{
-    const el=e.target.closest?.('.dm-ua-mounted');if(el)reset(el);
-  },true);
+  document.addEventListener('focusin',e=>{targets(e).forEach(play);},true);
+  document.addEventListener('focusout',e=>{targets(e).forEach(reset);},true);
   document.addEventListener('click',e=>{
-    const el=e.target.closest?.('.dm-ua-mounted');if(el)play(el);
+    targets(e).forEach(play);
+    const bell=e.target.closest?.('#whatsNewButton');
+    if(bell){bell.classList.remove('is-ringing');void bell.offsetWidth;
+      bell.classList.add('is-ringing');
+      setTimeout(()=>bell.classList.remove('is-ringing'),2250);}
   },true);
   const disable=()=> {
     for (const entry of live){
@@ -174,10 +177,10 @@
       observer.observe(nav,{childList:true,subtree:true});
     }
     // Observe new matching controls, not the internal SVG nodes Lottie draws.
+    const selector='[data-dm-icon],button[id],button[data-aa-section],.dash-summary-icon,.dm-kpi-arrow,.rd-nav-glyph,.catalog-save-icon,.catalog-btn-icon,.users-action';
     const bodyObserver=new MutationObserver(changes=>{
       if(changes.some(c=>[...c.addedNodes].some(n=>n.nodeType===1&&(
-        n.matches?.('button[data-dm-icon],#whatsNewButton')||
-        n.querySelector?.('button[data-dm-icon],#whatsNewButton')))))scheduleScan();
+        n.matches?.(selector)||n.querySelector?.(selector)))))scheduleScan();
     });
     bodyObserver.observe(document.body,{childList:true,subtree:true});
   }).catch(()=>{/* Native SVGs remain functional if an icon bundle fails. */});
