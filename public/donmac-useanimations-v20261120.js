@@ -74,6 +74,13 @@
       el.classList.add('dm-ua-mounted');
       el.dataset.dmUaMounted='ready';
       item.goToAndStop(0,true);
+      // Analytics rebuilds its navigation after a click. Start the newly
+      // selected icon's animation once its Lottie SVG has mounted.
+      if(el.matches('.rd-nav-glyph')&&el.closest('button[data-aa-section].active')){
+        requestAnimationFrame(()=>{
+          if(el.isConnected&&!reduce?.matches)try{item.goToAndPlay(0,true)}catch(_){}
+        });
+      }
     });
     item.addEventListener('data_failed',() => {
       if (!original.isConnected && slot.isConnected) slot.replaceWith(original);
