@@ -326,3 +326,144 @@ html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-guide-inline > .d
  #app #whatsNewButton>.dm-ua-icon svg,
  #app #whatsNewButton>.dm-ua-native{animation:none!important;will-change:auto!important}
 }
+
+
+/* Nov 21 icon corrections: one visual glyph in each existing control. */
+/* The KPI icon animation uses real white strokes. Do NOT invert white again. */
+html body #app #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow > .dm-ua-context{
+  filter:none!important;color:white!important;
+  width:1.25rem!important;height:1.25rem!important;
+  min-width:1.25rem!important;min-height:1.25rem!important;
+  max-width:1.25rem!important;max-height:1.25rem!important;
+  display:inline-grid!important;place-items:center!important;
+}
+html body #app #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow .dm-ua-context svg,
+html body #app #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow .dm-ua-context svg path{
+  stroke:white!important;color:white!important;
+}
+html body #app #view-dashboard #dashboardSummary .dm-kpi-button .dm-kpi-arrow .dm-ua-context svg path{
+  fill:none!important;
+}
+/* White animated left-pointing arrows for every dashboard drill-down back action. */
+#app #dmKpiDetail button.dm-animated-back > .dm-ua-context,
+#app #dmBusinessStoreDetail button.dm-animated-back > .dm-ua-context{
+  display:inline-grid!important;place-items:center!important;
+  box-sizing:border-box!important;
+  width:1.2rem!important;height:1.2rem!important;
+  min-width:1.2rem!important;min-height:1.2rem!important;
+  max-width:1.2rem!important;max-height:1.2rem!important;
+  flex:0 0 1.2rem!important;filter:invert(100%)!important;
+  transform:rotate(180deg)!important;margin:0!important;padding:0!important;
+}
+#app #dmBusinessStoreDetail button.dm-animated-back[data-dm-back-fallback="right"] > svg.dm-ua-native{
+  transform:rotate(180deg)!important;
+}
+/* Refresh icons centered by their existing button footprint. */
+html body #app button.dm-refresh[data-dm-icon="refresh"],
+html body #platformApp button.dm-refresh[data-dm-icon="refresh"],
+html body #officeApp button.dm-refresh[data-dm-icon="refresh"]{
+  align-items:center!important;justify-content:center!important;align-content:center!important;
+  text-align:center!important;gap:0!important;
+}
+html body #app button[data-dm-icon="refresh"] > .dm-ua-icon,
+html body #platformApp button[data-dm-icon="refresh"] > .dm-ua-icon,
+html body #officeApp button[data-dm-icon="refresh"] > .dm-ua-icon{
+  box-sizing:border-box!important;align-self:center!important;justify-self:center!important;
+  place-items:center!important;text-align:center!important;
+  position:static!important;left:auto!important;top:auto!important;
+  margin:0!important;padding:0!important;vertical-align:middle!important;
+  min-width:1.25rem!important;min-height:1.25rem!important;
+  width:1.25rem!important;height:1.25rem!important;
+  max-width:1.25rem!important;max-height:1.25rem!important;
+  flex:0 0 1.25rem!important;
+}
+html body #app button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon,
+html body #platformApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon,
+html body #officeApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon{
+  width:1.45rem!important;height:1.45rem!important;
+  min-width:1.45rem!important;min-height:1.45rem!important;
+  max-width:1.45rem!important;max-height:1.45rem!important;
+  flex:0 0 1.45rem!important;
+}
+html body #app button[data-dm-icon="refresh"] > .dm-ua-icon svg,
+html body #platformApp button[data-dm-icon="refresh"] > .dm-ua-icon svg,
+html body #officeApp button[data-dm-icon="refresh"] > .dm-ua-icon svg{
+  display:block!important;position:static!important;
+  width:100%!important;height:100%!important;
+  margin:0!important;padding:0!important;
+  transform:none!important;transform-origin:center!important;
+}
+html body #app button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-context,
+html body #platformApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-context,
+html body #officeApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-context{
+  filter:invert(100%)!important;
+}
+/* Inventory Replenish / Transfer animations physically replace old SVG/span. */
+#app #view-inventory .inv-operation-top > .dm-ua-context{
+  display:inline-grid!important;place-items:center!important;
+  width:35px!important;height:35px!important;
+  min-width:35px!important;min-height:35px!important;
+  max-width:35px!important;max-height:35px!important;
+  flex:0 0 35px!important;margin:2px 0 0!important;
+  filter:invert(27%) sepia(45%) saturate(730%) hue-rotate(98deg)!important;
+}
+#app #view-inventory .inv-operation-launch > .dm-ua-context{
+  display:inline-grid!important;place-items:center!important;
+  width:1.35rem!important;height:1.35rem!important;
+  min-width:1.35rem!important;min-height:1.35rem!important;
+  max-width:1.35rem!important;max-height:1.35rem!important;
+  flex:0 0 1.35rem!important;margin:0!important;padding:0!important;
+  filter:invert(100%)!important;
+}
+@media(max-width:940px){
+ #app #view-inventory .inv-operation-top > .dm-ua-context{
+  width:27px!important;height:27px!important;flex-basis:27px!important;
+  min-width:27px!important;min-height:27px!important;
+  max-width:27px!important;max-height:27px!important;
+ }
+}
+/* Proper white animated Delete/Clear icons in the original Save/Clear positions. */
+#app #view-catalog button[data-dm-icon="trash2"] > .dm-ua-context,
+#app #view-users button.users-action-clear[data-dm-icon="trash2"] > .dm-ua-context{
+  display:inline-grid!important;place-items:center!important;
+  width:1.15rem!important;height:1.15rem!important;
+  min-width:1.15rem!important;min-height:1.15rem!important;
+  max-width:1.15rem!important;max-height:1.15rem!important;
+  flex:0 0 1.15rem!important;
+  margin:0 .25rem 0 0!important;padding:0!important;filter:invert(100%)!important;
+}
+/* Analytics: gray unselected icon; green selected, with animation on selection. */
+#app #view-advanced.is-business .dm-advanced-shell .rd-sidebar nav button:not(.active) .rd-nav-glyph > .dm-ua-context{
+  filter:invert(46%) sepia(8%) saturate(400%) hue-rotate(89deg) brightness(98%)!important;
+}
+#app #view-advanced.is-business .dm-advanced-shell .rd-sidebar nav button.active .rd-nav-glyph > .dm-ua-context{
+  filter:invert(24%) sepia(43%) saturate(968%) hue-rotate(102deg) brightness(94%)!important;
+}
+#app #view-advanced.is-business .dm-advanced-shell .rd-sidebar nav button:not(.active):hover .rd-nav-glyph > .dm-ua-context{
+  filter:invert(46%) sepia(8%) saturate(400%) hue-rotate(89deg) brightness(98%)!important;
+}
+/* Backup action stays immediately before the already-existing Refresh icon. */
+#app #view-catalog #admin-backups > .card > .card-head{
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  flex-wrap:wrap!important;gap:.55rem!important;
+}
+#app #view-catalog #admin-backups > .card > .card-head > div:first-child{order:0!important}
+#app #view-catalog #admin-backups #createBackup{
+  order:1!important;margin-left:auto!important;margin-right:0!important;
+  align-self:center!important;flex-shrink:0!important;
+}
+#app #view-catalog #admin-backups > .card > .card-head > button.dm-refresh{
+  order:2!important;margin-left:0!important;align-self:center!important;
+}
+/* Hide the unused mobile Timekeeper nav row completely; otherwise it leaves a blank line. */
+html body #app #mainNav .dm-attendance-entry.hidden,
+html body #app #mainNav .dm-attendance-entry[aria-hidden="true"],
+html body #app #mainNav .dm-guide-nav-row:has(> .dm-attendance-entry.hidden),
+html body #app #mainNav .dm-guide-nav-row:has(> .dm-attendance-entry[aria-hidden="true"]){
+  display:none!important;visibility:hidden!important;
+  min-height:0!important;height:0!important;
+  padding:0!important;margin:0!important;gap:0!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #app #view-advanced .rd-nav-glyph > .dm-ua-icon {animation:none!important}
+}
