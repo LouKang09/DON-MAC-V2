@@ -20,6 +20,7 @@
   const upcoming = 'Future improvements will appear here before or when they are released.';
 
   function toast(message) {
+    if (window.donmacPrompt) { void window.donmacPrompt.notify(String(message)); return; }
     const el = $('toast');
     if (!el) return;
     el.textContent = message;
