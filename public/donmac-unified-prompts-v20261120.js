@@ -152,7 +152,7 @@
   });
  }
  const notify=(message,options={})=>enqueue('notice',message,options);
- const confirm=(message,options={})=>enqueue('confirm',message,{variant:'warning',...options});
+ const confirm=(message,options={})=>enqueue('confirm',message,options);
  const input=(message,options={})=>enqueue('input',message,{variant:'warning',...options});
  const reset=()=>{
   for(const item of state.queue.splice(0))item.resolve(item.kind==='input'?null:false);
