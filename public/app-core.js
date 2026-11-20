@@ -783,14 +783,79 @@
     if(delta>0&&kind==='officePromo'){
       const p=(state.catalog.officePromos||[]).find(p=>p.id===id);
       if(!p?.eligible||line.qty>=p.remaining){toast('Insufficient promotional supply credits.');return;}
-    }if(delta>0&&kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p||!canAddProduct(p)){toast('Promo item limit reached.');return;}const decision=stockNext('product',id);if(!decision.ok){warnStock(decision);return;}}if(delta>0&&kind==='package'){const decision=stockNext('package',id);if(!decision.ok){warnStock(decision);return;}}if(delta>0&&kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!canAddAddon(a)){toast('Upgrade quantity cannot exceed the matching promo item quantity.');return;}}line.qty+=delta;if(line.qty<=0)state.cart=state.cart.filter(x=>x!==line);if(delta<0&&kind==='product')enforceAddonLimits();state.pendingSaleRequestId=null;renderAll();}
-  function clearCart(){resetOrderState();}
+    }if(delta>0&&kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p||!canAddProduct(p)){toast('Promo item limit reached.');return;}const decision=stockNext('product',id);if(!decision.ok){warnStock(decision);return;}}if(delta>0&&kind==='package'){const decision=stockNext('package',id);if(!decision.ok){warnStock(decision);return;}}if(delta>0&&kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!canAddAddon(a)){toast('Upgrade quantity cannot exceed the matching promo item quantity.');return;}}if(delta<0&&line.qty<=1)return;
+    if(delta>0&&line.qty>=999){toast('Maximum quantity is 999.');return;}
+    line.qty+=delta;if(delta<0&&kind==='product')enforceAddonLimits();state.pendingSaleRequestId=null;renderAll();}
+  function setCartQuantity(kind,id,input){
+    const line=cartItem(kind,id),amount=Number(input);
+    if(!line)return;
+    if(!Number.isSafeInteger(amount)||amount<1||amount>999){toast('Enter a whole number from 1 to 999.');renderOrder();return;}
+    if(amount===line.qty){renderOrder();return;}
+    if(amount>line.qty){
+      const extra=amount-line.qty,counts=cartCounts(),promo=promoById();
+      if(kind==='product'){
+        const p=state.catalog.products.find(x=>x.id===id);
+        if(!p||!p.available||promo&&(
+          p.category==='Food'&&counts.food+extra>promo.foodLimit||
+          ['Coffee','Non Coffee'].includes(p.category)&&counts.coffee+extra>promo.coffeeLimit)){
+          toast('Promotion or product availability limit reached.');renderOrder();return;
+        }
+      }
+      if(kind==='addon'){
+        const item=state.catalog.addOns.find(x=>x.id===id),n=normalize(item?.name),limit=n==='FLAVORED FRIES'?counts.food:n==='PREMIUM COFFEE'?counts.coffee:999;
+        if(!state.promoId||amount>limit){toast('Upgrade quantity exceeds the matching promotional items.');renderOrder();return;}
+      }
+      if(kind==='officePromo'){
+        const item=(state.catalog.officePromos||[]).find(x=>x.id===id);
+        if(!item?.eligible||amount>item.remaining){toast('Insufficient promotional supply credits.');renderOrder();return;}
+      }
+      if(['product','package'].includes(kind)){
+        const draft=state.cart.map(x=>({...x,qty:x===line?amount:x.qty}));
+        const result=stockPlanner?.evaluate(state.catalog,draft);
+        if(result&&!result.ok){warnStock(result);renderOrder();return;}
+      }
+    }
+    line.qty=amount;
+    if(kind==='product')enforceAddonLimits();
+    state.pendingSaleRequestId=null;renderAll();
+  }
+  async function requestCartRemoval(kind,id){
+    const line=cartItem(kind,id),item=line&&cartDisplayLine(line);
+    if(!line||!item)return;
+    const approved=await window.donmacPrompt.confirm('Delete '+item.name+' from the current order?',{
+      title:'Remove Order Item',confirmText:'Yes, Delete',cancelText:'No',variant:'danger'});
+    if(!approved||!cartItem(kind,id))return;
+    state.cart=state.cart.filter(x=>x!==line);
+    if(kind==='product')enforceAddonLimits();
+    state.pendingSaleRequestId=null;renderAll();
+  }
+  async function clearCart(){
+    if(!state.cart.length)return;
+    if(await window.donmacPrompt.confirm('Delete all items in this order?',{
+      title:'Clear Order',confirmText:'Yes, Clear',cancelText:'No',variant:'danger'}))resetOrderState();
+  }
   function cartDisplayLine(x){if(x.kind==='officePromo'){
     const p=(state.catalog.officePromos||[]).find(p=>p.id===x.id);
     return p?{...p,name:p.buttonName,category:'Main Office Promotion'}:null;
    }if(x.kind==='product')return state.catalog.products.find(p=>p.id===x.id);if(x.kind==='addon')return state.catalog.addOns.find(a=>a.id===x.id);return state.catalog.packages.find(p=>p.id===x.id);}
   function localGross(){return state.cart.reduce((a,x)=>{const p=cartDisplayLine(x);return a+(p?Number(p.price)*x.qty:0);},0);}
-  function renderOrder(){if(!state.cart.length){$('orderList').innerHTML='<div class="empty-state"><div><b>Your order is empty</b>Select an item to begin.</div></div>';return;}$('orderList').innerHTML=state.cart.map(x=>{const p=cartDisplayLine(x);if(!p)return'';const check=['product','package'].includes(x.kind)?stockNext(x.kind,x.id):{ok:true};const full=!check.ok;const reason=full?'Ingredient stock limit reached. '+check.message:'';return`<div class="order-row"><div><h4>${esc(p.name)}</h4><div class="row-sub">${x.kind==='addon'?'PROMO UPGRADE':x.kind==='package'?'PACKAGE':esc(p.category||'')} · ${peso(p.price)} each</div>${full?`<div class="pos-stock-limit-hint">${esc(reason)}</div>`:''}</div><div><strong>${peso(Number(p.price)*x.qty)}</strong><div class="qty-control"><button data-minus="${x.kind}:${x.id}">−</button><span>${x.qty}</span><button data-plus="${x.kind}:${x.id}" ${full?'disabled':''} title="${esc(full?reason:'Add one')}">+</button></div></div></div>`;}).join('');$('orderList').querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.minus.split(':');changeQty(k,k==='officePromo'?id:Number(id),-1);});$('orderList').querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.plus.split(':');changeQty(k,k==='officePromo'?id:Number(id),1);});}
+  function renderOrder(){if(!state.cart.length){$('orderList').innerHTML='<div class="empty-state"><div><b>Your order is empty</b>Select an item to begin.</div></div>';return;}$('orderList').innerHTML=state.cart.map(x=>{const p=cartDisplayLine(x);if(!p)return'';const check=['product','package'].includes(x.kind)?stockNext(x.kind,x.id):{ok:true};const full=!check.ok;const reason=full?'Ingredient stock limit reached. '+check.message:'';return`<div class="order-row"><div><h4>${esc(p.name)}</h4><div class="row-sub">${x.kind==='addon'?'PROMO UPGRADE':x.kind==='package'?'PACKAGE':esc(p.category||'')} · ${peso(p.price)} each</div>${full?`<div class="pos-stock-limit-hint">${esc(reason)}</div>`:''}</div><div><strong>${peso(Number(p.price)*x.qty)}</strong><div class="qty-control"><button type="button" data-minus="${x.kind}:${x.id}" ${x.qty<=1?'disabled title="Minimum quantity is 1"':''}>−</button><input type="number" class="dm-cart-quantity" data-cart-qty="${x.kind}:${x.id}" value="${x.qty}" min="1" max="999" step="1" inputmode="numeric" title="Enter quantity" aria-label="Quantity for ${esc(p.name)}"><button type="button" data-plus="${x.kind}:${x.id}" ${full?'disabled':''} title="${esc(full?reason:'Add one')}">+</button><button type="button" class="dm-cart-delete" data-cart-delete="${x.kind}:${x.id}" data-dm-icon="trash2" aria-label="Delete ${esc(p.name)} from order" title="Delete item"><svg class="dm-ua-native" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></div></div>`;}).join('');$('orderList').querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.minus.split(':');changeQty(k,k==='officePromo'?id:Number(id),-1);});$('orderList').querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.plus.split(':');changeQty(k,k==='officePromo'?id:Number(id),1);});}
+  // The quantity input is an additional shortcut; repeated +/- tapping remains available.
+  $('orderList').addEventListener('change',event=>{
+    const field=event.target.closest('[data-cart-qty]');if(!field)return;
+    const [kind,key]=field.dataset.cartQty.split(':');
+    setCartQuantity(kind,kind==='officePromo'?key:Number(key),field.value);
+  });
+  $('orderList').addEventListener('keydown',event=>{
+    if(event.key==='Enter'&&event.target.matches('[data-cart-qty]')){
+      event.preventDefault();event.target.blur();
+    }
+  });
+  $('orderList').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-cart-delete]');if(!button)return;
+    const [kind,key]=button.dataset.cartDelete.split(':');
+    void requestCartRemoval(kind,kind==='officePromo'?key:Number(key));
+  });
   function renderPromo(){const p=promoById();$('promoBanner').classList.toggle('hidden',!p);if(!p)return;const c=cartCounts();$('promoBanner').innerHTML=`<div><b>${esc(p.name)}</b> · Food ${c.food}/${p.foodLimit} · Coffee ${c.coffee}/${p.coffeeLimit} · Promo ${peso(p.price)} <span class="muted">(+ upgrades)</span></div><button id="cancelPromo">CANCEL PROMO</button>`;$('cancelPromo').onclick=cancelPromo;}
   function quotePayload(){return{items:state.cart.map(x=>({kind:x.kind,id:x.id,qty:x.qty})),promoId:state.promoId,senior:{enabled:$('seniorEnabled').checked,name:$('seniorName').value.trim(),id:$('seniorId').value.trim()}};}
   async function refreshQuote(){const seq=++quoteSeq,gross=localGross();$('grossAmount').textContent=peso(gross);$('payButton').disabled=true;state.quote=null;if(!state.cart.length){$('adjustmentAmount').textContent=peso(0);$('actualAmount').textContent=peso(0);$('payButton').textContent='Pay ₱0.00';$('quoteMessage').textContent='';return;}const stock=cartStock();if(!stock.ok){$('adjustmentAmount').textContent='—';$('actualAmount').textContent='—';$('payButton').textContent='Stock unavailable';$('quoteMessage').textContent=stock.message;return;}try{const quote=await api('/api/quote',{method:'POST',body:quotePayload()});if(seq!==quoteSeq)return;state.quote=quote;$('grossAmount').textContent=peso(quote.gross);$('adjustmentAmount').textContent=peso(quote.adjustment);$('actualAmount').textContent=peso(quote.actual);$('payButton').textContent=`Pay ${peso(quote.actual)}`;$('payButton').disabled=false;$('quoteMessage').textContent='';}catch(err){if(seq!==quoteSeq)return;$('adjustmentAmount').textContent='—';$('actualAmount').textContent='—';$('payButton').textContent='Complete Order';$('quoteMessage').textContent=err.message;if(err.status===409)await updateCatalogAvailability();}}

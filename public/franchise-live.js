@@ -112,9 +112,11 @@
    const limit=!check.ok;
    return'<div class="cart-row"><div><h4>'+escape(p.name)+'</h4><small>'+
      money(p.price)+' each · '+escape(x.kind)+'</small></div><div class="qty">'+
-     '<button type="button" data-cart-minus="'+escape(x.kind+':'+x.id)+'">−</button>'+
-     '<strong>'+x.qty+'</strong><button type="button" data-cart-plus="'+escape(x.kind+':'+x.id)+
-     '" '+(limit?'disabled':'')+' title="'+escape(limit?check.message:'Add one')+'">+</button></div></div>';
+     '<button type="button" data-cart-minus="'+escape(x.kind+':'+x.id)+'" '+(x.qty<=1?'disabled title="Minimum quantity is 1"':'')+'>−</button>'+
+     '<input type="number" class="dm-cart-quantity" data-cart-qty="'+escape(x.kind+':'+x.id)+'" value="'+x.qty+'" min="1" max="999" step="1" inputmode="numeric" title="Enter quantity" aria-label="Quantity for '+escape(p.name)+'"><button type="button" data-cart-plus="'+escape(x.kind+':'+x.id)+
+     '" '+(limit?'disabled':'')+' title="'+escape(limit?check.message:'Add one')+'">+</button>'+ 
+     '<button type="button" class="dm-cart-delete" data-cart-delete="'+escape(x.kind+':'+x.id)+'" data-dm-icon="trash2" title="Delete item" aria-label="Delete '+escape(p.name)+' from order">'+
+     '<svg class="dm-ua-native" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></div>';
   }).join('')||'<p class="empty">Choose a product to start a sale.</p>';
   $('grossTotal').textContent=money(totals());
  }
@@ -447,17 +449,49 @@
   $('productGrid').addEventListener('click',e=>{
    const b=e.target.closest('button[data-add-id]');if(b&&!b.disabled)addItem(b.dataset.addKind,Number(b.dataset.addId));
   });
-  $('cartRows').addEventListener('click',e=>{
-   const plus=e.target.closest('[data-cart-plus]'),minus=e.target.closest('[data-cart-minus]');
-   if(!plus&&!minus)return;
-   const [kind,idText]=(plus?.dataset.cartPlus||minus.dataset.cartMinus).split(':'),id=Number(idText);
+  $('cartRows').addEventListener('click',async e=>{
+   const plus=e.target.closest('[data-cart-plus]'),minus=e.target.closest('[data-cart-minus]'),remove=e.target.closest('[data-cart-delete]');
+   if(!plus&&!minus&&!remove)return;
+   const [kind,idText]=(plus?.dataset.cartPlus||minus?.dataset.cartMinus||remove.dataset.cartDelete).split(':'),id=Number(idText);
    const line=state.cart.find(x=>x.kind===kind&&x.id===id);
    if(!line)return;
-   if(plus){const check=next(kind,id);if(!check.ok){notice(check.message,true);return}line.qty++}
-   else{line.qty--;if(line.qty<=0)state.cart=state.cart.filter(x=>x!==line)}
+   if(remove){
+    const item=product(kind,id);
+    if(!await window.donmacPrompt.confirm('Delete '+(item?.name||'this item')+' from the current order?',{
+     title:'Remove Order Item',confirmText:'Yes, Delete',cancelText:'No',variant:'danger'}))return;
+    state.cart=state.cart.filter(x=>x!==line);
+   }else if(plus){
+    if(line.qty>=999){notice('Maximum quantity is 999.',true);return;}
+    const check=next(kind,id);if(!check.ok){notice(check.message,true);return;}
+    line.qty++;
+   }else{
+    if(line.qty<=1)return;
+    line.qty--;
+   }
    changedCart();
   });
-  $('clearCart').addEventListener('click',()=>{state.cart=[];changedCart()});
+  $('cartRows').addEventListener('change',e=>{
+   const input=e.target.closest('[data-cart-qty]');if(!input)return;
+   const [kind,idText]=input.dataset.cartQty.split(':'),id=Number(idText);
+   const line=state.cart.find(x=>x.kind===kind&&x.id===id),amount=Number(input.value);
+   if(!line||!Number.isSafeInteger(amount)||amount<1||amount>999){notice('Enter a whole number from 1 to 999.',true);renderCart();return;}
+   if(amount>line.qty){
+    const draft=state.cart.map(x=>x===line?{...x,qty:amount}:{...x});
+    const check=stock.evaluate(state.catalog,draft);
+    if(kind==='addon'&&!$('promoSelect').value||!check.ok){notice(check.message||'Promotion required.',true);renderCart();return;}
+   }
+   line.qty=amount;changedCart();
+  });
+  $('cartRows').addEventListener('keydown',e=>{
+   if(e.key==='Enter'&&e.target.matches('[data-cart-qty]')){e.preventDefault();e.target.blur();}
+  });
+  $('clearCart').addEventListener('click',async()=>{
+   if(!state.cart.length)return;
+   if(await window.donmacPrompt.confirm('Delete all items in this order?',{
+    title:'Clear Order',confirmText:'Yes, Clear',cancelText:'No',variant:'danger'})){
+    state.cart=[];changedCart();
+   }
+  });
   for(const id of ['promoSelect','seniorEnabled','seniorName','seniorId'])
    $(id).addEventListener('change',()=>{$('seniorDetails').classList.toggle('hidden',!$('seniorEnabled').checked);state.checkoutId=null;renderProducts();renderCart();scheduleQuote()});
   for(const id of ['seniorName','seniorId'])$(id).addEventListener('input',scheduleQuote);
