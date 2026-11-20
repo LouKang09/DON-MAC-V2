@@ -241,3 +241,88 @@ html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-guide-inline > .d
     animation:none!important;will-change:auto!important;
   }
 }
+
+/* 2026-11-21: all icon footprints are shared, including separate office shells. */
+#app [data-dm-icon] > .dm-ua-native,
+#platformApp [data-dm-icon] > .dm-ua-native,
+#officeApp [data-dm-icon] > .dm-ua-native{
+  display:inline-block;flex:0 0 1.22rem;width:1.22rem;height:1.22rem;
+  vertical-align:middle;pointer-events:none;
+}
+#platformApp .dm-ua-icon,#officeApp .dm-ua-icon{
+  display:none!important;place-items:center;box-sizing:border-box;
+  flex:0 0 1.22rem;width:1.22rem;height:1.22rem;
+  min-width:1.22rem;min-height:1.22rem;max-width:1.22rem;max-height:1.22rem;
+  padding:0;margin:0;line-height:0;pointer-events:none;
+}
+#platformApp .dm-ua-mounted .dm-ua-icon,
+#officeApp .dm-ua-mounted .dm-ua-icon{display:inline-grid!important}
+#platformApp .dm-ua-icon svg,#officeApp .dm-ua-icon svg{
+  display:block!important;width:100%!important;height:100%!important;
+  pointer-events:none!important;
+}
+#app #dashboardSummary .dash-summary-icon>.dm-ua-context{
+  display:inline-grid!important;place-items:center!important;
+  width:1.35rem!important;height:1.35rem!important;
+  min-width:1.35rem!important;min-height:1.35rem!important;
+  max-width:1.35rem!important;max-height:1.35rem!important;
+  flex:0 0 1.35rem!important;
+  filter:invert(26%) sepia(49%) saturate(460%) hue-rotate(94deg) brightness(90%);
+}
+#app #dashboardSummary .dm-kpi-arrow>.dm-ua-context{
+  width:1.25rem!important;height:1.25rem!important;
+  min-width:1.25rem!important;min-height:1.25rem!important;
+  max-width:1.25rem!important;max-height:1.25rem!important;
+  flex:0 0 1.25rem!important;filter:invert(100%);
+}
+#app #advancedReferenceContent .rd-nav-glyph>.dm-ua-context{
+  width:1.27rem!important;height:1.27rem!important;
+  min-width:1.27rem!important;min-height:1.27rem!important;
+  max-width:1.27rem!important;max-height:1.27rem!important;
+  flex:0 0 1.27rem!important;filter:invert(89%);
+}
+#app #advancedReferenceContent [data-aa-section].active .rd-nav-glyph>.dm-ua-context{
+  filter:invert(25%) sepia(54%) saturate(525%) hue-rotate(99deg);
+}
+#app #view-catalog .dm-ua-context,#app #view-reports .report-download .dm-ua-context,
+#app #view-supply .supply-submit .dm-ua-context{
+  width:1.18rem!important;height:1.18rem!important;
+  min-width:1.18rem!important;min-height:1.18rem!important;
+  max-width:1.18rem!important;max-height:1.18rem!important;
+  flex:0 0 1.18rem!important;vertical-align:middle;
+}
+#app #view-catalog button.primary .dm-ua-context,
+#app #view-reports button.primary .dm-ua-context,
+#app #view-supply button.primary .dm-ua-context,
+#app #view-users .users-action-save .dm-ua-context,
+#app #view-users .users-action-clear .dm-ua-context,
+#platformApp .btn-main .dm-ua-context,
+#officeApp .btn.solid .dm-ua-context{
+  filter:invert(100%);
+}
+#app #view-users .dm-users-heading-actions .users-help>.dm-ua-context{
+  width:1.48rem!important;height:1.48rem!important;
+  min-width:1.48rem!important;min-height:1.48rem!important;
+  max-width:1.48rem!important;max-height:1.48rem!important;
+  filter:invert(100%);
+}
+#app #view-users .dm-users-heading-actions .users-help{
+  display:inline-flex;align-items:center;justify-content:center;
+}
+#app #whatsNewButton>.dm-ua-icon svg,
+#app #whatsNewButton>.dm-ua-native{
+  transform-origin:50% 14%;will-change:transform;
+}
+#app #whatsNewButton:hover>.dm-ua-icon svg,
+#app #whatsNewButton:focus-visible>.dm-ua-icon svg,
+#app #whatsNewButton.is-ringing>.dm-ua-icon svg,
+#app #whatsNewButton:has(#whatsNewBadge:not(.hidden))>.dm-ua-icon svg,
+#app #whatsNewButton:hover>.dm-ua-native,
+#app #whatsNewButton.is-ringing>.dm-ua-native{
+  animation:dm-supply-bell-ring 1.05s ease-in-out 2;
+}
+@media(prefers-reduced-motion:reduce){
+ #platformApp .dm-ua-icon,#officeApp .dm-ua-icon{display:none!important}
+ #app #whatsNewButton>.dm-ua-icon svg,
+ #app #whatsNewButton>.dm-ua-native{animation:none!important;will-change:auto!important}
+}
