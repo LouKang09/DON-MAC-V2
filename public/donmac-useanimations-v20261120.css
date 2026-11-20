@@ -1,0 +1,79 @@
+/* Don Mac POS animated icon layer, built from MIT-licensed useAnimations.
+   Original SVGs stay in DOM until Lottie successfully renders.
+   Never alter pointer targets, nav permissions, layout or checkout behavior. */
+#app .dm-ua-icon {
+  display:inline-grid!important;
+  place-items:center!important;
+  box-sizing:border-box!important;
+  flex:0 0 1.18rem!important;
+  width:1.18rem!important;
+  height:1.18rem!important;
+  min-width:1.18rem!important;
+  min-height:1.18rem!important;
+  max-width:1.18rem!important;
+  max-height:1.18rem!important;
+  margin:0!important;padding:0!important;
+  line-height:0!important;
+  pointer-events:none!important;
+  vertical-align:middle!important;
+  overflow:visible!important;
+  color:inherit;
+}
+#app .dm-ua-icon svg {
+  display:block!important;
+  width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+}
+/* Black Lottie strokes need a light tint on the dark navigation.
+   Both collapsed and expanded variants use the same sizing. */
+#app #mainNav .nav .dm-ua-icon,
+#app #mainNav .dm-ua-group{
+  filter:invert(88%) sepia(9%) saturate(280%) hue-rotate(70deg) brightness(97%);
+}
+#app #mainNav .nav.active .dm-ua-icon{
+  filter:invert(35%) sepia(43%) saturate(759%) hue-rotate(97deg) brightness(90%);
+}
+#app #mainNav .nav:hover .dm-ua-icon,
+#app #mainNav .nav:focus-visible .dm-ua-icon{
+  filter:invert(95%) sepia(12%) saturate(270%) hue-rotate(59deg);
+}
+#app #mainNav .dm-nav-group-toggle:hover .dm-ua-group{
+  filter:invert(97%);
+}
+#app .dm-ua-mounted > svg.nav-icon,
+#app .dm-ua-mounted > svg:first-child:not(.topbar-profile-chevron){
+  display:none!important;
+}
+#app #mainNav .dm-nav-group-toggle.dm-ua-mounted .dm-nav-group-icon > svg{
+  display:none!important;
+}
+#app #mainNav .dm-nav-group-toggle .dm-nav-group-icon .dm-ua-group{
+  width:1.16rem!important;height:1.16rem!important;
+  min-height:1.16rem!important;min-width:1.16rem!important;
+}
+#app .dm-ua-icon.dm-ua-action{
+  flex:0 0 1.35rem!important;
+  width:1.35rem!important;height:1.35rem!important;
+  min-width:1.35rem!important;min-height:1.35rem!important;
+}
+#app .sidebar #sidebarToggle .dm-ua-action,
+#app .sidebar #logoutButton .dm-ua-action{
+  filter:invert(95%);
+}
+#app .dashboard-icon-button .dm-ua-action{
+  filter:invert(100%);
+}
+#app #mainNav .nav.dm-ua-mounted{
+  gap:inherit!important;
+}
+/* Existing coffee art and category images remain untouched. */
+@media(prefers-reduced-motion:reduce){
+ #app .dm-ua-icon{display:none!important}
+ #app .dm-ua-mounted > svg.nav-icon,
+ #app .dm-ua-mounted > svg:first-child:not(.topbar-profile-chevron),
+ #app #mainNav .dm-nav-group-toggle.dm-ua-mounted .dm-nav-group-icon > svg{
+  display:block!important;
+ }
+}
