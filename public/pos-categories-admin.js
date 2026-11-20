@@ -92,7 +92,7 @@
     }catch(err){status(err.message,true);$('posCategoryAdminList').textContent=err.message;}
   }
   async function remove(name){
-    if(!confirm('Remove the '+name+' category button? The products and existing sales will remain unchanged.'))return;
+    if(!await window.donmacPrompt.confirm('Remove the '+name+' category button? The products and existing sales will remain unchanged.'))return;
     try{
       await request('/api/admin/pos-categories/'+encodeURIComponent(name),'DELETE');
       clear();await load();
