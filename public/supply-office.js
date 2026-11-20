@@ -275,7 +275,7 @@ function renderFranchiseDetail(){
  }).join('')||'<tr><td colspan="5">No royalty months have been issued. Set the monthly fee to begin billing.</td></tr>';
  $('franchiseRoyaltyRows').querySelectorAll('[data-royalty-id]').forEach(b=>b.onclick=async()=>{
   const status=b.dataset.nextStatus,id=b.dataset.royaltyId;
-  if(!window.confirm(status==='PAID'?'Confirm receipt of this monthly royalty payment?':'Reopen this manually paid royalty as Pending?'))return;
+  if(!await window.donmacPrompt.confirm(status==='PAID'?'Confirm receipt of this monthly royalty payment?':'Reopen this manually paid royalty as Pending?'))return;
   b.disabled=true;
   try{
    await api('/api/supply/office/franchisees/'+data.owner.workspaceId+'/royalties/'+id+'/status',
@@ -507,7 +507,7 @@ $('officeStatusForm').onsubmit=async e=>{
  if((next==='ON_HOLD'||next==='DENIED'||overturn||current.status==='APPEAL_REVIEW')&&!note){
   notice('Enter a reason before confirming this decision.',true);$('officeStatusNote').focus();return;
  }
- if(overturn&&!window.confirm('Overturn this denial and approve payment? This will reserve the required stock and original royalty charges.'))return;
+ if(overturn&&!await window.donmacPrompt.confirm('Overturn this denial and approve payment? This will reserve the required stock and original royalty charges.'))return;
  const save=$('officeStatusSave');save.disabled=true;
  try{
   const d=await api('/api/supply/office/orders/'+current.id+'/status',{method:'POST',body:JSON.stringify({status:next,note})});
