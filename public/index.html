@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="/business-store-dashboard-v20261119.css?v=4" />
   <link rel="stylesheet" href="/account-plan-pill-hover-v20261119.css?v=1" />
   <link rel="stylesheet" href="/sidebar-fluid-layout-v20261119.css?v=2" />
+  <link rel="stylesheet" href="/inventory-usage-summary-v20261120.css?v=1" />
 </head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
@@ -535,6 +536,31 @@
             </div>
           </section>
         </div>
+        <section id="inventoryUsageSummary" class="card spaced inv-usage-summary" aria-label="Ingredients consumed by completed sales">
+          <div class="inv-usage-head">
+            <div><p class="eyebrow">SOLD INGREDIENT CONSUMPTION</p><h3>Ingredients Usage Summary</h3><p class="muted">Ingredient quantities used by sold products, excluding supplier purchases and stock transfers. Follows the Inventory Branch selected above.</p></div>
+            <div class="inv-usage-controls">
+              <label>Period<select id="inventoryUsagePeriod"><option value="day">Today</option><option value="week">Last 7 days</option><option value="month">This month</option><option value="custom">Custom range</option></select></label>
+              <label>Chart Type<select id="inventoryUsageChartType"><option value="line">Line</option><option value="tile">Tile</option><option value="pie">Pie</option></select></label>
+              <button id="inventoryUsageApply" type="button" class="primary">Apply</button>
+            </div>
+          </div>
+          <div class="inv-usage-custom" id="inventoryUsageCustom" hidden>
+            <label>From<input id="inventoryUsageStart" type="date" /></label><label>To<input id="inventoryUsageEnd" type="date" /></label><span>Maximum custom range: 366 days.</span>
+          </div>
+          <div id="inventoryUsageFeedback" role="status" aria-live="polite" class="inv-usage-feedback">Choose an inventory branch to load recorded ingredient use.</div>
+          <div class="inv-usage-results" id="inventoryUsageResults" hidden>
+            <div class="inv-usage-kpis">
+              <div class="inv-usage-stat"><span>Gross Cost</span><strong id="inventoryUsageGross">₱0.00</strong><small>Checkout costs before void/delete exclusions</small></div>
+              <div class="inv-usage-stat"><span>Net Cost</span><strong id="inventoryUsageNet">₱0.00</strong><small>Ingredient cost in completed sales</small></div>
+              <div class="inv-usage-stat"><span>Ingredient Types Used</span><strong id="inventoryUsageCount">0</strong><small id="inventoryUsageScope">Selected branch</small></div>
+            </div>
+            <div class="inv-usage-chart-container"><div class="inv-usage-chart-title"><strong>Overall Ingredient Cost</strong><span id="inventoryUsageChartScope"></span></div><div id="inventoryUsageChart" class="inv-usage-chart" aria-live="polite"></div></div>
+            <div class="inv-usage-table-head"><div><h4>Ingredients Consumed in Sales</h4><p id="inventoryUsageTableCaption" class="muted"></p></div><label class="inv-usage-search">Search<input id="inventoryUsageSearch" type="search" placeholder="Find ingredient…" autocomplete="off" /></label></div>
+            <div class="inv-usage-table-scroll"><table class="inv-usage-table" aria-label="Ingredients used in sold transactions"><thead><tr><th>Ingredient</th><th>Products Sold</th><th class="num">Used Quantity</th><th class="num">Gross Cost</th><th class="num">Net Cost</th><th>Details</th></tr></thead><tbody id="inventoryUsageBody"></tbody></table></div>
+            <p id="inventoryUsageNotes" class="inv-usage-notes"></p>
+          </div>
+        </section>
         <div class="card spaced inv-audit-card"><div class="card-head"><div><p class="eyebrow">MOVEMENT HISTORY</p><h3>Inventory Audit</h3><p class="inv-audit-subtitle">One row per transaction. Expand a row to see every ingredient and stock change.</p></div></div>
           <div class="audit-filter-toolbar inv-audit-unified-toolbar" role="search" aria-label="Filter inventory transactions">
             <label>Movement<select id="movementTypeFilter" aria-label="Movement type"><option value="all">All Movements</option><option value="sale">Sales Usage</option><option value="reversal">Sale Reversals</option><option value="replenish">Replenish</option><option value="transfer">Transfer</option><option value="other">Other</option></select></label>
@@ -1141,6 +1167,6 @@
   <script src="/auth-login-v1574.js?v=1.6.10"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=6"></script>
-  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/franchise-payroll-v20261117.js?v=8"></script><script src="/nav-hierarchy-v20261117.js?v=4"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=5"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=1.6.32-advanced-branch-cards"></script>
+  <script src="/historical-sales-v20261110.js?v=1" defer></script><script src="/franchise-payroll-v20261117.js?v=8"></script><script src="/nav-hierarchy-v20261117.js?v=4"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=5"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=1.6.32-advanced-branch-cards"></script><script src="/inventory-usage-summary-v20261120.js?v=1" defer></script>
 </body>
 </html>
