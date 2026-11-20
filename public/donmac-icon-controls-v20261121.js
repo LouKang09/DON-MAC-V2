@@ -10,7 +10,9 @@
   download:'<path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/>',
   checkCircle:'<circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
-  chevronRight:'<path d="m9 5 7 7-7 7"/>'
+  chevronRight:'<path d="m9 5 7 7-7 7"/>',
+  trash2:'<path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
+  plusCircle:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/>'
  };
  function add(name,element,original){
   if(!element||element.dataset.dmUaMounted||element.dataset.dmIcon&&element.dataset.dmIcon!==name)return false;
@@ -46,6 +48,19 @@
   });
   document.querySelectorAll('#dashboardSummary .dm-kpi-arrow').forEach(el=>
    mark('chevronRight',el,el.querySelector(':scope > svg')));
+  // Animated back arrows face left, in the original button, across KPI and Store Performance.
+  document.querySelectorAll('#dmKpiBack,#dmBusinessStoreDetail .dm-bs-back,#dmBusinessStoreDetail [data-bs-history-back]').forEach(btn=>{
+   btn.classList.add('dm-animated-back');
+   mark('chevronRight',btn,btn.querySelector(':scope > svg'));
+  });
+  // Keep Replenish/Transfer symbols in their exact original card/button positions.
+  [['replenish','plusCircle'],['transfer','refresh']].forEach(([type,name])=>{
+   const card=document.querySelector('#view-inventory .inv-operation-'+type);
+   const top=card?.querySelector('.inv-operation-top');
+   mark(name,top,top?.querySelector(':scope > svg'));
+   const launcher=card?.querySelector('.inv-operation-launch');
+   mark(name,launcher,launcher?.querySelector(':scope > span'));
+  });
   document.querySelectorAll('#advancedReferenceContent button[data-aa-section] .rd-nav-glyph').forEach(el=>{
    const section=el.closest('[data-aa-section]')?.dataset.aaSection;
    mark(analyticsIcons[section]||'grid',el,el.querySelector(':scope > svg'));
@@ -68,12 +83,12 @@
    const clear=btn.querySelector(':scope > span.catalog-btn-icon');
    const isSave=!!img||/^save\b/i.test(label);
    const isClear=!!clear||/\bclear\b/i.test(label)||/formclear|categoryclear/i.test(btn.id||'');
-   if(isSave||isClear)mark(isSave?'save':'searchToX',btn,
+   if(isSave||isClear)mark(isSave?'save':'trash2',btn,
     img||clear||btn.querySelector(':scope > svg'));
   });
   document.querySelectorAll('#view-users button.users-action').forEach(btn=>{
    if(btn.classList.contains('users-action-save'))mark('save',btn,btn.querySelector(':scope > svg'));
-   else if(btn.classList.contains('users-action-clear'))mark('searchToX',btn,btn.querySelector(':scope > svg'));
+   else if(btn.classList.contains('users-action-clear'))mark('trash2',btn,btn.querySelector(':scope > svg'));
   });
   if(changed)window.donmacAnimatedIcons?.refresh?.();
  }
@@ -84,7 +99,7 @@
   requestAnimationFrame(()=>{scheduled=false;prepare();});
  }
  const observer=new MutationObserver(changes=>{
-  const match='.dm-kpi-button,[data-aa-section],[data-aa-refresh],.report-download,.catalog-save-icon,.catalog-btn-icon,button[id],button.users-action';
+  const match='.dm-kpi-button,[data-aa-section],[data-aa-refresh],.report-download,.catalog-save-icon,.catalog-btn-icon,button[id],button.users-action,.inv-operation-top,.inv-operation-launch,[data-bs-history-back]';
   if(changes.some(c=>[...c.addedNodes].some(n=>
     n.nodeType===1&&(n.matches?.(match)||n.querySelector?.(match)))))queue();
  });
