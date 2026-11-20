@@ -185,3 +185,22 @@
  display:grid!important;visibility:visible!important;pointer-events:auto!important;
 }
 #view-payroll > #dmPayrollTabs{display:flex;margin-bottom:12px}
+
+/* Mobile paid-plan timekeeping is a separate management view, never a POS banner. */
+#view-attendance.dm-attendance-page{max-width:42rem;margin-inline:auto;padding:1rem 0 2rem}
+#view-attendance .dm-attendance-page-header{padding:.75rem .25rem 1rem}
+#view-attendance .dm-attendance-page-header h2{font-size:clamp(1.25rem,4vw,1.65rem);margin:.35rem 0;color:#10482e}
+#view-attendance .dm-attendance-page-header p:not(.eyebrow){font-size:.82rem;line-height:1.6;color:#546d5d;margin:0}
+#view-attendance .dm-attendance-widget{margin:0;min-width:0}
+#view-attendance .dm-attendance-heading{align-items:flex-start}
+#view-attendance .dm-attendance-time strong{font-size:1.35rem}
+#view-attendance .dm-attendance-actions button{flex:1 1 8rem}
+@media(min-width:700px){
+ #app #view-attendance, #app .dm-attendance-entry{display:none!important}
+}
+@media(max-width:699px){
+ #app .dm-attendance-entry:not(.hidden){display:flex}
+ #view-attendance .dm-attendance-widget{padding:1rem;border-radius:.9rem}
+ #view-attendance .dm-attendance-heading{gap:.7rem}
+ #view-attendance .dm-attendance-time{white-space:normal}
+}
