@@ -122,3 +122,10 @@ button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native,
 button.dm-refresh[data-dm-icon="refresh"]:not(.dm-ua-mounted) > .dm-ua-icon{
   display:none!important;
 }
+
+/* The Lottie parent supplies the white tint. Do not invert its SVG a second time. */
+button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon svg,
+.office-app button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon svg,
+#platformApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon svg{
+  filter:none!important;
+}
