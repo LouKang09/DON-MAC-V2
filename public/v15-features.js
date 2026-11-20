@@ -13,6 +13,7 @@
   const upcoming = 'Future POS improvements and scheduled updates will be announced here when they are ready.';
 
   function toast(message) {
+    if (window.donmacPrompt) { void window.donmacPrompt.notify(String(message)); return; }
     const el = $('toast');
     if (!el) return;
     el.textContent = message;
