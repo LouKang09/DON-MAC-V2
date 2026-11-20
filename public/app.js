@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.31-business-subscription-fix-20261120';
+  const VERSION = '1.6.32-advanced-branch-cards-20261120';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -117,7 +117,7 @@
       // The live shell skips the legacy enhancement chain. The Business
       // Analytics renderer must be initialized here; otherwise the static
       // upgrade lock remains even on paid Business accounts.
-      await loadScript('/advanced-analytics-v20261108.js?v=20261120-live-business');
+      await loadScript('/advanced-analytics-v20261108.js?v=20261120-branch-cards');
       // Keep the same mobile navigation behavior for newly provisioned and legacy franchises.
       await loadScript('/mobile-nav-v1529.js?v=20261116-shell');
       // The original Main POS shell still needs the matching enhancement styles.
