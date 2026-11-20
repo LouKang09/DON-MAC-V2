@@ -32,10 +32,13 @@
  padding-top:12px;font-size:12px;color:#56715b
 }
 #view-logs #systemLogsPagination button{
- border:1px solid #cde0d1;background:#fff;border-radius:9px;
- padding:7px 13px;color:#075d38;font-size:12px;font-weight:750;cursor:pointer
+ border:1px solid #075d38;background:#075d38;border-radius:9px;
+ padding:7px 13px;color:#fff;font-size:12px;font-weight:750;cursor:pointer;
+ transition:background .16s ease,border-color .16s ease
 }
-#view-logs #systemLogsPagination button:disabled{opacity:.45;cursor:default}
+#view-logs #systemLogsPagination button:hover:not(:disabled),
+#view-logs #systemLogsPagination button:focus-visible:not(:disabled){background:#08784a;border-color:#08784a}
+#view-logs #systemLogsPagination button:disabled{opacity:.43;cursor:not-allowed}
 @media(max-width:650px){
  #view-logs .live-system-log-controls{align-items:stretch}
  #view-logs .live-system-log-controls label{min-width:100%;flex:1}
