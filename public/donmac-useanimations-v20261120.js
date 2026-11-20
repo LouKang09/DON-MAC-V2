@@ -13,7 +13,7 @@
   };
   const actions = {
     sidebarToggle:'menu',logoutButton:'logOut',dashboardChartRefresh:'refresh',
-    dashboardRefresh:'refresh',dashboardPrintReport:'printer'
+    dashboardRefresh:'refresh',dashboardPrintReport:'printer',whatsNewButton:'notification'
   };
   const groupMap = {main:'grid',team:'users',transactions:'fileText',management:'settings'};
   const animated = new WeakMap();
@@ -103,6 +103,11 @@
       const button=document.getElementById(id);
       install(button,name,button?.querySelector(':scope > svg'),'dm-ua-icon dm-ua-action');
     }
+    // Dynamic finance, cart and guide controls use the existing icon bundles.
+    document.querySelectorAll('button[data-dm-icon]').forEach(button=>{
+      install(button,button.dataset.dmIcon,
+        button.querySelector(':scope > svg.dm-ua-native'),'dm-ua-icon dm-ua-context');
+    });
   }
   function scheduleScan(){
     if(scanPending)return;
@@ -168,5 +173,12 @@
       });
       observer.observe(nav,{childList:true,subtree:true});
     }
+    // Observe new matching controls, not the internal SVG nodes Lottie draws.
+    const bodyObserver=new MutationObserver(changes=>{
+      if(changes.some(c=>[...c.addedNodes].some(n=>n.nodeType===1&&(
+        n.matches?.('button[data-dm-icon],#whatsNewButton')||
+        n.querySelector?.('button[data-dm-icon],#whatsNewButton')))))scheduleScan();
+    });
+    bodyObserver.observe(document.body,{childList:true,subtree:true});
   }).catch(()=>{/* Native SVGs remain functional if an icon bundle fails. */});
 })();
