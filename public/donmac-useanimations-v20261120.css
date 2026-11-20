@@ -187,3 +187,55 @@ body.dm-cashier-navigation #app #mainNav .dm-expense-menu > .nav {
 @media(prefers-reduced-motion:reduce) {
   #app .dm-cart-delete,.live-app .dm-cart-delete{transition:none!important}
 }
+
+/* Guide information icons: size and center the actual SVG, not just its button. */
+#app:not(.sidebar-collapsed) #mainNav .dm-guide-nav-row > .dm-guide-inline {
+  box-sizing:border-box!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;flex:0 0 2rem!important;
+  width:2rem!important;height:2rem!important;
+  min-width:2rem!important;min-height:2rem!important;
+  max-width:2rem!important;max-height:2rem!important;
+  padding:0!important;right:.25rem!important;top:50%!important;
+  transform:translateY(-50%)!important;line-height:0!important;
+}
+#app:not(.sidebar-collapsed) #mainNav .dm-guide-inline > .dm-ua-native,
+#app:not(.sidebar-collapsed) #mainNav .dm-guide-inline > .dm-ua-context {
+  box-sizing:border-box!important;display:inline-grid!important;place-items:center!important;
+  flex:0 0 1.7rem!important;width:1.7rem!important;height:1.7rem!important;
+  min-width:1.7rem!important;min-height:1.7rem!important;
+  max-width:1.7rem!important;max-height:1.7rem!important;
+  padding:0!important;margin:0!important;line-height:0!important;
+}
+#app:not(.sidebar-collapsed) #mainNav .dm-guide-inline > .dm-ua-context svg {
+  display:block!important;width:100%!important;height:100%!important;
+  margin:auto!important;
+}
+/* The same notification glyph as the upper bell, but swinging/ringing here. */
+@keyframes dm-supply-bell-ring {
+  0%,100%{transform:rotate(0deg)}
+  12%,38%{transform:rotate(-18deg)}
+  25%,51%{transform:rotate(18deg)}
+  63%{transform:rotate(-9deg)}
+  75%{transform:rotate(9deg)}
+  88%{transform:rotate(0deg)}
+}
+#app #supplyNotificationsButton .dm-ua-context {
+  filter:invert(100%);
+}
+#app #supplyNotificationsButton .dm-ua-context svg,
+#app #supplyNotificationsButton > .dm-ua-native {
+  transform-origin:50% 14%;will-change:transform;
+}
+#app #supplyNotificationsButton:hover .dm-ua-context svg,
+#app #supplyNotificationsButton:focus-visible .dm-ua-context svg,
+#app #supplyNotificationsButton.has-unread .dm-ua-context svg,
+#app #supplyNotificationsButton:hover > .dm-ua-native,
+#app #supplyNotificationsButton.has-unread > .dm-ua-native {
+  animation:dm-supply-bell-ring 1.05s ease-in-out 2;
+}
+@media(prefers-reduced-motion:reduce) {
+  #app #supplyNotificationsButton .dm-ua-context svg,
+  #app #supplyNotificationsButton > .dm-ua-native {
+    animation:none!important;will-change:auto!important;
+  }
+}
