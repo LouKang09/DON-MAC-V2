@@ -68,7 +68,9 @@
     });
     item.addEventListener('data_failed',() => {
       el.classList.remove('dm-ua-mounted');
+      animated.delete(el);
       slot.remove();delete el.dataset.dmUaMounted;
+      try{item.destroy()}catch(_){}
     });
   }
   function scan() {
@@ -124,6 +126,10 @@
   const disable=()=> {
     for (const entry of live){
       entry.el.classList.remove('dm-ua-mounted');
+      entry.el.querySelector(':scope > .dm-ua-icon')?.remove();
+      entry.el.querySelector('.dm-nav-group-icon > .dm-ua-group')?.remove();
+      delete entry.el.dataset.dmUaMounted;
+      animated.delete(entry.el);
       try{entry.item.destroy()}catch(_){}
     }
     live.clear();
