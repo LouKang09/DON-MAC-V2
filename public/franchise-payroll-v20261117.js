@@ -17,6 +17,34 @@
  const minuteText=n=>Math.floor(Math.max(0,n)/60)+'h '+pad(Math.max(0,n)%60)+'m';
  let user=null,token=0,entitlement=null,shift=null,shiftReceivedAt=0,employees=[],previewData=null,savedSlip=null;
  let loadInProgress=false,expenseTab='ledger',branches=[];
+ const mobileViewport=window.matchMedia('(max-width:699px)');
+ function syncMobileAttendance(){
+  const eligible=!!(user?.role==='User'&&entitlement?.enabled&&mobileViewport.matches);
+  window.donmacAttendanceEligible=eligible;
+  document.querySelectorAll('#app .dm-attendance-entry').forEach(button=>{
+   button.classList.toggle('hidden',!eligible);
+   button.disabled=!eligible;
+   button.setAttribute('aria-hidden',String(!eligible));
+  });
+  // A cashier may have no other Management permissions; the mobile timekeeper
+  // must still make the corresponding menu and More tab reachable.
+  const management=document.querySelector('#mainNav .nav-management');
+  if(management&&user?.role==='User'){
+   const hasItems=[...management.querySelectorAll('button.nav[data-view]')]
+    .some(button=>!button.classList.contains('hidden'));
+   management.classList.toggle('hidden',!hasItems);
+  }
+  const more=document.getElementById('mobileMoreButton');
+  if(more&&user?.role==='User'){
+   const permitted=[...document.querySelectorAll('#mobileMorePanel .mobile-more-item')]
+    .some(button=>!button.classList.contains('hidden'));
+   const messages=(user.accessPermissions||[]).includes('messages.view');
+   more.classList.toggle('hidden',!permitted&&!messages);
+  }
+  if(!eligible&&document.querySelector('#view-attendance.active'))
+   window.donmacNavigateView?.('pos');
+  window.donmacNavHierarchy?.sync?.();
+ }
  async function api(path,method='GET',data){
   const res=await fetch(path,{method,credentials:'same-origin',cache:'no-store',
    headers:data===undefined?{}:{'Content-Type':'application/json'},
@@ -39,6 +67,7 @@
   if(expenseLedger){expenseLedger.classList.remove('dm-expense-pane-inactive');expenseLedger.inert=false;}
   const ledger=document.querySelector('#view-expenses>.pos-finance-shell');if(ledger)ledger.hidden=false;
   $('dmAttendanceWidget')?.setAttribute('hidden','');
+  syncMobileAttendance();
   $('dmPayrollManager')?.setAttribute('hidden','');
   $('dmPayrollReady')?.setAttribute('hidden','');
   $('dmPayrollLocked')?.setAttribute('hidden','');
@@ -90,8 +119,12 @@
   }
  }
  function markAttendance(){
-  if(!$('dmAttendanceWidget')||!user||user.role!=='User'||!entitlement?.enabled)return;
-  $('dmAttendanceWidget').hidden=false;
+  const widget=$('dmAttendanceWidget');
+  if(!widget)return;
+  if(!user||user.role!=='User'||!entitlement?.enabled||!mobileViewport.matches){
+   widget.hidden=true;return;
+  }
+  widget.hidden=false;
   const state=shift?.state||'not-in';
   const name={working:'Working / Clocked In',lunch:'Lunch Break',out:'Timed Out','not-in':'Not Clocked In'}[state]||state;
   $('dmAttendanceStatus').textContent=name;
@@ -113,6 +146,7 @@
    if(thisToken!==token)return;
    entitlement=info;
    shift=info.shift||null;shiftReceivedAt=Date.now();
+   syncMobileAttendance();
    if(user.role==='Admin'){
     $('dmPayrollManager').hidden=expenseTab!=='payroll';
     $('dmPayrollLocked').hidden=info.enabled;
@@ -127,6 +161,7 @@
     if(user.role==='Admin'){$('dmPayrollManager').hidden=expenseTab!=='payroll';$('dmPayrollLocked').hidden=false;
      $('dmPayrollLockText').textContent=error.message;}
     else if($('dmAttendanceMessage'))$('dmAttendanceMessage').textContent=error.message;
+    entitlement=null;syncMobileAttendance();
    }
   }
  }
@@ -386,6 +421,10 @@
   page.document.close();page.focus();
  }
  function onViewChange(view){
+  if(user?.role==='User'){
+   if(view==='attendance'){markAttendance();refreshStatus();}
+   return;
+  }
   if(user?.role!=='Admin')return;
   if(view==='payroll')switchExpenseTab('payroll',false);
   else if(view==='expenses')switchExpenseTab('ledger',false);
@@ -457,7 +496,12 @@
  });
  $('dmPayrollDtrCancel').onclick=()=>$('dmPayrollDtrDialog').close();
  $('dmPayrollDtrForm').onsubmit=editDtr;
- setInterval(()=>{if(user?.role==='User'&&entitlement?.enabled)markAttendance();},1000);
+ mobileViewport.addEventListener?.('change',()=>{
+  syncMobileAttendance();
+  markAttendance();
+ });
+ setInterval(()=>{if(user?.role==='User'&&entitlement?.enabled&&
+  document.querySelector('#view-attendance.active'))markAttendance();},1000);
  setInterval(()=>{if(user&&document.visibilityState==='visible')refreshStatus();},60000);
  window.donmacPayroll={onLogin,onLogout,onViewChange,refreshStatus,
   open(tab){if(user?.role==='Admin')switchExpenseTab(tab);},
