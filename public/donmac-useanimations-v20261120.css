@@ -2,7 +2,7 @@
    Original SVGs stay in DOM until Lottie successfully renders.
    Never alter pointer targets, nav permissions, layout or checkout behavior. */
 #app .dm-ua-icon {
-  display:inline-grid!important;
+  display:none!important;
   place-items:center!important;
   box-sizing:border-box!important;
   flex:0 0 1.18rem!important;
@@ -18,6 +18,9 @@
   vertical-align:middle!important;
   overflow:visible!important;
   color:inherit;
+}
+#app .dm-ua-mounted .dm-ua-icon{
+  display:inline-grid!important;
 }
 #app .dm-ua-icon svg {
   display:block!important;
