@@ -1,0 +1,248 @@
+/* Don Macchiatos • consistent system notifications & checkout prompts.
+   Reference: prominent header, subdued backdrop, clear message and action. */
+dialog.dm-system-dialog{
+ border:0!important;padding:0!important;
+ width:min(31rem,calc(100vw - 1.5rem))!important;
+ max-width:calc(100vw - 1.5rem)!important;
+ max-height:min(85dvh,49rem)!important;
+ margin:auto!important;background:transparent!important;
+ border-radius:1.15rem!important;overflow:visible!important;
+ box-shadow:0 1.4rem 4.5rem rgba(0,25,13,.27)!important;
+ color:#173c29;font-family:Inter,system-ui,-apple-system,sans-serif;
+}
+dialog.dm-system-dialog::backdrop{
+ background:rgba(7,24,16,.72)!important;
+ backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+}
+.dm-system-card{
+ --dm-prompt-color:#075d38;
+ display:flex;flex-direction:column;
+ background:#fff;border:1px solid rgba(255,255,255,.65);
+ border-radius:1.15rem;overflow:hidden;
+ max-height:min(85dvh,49rem);
+}
+.dm-system-card[data-prompt-variant="danger"]{--dm-prompt-color:#bb2527}
+.dm-system-card[data-prompt-variant="error"]{--dm-prompt-color:#b92d2e}
+.dm-system-card[data-prompt-variant="warning"]{--dm-prompt-color:#a96d11}
+.dm-system-card[data-prompt-variant="success"]{--dm-prompt-color:#075d38}
+.dm-system-card[data-prompt-variant="info"]{--dm-prompt-color:#075d38}
+.dm-system-header{
+ background:var(--dm-prompt-color);
+ color:#fff;
+ display:flex;align-items:center;gap:.85rem;
+ padding:1.2rem 1.25rem;min-height:5.15rem;
+ box-sizing:border-box;position:relative;
+}
+.dm-system-icon{
+ width:2.55rem;height:2.55rem;
+ flex:0 0 2.55rem;display:grid;place-items:center;
+ border:1px solid rgba(255,255,255,.4);
+ background:rgba(255,255,255,.12);border-radius:.75rem;
+}
+.dm-system-icon svg{width:1.5rem;height:1.5rem}
+.dm-system-head-copy{flex:1;min-width:0}
+.dm-system-kicker{
+ display:block;margin-bottom:.25rem;
+ font-size:.63rem;letter-spacing:.13em;
+ font-weight:850;color:rgba(255,255,255,.83);
+}
+.dm-system-head-copy h2{
+ color:#fff!important;margin:0!important;
+ font-size:clamp(1.06rem,1.55vw,1.35rem)!important;
+ line-height:1.28!important;font-weight:880!important;
+ overflow-wrap:anywhere;
+}
+.dm-system-close{
+ flex:0 0 2rem;width:2rem;height:2rem;
+ border:1px solid rgba(255,255,255,.3);
+ border-radius:.6rem;color:#fff;
+ background:rgba(255,255,255,.12);
+ cursor:pointer;font-size:1.35rem;line-height:1;display:grid;place-items:center;
+}
+.dm-system-close:hover{background:rgba(255,255,255,.24)}
+.dm-system-close[hidden]{display:none}
+.dm-system-content{
+ padding:clamp(1.25rem,3vw,1.65rem);
+ overflow-y:auto;min-height:4.2rem;
+}
+.dm-system-body{
+ font-size:clamp(.87rem,1.2vw,1rem);
+ line-height:1.65;white-space:pre-line;
+ color:#3f5246;margin:0;
+ overflow-wrap:anywhere;
+}
+.dm-system-input-wrap{
+ display:flex;flex-direction:column;gap:.5rem;
+ margin-top:1.15rem;font-weight:760;color:#2a5b40;font-size:.8rem;
+}
+.dm-system-input-wrap[hidden]{display:none}
+.dm-system-input-wrap textarea{
+ display:block;width:100%;min-height:5.9rem;
+ border:1px solid #c8dccd;border-radius:.7rem;
+ padding:.7rem;font:inherit;font-weight:450;color:#153d28;
+ resize:vertical;background:#fbfdfb;box-sizing:border-box;
+}
+.dm-system-input-wrap textarea:focus-visible{
+ outline:2px solid #128f60;outline-offset:2px;
+}
+.dm-system-actions{
+ display:flex;justify-content:flex-end;gap:.7rem;
+ padding:1rem clamp(1.1rem,3vw,1.5rem) 1.25rem;
+ background:#f9fbf9;border-top:1px solid #edf1ed;
+}
+.dm-system-btn{
+ font-family:inherit;min-height:2.65rem;
+ min-width:6.75rem;border-radius:.65rem;
+ padding:.55rem 1rem;font-size:.82rem;
+ font-weight:800;letter-spacing:.01em;cursor:pointer;
+ transition:background-color .16s ease,transform .16s ease,box-shadow .16s ease;
+}
+.dm-system-btn:focus-visible{outline:2px solid #176e4f;outline-offset:3px}
+.dm-system-btn:active{transform:scale(.985)}
+.dm-system-btn-primary{
+ background:var(--dm-prompt-color)!important;
+ border:1px solid transparent!important;color:#fff!important;
+ box-shadow:0 .23rem .55rem rgba(5,39,21,.13);
+}
+.dm-system-btn-primary:hover{filter:brightness(1.08);box-shadow:0 .35rem .9rem rgba(5,39,21,.22)}
+.dm-system-btn-secondary{
+ background:white!important;color:#295b40!important;
+ border:1px solid #c9dfd0!important;box-shadow:none!important;
+}
+.dm-system-btn-secondary:hover{background:#eef7f0!important}
+.dm-system-btn[hidden]{display:none!important}
+/* Notifications center should match the shared prompt's finishing details,
+   without converting its interactive history/promotions into an alert. */
+dialog.dm-notifications-dialog::backdrop{
+ background:rgba(7,24,16,.68)!important;
+ backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+}
+dialog.dm-notifications-dialog .dm-notifications-card{
+ box-shadow:0 1.25rem 3.75rem rgba(0,36,19,.22);
+}
+dialog.dm-notifications-dialog .dm-notifications-heading{
+ border-radius:.8rem;
+}
+dialog.dm-notifications-dialog #franchiseNotificationClose{
+ color:#fff!important;background:#075d38!important;
+ border:1px solid #0b7a49!important;
+ border-radius:.65rem!important;
+}
+dialog.dm-notifications-dialog #franchiseNotificationClose:hover{
+ background:#0b8751!important;
+}
+/* Checkout dialogs retain original handlers, field validation and receipt
+   content. Only their appearance is harmonized with the prompt system. */
+dialog:is(#paymentDialog,#receiptDialog,#transactionDialog){
+ width:min(31rem,calc(100vw - 1.4rem))!important;
+ max-width:calc(100vw - 1.4rem)!important;
+ max-height:90dvh!important;border:0!important;
+ padding:0!important;background:transparent!important;
+ border-radius:1.15rem!important;overflow:visible!important;
+}
+dialog:is(#paymentDialog,#receiptDialog,#transactionDialog)::backdrop{
+ background:rgba(7,24,16,.72)!important;
+ backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+}
+dialog:is(#paymentDialog,#receiptDialog,#transactionDialog) > .modal-card{
+ width:100%!important;max-width:100%!important;box-sizing:border-box!important;
+ padding:0 1.45rem 1.45rem!important;gap:.8rem!important;
+ border-radius:1.15rem!important;overflow:auto!important;
+ max-height:90dvh!important;
+ box-shadow:0 1.4rem 4.5rem rgba(0,25,13,.28)!important;
+ border:1px solid rgba(255,255,255,.68)!important;
+}
+dialog:is(#paymentDialog,#receiptDialog,#transactionDialog) .dm-checkout-head{
+ margin:0 -1.45rem .55rem;padding:1.1rem 1.45rem;
+ min-height:4.8rem;box-sizing:border-box;
+ background:#075d38;color:#fff;
+ display:flex;align-items:center;gap:.75rem;
+}
+.dm-checkout-head .dm-checkout-icon{
+ border:1px solid rgba(255,255,255,.32);
+ border-radius:.7rem;background:rgba(255,255,255,.13);
+ display:grid;place-items:center;
+ width:2.35rem;height:2.35rem;flex:0 0 2.35rem;
+ font-size:1.4rem;
+}
+.dm-checkout-head .dm-checkout-copy{
+ flex:1;min-width:0;
+}
+.dm-checkout-head .dm-checkout-eyebrow{
+ color:rgba(255,255,255,.8);font-size:.63rem;
+ font-weight:850;letter-spacing:.12em;
+}
+.dm-checkout-head h2{
+ margin:.18rem 0 0!important;
+ color:#fff!important;font-size:clamp(1.08rem,2vw,1.28rem)!important;
+ font-weight:850!important;line-height:1.25!important;
+}
+dialog:is(#paymentDialog,#receiptDialog,#transactionDialog) .modal-close{
+ top:1.24rem!important;right:1.35rem!important;
+ color:#fff!important;background:rgba(255,255,255,.14)!important;
+ border:1px solid rgba(255,255,255,.3)!important;
+ border-radius:.65rem!important;
+ width:2rem!important;height:2rem!important;z-index:2;
+}
+dialog:is(#paymentDialog,#receiptDialog,#transactionDialog) .modal-close:hover{
+ background:rgba(255,255,255,.25)!important;
+}
+dialog#paymentDialog .amount-due{
+ border:1px solid #cce4d6!important;
+ background:#f0faf4!important;
+ border-radius:.75rem!important;padding:.95rem 1.1rem!important;
+}
+dialog#paymentDialog .amount-due strong{color:#075d38!important}
+dialog#paymentDialog .change-preview{
+ color:#37674b!important;text-align:left!important;
+ border-radius:.65rem;background:#f5f9f6!important;
+ padding:.65rem .85rem!important;
+}
+dialog:is(#paymentDialog,#receiptDialog) .primary.big{
+ background:#075d38!important;color:#fff!important;
+ border-radius:.68rem!important;min-height:2.8rem!important;
+ font-weight:850!important;
+ box-shadow:0 .25rem .6rem rgba(4,74,43,.19);
+}
+dialog:is(#paymentDialog,#receiptDialog) .primary.big:hover:not(:disabled){
+ background:#0b8750!important;
+}
+dialog#receiptDialog .dm-checkout-head{background:#075d38!important}
+dialog#receiptDialog .success-icon{
+ color:#075d38!important;background:#e7f6eb!important;
+ border:1px solid #cbebd3!important;
+ width:3.2rem;height:3.2rem;
+}
+dialog#receiptDialog .receipt-text{
+ line-height:1.55!important;overflow-wrap:anywhere!important;
+ color:#284c38!important;
+}
+dialog#transactionDialog{
+ width:min(54rem,calc(100vw - 1.4rem))!important;
+ max-width:calc(100vw - 1.4rem)!important;
+}
+dialog#transactionDialog .transaction-detail-card{
+ max-height:90dvh!important;
+}
+dialog#transactionDialog .transaction-title{
+ margin-top:.2rem!important;
+}
+@media(max-width:480px){
+ dialog.dm-system-dialog{
+  width:calc(100vw - 1rem)!important;max-width:calc(100vw - 1rem)!important;
+ }
+ .dm-system-header{padding:.9rem .9rem;gap:.55rem;min-height:4.5rem}
+ .dm-system-icon{width:2.2rem;height:2.2rem;flex-basis:2.2rem}
+ .dm-system-content{padding:1.1rem}
+ .dm-system-actions{padding:.85rem .95rem 1.05rem}
+ .dm-system-btn{min-width:5.75rem}
+ dialog:is(#paymentDialog,#receiptDialog,#transactionDialog) > .modal-card{
+  padding:0 1.05rem 1.1rem!important;
+ }
+ dialog:is(#paymentDialog,#receiptDialog,#transactionDialog) .dm-checkout-head{
+  margin:0 -1.05rem .5rem;padding:.95rem 1.05rem;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .dm-system-btn{transition:none!important}
+}
