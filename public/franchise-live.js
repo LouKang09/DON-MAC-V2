@@ -488,7 +488,7 @@
   $('receiptClose').addEventListener('click',()=>$('receiptDialog').close());
   $('receiptContent').addEventListener('click',async e=>{
    const b=e.target.closest('[data-void]');if(!b)return;
-   if(!confirm('Void this real receipt and restore its ingredient stock?'))return;
+   if(!await window.donmacPrompt.confirm('Void this real receipt and restore its ingredient stock?'))return;
    try{await post('transactions/'+b.dataset.void+'/void',{restoreStock:true,branchId:state.branchId});
     $('receiptDialog').close();notice('Receipt voided and isolated stock restored.');
     await refreshAll();
