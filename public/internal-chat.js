@@ -324,7 +324,7 @@
    }catch(err){notice(err.message);}
  }
  async function remove(id){
-   if(!confirm('Delete this message for both people?'))return;
+   if(!await window.donmacPrompt.confirm('Delete this message for both people?'))return;
    const url=state.selected<0?'/api/chat/groups/'+(-state.selected)+'/message/'+id:'/api/chat/message/'+id;
    try{await request(url,{method:'DELETE',body:'{}'});await refreshThread(true);await refreshContacts();}
    catch(err){notice(err.message);}
