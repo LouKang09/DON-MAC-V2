@@ -103,3 +103,15 @@
  display:block;width:64px;height:64px;max-width:100%;object-fit:contain;
  margin:4px auto 9px;border-radius:10px;
 }
+
+/* Products: promote Use Default Images to the same green control family. */
+#app #view-catalog #productDefaultImagesToggle{
+  background:#075d38!important;border:1px solid #075d38!important;
+  color:#fff!important;font-weight:800!important;
+}
+#app #view-catalog #productDefaultImagesToggle:hover,
+#app #view-catalog #productDefaultImagesToggle:focus-visible,
+#app #view-catalog #productDefaultImagesToggle[aria-expanded="true"]{
+  background:#08794c!important;border-color:#08794c!important;color:#fff!important;
+}
+#app #view-catalog #productDefaultImagesToggle:focus-visible{outline:2px solid #6cba93;outline-offset:2px;}
