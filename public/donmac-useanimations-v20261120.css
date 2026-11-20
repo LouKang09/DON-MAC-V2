@@ -467,3 +467,82 @@ html body #app #mainNav .dm-guide-nav-row:has(> .dm-attendance-entry[aria-hidden
 @media(prefers-reduced-motion:reduce){
  #app #view-advanced .rd-nav-glyph > .dm-ua-icon {animation:none!important}
 }
+
+
+/* 2026-11-21: inventory map symbol and exact catalog refresh centering. */
+/* The map replaces the prior transfer arrows; animate the same symbol in place. */
+#app #view-inventory .inv-operation-transfer .inv-transfer-map-icon{
+  display:block!important;
+  flex-shrink:0!important;
+  transform-origin:50% 50%;
+  will-change:transform;
+}
+#app #view-inventory .inv-operation-transfer .inv-operation-top > .inv-transfer-map-icon{
+  width:35px!important;height:35px!important;flex-basis:35px!important;
+  color:#1c6040!important;margin-top:2px!important;
+}
+#app #view-inventory .inv-operation-transfer .inv-operation-launch > .inv-transfer-map-icon{
+  width:1.35rem!important;height:1.35rem!important;
+  flex:0 0 1.35rem!important;
+  color:#fff!important;margin:0!important;
+}
+@keyframes dm-transfer-map-open{
+  0%,100%{transform:translateY(0) rotate(0deg) scale(1)}
+  24%{transform:translateY(-2px) rotate(-6deg) scale(1.07)}
+  52%{transform:translateY(0) rotate(5deg) scale(1.05)}
+  78%{transform:translateY(-1px) rotate(-3deg) scale(1.02)}
+}
+#app #view-inventory .inv-operation-transfer:hover .inv-transfer-map-icon,
+#app #view-inventory .inv-operation-transfer:focus-within .inv-transfer-map-icon,
+#app #view-inventory .inv-operation-transfer.active .inv-transfer-map-icon{
+  animation:dm-transfer-map-open .88s ease-in-out 1;
+}
+@media(max-width:940px){
+  #app #view-inventory .inv-operation-transfer .inv-operation-top > .inv-transfer-map-icon{
+    width:27px!important;height:27px!important;flex-basis:27px!important;
+  }
+}
+/* All six catalog panels (Products, Ingredients, Recipes & Costing, Promos,
+   Packages, Backups) share this Refresh control. Center the actual 23px
+   renderer inside the 41px button, independent of other toolbar CSS. */
+html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"]{
+  position:relative!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:41px!important;height:41px!important;
+  min-width:41px!important;min-height:41px!important;
+  max-width:41px!important;max-height:41px!important;
+  flex:0 0 41px!important;box-sizing:border-box!important;
+  padding:0!important;line-height:0!important;overflow:hidden!important;
+  text-align:center!important;text-indent:0!important;
+}
+html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"] > :is(.dm-ua-icon,.dm-ua-context,.dm-ua-native){
+  display:grid!important;place-items:center!important;
+  position:absolute!important;inset:auto!important;
+  left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  margin:0!important;padding:0!important;
+  width:23px!important;height:23px!important;
+  min-width:23px!important;min-height:23px!important;
+  max-width:23px!important;max-height:23px!important;
+  flex:0 0 23px!important;line-height:0!important;
+  vertical-align:middle!important;
+}
+html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"] > :is(.dm-ua-icon,.dm-ua-context) svg{
+  display:block!important;
+  width:100%!important;height:100%!important;
+  position:static!important;transform:none!important;
+  margin:0!important;padding:0!important;
+}
+html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"]:not(.dm-ua-mounted) > .dm-ua-icon{
+  display:none!important;
+}
+@media(max-width:560px){
+  html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"]{
+    width:38px!important;height:38px!important;
+    min-width:38px!important;min-height:38px!important;
+    max-width:38px!important;max-height:38px!important;flex-basis:38px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+ #app #view-inventory .inv-operation-transfer .inv-transfer-map-icon{animation:none!important;will-change:auto!important}
+}
