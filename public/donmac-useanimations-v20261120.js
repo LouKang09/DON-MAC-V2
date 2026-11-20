@@ -48,6 +48,9 @@
     const slot = document.createElement('span');
     slot.className=slotClass;
     slot.setAttribute('aria-hidden','true');
+    // Keep the pending renderer out of layout until it replaces the SVG.
+    slot.style.setProperty('position','absolute','important');
+    slot.style.setProperty('visibility','hidden','important');
     const clone = JSON.parse(JSON.stringify(catalog[name]));
     original.insertAdjacentElement('afterend',slot);
     let item;
@@ -59,17 +62,26 @@
     } catch(e) {
       slot.remove();delete el.dataset.dmUaMounted;return;
     }
-    animated.set(el,item);live.add({el,item});
+    const record={el,item,original,slot};
+    animated.set(el,item);live.add(record);
     item.addEventListener('DOMLoaded',() => {
-      if (!el.isConnected) return;
+      if (!el.isConnected || !el.contains(original) ||
+          el.dataset.dmUaMounted!=='pending' || reduce?.matches) return;
+      // One icon in the original position: physically replace the old SVG.
+      original.replaceWith(slot);
+      slot.style.removeProperty('position');
+      slot.style.removeProperty('visibility');
       el.classList.add('dm-ua-mounted');
       el.dataset.dmUaMounted='ready';
       item.goToAndStop(0,true);
     });
     item.addEventListener('data_failed',() => {
+      if (!original.isConnected && slot.isConnected) slot.replaceWith(original);
+      else slot.remove();
       el.classList.remove('dm-ua-mounted');
       animated.delete(el);
-      slot.remove();delete el.dataset.dmUaMounted;
+      live.delete(record);
+      delete el.dataset.dmUaMounted;
       try{item.destroy()}catch(_){}
     });
   }
@@ -97,11 +109,14 @@
     scanPending=true;
     window.requestAnimationFrame(()=>{
       scanPending=false;
-      scan();
-      for(const entry of live)if(!entry.el.isConnected){
+      for(const entry of live)if(!entry.el.isConnected || !entry.slot.isConnected){
+        entry.el.classList.remove('dm-ua-mounted');
+        delete entry.el.dataset.dmUaMounted;
+        animated.delete(entry.el);
         try{entry.item.destroy()}catch(_){}
         live.delete(entry);
       }
+      scan();
     });
   }
   document.addEventListener('pointerover',e=>{
@@ -126,8 +141,10 @@
   const disable=()=> {
     for (const entry of live){
       entry.el.classList.remove('dm-ua-mounted');
-      entry.el.querySelector(':scope > .dm-ua-icon')?.remove();
-      entry.el.querySelector('.dm-nav-group-icon > .dm-ua-group')?.remove();
+      // Reduced-motion restores the existing native SVG, never two icons.
+      if(entry.slot.isConnected && !entry.original.isConnected)
+        entry.slot.replaceWith(entry.original);
+      else entry.slot.remove();
       delete entry.el.dataset.dmUaMounted;
       animated.delete(entry.el);
       try{entry.item.destroy()}catch(_){}
@@ -139,7 +156,6 @@
     else scheduleScan();
   });
   window.donmacAnimatedIcons={refresh:scheduleScan};
-  if(reduce?.matches) return;
   loadCatalog().then(()=>{
     scan();
     const nav=document.getElementById('mainNav');
