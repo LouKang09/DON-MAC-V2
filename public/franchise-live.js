@@ -523,6 +523,11 @@
   $('receiptClose').addEventListener('click',()=>$('receiptDialog').close());
   $('receiptContent').addEventListener('click',async e=>{
    const b=e.target.closest('[data-void]');if(!b)return;
+   if(isOwner()){
+    await window.donmacPrompt.notify('Voiding transactions is allowed only for cashiers.',{
+     title:'Cashier-Only Action',variant:'warning'});
+    return;
+   }
    const reason=await window.donmacPrompt.input('Why are you voiding receipt '+b.dataset.void+'?',{
     title:'Void Transaction',inputLabel:'Reason (required)',minLength:5,maxLength:500,
     placeholder:'Enter a reason for voiding this sale',confirmText:'Review Void',cancelText:'No',variant:'danger'});
