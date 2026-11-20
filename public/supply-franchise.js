@@ -285,6 +285,7 @@ async function loadNotices(){
   const unread=Number(d.unread||0);
   $('supplyUnreadCount').textContent=unread;
   $('supplyNavUnread')?.classList.toggle('hidden',!unread);
+  $('supplyNotificationsButton')?.classList.toggle('has-unread',unread>0);
   renderNotices();
   return true;
  }catch(err){console.warn('Unable to load supply notifications:',err.message);return false;}
@@ -307,6 +308,7 @@ $('supplyNotificationsButton').onclick=async()=>{
   notices.forEach(n=>{n.read=true;});
   $('supplyUnreadCount').textContent='0';
   $('supplyNavUnread')?.classList.add('hidden');
+  $('supplyNotificationsButton')?.classList.remove('has-unread');
   renderNotices();
   await loadNotices();
  }catch(err){
