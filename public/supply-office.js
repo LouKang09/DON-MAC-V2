@@ -37,7 +37,8 @@ function photoHtml(data){
 
 const PAGE_SIZE=10;
 let all=[],current=null,page=1,activePage='requests',timer=null,catalogPage=1,catalogProducts=[],chatPhoto=null,franchiseOwners=[],franchiseProfile=null,franchisePage=1,franchiseOrderPage=1,franchiseRoyaltyPage=1,franchiseTab='orders';
-function notice(msg,error=false){const n=$('officeNotice');n.classList.remove('hidden');n.textContent=msg;n.style.background=error?'#ffebec':'#e7f4e9';n.style.color=error?'#a3262b':'#145537';}
+function notice(msg,error=false){
+ if(msg&&window.donmacPrompt&&!/^(loading|checking|refreshing|connecting)\b/i.test(msg))void window.donmacPrompt.notify(msg,{variant:error?'error':undefined});const n=$('officeNotice');n.classList.remove('hidden');n.textContent=msg;n.style.background=error?'#ffebec':'#e7f4e9';n.style.color=error?'#a3262b':'#145537';}
 async function api(path,options={}){
  const result=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await result.json().catch(()=>({}));
