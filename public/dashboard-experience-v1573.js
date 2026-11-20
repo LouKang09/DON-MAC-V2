@@ -68,7 +68,12 @@
    button.title=existing;
    button.setAttribute('aria-label',existing);
    button.classList.add('unified-refresh-circle');
-   button.innerHTML=refreshSvg;
+   // Keep the SVG available for the shared useAnimations renderer.
+   if(!button.querySelector(':scope > .dm-ua-icon')){
+     button.innerHTML=refreshSvg.replace('<svg ','<svg class="dm-ua-native" ');
+   }
+   button.dataset.dmIcon='refresh';
+   window.donmacIconControls?.refresh?.();
  }
  function updateRefresh(){
    document.querySelectorAll('button[id]').forEach(btn=>{
