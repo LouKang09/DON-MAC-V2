@@ -275,3 +275,31 @@
     width: 100%;
   }
 }
+
+/* Compact Package Master fields: preserve the full-width editor and composition below. */
+#app #view-catalog #admin-packages #packageForm .package-master-fields{
+  box-sizing:border-box!important;
+  grid-template-columns:minmax(0,19rem) minmax(0,9.5rem) auto!important;
+  gap:clamp(.6rem,1.2vw,.95rem)!important;
+  max-width:min(100%,40rem)!important;
+  width:100%!important;
+  align-items:end!important;
+}
+#app #view-catalog #admin-packages #packageForm .package-master-fields #packageName,
+#app #view-catalog #admin-packages #packageForm .package-master-fields #packagePrice{
+  box-sizing:border-box!important;width:100%!important;max-width:100%!important;
+}
+@media(max-width:720px){
+  #app #view-catalog #admin-packages #packageForm .package-master-fields{
+    grid-template-columns:minmax(0,1fr) minmax(0,9rem)!important;
+    max-width:100%!important;
+  }
+  #app #view-catalog #admin-packages #packageForm .package-master-fields .package-active-field{
+    grid-column:1 / -1;
+  }
+}
+@media(max-width:420px){
+  #app #view-catalog #admin-packages #packageForm .package-master-fields{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
