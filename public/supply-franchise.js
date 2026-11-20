@@ -38,6 +38,10 @@ function photoHtml(data){
 
 let noticeTimeout=null;
 const alert=(msg,bad=false)=>{
+ if(window.donmacPrompt){
+  const x=$('supplyAlert');if(x)x.classList.add('hidden');
+  return window.donmacPrompt.notify(msg,{variant:bad?'error':undefined});
+ }
  const x=$('supplyAlert');clearTimeout(noticeTimeout);
  x.classList.remove('hidden');x.textContent=msg;
  x.style.color=bad?'#9d3138':'#165939';
