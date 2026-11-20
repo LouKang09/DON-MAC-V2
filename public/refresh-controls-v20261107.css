@@ -89,3 +89,36 @@ button.dm-refresh:disabled {opacity:.48!important;cursor:wait!important;transfor
   width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;max-width:38px!important;flex-basis:38px!important;
  }
 }
+
+/* Animate the existing 41px green Refresh button without a second mask glyph. */
+button.dm-refresh[data-dm-icon="refresh"]::before,
+.office-app button.dm-refresh[data-dm-icon="refresh"]::before,
+#platformApp button.dm-refresh[data-dm-icon="refresh"]::before{
+  display:none!important;content:none!important;
+}
+button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native,
+button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon,
+button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon svg,
+.office-app button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native,
+.office-app button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon,
+.office-app button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon svg,
+#platformApp button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native,
+#platformApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon,
+#platformApp button.dm-refresh[data-dm-icon="refresh"] > .dm-ua-icon svg{
+  display:inline-grid!important;
+  width:23px!important;height:23px!important;
+  min-width:23px!important;min-height:23px!important;
+  max-width:23px!important;max-height:23px!important;
+  flex:0 0 23px!important;box-sizing:border-box!important;
+  margin:0!important;padding:0!important;
+  filter:invert(100%);
+  line-height:0!important;
+}
+button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native,
+.office-app button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native,
+#platformApp button.dm-refresh[data-dm-icon="refresh"] > svg.dm-ua-native{
+  filter:none;color:white;
+}
+button.dm-refresh[data-dm-icon="refresh"]:not(.dm-ua-mounted) > .dm-ua-icon{
+  display:none!important;
+}
