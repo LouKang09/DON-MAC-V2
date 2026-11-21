@@ -1864,11 +1864,39 @@
      alert:'<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.4h.01"/>'
    };
    const metricKeys=['revenue','orders','today','month','expenses','deposited','discount','alerts'];
-   $('dashboardSummary').innerHTML=statCards.map((c,i)=>'<button type="button" class="summary-card dm-kpi-button'+(c.gross?' dash-financial-card':'')+'" data-dm-kpi="'+metricKeys[i]+'" aria-label="View '+esc(c.title)+' breakdown">'+
+   const dashboardCardsMarkup=statCards.map((c,i)=>'<button type="button" class="summary-card dm-kpi-button'+(c.gross?' dash-financial-card':'')+'" data-dm-kpi="'+metricKeys[i]+'" aria-label="View '+esc(c.title)+' breakdown">'+
       '<div class="dash-card-main"><div class="dash-summary-label"><span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+statIcons[c.glyph]+'</svg></span><span>'+esc(c.title)+'</span></div>'+
       '<strong>'+c.value+'</strong><small>'+esc(c.caption)+'</small></div>'+
       (c.gross?'<div class="dash-gross-net" aria-label="Gross and net sales"><span>Gross:<b>'+c.gross+'</b></span><span>Net:<b>'+c.net+'</b></span></div>':'')+
       '<span class="dm-kpi-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span></button>').join('');
+   // Reuse KPI elements after refresh/navigation. Replacing them on every
+   // dashboard visit destroyed and remounted the animated SVG, causing blink.
+   const summaryNode=$('dashboardSummary');
+   const existing=[...summaryNode.querySelectorAll(':scope > button[data-dm-kpi]')];
+   const reusable=existing.length===metricKeys.length&&existing.every(button=>{
+     const card=statCards[metricKeys.indexOf(button.dataset.dmKpi)];
+     return !!card&&button.classList.contains('dash-financial-card')===!!card.gross&&
+       !!button.querySelector('.dash-card-main > strong');
+   });
+   if(reusable){
+     for(const button of existing){
+       const card=statCards[metricKeys.indexOf(button.dataset.dmKpi)];
+       button.setAttribute('aria-label','View '+card.title+' breakdown');
+       const heading=button.querySelector('.dash-summary-label > span:last-child');
+       const amount=button.querySelector('.dash-card-main > strong');
+       const caption=button.querySelector('.dash-card-main > small');
+       if(heading)heading.textContent=card.title;
+       if(amount)amount.textContent=card.value;
+       if(caption)caption.textContent=card.caption;
+       const totals=button.querySelectorAll('.dash-gross-net b');
+       if(card.gross&&totals.length===2){
+         totals[0].textContent=card.gross;
+         totals[1].textContent=card.net;
+       }
+     }
+   }else{
+     summaryNode.innerHTML=dashboardCardsMarkup;
+   }
    $('dashboardLowStock').innerHTML=d.lowStock.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(String(x.uom).toUpperCase())}</td><td class="num stock-low">${num(x.stock)}</td><td class="num">${num(x.lowStockThreshold)}</td></tr>`).join('')||'<tr><td colspan="4" class="stock-ok">No low-stock ingredients.</td></tr>';
    const max=Math.max(1,...d.categorySales.map(x=>x.amount));
    $('categorySales').innerHTML=d.categorySales.map(x=>`<div class="bar-row"><div><b>${esc(x.name)}</b><span>${peso(x.amount)}</span></div><div class="bar-track"><i style="width:${Math.max(2,x.amount/max*100)}%"></i></div></div>`).join('')||'<div class="empty-state">No sales this month.</div>';
