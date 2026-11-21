@@ -322,12 +322,22 @@ async function run(){
  assert.equal(afterCount.total,3);
  const move=(await db.query("SELECT COUNT(*)::integer AS count FROM branch_inventory_movements WHERE workspace_id=10 AND branch_id=101 AND movement_type='LIVE_SALE'")).rows[0];
  assert.equal(move.count,3);
- const voidResult=await liveSales.voidSale(db,ctxA,second.reference,{restoreStock:true});
+ const authorizedVoidCashier={...ctxCashierA,permissions:['transactions.view']};
+ await assert.rejects(liveSales.voidSale(db,ctxA,second.reference,{
+  restoreStock:true,reason:'Customer requested correction'}),{status:403},
+  'Owner must not bypass cashier-only void permissions');
+ const voidResult=await liveSales.voidSale(db,authorizedVoidCashier,second.reference,{
+  restoreStock:true,reason:'Customer requested correction'});
  assert.equal(voidResult.stockRestored,true);
  assert.equal(await stock(10,101,ingredientA),.15);
  assert.equal(await stock(20,201,ingredientB),.25);
  assert.equal((await liveSales.report(db,ctxA,{branchId:101,range:'week'})).transactionCount,2);
- await assert.rejects(liveSales.voidSale(db,ctxB,first.reference,{restoreStock:true}),{status:404});
+ const afterVoidFinance=await finance.transactions(db,ctxA,financeDates);
+ assert.equal(afterVoidFinance.total,3,'Voided receipt remains in the audit ledger');
+ assert.equal(afterVoidFinance.products[0].quantity,2,
+  'Products Sold excludes the voided receipt from all matching quantities');
+ await assert.rejects(liveSales.voidSale(db,ctxB,first.reference,{
+  restoreStock:true,reason:'Cross-account access blocked'}),{status:403});
  const employee=await liveScope.createCashier(db,ctxA,{username:'newbranchcashier',
   password:'NewPassword123',fullName:'Another Cashier',branchId:101});
  assert.equal(employee.branchId,101);
