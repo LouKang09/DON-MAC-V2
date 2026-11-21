@@ -2183,8 +2183,18 @@
 
   function syncPromoCopyControls(){
    const branch=Number($('promoBranchFilter')?.value||state.promoBranchId||0),
-    id=Number($('promoEditId').value||0);
-   const available=(state.branches||[]).filter(b=>b.active&&Number(b.id)!==branch);
+    id=Number($('promoEditId').value||0),
+    eligible=state.user?.role==='Admin'&&!!window.donmacFranchiseUnified;
+   // All Branches applies to new promos only. Editing and copying always
+   // operate on an existing branch-specific record.
+   $('promoPublishWrap').classList.toggle('hidden',!eligible||!!id);
+   $('promoPublishTarget').disabled=!eligible||!!id;
+   const selected=$('promoPublishTarget').value;
+   const active=(state.branches||[]).filter(b=>b.active);
+   $('promoPublishHint').textContent=selected==='all'?
+    'Creates a separate editable promo in all '+active.length+' active branches. Existing promos are never overwritten.':
+    'Creates this promo only in the selected branch. Use Copy to Branch afterward if needed.';
+   const available=active.filter(b=>Number(b.id)!==branch);
    const target=$('promoCopyTarget'),before=target.value;
    target.innerHTML=available.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('');
    if(available.some(b=>String(b.id)===before))target.value=before;
@@ -2210,7 +2220,11 @@
   function clearPromoForm(){
    $('promoEditId').value='';$('promoName').value='';$('promoInclusion').value='';
    $('promoPrice').value='';$('promoFood').value='';$('promoCoffee').value='';
-   $('promoActive').checked=true;syncPromoCopyControls();
+   $('promoActive').checked=true;
+   if($('promoPublishTarget').querySelector('option[value="'+
+      String(state.promoBranchId||'')+'"]'))
+    $('promoPublishTarget').value=String(state.promoBranchId);
+   syncPromoCopyControls();
   }
   function editPromo(id){
    const p=state.adminPromos.find(x=>x.id===id);if(!p)return;
@@ -2232,12 +2246,15 @@
   $('promoBranchFilter').addEventListener('change',async e=>{
    if(!window.donmacFranchiseUnified)return;
    state.promoBranchId=Number(e.target.value);clearPromoForm();
+   $('promoPublishTarget').value=String(state.promoBranchId);
+   syncPromoCopyControls();
    try{
     const result=await api('/api/admin/promos');
     state.adminPromos=result.promos||[];
     catalogPages.promos=1;renderAdminPromos();
    }catch(err){toast(err.message);}
   });
+  $('promoPublishTarget').addEventListener('change',syncPromoCopyControls);
   $('promoCopyButton').addEventListener('click',async()=>{
    const id=Number($('promoEditId').value||0),
     sourceBranchId=Number($('promoBranchFilter').value),
@@ -2490,7 +2507,12 @@
      promoFilter.innerHTML=branchOptions(active,state.promoBranchId);
      if(branch)promoFilter.value=String(branch.id);
      promoFilter.disabled=!eligible;
-     syncPromoCopyControls?.();
+     const publish=$('promoPublishTarget'),previous=publish.value;
+     publish.innerHTML='<option value="all">All Branches ('+active.length+')</option>'+
+      branchOptions(active,state.promoBranchId);
+     publish.value=previous==='all'||active.some(b=>String(b.id)===previous)?
+       previous:String(state.promoBranchId||'');
+     syncPromoCopyControls();
    }
    const previous=$('newUserBranch').value;
    $('newUserBranch').innerHTML=branchOptions(active,previous);
