@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.38-inventory-catalog-20261121';
+  const VERSION = '1.6.39-dashboard-finance-production-20261121';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
