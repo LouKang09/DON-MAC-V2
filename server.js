@@ -2160,6 +2160,52 @@ async function handleApi(req,res,url){
         return json(res,403,{error:'Messages access has not been granted by your Owner.'},safeHeaders({'Cache-Control':'no-store'}));
       return internalChat.handle({req,res,url,user,db,readJson,json,safeHeaders});
     }
+    if(method==='GET'&&p==='/api/live/report/print'){
+      // Cashier dashboard shortcut: use the current NEW workspace's live sales.
+      // Never consult shared legacy sales or honor a client-selected branch/date.
+      franchiseLiveScope.requirePaid(franchiseLive);
+      const grants=franchiseLive.admin?[...cashierAccess.KEYS]:
+        await cashierAccess.forUser(db,{id:user.id,role:'User'});
+      if(!franchiseLive.admin&&!grants.includes('dashboard.view')&&!grants.includes('reports.view'))
+        throw Object.assign(new Error('Dashboard or sales report access is required to print.'),{status:403});
+      const branch=await franchiseLiveScope.branch(db,franchiseLive,franchiseLive.branchId);
+      const report=await franchiseLiveSales.report(db,franchiseLive,{branchId:branch.id,range:'day'});
+      const summary=(await db.query(
+        "SELECT COALESCE(SUM(gross),0) AS gross,COALESCE(SUM(actual),0) AS actual,"+
+        "COUNT(*) AS transaction_count FROM branch_live_sales "+
+        "WHERE workspace_id=$1 AND branch_id=$2 AND status='Sold' AND sold_at>=$3",
+        [franchiseLive.workspaceId,branch.id,report.since])).rows[0]||{};
+      const gross=Number(summary.gross||0),actual=Number(summary.actual||0);
+      const productGross=report.products.reduce((n,x)=>n+Number(x.gross||0),0);
+      const products=report.products.map(x=>{
+        const productActual=productGross>0?Number(x.gross)*actual/productGross:0;
+        return{name:x.name,qty:x.qty,gross:x.gross,adjusted:Number(x.gross)-productActual,
+          actual:productActual,costing:x.costing,net:productActual-Number(x.costing||0)};
+      });
+      // Detailed receipts are visible only with the owner's separate
+      // Transactions grant; dashboard-only cashiers get aggregate totals.
+      const showReceipts=franchiseLive.admin||grants.includes('transactions.view');
+      const receipts=showReceipts?(await db.query(
+        'SELECT reference,cashier_name_snapshot,status,sold_at,actual,remark '+
+        'FROM branch_live_sales WHERE workspace_id=$1 AND branch_id=$2 AND sold_at>=$3 '+
+        'ORDER BY sold_at DESC LIMIT 250',
+        [franchiseLive.workspaceId,branch.id,report.since])).rows.map(x=>({
+        reference:x.reference,cashier:x.cashier_name_snapshot,status:x.status,
+        soldAt:x.sold_at,actual:Number(x.actual),remark:x.remark||''
+      })):[];
+      const now=new Date();
+      const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',
+        year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+      const filename='Sales_Daily_'+today+'.pdf';
+      const payload={period:'daily',target:today,cashier:franchiseLive.admin?'ALL':user.username,
+        transactionCount:Number(summary.transaction_count||0),deletedCount:0,
+        gross,adjustment:gross-actual,actual,products,promos:report.promos,transactions:receipts};
+      const lines=salesReportLines(payload,'Don Macchiatos - '+branch.name+' - Daily Sales Report');
+      if(!showReceipts)lines.push({text:'Receipt details require Transactions access.'});
+      const pdf=makePdf(lines,{title:'Daily Branch Sales Report'});
+      return binary(res,200,pdf,'application/pdf',
+        {'Content-Disposition':'inline; filename="'+filename+'"','Cache-Control':'no-store'});
+    }
     if(p.startsWith('/api/live/')){
       const response=await franchiseLiveRouter.run(db,franchiseLive,user,method,url,
         ()=>readJson(req,262144));
