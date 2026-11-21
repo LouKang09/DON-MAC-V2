@@ -1,53 +1,48 @@
-/* Don Mac login logo animation — source vector stays visible until SVG is ready.
- * One raise/pour/return per hover, touch or keyboard activation. */
+/* Don Macchiatos login barista: reliable hover/tap animation.
+ * The visible original IMG stays in the DOM; no SVG DOMParser or replacement.
+ * A fresh external animated-SVG resource replays its own timeline on each gesture.
+ */
 (()=>{
  'use strict';
- const src='/donmac-logo-pour.svg?v=20261121-pour-v1';
- function attach(img,svg){
-  svg.classList.add('auth-brand-logo','dm-pour-logo');
-  svg.setAttribute('tabindex','0');
-  svg.setAttribute('aria-label','Don Macchiatos barista — hover or tap to pour coffee');
-  let playing=false;
-  const play=()=>{
-   if(playing || document.documentElement.classList.contains('dm-icon-motion-off') ||
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
-   playing=true;
-   svg.classList.remove('dm-logo-pouring');
-   void svg.getBoundingClientRect().width;
-   svg.classList.add('dm-logo-pouring');
-  };
-  svg.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')play()});
-  svg.addEventListener('click',play);
-  svg.addEventListener('keydown',e=>{
-   if(e.key==='Enter'||e.key===' '){e.preventDefault();play()}
-  });
-  svg.addEventListener('animationend',e=>{
-   if(e.target.id==='dmPourArm'){
+ const animated='/donmac-logo-pour.svg?v=20261121-pour-v2';
+ let cycle=0;
+ function init(){
+  document.querySelectorAll('#authScreen .auth-brand-panel img.auth-brand-logo').forEach(img=>{
+   if(img.dataset.dmPourBound==='1')return;
+   img.dataset.dmPourBound='1';
+   img.tabIndex=0;
+   img.setAttribute('role','button');
+   img.setAttribute('aria-label','Don Macchiatos logo — hover, tap or press Enter to see coffee pour');
+   img.title='Hover or tap to pour coffee';
+   const original=img.getAttribute('src')||'/donmac-logo-hires.svg';
+   let playing=false,finish=0;
+   function restore(){
+    clearTimeout(finish);
     playing=false;
-    svg.classList.remove('dm-logo-pouring');
+    img.src=original;
+    img.classList.remove('dm-pour-active');
    }
+   function play(){
+    if(playing||document.documentElement.classList.contains('dm-icon-motion-off'))return;
+    playing=true;
+    img.classList.add('dm-pour-active');
+    const next=animated+'&cycle='+(++cycle);
+    // A distinct resource URL makes the SVG's own CSS timeline start at frame 0.
+    img.src=next;
+    finish=setTimeout(restore,2050);
+   }
+   img.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')play()});
+   img.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')play()});
+   img.addEventListener('focus',play);
+   img.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();play()}
+   });
+   img.addEventListener('error',()=>{
+    if(playing)restore();
+   });
   });
-  img.replaceWith(svg);
  }
- const init=async()=>{
-  const logos=[...document.querySelectorAll('#authScreen .auth-brand-panel > img.auth-brand-logo')];
-  if(!logos.length)return;
-  try{
-   const response=await fetch(src,{credentials:'same-origin',cache:'no-store'});
-   if(!response.ok)throw new Error('Animated logo unavailable: '+response.status);
-   const parsed=new DOMParser().parseFromString(await response.text(),'image/svg+xml');
-   const base=parsed.documentElement;
-   if(base.localName!=='svg'||parsed.querySelector('parsererror'))throw new Error('Invalid logo SVG');
-   for(const img of logos){
-    if(!img.isConnected)continue;
-    const svg=document.importNode(base,true);
-    attach(img,svg);
-   }
-  }catch(error){
-   // Original approved logo must always remain visible.
-   console.warn('[DonMac Logo] Keeping original static logo:',error.message);
-  }
- };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
  else init();
+ window.donmacLogoPour={refresh:init};
 })();
