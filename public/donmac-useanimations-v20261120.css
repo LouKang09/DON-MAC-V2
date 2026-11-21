@@ -825,3 +825,35 @@ html body #authScreen .auth-plan-select-wrap .dm-plan-animated-mark.dm-ua-mounte
 html body #authScreen button.dm-auth-action > svg.dm-ua-native{
   color:#fff!important;stroke:#fff!important;
 }
+
+
+/* Login brand animation: identical footprint to the approved static SVG.
+   Only the pot/hand vector is animated; the entire logo remains sharp. */
+html body #authScreen .auth-brand-panel{
+ pointer-events:auto!important;
+}
+html body #authScreen .auth-brand-panel > svg.dm-pour-logo{
+ display:block;
+ width:auto;
+ max-width:100%;
+ max-height:calc(100dvh - 85px);
+ height:auto;
+ aspect-ratio:1020 / 1145;
+ margin:auto;
+ object-fit:contain;
+ overflow:visible;
+ cursor:pointer;
+ border:0!important;
+ box-shadow:none!important;
+ background:transparent!important;
+ filter:contrast(1.5)!important;
+ pointer-events:auto!important;
+}
+html body #authScreen .auth-brand-panel > svg.dm-pour-logo:focus-visible{
+ outline:2px solid #075d38;outline-offset:5px;border-radius:8px;
+}
+@media(max-width:640px){
+ html body #authScreen .auth-brand-panel > svg.dm-pour-logo{
+  width:auto;max-width:260px;height:175px;max-height:100%;
+ }
+}
