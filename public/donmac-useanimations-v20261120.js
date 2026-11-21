@@ -17,6 +17,7 @@
   };
   const groupMap = {main:'grid',team:'users',transactions:'fileText',management:'settings'};
   const animated = new WeakMap();
+  const records = new WeakMap();
   const live = new Set();
   let catalog = {}, observer, scanPending = false;
   const diagnostics = {loadedBundles:0, mounted:0, failed:0, lastError:null};
@@ -33,18 +34,22 @@
     catalog = Object.assign({}, ...response.filter(x=>x.status==='fulfilled').map(x=>x.value));
     if (!Object.keys(catalog).length) throw new Error('No icon animation bundles loaded');
   };
+  // Exactly one Lottie playback per interaction. Hover, focus, and click
+  // often arrive together, particularly on touch and hybrid laptops.
   const play = el => {
-    if (reduce?.matches) return;
-    const item = animated.get(el);
-    if (!item || !el.isConnected || el.disabled || el.hidden ||
+    if (reduce?.matches || document.hidden) return;
+    const record = records.get(el);
+    if (!record || !record.ready || record.playing ||
+        !el.isConnected || el.disabled || el.hidden ||
         el.closest('.hidden,[hidden],[inert]')) return;
-    try { item.goToAndPlay(0,true); } catch(_){}
+    record.playing=true;
+    try { record.item.goToAndPlay(0,true); }
+    catch(error){record.playing=false;diagnostics.lastError=String(error?.message||error)}
   };
   const reset = el => {
-    const item = animated.get(el);
-    if (!item) return;
-    // Keep the icon's idle animation active after pointer leaves.
-    try { item.play(); } catch(_){}
+    // Do not interrupt an animation halfway through just because the pointer
+    // leaves. The 'complete' listener returns it to its idle first frame.
+    // It must NOT call play() here.
   };
   function install(el, name, original, slotClass='dm-ua-icon') {
     if (!el || !original || !catalog[name] || el.dataset.dmUaMounted) return;
@@ -60,14 +65,18 @@
     let item;
     try {
       item=window.lottie.loadAnimation({
-        container:slot,renderer:'svg',loop:true,autoplay:true,animationData:clone,
+        container:slot,renderer:'svg',loop:false,autoplay:false,animationData:clone,
         rendererSettings:{progressiveLoad:false,preserveAspectRatio:'xMidYMid meet'}
       });
     } catch(e) {
       slot.remove();delete el.dataset.dmUaMounted;return;
     }
-    const record={el,item,original,slot};
-    animated.set(el,item);live.add(record);
+    const record={el,item,original,slot,ready:false,playing:false};
+    animated.set(el,item);records.set(el,record);live.add(record);
+    item.addEventListener('complete',()=>{
+      record.playing=false;
+      try{item.goToAndStop(0,true)}catch(_){}
+    });
     let committed=false;
     const commit=()=>{
       if(committed||!el.isConnected||!original.isConnected||!slot.isConnected||
@@ -82,8 +91,10 @@
       slot.style.removeProperty('visibility');
       el.classList.add('dm-ua-mounted');
       el.dataset.dmUaMounted='ready';
+      record.ready=true;
       diagnostics.mounted++;
-      try{item.goToAndPlay(0,true)}catch(error){
+      // Lottie is inert until hover, click, tap or keyboard activation.
+      try{item.goToAndStop(0,true)}catch(error){
         diagnostics.lastError=String(error?.message||error);
       }
     };
@@ -95,6 +106,7 @@
       else slot.remove();
       el.classList.remove('dm-ua-mounted');
       animated.delete(el);
+      records.delete(el);
       live.delete(record);
       delete el.dataset.dmUaMounted;
       try{item.destroy()}catch(_){}
@@ -147,6 +159,7 @@
         entry.el.classList.remove('dm-ua-mounted');
         delete entry.el.dataset.dmUaMounted;
         animated.delete(entry.el);
+        records.delete(entry.el);
         try{entry.item.destroy()}catch(_){}
         live.delete(entry);
       }
@@ -154,14 +167,20 @@
     });
   }
   const targets=e=>{
-    const el=e.target.closest?.('.dm-ua-mounted');
-    if(el)return [el];
-    const parent=e.target.closest?.('button');
-    return parent?[...parent.querySelectorAll('[data-dm-icon].dm-ua-mounted')]:[];
+    const target=e.target;
+    if(!(target instanceof Element))return [];
+    const control=target.closest('button,[role="button"],[tabindex]');
+    if(!control)return [];
+    // Include direct button glyphs and nested KPI/nav glyphs exactly once.
+    const found=new Set();
+    if(control.classList.contains('dm-ua-mounted'))found.add(control);
+    control.querySelectorAll('.dm-ua-mounted').forEach(el=>found.add(el));
+    return [...found];
   };
   document.addEventListener('pointerover',e=>{
     for(const el of targets(e))if(!el.contains(e.relatedTarget))play(el);
   },true);
+  // Leaving the button never restarts an animation.
   document.addEventListener('pointerout',e=>{
     for(const el of targets(e))if(!el.contains(e.relatedTarget))reset(el);
   },true);
@@ -169,10 +188,13 @@
   document.addEventListener('focusout',e=>{targets(e).forEach(reset);},true);
   document.addEventListener('click',e=>{
     targets(e).forEach(play);
+    // Do not run the legacy CSS bell shake on top of the Lottie bell.
     const bell=e.target.closest?.('#whatsNewButton');
-    if(bell){bell.classList.remove('is-ringing');void bell.offsetWidth;
+    if(bell&&!bell.classList.contains('dm-ua-mounted')){
+      bell.classList.remove('is-ringing');void bell.offsetWidth;
       bell.classList.add('is-ringing');
-      setTimeout(()=>bell.classList.remove('is-ringing'),2250);}
+      setTimeout(()=>bell.classList.remove('is-ringing'),2250);
+    }
   },true);
   const disable=()=> {
     for (const entry of live){
@@ -183,6 +205,7 @@
       else entry.slot.remove();
       delete entry.el.dataset.dmUaMounted;
       animated.delete(entry.el);
+      records.delete(entry.el);
       try{entry.item.destroy()}catch(_){}
     }
     live.clear();
