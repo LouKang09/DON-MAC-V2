@@ -670,3 +670,27 @@
 #authScreen .auth-plan-feature{font-size:10px;border:1px solid rgba(226,255,222,.17);background:rgba(5,29,21,.23);color:#e9fcea;border-radius:30px;padding:6px 9px;font-weight:700}
 #authScreen .auth-plan-feature::before{content:"✓";display:inline-block;margin-right:5px;color:#c9f5a2;font-weight:900}
 @media (max-width:560px){#authScreen .auth-plan-preview{padding:12px}#authScreen .auth-plan-preview-heading{align-items:flex-start;flex-wrap:wrap}#authScreen select.auth-plan-select{font-size:12px}}
+
+
+/* DonMac signup: detailed external plan comparison without disrupting form state. */
+#authScreen .auth-plan-know-more{
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  margin-top:13px;
+  padding:8px 1px;
+  color:#e1f7d9;
+  font-weight:850;
+  font-size:12px;
+  letter-spacing:.015em;
+  text-decoration:underline;
+  text-underline-offset:4px;
+  text-decoration-thickness:1px;
+  transition:color .2s ease;
+}
+#authScreen .auth-plan-know-more:hover{color:#fff;text-decoration-thickness:2px}
+#authScreen .auth-plan-know-more:focus-visible{outline:2px solid #d0ff90;outline-offset:4px;border-radius:3px}
+#authScreen .auth-plan-know-more span{font-size:15px;text-decoration:none}
+@media(max-width:560px){#authScreen .auth-plan-know-more{min-height:40px;margin-top:10px;font-size:12px}}
