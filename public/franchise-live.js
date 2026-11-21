@@ -7,7 +7,7 @@
  const stock=window.donmacPosStock;
  const state={me:null,branchId:null,catalog:null,inventory:[],manage:null,cart:[],
    quote:null,quoteSeq:0,checkoutId:null,stockId:null,salesPage:1,salesTotal:0,view:'overview'};
- let loadingCatalog=false,quoteTimer=0,refreshLock=false;
+ let quoteTimer=0,refreshLock=false;
  function notice(message,error=false){const n=$('notice');n.textContent=message||'';n.classList.toggle('error',error);if(message&&window.donmacPrompt&&!/^(loading|checking|refreshing|connecting)\b/i.test(message))void window.donmacPrompt.notify(message,{variant:error?'error':undefined});}
  async function api(path,options={}){
   const r=await fetch(path,{credentials:'same-origin',cache:'no-store',
@@ -198,14 +198,12 @@
   changedCart();
  }
  async function fetchCatalog(){
-  if(loadingCatalog)return;
-  loadingCatalog=true;
-  try{
-   const c=await get('catalog'+selection());
-   if(Number(c.branchId)!==state.branchId)return;
-   state.catalog=c;categoryOptions();renderProducts();renderCart();
-   if(state.view==='pos')scheduleQuote();
-  }finally{loadingCatalog=false}
+  const requestedBranchId=state.branchId;
+  const c=await get('catalog?branchId='+encodeURIComponent(requestedBranchId));
+  // Ignore delayed responses from a previous branch selection.
+  if(Number(c.branchId)!==requestedBranchId||state.branchId!==requestedBranchId)return;
+  state.catalog=c;categoryOptions();renderProducts();renderCart();
+  if(state.view==='pos')scheduleQuote();
  }
  async function fetchInventory(){
   const data=await get('inventory'+selection());
