@@ -53,7 +53,7 @@
   hasWebPassword:true,accessPermissions:x.permissions||[],email:x.email||'',emailVerified:x.emailVerified===true,phone:x.phone||'',
   photoData:x.photoData||null,branchName:x.branchName||'',isOwner:false});
  async function adminCatalog(state,kind){
-  const x=await live('/api/live/manage'+qs(scopedBranch(state)));
+  const x=await live('/api/live/manage'+qs(scopedBranch(state,kind==='promos'?state.promoBranchId:null)));
   const key=({products:'products',ingredients:'ingredients',promos:'promos',packages:'packages'})[kind];
   return{[key]:x[key]||[]};
  }
@@ -169,13 +169,19 @@
    return live('/api/live/'+kind+'/'+id+qs(scopedBranch(state)),'DELETE');
   }
   if(p==='/api/admin/promos'&&method==='POST')
-   return live('/api/live/promos','POST',{...data,branchId:scopedBranch(state)});
+   return live('/api/live/promos','POST',{...data,branchId:scopedBranch(state,data.branchId||state.promoBranchId)});
+  const promoCopy=p.match(/^\/api\/admin\/promos\/(\d+)\/copy$/);
+  if(promoCopy&&method==='POST')
+   return live('/api/live/promos/'+Number(promoCopy[1])+'/copy','POST',{
+    sourceBranchId:scopedBranch(state,data.sourceBranchId||state.promoBranchId),
+    targetBranchId:Number(data.targetBranchId)
+   });
   if(p==='/api/admin/packages'&&method==='POST')
    return live('/api/live/packages','POST',{...data,branchId:scopedBranch(state)});
   edit=p.match(/^\/api\/admin\/(promos|packages)\/(\d+)$/);
   if(edit&&method==='PUT')
    return live('/api/live/'+edit[1]+'/'+Number(edit[2]),'PUT',
-    {...data,branchId:scopedBranch(state)});
+    {...data,branchId:scopedBranch(state,edit[1]==='promos'?(data.branchId||state.promoBranchId):null)});
   edit=p.match(/^\/api\/admin\/packages\/(\d+)\/items$/);
   if(edit&&method==='PUT')
    return live('/api/live/packages/'+Number(edit[1])+'/items','PUT',
