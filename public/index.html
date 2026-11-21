@@ -805,6 +805,18 @@
     </div>
     <div class="pos-finance-summary" aria-live="polite" aria-busy="false"><div><small>Transactions</small><strong id="financeTransactionCount">—</strong></div><div><small>Total Sales</small><strong id="financeTransactionTotal">—</strong></div></div>
     <p class="muted tiny dm-transaction-count-note">Counts and sales reflect all matching cashier, date, branch and status filters—not only the current page. Voided sales are excluded from Total Sales.</p>
+    <section class="dm-finance-products" aria-labelledby="dmFinanceProductsHeading">
+      <div class="dm-finance-products-heading">
+        <div><p class="eyebrow">FILTERED SALES BREAKDOWN</p><h4 id="dmFinanceProductsHeading">Products Sold</h4>
+          <p class="muted tiny">Items and quantities from completed sales in the selected cashier, date range, branch and other filters. Voided transactions are excluded.</p>
+        </div><div class="dm-finance-products-total"><small>Total units sold</small><strong id="financeProductsSoldQuantity">—</strong></div>
+      </div>
+      <div class="dm-finance-products-list" role="region" aria-label="Products sold breakdown" tabindex="0">
+        <table class="dm-finance-products-table"><thead><tr><th>Product / Item</th><th>Type</th><th class="num">Quantity Sold</th></tr></thead>
+          <tbody id="financeProductsSoldBody"><tr><td colspan="3" class="dm-finance-products-empty">Choose a date range or cashier to view products sold.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <div class="table-wrap"><table class="pos-finance-table"><thead><tr><th>Date</th><th>Reference</th><th>Branch</th><th>Cashier</th><th>Payment</th><th>Order type</th><th>Status / Void footprint</th><th>Amount</th><th>Action</th></tr></thead><tbody id="financeTransactionsBody"><tr><td colspan="9">Select Transactions to load the ledger.</td></tr></tbody></table></div><nav id="financeTransactionPages" class="pos-finance-pagination"></nav>
   </div>
 </section>
