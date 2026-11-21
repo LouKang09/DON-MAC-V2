@@ -17,6 +17,16 @@
   transportation:'financeTransportation',electricity:'financeElectricity',ice:'financeIce',
   water:'financeWater',misc:'financeMisc'};
  const state={transactions:{page:1,branches:[],loading:false,queued:false},expenses:{page:1,branches:[],loading:false}};
+ // These totals always describe ALL records matching the current filters,
+ // not only the ten transactions on the visible page.
+ function transactionSummaryPending(){
+  $('financeTransactionCount').textContent='…';
+  $('financeTransactionTotal').textContent='…';
+  $('financeTransactionCount').closest('.pos-finance-summary')?.setAttribute('aria-busy','true');
+ }
+ function transactionSummaryReady(){
+  $('financeTransactionCount').closest('.pos-finance-summary')?.setAttribute('aria-busy','false');
+ }
  function canManageExpenses(){return window.donmacFinanceAccess?.manageExpenses===true;}
  function enforceHistoryBounds(){
   if(cashierHistoryDays()===null)return;
@@ -92,6 +102,7 @@
   }
   state[kind].loading=true;
   const requestQuery=query(kind);
+  if(kind==='transactions')transactionSummaryPending();
   try{
    const data=await api(financeApiBase+'/'+kind+'?'+requestQuery);
    if(!sessionStillValid())return; // Never render previous account results.
@@ -104,8 +115,11 @@
    state[kind].branches=data.branches||[];
    if(kind==='transactions'){
     bindBranchOptions($('financeTransactionBranch'),data.branches||[],true);
+    // API calculates both aggregates from exactly the same cashier/reference,
+    // branch, status, and start/end-date WHERE clause as the ledger rows.
     $('financeTransactionCount').textContent=Number(data.total||0).toLocaleString('en-PH');
     $('financeTransactionTotal').textContent=peso(data.salesTotal);
+    transactionSummaryReady();
     $('financeTransactionsBody').innerHTML=(data.rows||[]).map(r=>{
      const voided=r.status==='Voided'||r.status==='Deleted';
      const footprint=voided?'<small class="dm-void-footprint">'+
@@ -149,7 +163,15 @@
    }
   }catch(err){
    if(!sessionStillValid())return;
-   if(kind==='transactions')$('financeTransactionsBody').innerHTML='<tr><td colspan="9">'+esc(err.message)+'</td></tr>';
+   if(kind==='transactions'&&requestQuery!==query('transactions')){
+    state.transactions.queued=true;return;
+   }
+   if(kind==='transactions'){
+    $('financeTransactionsBody').innerHTML='<tr><td colspan="9">'+esc(err.message)+'</td></tr>';
+    $('financeTransactionCount').textContent='—';
+    $('financeTransactionTotal').textContent='—';
+    transactionSummaryReady();
+   }
    else message(err.message,true);
   }finally{
    state[kind].loading=false;
@@ -197,10 +219,14 @@
  const applyTransactionFilters=()=>{
   if(transactionSearchTimer!==null){clearTimeout(transactionSearchTimer);transactionSearchTimer=null;}
   state.transactions.page=1;
+  transactionSummaryPending();
   load('transactions');
  };
  // Text searches are debounced to avoid issuing one network call per keystroke.
  $('financeTransactionSearch').addEventListener('input',()=>{
+  // Immediately invalidate the previous cashier/date totals while typing,
+  // including when an older search is still waiting on the server.
+  transactionSummaryPending();
   if(transactionSearchTimer!==null)clearTimeout(transactionSearchTimer);
   transactionSearchTimer=setTimeout(()=>{
    transactionSearchTimer=null;
