@@ -250,11 +250,23 @@
     parent.appendChild(b);return b;
   };
   const addHeader=(eyebrow,title,lead)=>{
-    const header=make('div','dm-guide-card-head');
-    header.appendChild(make('span','dm-guide-eyebrow',eyebrow));
-    const h=make('h2','',title);header.appendChild(h);
-    if(lead)header.appendChild(make('p','dm-guide-lead',lead));
+    // Same anatomy as DonMac's system prompt: branded heading, icon,
+    // accessible close control, white message body, shared action footer.
+    const header=make('header','dm-guide-card-head');
+    const icon=make('span','dm-guide-head-icon');
+    icon.setAttribute('aria-hidden','true');
+    icon.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>';
+    header.appendChild(icon);
+    const copy=make('div','dm-guide-head-copy');
+    copy.appendChild(make('span','dm-guide-eyebrow',eyebrow));
+    const h=make('h2','',title);copy.appendChild(h);
+    header.appendChild(copy);
+    const close=make('button','dm-guide-close','×');
+    close.type='button';close.setAttribute('aria-label','Close POS guide');
+    close.addEventListener('click',()=>{markSeen();finish(false);});
+    header.appendChild(close);
     panel.appendChild(header);
+    if(lead)panel.appendChild(make('p','dm-guide-lead',lead));
     return header;
   };
   const addFooter=()=>{
@@ -298,7 +310,7 @@
     addButton(actions,'Start system tour',()=>start('overview'),'primary');
     addButton(actions,'Choose a category',showBrowser,'');
     addButton(actions,'Maybe later',()=>{markSeen();finish(false);},'muted');
-    panel.appendChild(actions);addFooter();panel.focus();
+    addFooter();panel.appendChild(actions);panel.focus();
   };
   const showBrowser=()=>{
     if(!identity || rootApp()?.classList.contains('hidden'))return;
@@ -360,7 +372,7 @@
     addButton(actions,'Back',()=>move(-1),'muted').disabled=index===0;
     addButton(actions,index===steps.length-1?'Finish tour':'Next',()=>move(1),'primary');
     addButton(actions,'Exit tour',()=>{markSeen();finish(false);},'exit');
-    panel.appendChild(actions);addFooter();
+    addFooter();panel.appendChild(actions);
     findStepTarget(step);
     watchTarget();
     queueDraw();
