@@ -622,3 +622,28 @@ html body #app #supplyNotificationsButton.dm-ua-mounted > .dm-ua-context svg{
 #view-account .dm-icon-motion-switch{display:inline-flex;align-items:center;gap:.65rem;font-weight:600}
 #view-account .dm-icon-motion-switch input{width:1.1rem;height:1.1rem;accent-color:#075d38}
 #view-account #dmIconMotionStatus{font-size:.8rem}
+
+
+/* Cashier Dashboard — white Report action, matching the intended white pill.
+   This intentionally overrides the shared green header-control theme only
+   for the Report button; notification and account buttons stay unchanged. */
+html body #app .topbar .topbar-right #dashboardPrintReport{
+ background:#fff!important;
+ color:#163d2b!important;
+ border:1.5px solid #f0f4ef!important;
+ box-shadow:0 2px 8px rgba(4,35,23,.13)!important;
+}
+html body #app .topbar .topbar-right #dashboardPrintReport > span,
+html body #app .topbar .topbar-right #dashboardPrintReport > svg,
+html body #app .topbar .topbar-right #dashboardPrintReport .dm-ua-icon{
+ color:#163d2b!important;
+}
+html body #app .topbar .topbar-right #dashboardPrintReport:hover,
+html body #app .topbar .topbar-right #dashboardPrintReport:focus-visible{
+ background:#f5fbf6!important;
+ border-color:#cee5d4!important;
+ color:#163d2b!important;
+}
+html body #app .topbar .topbar-right #dashboardPrintReport .dm-ua-icon{
+ filter:none!important;
+}
