@@ -271,6 +271,19 @@ async function run(){
  const financeB=await finance.transactions(db,ctxB,financeDates);
  assert.equal(financeA.total,2);assert.equal(financeB.total,0);
  assert.equal(financeA.rows[0].branch,'Cebu A');
+ assert.deepEqual(financeA.products,[{kind:'product',name:'test1',quantity:2}],
+  'Product quantity breakdown must include both completed receipts, not just the visible page');
+ assert.deepEqual(financeB.products,[],
+  'Another franchise must never inherit this workspace product quantities');
+ const cashierFilter=new URLSearchParams({...Object.fromEntries(financeDates),
+  search:String(financeA.rows[0].cashier)});
+ const filteredProducts=await finance.transactions(db,ctxA,cashierFilter);
+ assert.equal(filteredProducts.total,2);
+ assert.equal(filteredProducts.products[0].quantity,2,
+  'Cashier search and date filters must apply identically to receipts and sold products');
+ const noMatch=await finance.transactions(db,ctxA,new URLSearchParams({
+  start:'2020-01-01',end:'2030-12-31',search:'no-such-cashier'}));
+ assert.equal(noMatch.total,0);assert.deepEqual(noMatch.products,[]);
  // The shared dashboard chart must use exclusively this tenant's live sales,
  // and PostgreSQL must execute its category breakdown without query errors.
  const dashboardParams=new URLSearchParams({view:'hourly'});
