@@ -80,12 +80,12 @@
           <label class="auth-remember"><input id="authRememberUsername" type="checkbox" /> <span>Remember me</span></label>
           <button type="button" id="authForgotPassword" class="auth-text-action">Forgot password?</button>
         </div>
-        <button id="authSubmit" class="primary big auth-submit" type="submit">Sign In</button>
+        <button id="authSubmit" class="primary big auth-submit dm-auth-action" data-dm-icon="logOut" type="submit"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="m13 8 4 4-4 4M8 12h9"/></svg><span>Sign In</span></button>
         <p class="auth-signup" id="authSignupPrompt">Need a franchise account? <button type="button" id="authSignupButton" class="auth-text-action">Request access</button></p>
         <p id="authHelpMessage" class="auth-help-message hidden" role="status"></p>
       </form>
       <section id="authRegisterPanel" class="auth-secondary-panel hidden" aria-label="Request franchise Owner account">
-        <button type="button" class="auth-back auth-back-top" data-auth-back aria-label="Back to Sign In"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M5 12h14"/></svg><span>Back to Sign In</span></button>
+        <button type="button" class="auth-back auth-back-top dm-auth-back" data-auth-back data-dm-icon="chevronRight" aria-label="Back to Sign In"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 5-7 7 7 7M6 12h14"/></svg><span>Back to Sign In</span></button>
         <img src="/assets/login-coffee-beans-all-white-strokes-v1587.svg" class="auth-beans-icon" alt="" width="56" height="56">
         <h2>Request franchise account</h2><p class="auth-secondary-intro">Submit details for Admin Control review. This does not create a POS login yet.</p>
         <form id="authRegisterForm" class="auth-secondary-form">
@@ -103,7 +103,7 @@
                 <option value="PRO">Pro Plan · Growing business</option>
                 <option value="BUSINESS">Business Plan · Multi-branch management</option>
               </select>
-              <span class="auth-plan-chevron" aria-hidden="true">⌄</span>
+              <span class="auth-plan-chevron dm-plan-animated-chevron" data-dm-icon="chevronDown" aria-hidden="true"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
             </div>
             <div id="regPlanDescription" class="auth-plan-preview" aria-live="polite">
               <div class="auth-plan-preview-heading"><strong id="regPlanTitle">Select a plan to compare benefits</strong><span id="regPlanTag" class="auth-plan-tag">PLAN OPTIONS</span></div>
@@ -113,7 +113,7 @@
           </div>
           <p class="auth-field-status">This is a plan request, not an automatic charge or activation. Admin Control will confirm your plan, subscription amount and payment status.</p>
           <p class="auth-field-status">After email OTP verification, your chosen password creates your own franchise account and zero-stock starter inventory. Once Admin Control assigns a Paid subscription, the live POS is available.</p>
-          <button id="regSubmit" type="submit" class="primary auth-submit">Submit Request</button>
+          <button id="regSubmit" type="submit" class="primary auth-submit dm-auth-action" data-dm-icon="checkCircle"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5 5.5-6"/></svg><span>Submit Request</span></button>
         </form>
         <p id="regMessage" class="auth-secondary-message" role="status"></p>
         <form id="authRegisterVerifyForm" class="auth-secondary-form hidden" aria-label="Verify franchise request email">
@@ -128,13 +128,13 @@
         </form>
       </section>
       <section id="authResetPanel" class="auth-secondary-panel hidden" aria-label="Reset password">
-        <button type="button" class="auth-back auth-back-top" data-auth-back aria-label="Back to Sign In"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M5 12h14"/></svg><span>Back to Sign In</span></button>
+        <button type="button" class="auth-back auth-back-top dm-auth-back" data-auth-back data-dm-icon="chevronRight" aria-label="Back to Sign In"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 5-7 7 7 7M6 12h14"/></svg><span>Back to Sign In</span></button>
         <img src="/assets/login-coffee-beans-all-white-strokes-v1587.svg" class="auth-beans-icon" alt="" width="56" height="56">
         <h2>Forgot Password?</h2><p class="auth-secondary-intro">Enter your POS username and the registered Gmail or email address associated with your account. We'll verify your franchise and branch before sending the six-digit code.</p>
         <form id="authResetRequestForm" class="auth-secondary-form">
           <label>POS Account Username<input id="resetIdentifier" required maxlength="180" autocomplete="username" placeholder="Your POS login username"></label>
           <label>Registered Gmail / Email<input id="resetEmail" required type="email" maxlength="180" autocomplete="email" placeholder="name@gmail.com"></label>
-          <button id="resetSend" class="primary auth-submit" type="submit">Send Email OTP</button>
+          <button id="resetSend" class="primary auth-submit dm-auth-action" data-dm-icon="messageCircle" type="submit"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg><span>Send Email OTP</span></button>
         </form>
         <form id="authResetConfirmForm" class="auth-secondary-form hidden">
           <label>6-digit OTP<input id="resetCode" required maxlength="6" minlength="6" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" placeholder="000000"></label>
