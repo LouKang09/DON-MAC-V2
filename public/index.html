@@ -684,9 +684,13 @@
 
         <div id="admin-promos" class="admin-panel section-grid admin-layout">
           <div class="card"><div class="card-head"><div><p class="eyebrow">PROMOLIST</p><h3>Promos</h3></div></div><div class="table-wrap"><table><thead><tr><th>Name</th><th>Inclusion</th><th class="num">Price</th><th>Limits</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminPromosBody"></tbody></table></div><nav id="adminPromosBodyPagination" class="catalog-list-pagination" aria-label="Promos pages"></nav></div>
-          <form id="promoForm" class="card form-card"><p class="eyebrow">ADD / UPDATE</p><h3>Promo</h3><input id="promoEditId" type="hidden" /><label id="promoBranchWrap" class="hidden">Branch offering this promo
-  <select id="promoBranchFilter" aria-label="Choose branch for this promotion" required disabled></select>
-  <small class="muted">Only this branch will offer the promotion.</small>
+          <form id="promoForm" class="card form-card"><p class="eyebrow">ADD / UPDATE</p><h3>Promo</h3><input id="promoEditId" type="hidden" /><label id="promoBranchWrap" class="hidden">View / edit promos for branch
+  <select id="promoBranchFilter" aria-label="View promotions for branch" required disabled></select>
+  <small class="muted">Choose a branch to see and edit its existing promos.</small>
+</label>
+<label id="promoPublishWrap" class="hidden">Offer this new promo in
+  <select id="promoPublishTarget" aria-label="Choose individual branch or all branches"></select>
+  <small class="muted" id="promoPublishHint">Select one branch or All Branches. Each branch gets its own editable promo.</small>
 </label><label>Name<input id="promoName" maxlength="150" required /></label><label>Inclusion Label<input id="promoInclusion" maxlength="100" placeholder="2Food+2Coffee" required /></label><label>Promo Price<input id="promoPrice" type="number" min="0" step="0.01" required /></label><div class="two-col"><label>Food Limit<input id="promoFood" type="number" min="0" step="1" required /></label><label>Coffee Limit<input id="promoCoffee" type="number" min="0" step="1" required /></label></div><label class="catalog-active-row"><input id="promoActive" type="checkbox" checked /><span>Active</span><span class="catalog-help" tabindex="0" role="img" aria-label="When checked, this promo is visible on POS." data-tooltip="When checked, this promo is available in POS. Uncheck to hide it without deleting historical purchases."><img class="catalog-question-icon" src="/assets/catalog/question.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /></span></label><button class="primary" type="submit"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Promo</button><button id="promoFormClear" class="ghost" type="button"><span class="catalog-btn-icon" aria-hidden="true">↺</span> Clear</button><div id="promoCopyControls" class="dm-promo-copy hidden">
  <div class="dm-promo-copy-heading"><strong>Copy promotion</strong><small>Reuse this offer in another branch.</small></div>
  <label for="promoCopyTarget">Destination branch</label>
