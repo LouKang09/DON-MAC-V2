@@ -5,7 +5,7 @@
   const normalize=s=>String(s||'').trim().replace(/\s+/g,' ').toUpperCase();
   const manilaToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const num=(n,d=6)=>Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:d});
-  const state={status:null,user:null,catalog:null,category:'Coffee',query:'',cart:[],promoId:null,quote:null,inventory:[],report:null,costing:null,dashboard:null,adminProducts:[],adminIngredients:[],adminPromos:[],adminPackages:[],recipeRows:[],compositionRows:[],pendingSaleRequestId:null,checkoutBusy:false,branches:[],userList:[],posBranchId:null};
+  const state={status:null,user:null,catalog:null,category:'Coffee',query:'',cart:[],promoId:null,quote:null,inventory:[],report:null,costing:null,dashboard:null,adminProducts:[],adminIngredients:[],adminPromos:[],adminPackages:[],recipeRows:[],compositionRows:[],pendingSaleRequestId:null,checkoutBusy:false,branches:[],userList:[],posBranchId:null,promoBranchId:null};
   // A user switch must invalidate ALL in-flight responses and stale UI state.
   // Never persist customer/owner sales in browser storage.
   const ACCOUNT_SESSION_KEY='donmac-pos-account-session-v2';
@@ -14,7 +14,7 @@
   function discardPreviousAccount(){
     sessionGeneration++;
     state.catalog=null;state.inventory=[];state.report=null;state.costing=null;state.dashboard=null;
-    state.adminProducts=[];state.adminIngredients=[];state.adminPromos=[];state.adminPackages=[];
+    state.adminProducts=[];state.adminIngredients=[];state.adminPromos=[];state.adminPackages=[];state.promoBranchId=null;
     state.recipeRows=[];state.compositionRows=[];state.branches=[];state.userList=[];
     state.posBranchId=null;state.subscription=null;
     window.__donmacDashboardData=null;
@@ -2180,12 +2180,99 @@
   });
   $('recipeProduct').onchange=loadRecipe;$('saveRecipe').onclick=()=>withActionLock('save-recipe',async()=>{const pid=Number($('recipeProduct').value);if(!pid){toast('Choose a product first.');return;}try{await api(`/api/admin/products/${pid}/recipe`,{method:'PUT',body:{items:state.recipeRows.map(x=>({ingredientId:x.ingredientId,quantity:x.quantity,cost:x.cost}))}});toast('Recipe and costing saved.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});
 
-  function renderAdminPromos(){$('adminPromosBody').innerHTML=catalogPage('promos',state.adminPromos).map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.inclusion)}</td><td class="num">${peso(p.price)}</td><td>${p.foodLimit} Food / ${p.coffeeLimit} Coffee</td><td class="${p.active?'stock-ok':'stock-low'}">${p.active?'ACTIVE':'DISABLED'}</td><td><button class="table-btn" data-edit-promo="${p.id}">Edit</button>${p.active?`<button class="danger-link" data-archive-promo="${p.id}">Disable</button>`:''}</td></tr>`).join('');$('adminPromosBody').querySelectorAll('[data-edit-promo]').forEach(b=>b.onclick=()=>editPromo(Number(b.dataset.editPromo)));$('adminPromosBody').querySelectorAll('[data-archive-promo]').forEach(b=>b.onclick=()=>archivePromo(Number(b.dataset.archivePromo)));}
+
+  function syncPromoCopyControls(){
+   const branch=Number($('promoBranchFilter')?.value||state.promoBranchId||0),
+    id=Number($('promoEditId').value||0);
+   const available=(state.branches||[]).filter(b=>b.active&&Number(b.id)!==branch);
+   const target=$('promoCopyTarget'),before=target.value;
+   target.innerHTML=available.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('');
+   if(available.some(b=>String(b.id)===before))target.value=before;
+   $('promoCopyControls').classList.toggle('hidden',!window.donmacFranchiseUnified||!id||!available.length);
+   $('promoCopyButton').disabled=!id||!available.length;
+  }
+  function renderAdminPromos(){
+   const branch=state.branches.find(x=>Number(x.id)===Number(state.promoBranchId));
+   $('adminPromosBody').innerHTML=catalogPage('promos',state.adminPromos).map(p=>
+    '<tr><td><b>'+esc(p.name)+'</b><small class="muted"> '+esc(branch?.name||'')+'</small></td>'+
+    '<td>'+esc(p.inclusion)+'</td><td class="num">'+peso(p.price)+'</td>'+
+    '<td>'+p.foodLimit+' Food / '+p.coffeeLimit+' Coffee</td>'+
+    '<td class="'+(p.active?'stock-ok':'stock-low')+'">'+(p.active?'ACTIVE':'DISABLED')+'</td>'+
+    '<td><button class="table-btn" data-edit-promo="'+p.id+'">Edit</button>'+
+    (p.active?'<button class="danger-link" data-archive-promo="'+p.id+'">Disable</button>':'')+'</td></tr>'
+   ).join('');
+   $('adminPromosBody').querySelectorAll('[data-edit-promo]').forEach(b=>
+     b.onclick=()=>editPromo(Number(b.dataset.editPromo)));
+   $('adminPromosBody').querySelectorAll('[data-archive-promo]').forEach(b=>
+     b.onclick=()=>archivePromo(Number(b.dataset.archivePromo)));
+  }
   catalogRenders.promos=renderAdminPromos;
-  function clearPromoForm(){$('promoEditId').value='';$('promoName').value='';$('promoInclusion').value='';$('promoPrice').value='';$('promoFood').value='';$('promoCoffee').value='';$('promoActive').checked=true;}
-  function editPromo(id){const p=state.adminPromos.find(x=>x.id===id);if(!p)return;$('promoEditId').value=id;$('promoName').value=p.name;$('promoInclusion').value=p.inclusion;$('promoPrice').value=p.price;$('promoFood').value=p.foodLimit;$('promoCoffee').value=p.coffeeLimit;$('promoActive').checked=p.active;}
-  async function archivePromo(id){return withActionLock(`archive-promo:${id}`,async()=>{const p=state.adminPromos.find(x=>x.id===id);if(!p||!await window.donmacPrompt.confirm(`Disable ${p.name}?`))return;try{await api(`/api/admin/promos/${id}`,{method:'DELETE'});toast('Promo disabled.');await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});}
-  $('promoFormClear').onclick=clearPromoForm;$('promoForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;await withFormLock(form,async()=>{const id=Number($('promoEditId').value||0),body={name:$('promoName').value.trim(),inclusion:$('promoInclusion').value.trim(),price:Number($('promoPrice').value),foodLimit:Number($('promoFood').value),coffeeLimit:Number($('promoCoffee').value),active:$('promoActive').checked};try{if(id)await api(`/api/admin/promos/${id}`,{method:'PUT',body});else await api('/api/admin/promos',{method:'POST',body});toast(id?'Promo updated.':'Promo added.');clearPromoForm();await loadAdminAll();await loadCatalog();}catch(err){toast(err.message);}});});
+  function clearPromoForm(){
+   $('promoEditId').value='';$('promoName').value='';$('promoInclusion').value='';
+   $('promoPrice').value='';$('promoFood').value='';$('promoCoffee').value='';
+   $('promoActive').checked=true;syncPromoCopyControls();
+  }
+  function editPromo(id){
+   const p=state.adminPromos.find(x=>x.id===id);if(!p)return;
+   $('promoEditId').value=id;$('promoName').value=p.name;
+   $('promoInclusion').value=p.inclusion;$('promoPrice').value=p.price;
+   $('promoFood').value=p.foodLimit;$('promoCoffee').value=p.coffeeLimit;
+   $('promoActive').checked=p.active;syncPromoCopyControls();
+  }
+  async function archivePromo(id){
+   return withActionLock('archive-promo:'+id,async()=>{
+    const p=state.adminPromos.find(x=>x.id===id);
+    if(!p||!await window.donmacPrompt.confirm('Disable '+p.name+'?'))return;
+    try{
+     await api('/api/admin/promos/'+id,{method:'DELETE'});
+     toast('Promo disabled.');await loadAdminAll();await loadCatalog();
+    }catch(err){toast(err.message);}
+   });
+  }
+  $('promoBranchFilter').addEventListener('change',async e=>{
+   if(!window.donmacFranchiseUnified)return;
+   state.promoBranchId=Number(e.target.value);clearPromoForm();
+   try{
+    const result=await api('/api/admin/promos');
+    state.adminPromos=result.promos||[];
+    catalogPages.promos=1;renderAdminPromos();
+   }catch(err){toast(err.message);}
+  });
+  $('promoCopyButton').addEventListener('click',async()=>{
+   const id=Number($('promoEditId').value||0),
+    sourceBranchId=Number($('promoBranchFilter').value),
+    targetBranchId=Number($('promoCopyTarget').value);
+   const source=state.branches.find(x=>Number(x.id)===sourceBranchId),
+    target=state.branches.find(x=>Number(x.id)===targetBranchId),
+    promo=state.adminPromos.find(x=>x.id===id);
+   if(!id||!source||!target||!promo)return;
+   if(!await window.donmacPrompt.confirm('Copy '+promo.name+' from '+source.name+
+      ' to '+target.name+'? Each branch can edit its promo independently.'))return;
+   await withActionLock('copy-promo:'+id+':'+targetBranchId,async()=>{
+    try{
+     await api('/api/admin/promos/'+id+'/copy',{
+      method:'POST',body:{sourceBranchId,targetBranchId}});
+     toast('Promo copied to '+target.name+'.');
+    }catch(err){toast(err.message);}
+   });
+  });
+  $('promoFormClear').onclick=clearPromoForm;
+  $('promoForm').addEventListener('submit',async e=>{
+   e.preventDefault();const form=e.currentTarget;
+   await withFormLock(form,async()=>{
+    const id=Number($('promoEditId').value||0),
+     body={name:$('promoName').value.trim(),inclusion:$('promoInclusion').value.trim(),
+      price:Number($('promoPrice').value),foodLimit:Number($('promoFood').value),
+      coffeeLimit:Number($('promoCoffee').value),active:$('promoActive').checked,
+      branchId:Number($('promoBranchFilter').value||state.promoBranchId||state.posBranchId)};
+    try{
+     if(id)await api('/api/admin/promos/'+id,{method:'PUT',body});
+     else await api('/api/admin/promos',{method:'POST',body});
+     toast(id?'Promo updated.':'Promo added.');
+     clearPromoForm();await loadAdminAll();await loadCatalog();
+    }catch(err){toast(err.message);}
+   });
+  });
 
   function renderAdminPackages(){$('adminPackagesBody').innerHTML=catalogPage('packages',state.adminPackages).map(p=>`<tr><td><b>${esc(p.name)}</b></td><td class="num">${peso(p.price)}</td><td>${p.items.length?`${p.items.length} product type(s)`:'<span class="stock-low">REQUIRED</span>'}</td><td class="${p.active?'stock-ok':'stock-low'}">${p.active?'ACTIVE':'DISABLED'}</td><td><button class="table-btn" data-edit-package="${p.id}">Edit</button>${p.active?`<button class="danger-link" data-archive-package="${p.id}">Disable</button>`:''}</td></tr>`).join('');$('adminPackagesBody').querySelectorAll('[data-edit-package]').forEach(b=>b.onclick=()=>editPackage(Number(b.dataset.editPackage)));$('adminPackagesBody').querySelectorAll('[data-archive-package]').forEach(b=>b.onclick=()=>archivePackage(Number(b.dataset.archivePackage)));}
   catalogRenders.packages=renderAdminPackages;
@@ -2388,6 +2475,18 @@
      $('posBranch').classList.add('hidden');$('posBranchReadOnly').classList.remove('hidden');
      $('posBranchReadOnly').textContent=state.branches.find(x=>x.id===state.user.branchId)?.name||'No branch assigned';
      $('dashboardBranchWrap').classList.add('hidden');$('reportBranch').classList.add('hidden');
+   }
+   const promoFilter=$('promoBranchFilter'),promoWrap=$('promoBranchWrap');
+   if(promoFilter){
+     const eligible=state.user?.role==='Admin'&&!!window.donmacFranchiseUnified;
+     promoWrap.classList.toggle('hidden',!eligible);
+     const saved=Number(state.promoBranchId||promoFilter.value||state.posBranchId||0);
+     const branch=active.find(b=>Number(b.id)===saved)||active[0];
+     state.promoBranchId=branch?.id||null;
+     promoFilter.innerHTML=branchOptions(active,state.promoBranchId);
+     if(branch)promoFilter.value=String(branch.id);
+     promoFilter.disabled=!eligible;
+     syncPromoCopyControls?.();
    }
    const previous=$('newUserBranch').value;
    $('newUserBranch').innerHTML=branchOptions(active,previous);
