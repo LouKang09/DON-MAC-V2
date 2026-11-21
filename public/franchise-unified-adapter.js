@@ -168,6 +168,8 @@
    const kind=edit[1],id=Number(edit[2]);
    return live('/api/live/'+kind+'/'+id+qs(scopedBranch(state)),'DELETE');
   }
+  if(p==='/api/admin/promos'&&method==='POST'&&data.targetBranches==='all')
+   return live('/api/live/promos/all-branches','POST',data);
   if(p==='/api/admin/promos'&&method==='POST')
    return live('/api/live/promos','POST',{...data,branchId:scopedBranch(state,data.branchId||state.promoBranchId)});
   const promoCopy=p.match(/^\/api\/admin\/promos\/(\d+)\/copy$/);
