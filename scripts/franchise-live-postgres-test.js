@@ -426,8 +426,11 @@ async function run(){
   foodLimit:0,coffeeLimit:1,active:true};
  const published=await liveCatalog.savePromoAllBranches(db,ctxA,allBranchData);
  assert.equal(published.allBranches,true);
- assert.equal(published.count,2);
- assert.deepEqual([...published.branchIds].sort((a,b)=>a-b),[101,destBranch].sort((a,b)=>a-b));
+ const activeOwnedBranches=(await liveScope.branches(db,ctxA)).filter(b=>b.active);
+ assert.equal(published.count,activeOwnedBranches.length,
+  'All Branches should target every currently active branch in this franchise');
+ assert.deepEqual([...published.branchIds].sort((a,b)=>a-b),
+  activeOwnedBranches.map(b=>b.id).sort((a,b)=>a-b));
  const perBranchA=(await liveCatalog.manage(db,ctxA,{branchId:101})).promos.find(x=>x.name===allBranchData.name);
  const perBranchDest=(await liveCatalog.manage(db,ctxA,{branchId:destBranch})).promos.find(x=>x.name===allBranchData.name);
  assert(perBranchA&&perBranchDest);
