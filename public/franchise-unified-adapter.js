@@ -237,7 +237,11 @@
   }
   // DO NOT add a catch-all proxy or return fake empty data. An incomplete
   // feature must be unavailable rather than show someone else's records.
-  throw fail('This Main POS function has not yet been migrated to your isolated franchise data. It remains disabled to protect other accounts.',403);
+  // The live franchise checkout/data migration is active. Only THIS request
+  // lacks an isolated endpoint. Never bypass workspace protection or retry
+  // against a globally shared legacy API.
+  console.warn('[DonMac isolated POS] Unmapped feature blocked:',method,p);
+  throw fail('This specific action is unavailable in the isolated POS for this account. Your franchise data migration is active; no transaction or inventory data was changed. Please report the action to support.',403);
  }
  window.donmacFranchiseCompat={request,fail};
 })();
