@@ -2182,24 +2182,13 @@ async function handleApi(req,res,url){
         return{name:x.name,qty:x.qty,gross:x.gross,adjusted:Number(x.gross)-productActual,
           actual:productActual,costing:x.costing,net:productActual-Number(x.costing||0)};
       });
-      // Detailed receipts are visible only with the owner's separate
-      // Transactions grant; dashboard-only cashiers get aggregate totals.
-      const showReceipts=franchiseLive.admin||grants.includes('transactions.view');
-      const receipts=showReceipts?(await db.query(
-        'SELECT reference,cashier_name_snapshot,status,sold_at,actual,remark '+
-        'FROM branch_live_sales WHERE workspace_id=$1 AND branch_id=$2 AND sold_at>=$3 '+
-        'ORDER BY sold_at DESC LIMIT 250',
-        [franchiseLive.workspaceId,branch.id,report.since])).rows.map(x=>({
-        reference:x.reference,cashier:x.cashier_name_snapshot,status:x.status,
-        soldAt:x.sold_at,actual:Number(x.actual),remark:x.remark||''
-      })):[];
       const now=new Date();
       const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',
         year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
       const filename='Sales_Daily_'+today+'.pdf';
       const payload={period:'daily',target:today,cashier:franchiseLive.admin?'ALL':user.username,
         transactionCount:Number(summary.transaction_count||0),deletedCount:0,
-        gross,adjustment:gross-actual,actual,products,promos:report.promos,transactions:receipts};
+        gross,adjustment:gross-actual,actual,products,promos:report.promos,transactions:[]};
       const lines=salesReportLines(payload,'Don Macchiatos - '+branch.name+' - Daily Sales Report',
         {includeTransactions:false,costLabel:'In-Store Expense'});
 
