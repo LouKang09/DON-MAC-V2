@@ -739,3 +739,89 @@ html body #app .topbar .topbar-right #dashboardPrintReport>.dm-ua-icon{
 html body #app .topbar .topbar-right #dashboardPrintReport:hover{
  background:#06492e!important;border-color:#fff!important;color:#fff!important;
 }
+
+
+/* 2026-11-21: final auth contrast and motion correction.
+   White outline must survive all later themes on Main/Admin/Supply screens. */
+html body #authScreen button:is(#authSubmit,#platformLoginButton,#officeLoginButton,#regSubmit,#resetSend),
+html body #authScreen form button.dm-auth-action{
+  background-color:#075d38!important;
+  background-image:none!important;
+  border:1.8px solid #fff!important;
+  color:#fff!important;
+  box-shadow:0 2px 10px rgba(1,27,15,.18)!important;
+  opacity:1;
+}
+html body #authScreen button:is(#authSubmit,#platformLoginButton,#officeLoginButton,#regSubmit,#resetSend):hover:not(:disabled),
+html body #authScreen form button.dm-auth-action:hover:not(:disabled){
+  background-color:#06492e!important;
+  border-color:#fff!important;
+  color:#fff!important;
+}
+html body #authScreen button:is(#authSubmit,#platformLoginButton,#officeLoginButton,#regSubmit,#resetSend):focus-visible{
+  outline:2px solid #fff!important;outline-offset:3px!important;
+}
+html body #authScreen button.dm-auth-action > :is(span,svg){
+  vertical-align:middle;
+}
+html body #authScreen .auth-panel > #authRegisterPanel > img.auth-beans-icon,
+html body #authScreen .auth-panel > #authResetPanel > img.auth-beans-icon{
+  margin-top:-17px!important;
+  margin-bottom:-10px!important;
+  transform:translateY(-18px)!important;
+}
+@media(max-width:640px){
+  html body #authScreen .auth-panel > #authRegisterPanel > img.auth-beans-icon,
+  html body #authScreen .auth-panel > #authResetPanel > img.auth-beans-icon{
+    margin-top:-13px!important;
+    margin-bottom:-8px!important;
+    transform:translateY(-13px)!important;
+  }
+}
+/* All portals share the same animated login controls. A native fallback
+   also gives visual feedback when an animation asset is not yet mounted. */
+@keyframes dm-auth-arrow-single{
+  0%,100%{transform:translateX(0)}
+  50%{transform:translateX(3px)}
+}
+@keyframes dm-auth-chevron-single{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(3px)}
+}
+html body #authScreen button.dm-auth-action:not(.dm-ua-mounted):is(:hover,:focus-visible) > svg.dm-ua-native{
+  animation:dm-auth-arrow-single .65s ease-in-out 1!important;
+}
+html body #authScreen .dm-plan-animated-chevron:not(.dm-ua-mounted) > svg.dm-ua-native,
+html body #authScreen .dm-plan-animated-mark:not(.dm-ua-mounted) > svg.dm-ua-native{
+  display:block!important;width:19px!important;height:19px!important;
+}
+html body #authScreen .auth-plan-select-wrap:is(:hover,:focus-within) .dm-plan-animated-chevron:not(.dm-ua-mounted) > svg.dm-ua-native,
+html body #authScreen .auth-plan-select-wrap:is(:hover,:focus-within) .dm-plan-animated-mark:not(.dm-ua-mounted) > svg.dm-ua-native{
+  animation:dm-auth-chevron-single .7s ease-in-out 1!important;
+}
+html body #authScreen .auth-plan-select-icon.dm-plan-animated-mark{
+  display:inline-grid!important;place-items:center!important;
+  top:50%!important;transform:translateY(-50%)!important;
+  width:21px!important;height:21px!important;
+  font-size:0!important;line-height:0!important;
+  color:#e9ffe9!important;
+}
+html body #authScreen .dm-plan-animated-mark > .dm-ua-icon{
+  width:19px!important;height:19px!important;
+  filter:invert(1)!important;
+}
+html body #authScreen .auth-plan-select-wrap .dm-plan-animated-chevron{
+  top:50%!important;transform:translateY(-50%)!important;
+}
+html body #authScreen .auth-plan-select-wrap .dm-plan-animated-chevron.dm-ua-mounted > .dm-ua-icon,
+html body #authScreen .auth-plan-select-wrap .dm-plan-animated-mark.dm-ua-mounted > .dm-ua-icon{
+  display:inline-grid!important;
+}
+html body #authScreen .auth-plan-select-wrap .dm-plan-animated-chevron.dm-ua-mounted > .dm-ua-native,
+html body #authScreen .auth-plan-select-wrap .dm-plan-animated-mark.dm-ua-mounted > .dm-ua-native{
+  display:none!important;
+}
+/* Strong native icon contrast when Lottie fails to initialize. */
+html body #authScreen button.dm-auth-action > svg.dm-ua-native{
+  color:#fff!important;stroke:#fff!important;
+}
