@@ -737,7 +737,7 @@
       html=items.map(p=>`<button class="product-card promo ${state.promoId===p.id?'selected':''}" data-promo="${p.id}"><div class="cat">PROMO · ${esc(p.inclusion)}</div><h4>${esc(p.name)}</h4><div class="price">${peso(p.price)}</div></button>`).join('');
       html+=(state.catalog.officePromos||[]).filter(p=>p.active&&p.status!=='ENDED'&&Date.parse(p.endsAt)>Date.now()&&(!q||normalize(p.buttonName).includes(q))).map(p=>{
         const started=Date.parse(p.startsAt)<=Date.now(),eligible=started&&p.eligible&&p.remaining>0;
-        const status=!started?'COMING SOON':eligible?'MAIN OFFICE · READY TO SELL':'MAIN OFFICE · REQUIRED SUPPLIES NOT PURCHASED';
+        const status=!started?'COMING SOON':eligible?'MAIN OFFICE · READY TO SELL':'MAIN OFFICE · INSUFFICIENT BRANCH STOCK';
         return `<button class="product-card promo office-promo-button" data-office-promo="${esc(p.id)}" ${eligible&&!state.promoId?'':'disabled'}>${p.iconData?'<img class="office-promo-icon" src="'+esc(p.iconData)+'" alt="" loading="lazy" decoding="async">':''}<div class="cat">${esc(status)}</div><h4>${esc(p.buttonName)}</h4><div class="price">${peso(p.price)}</div><small data-office-countdown="${esc(p.endsAt)}" data-office-start="${esc(p.startsAt)}">Calculating countdown…</small>${!eligible?'<div class="unavailable">Purchase and receive the required promotional supplies first.</div>':''}</button>`;
       }).join('');
     }
@@ -780,7 +780,7 @@
   function addItem(kind,id){if(kind==='officePromo'){
     const p=(state.catalog.officePromos||[]).find(p=>p.id===id);
     if(!p||!p.eligible||p.remaining<1||Date.parse(p.endsAt)<=Date.now()){
-      toast('Main Office promotional supplies must be purchased and delivered before selling.');return;
+      toast('This branch does not have enough matching ingredients for this Main Office promo.');return;
     }
     if(state.promoId||$('seniorEnabled').checked){
       toast('Main Office promotions cannot be combined with other POS discounts.');return;
@@ -789,7 +789,7 @@
   function changeQty(kind,id,delta){const line=cartItem(kind,id);if(!line)return;
     if(delta>0&&kind==='officePromo'){
       const p=(state.catalog.officePromos||[]).find(p=>p.id===id);
-      if(!p?.eligible||line.qty>=p.remaining){toast('Insufficient promotional supply credits.');return;}
+      if(!p?.eligible||line.qty>=p.remaining){toast('Insufficient branch ingredient stock for this Main Office promo.');return;}
     }if(delta>0&&kind==='product'){const p=state.catalog.products.find(p=>p.id===id);if(!p||!canAddProduct(p)){toast('Promo item limit reached.');return;}const decision=stockNext('product',id);if(!decision.ok){warnStock(decision);return;}}if(delta>0&&kind==='package'){const decision=stockNext('package',id);if(!decision.ok){warnStock(decision);return;}}if(delta>0&&kind==='addon'){const a=state.catalog.addOns.find(a=>a.id===id);if(!a||!canAddAddon(a)){toast('Upgrade quantity cannot exceed the matching promo item quantity.');return;}}if(delta<0&&line.qty<=1)return;
     if(delta>0&&line.qty>=999){toast('Maximum quantity is 999.');return;}
     line.qty+=delta;if(delta<0&&kind==='product')enforceAddonLimits();state.pendingSaleRequestId=null;renderAll();}
@@ -814,7 +814,7 @@
       }
       if(kind==='officePromo'){
         const item=(state.catalog.officePromos||[]).find(x=>x.id===id);
-        if(!item?.eligible||amount>item.remaining){toast('Insufficient promotional supply credits.');renderOrder();return;}
+        if(!item?.eligible||amount>item.remaining){toast('Insufficient branch ingredient stock for this Main Office promo.');renderOrder();return;}
       }
       if(['product','package'].includes(kind)){
         const draft=state.cart.map(x=>({...x,qty:x===line?amount:x.qty}));
