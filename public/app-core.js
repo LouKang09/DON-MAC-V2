@@ -23,11 +23,11 @@
     window.donmacFranchiseUnified=false;
     window.donmacScopedApi=null;
     for(const id of ['dashboardSummary','dashboardLowStock','categorySales','salesTrendChart',
-      'dashboardRecentTransactions','financeTransactionsBody','financeExpensesBody','reportTransactions',
+      'dashboardRecentTransactions','financeTransactionsBody','financeExpensesBody','financeProductsSoldBody','reportTransactions',
       'usersList','inventoryList','logsList']){
       const el=$(id);if(el)el.replaceChildren();
     }
-    for(const id of ['financeTransactionCount','financeTransactionTotal','financeExpenseCount',
+    for(const id of ['financeTransactionCount','financeTransactionTotal','financeProductsSoldQuantity','financeExpenseCount',
       'financeExpenseTotal']){const el=$(id);if(el)el.textContent='—';}
   }
   function signalAccountChange(){
