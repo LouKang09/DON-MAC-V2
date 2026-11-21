@@ -688,8 +688,10 @@
   <select id="promoBranchFilter" aria-label="Choose branch for this promotion" required disabled></select>
   <small class="muted">Only this branch will offer the promotion.</small>
 </label><label>Name<input id="promoName" maxlength="150" required /></label><label>Inclusion Label<input id="promoInclusion" maxlength="100" placeholder="2Food+2Coffee" required /></label><label>Promo Price<input id="promoPrice" type="number" min="0" step="0.01" required /></label><div class="two-col"><label>Food Limit<input id="promoFood" type="number" min="0" step="1" required /></label><label>Coffee Limit<input id="promoCoffee" type="number" min="0" step="1" required /></label></div><label class="catalog-active-row"><input id="promoActive" type="checkbox" checked /><span>Active</span><span class="catalog-help" tabindex="0" role="img" aria-label="When checked, this promo is visible on POS." data-tooltip="When checked, this promo is available in POS. Uncheck to hide it without deleting historical purchases."><img class="catalog-question-icon" src="/assets/catalog/question.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /></span></label><button class="primary" type="submit"><img class="catalog-save-icon" src="/assets/catalog/save.png" alt="" aria-hidden="true" width="19" height="19" decoding="async" /> Save Promo</button><button id="promoFormClear" class="ghost" type="button"><span class="catalog-btn-icon" aria-hidden="true">↺</span> Clear</button><div id="promoCopyControls" class="dm-promo-copy hidden">
- <label>Copy this promo to another branch<select id="promoCopyTarget" aria-label="Destination branch for promo copy"></select></label>
- <button id="promoCopyButton" type="button" class="primary">Copy Promo to Branch</button>
+ <div class="dm-promo-copy-heading"><strong>Copy promotion</strong><small>Reuse this offer in another branch.</small></div>
+ <label for="promoCopyTarget">Destination branch</label>
+ <select id="promoCopyTarget" aria-label="Destination branch for promo copy"></select>
+ <button id="promoCopyButton" type="button" class="primary">Copy to Branch</button>
  </div></form>
         </div>
 
