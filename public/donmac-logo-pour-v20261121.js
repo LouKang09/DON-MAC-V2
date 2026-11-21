@@ -32,6 +32,9 @@
     finish=setTimeout(restore,4850);
    }
    img.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')play()});
+   // Leaving the logo stops the pour immediately — don't wait for the
+   // remaining SVG frames or the original 4.8s restore timer.
+   img.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')restore()});
    img.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')play()});
    img.addEventListener('focus',play);
    img.addEventListener('keydown',e=>{
