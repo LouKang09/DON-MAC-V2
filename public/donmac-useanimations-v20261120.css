@@ -647,3 +647,95 @@ html body #app .topbar .topbar-right #dashboardPrintReport:focus-visible{
 html body #app .topbar .topbar-right #dashboardPrintReport .dm-ua-icon{
  filter:none!important;
 }
+
+
+/* Authentication controls on Main POS, Admin Control, Supply Office.
+   Dark green buttons, clear white glyphs and exactly one Lottie per action. */
+html body #authScreen .dm-auth-action,
+html body #authScreen #authSubmit,
+html body #authScreen #regSubmit,
+html body #authScreen #resetSend,
+html body #authScreen #platformLoginButton,
+html body #authScreen #officeLoginButton{
+ background:#075d38!important;
+ border:1px solid #075d38!important;
+ color:#fff!important;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ gap:9px!important;
+ transition:background-color .18s ease,border-color .18s ease!important;
+ box-shadow:0 2px 8px rgba(0,39,19,.1)!important;
+}
+html body #authScreen .dm-auth-action:hover,
+html body #authScreen #authSubmit:hover,
+html body #authScreen #regSubmit:hover,
+html body #authScreen #resetSend:hover,
+html body #authScreen #platformLoginButton:hover,
+html body #authScreen #officeLoginButton:hover{
+ background:#06492e!important;border-color:#06492e!important;color:#fff!important;
+}
+html body #authScreen .dm-auth-action>span:not(.dm-ua-icon),
+html body #authScreen .dm-auth-action>.dm-ua-native{
+ color:#fff!important;
+}
+html body #authScreen .dm-auth-action>.dm-ua-native,
+html body #authScreen .dm-auth-back>.dm-ua-native{
+ display:block;width:19px;height:19px;flex:0 0 19px;
+}
+html body #authScreen [data-dm-icon]>.dm-ua-icon{
+ display:none!important;place-items:center!important;
+ width:19px!important;height:19px!important;min-width:19px!important;min-height:19px!important;
+ flex:0 0 19px!important;pointer-events:none!important;line-height:0;
+}
+html body #authScreen [data-dm-icon].dm-ua-mounted>.dm-ua-icon{
+ display:inline-grid!important;
+}
+html body #authScreen [data-dm-icon].dm-ua-mounted>.dm-ua-native{
+ display:none!important;
+}
+html body #authScreen [data-dm-icon]>.dm-ua-icon svg{
+ display:block!important;width:100%!important;height:100%!important;
+ pointer-events:none!important;
+}
+html body #authScreen .dm-auth-action>.dm-ua-icon{
+ filter:invert(1)!important;
+}
+html body #authScreen .dm-auth-action[data-dm-icon="logOut"]>.dm-ua-icon{
+ transform:scaleX(-1); /* logOut Lottie mirrored gives logIn */
+}
+html body #authScreen .dm-auth-back{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ gap:8px!important;background:#075d38!important;color:#fff!important;
+ border:1px solid rgba(255,255,255,.45)!important;
+ padding:9px 12px!important;border-radius:9px!important;
+}
+html body #authScreen .dm-auth-back:hover{
+ background:#06492e!important;color:#fff!important;
+}
+html body #authScreen .dm-auth-back>.dm-ua-icon{
+ filter:invert(1)!important;transform:rotate(180deg);
+}
+html body #authScreen .dm-plan-animated-chevron{
+ display:inline-grid!important;place-items:center!important;
+ width:19px!important;height:19px!important;line-height:0!important;
+ pointer-events:none!important;
+}
+html body #authScreen .dm-plan-animated-chevron>.dm-ua-icon{
+ width:19px!important;height:19px!important;min-width:19px!important;
+ min-height:19px!important;
+ filter:invert(1)!important;
+}
+html body #authScreen .dm-plan-animated-chevron>.dm-ua-native{width:19px;height:19px}
+html body #app .topbar .topbar-right #dashboardPrintReport{
+ background:#075d38!important;color:#fff!important;
+ border:1.6px solid #fff!important;box-shadow:none!important;
+}
+html body #app .topbar .topbar-right #dashboardPrintReport>span,
+html body #app .topbar .topbar-right #dashboardPrintReport>svg{
+ color:#fff!important;
+}
+html body #app .topbar .topbar-right #dashboardPrintReport>.dm-ua-icon{
+ color:#fff!important;filter:invert(1)!important;
+}
+html body #app .topbar .topbar-right #dashboardPrintReport:hover{
+ background:#06492e!important;border-color:#fff!important;color:#fff!important;
+}
