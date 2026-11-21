@@ -420,6 +420,30 @@ async function run(){
  assert.equal((await liveCatalog.manage(db,ctxA,{branchId:101})).promos
   .find(x=>x.id===freshPromo.id).price,150,'Source promo remains independent');
  await assert.rejects(liveCatalog.copyPromo(db,ctxB,101,freshPromo.id,201),{status:403});
+ // All Branches creates separate records in every active branch owned by A.
+ // Both destination records remain editable independently.
+ const allBranchData={name:'All Branches Special',inclusion:'One coffee',price:90,
+  foodLimit:0,coffeeLimit:1,active:true};
+ const published=await liveCatalog.savePromoAllBranches(db,ctxA,allBranchData);
+ assert.equal(published.allBranches,true);
+ assert.equal(published.count,2);
+ assert.deepEqual([...published.branchIds].sort((a,b)=>a-b),[101,destBranch].sort((a,b)=>a-b));
+ const perBranchA=(await liveCatalog.manage(db,ctxA,{branchId:101})).promos.find(x=>x.name===allBranchData.name);
+ const perBranchDest=(await liveCatalog.manage(db,ctxA,{branchId:destBranch})).promos.find(x=>x.name===allBranchData.name);
+ assert(perBranchA&&perBranchDest);
+ assert.notEqual(perBranchA.id,perBranchDest.id,'Each branch owns an independent promo record');
+ await liveCatalog.savePromo(db,ctxA,destBranch,perBranchDest.id,{...allBranchData,price:75});
+ assert.equal((await liveCatalog.manage(db,ctxA,{branchId:101})).promos
+  .find(x=>x.name===allBranchData.name).price,90,
+  'Editing an All Branches promo copy must not update other branches');
+ await assert.rejects(liveCatalog.savePromoAllBranches(db,ctxA,allBranchData),{status:409},
+  'Duplicate names prevent a partial or accidental overwrite');
+ await assert.rejects(liveCatalog.savePromoAllBranches(db,ctxCashierA,allBranchData),{status:403},
+  'Cashiers must not publish promotions across branches');
+ const otherWorkspace=await liveCatalog.savePromoAllBranches(db,ctxB,allBranchData);
+ assert.equal(otherWorkspace.count,1,
+  'All Branches targets only branches belonging to the authenticated franchise');
+ assert.deepEqual(otherWorkspace.branchIds,[201]);
  // No purchase/credit is required for a Main Office campaign. A branch with
  // matching name+UOM inventory can sell and is atomically debited at checkout.
  await db.query("INSERT INTO supply_products(id,name,uom,active) VALUES(991,'Promo Beans','EA',TRUE)");
