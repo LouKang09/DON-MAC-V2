@@ -586,9 +586,11 @@
   };
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
   $('dashboardPrintReport').addEventListener('click',()=>{
-    // The server resolves the user's own branch and today's date in Manila.
-    // Open the existing PDF report in print-ready inline mode.
-    window.open('/api/reports/sales/print?period=daily','_blank','noopener,noreferrer');
+    // Newly registered franchises use a paid, scoped PDF endpoint; established
+    // shared accounts retain their existing daily-report print shortcut.
+    const path=state.user?.liveMode?'/api/live/report/print':
+      '/api/reports/sales/print?period=daily';
+    window.open(path,'_blank','noopener,noreferrer');
   });
 
   function reconcileCartWithCatalog(){
