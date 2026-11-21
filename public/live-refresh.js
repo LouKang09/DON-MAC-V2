@@ -112,9 +112,11 @@
   }
 
   async function refreshPosAvailability() {
-    const r = await fetch('/api/catalog');
-    if (!r.ok) return;
-    const c = await r.json();
+    // Unified franchises must never query the globally shared legacy catalog.
+    const c = window.donmacFranchiseUnified
+      ? await window.donmacScopedApi?.('/api/catalog')
+      : await (async()=>{const r=await fetch('/api/catalog');return r.ok?r.json():null;})();
+    if(!c)return;
     const fingerprint = stableCatalogFingerprint(c);
     if (posFingerprint === null) {
       posFingerprint = fingerprint;
