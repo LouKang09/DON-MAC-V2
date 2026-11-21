@@ -609,3 +609,18 @@ html body #app #view-pos #categoryTabs .category-packages .category-symbol>.cate
    animation:none!important;transform:none!important;will-change:auto!important;
  }
 }
+
+
+/* Lottie itself owns movement for mounted interactive icons.
+   Do not apply the legacy CSS bell wobble on top of its frames.
+   Native fallback icons keep their existing CSS feedback. */
+html body #app #whatsNewButton.dm-ua-mounted > .dm-ua-icon svg,
+html body #app #supplyNotificationsButton.dm-ua-mounted > .dm-ua-icon svg,
+html body #app #supplyNotificationsButton.dm-ua-mounted > .dm-ua-context svg{
+  animation:none!important;
+  transition:none!important;
+  transform:none!important;
+  will-change:auto!important;
+}
+/* The six POS category illustrations above intentionally keep their
+   continuous animations; none of these rules targets category artwork. */
