@@ -41,7 +41,8 @@
   const reset = el => {
     const item = animated.get(el);
     if (!item) return;
-    try { item.goToAndStop(0,true); } catch(_){}
+    // Keep the icon's idle animation active after pointer leaves.
+    try { item.play(); } catch(_){}
   };
   function install(el, name, original, slotClass='dm-ua-icon') {
     if (!el || !original || !catalog[name] || el.dataset.dmUaMounted) return;
@@ -57,7 +58,7 @@
     let item;
     try {
       item=window.lottie.loadAnimation({
-        container:slot,renderer:'svg',loop:false,autoplay:false,animationData:clone,
+        container:slot,renderer:'svg',loop:true,autoplay:false,animationData:clone,
         rendererSettings:{progressiveLoad:false,preserveAspectRatio:'xMidYMid meet'}
       });
     } catch(e) {
@@ -74,7 +75,7 @@
       slot.style.removeProperty('visibility');
       el.classList.add('dm-ua-mounted');
       el.dataset.dmUaMounted='ready';
-      item.goToAndStop(0,true);
+      item.goToAndPlay(0,true);
       // Analytics rebuilds its navigation after a click. Start the newly
       // selected icon's animation once its Lottie SVG has mounted.
       if(el.matches(':hover,:focus-visible')||
