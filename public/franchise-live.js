@@ -440,7 +440,11 @@
   $('menuToggle').addEventListener('click',()=>document.querySelector('.live-app').classList.toggle('menu-open'));
   $('branchSelect').addEventListener('change',async()=>{
    state.branchId=Number($('branchSelect').value);
+   // Never display the previous branch's menu, promos, or inventory during a switch.
+   state.catalog=null;state.manage=null;state.inventory=[];
    state.cart=[];state.quote=null;state.checkoutId=null;state.salesPage=1;
+   $('promoSelect').innerHTML='<option value="">No POS promo</option>';
+   $('productGrid').innerHTML='';
    await refreshAll();selectView(state.view);
   });
   $('refreshAll').addEventListener('click',refreshAll);
