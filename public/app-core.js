@@ -2266,10 +2266,14 @@
       coffeeLimit:Number($('promoCoffee').value),active:$('promoActive').checked,
       branchId:Number($('promoBranchFilter').value||state.promoBranchId||state.posBranchId)};
     try{
-     if(id)await api('/api/admin/promos/'+id,{method:'PUT',body});
-     else await api('/api/admin/promos',{method:'POST',body});
+     const saved=id?await api('/api/admin/promos/'+id,{method:'PUT',body}):
+      await api('/api/admin/promos',{method:'POST',body});
      toast(id?'Promo updated.':'Promo added.');
-     clearPromoForm();await loadAdminAll();await loadCatalog();
+     await loadAdminAll();await loadCatalog();
+     // Leave a newly saved promo selected so it can immediately be copied.
+     const readyId=Number(saved?.id||id||0);
+     if(readyId&&state.adminPromos.some(p=>Number(p.id)===readyId))editPromo(readyId);
+     else clearPromoForm();
     }catch(err){toast(err.message);}
    });
   });
