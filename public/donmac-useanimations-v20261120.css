@@ -859,15 +859,25 @@ html body #authScreen .auth-brand-panel > svg.dm-pour-logo:focus-visible{
 }
 
 
-/* The uploaded animated SVG has a larger intrinsic white margin than the
-   original static portrait. Match its visible ink bounds without rewriting
-   the user's SVG paths, animation timings, or original artwork.
-   Changes are restricted to the active login-logo state on all portals. */
-html body #authScreen .auth-brand-panel > img.auth-brand-logo.dm-pour-active{
-  transform:translate(2.2%,-3%) scale(1.19)!important;
+/* Both logo states now use the exact same viewBox and vector geometry.
+   Zoom the aligned idle frame first, then start the supplied SVG animation.
+   Never translate or scale only one state — that caused the earlier jump. */
+html body #authScreen .auth-brand-panel > img.auth-brand-logo{
+  transform:scale(1)!important;
   transform-origin:center center!important;
-  transition:none!important;
+  transition:transform .28s cubic-bezier(.2,.7,.28,1)!important;
+  will-change:transform;
+  cursor:pointer;
+  pointer-events:auto!important;
 }
-html body #authScreen .auth-brand-panel > img.auth-brand-logo:not(.dm-pour-active){
-  transition:none!important;
+html body #authScreen .auth-brand-panel > img.auth-brand-logo.dm-pour-preparing,
+html body #authScreen .auth-brand-panel > img.auth-brand-logo.dm-pour-active{
+  transform:scale(1.035)!important;
 }
+/* Keep the same image box, visual anchor, aspect ratio and vertical position
+   on Main POS, Admin Control, Supply Office, mobile and desktop. */
+html body #authScreen .auth-brand-panel > img.auth-brand-logo{
+  aspect-ratio:744 / 836;
+  object-fit:contain!important;
+}
+
