@@ -803,7 +803,8 @@
       <label>Cashier / Reference<input id="financeTransactionSearch" type="search" maxlength="120" autocomplete="off" placeholder="Search cashier or receipt…"/></label>
       <div class="dm-transaction-filter-actions"><button id="financeTransactionReset" type="button" class="secondary">Clear Filters</button></div>
     </div>
-    <div class="pos-finance-summary"><div><small>Transactions</small><strong id="financeTransactionCount">—</strong></div><div><small>Completed sales</small><strong id="financeTransactionTotal">—</strong></div></div>
+    <div class="pos-finance-summary" aria-live="polite" aria-busy="false"><div><small>Transactions</small><strong id="financeTransactionCount">—</strong></div><div><small>Total Sales</small><strong id="financeTransactionTotal">—</strong></div></div>
+    <p class="muted tiny dm-transaction-count-note">Counts and sales reflect all matching cashier, date, branch and status filters—not only the current page. Voided sales are excluded from Total Sales.</p>
     <div class="table-wrap"><table class="pos-finance-table"><thead><tr><th>Date</th><th>Reference</th><th>Branch</th><th>Cashier</th><th>Payment</th><th>Order type</th><th>Status / Void footprint</th><th>Amount</th><th>Action</th></tr></thead><tbody id="financeTransactionsBody"><tr><td colspan="9">Select Transactions to load the ledger.</td></tr></tbody></table></div><nav id="financeTransactionPages" class="pos-finance-pagination"></nav>
   </div>
 </section>
