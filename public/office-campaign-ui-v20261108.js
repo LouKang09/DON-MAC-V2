@@ -220,12 +220,12 @@ $('officeCampaignRows').addEventListener('click',async e=>{
  }
  if(participants){
   const box=$('officeCampaignParticipants');box.classList.remove('hidden');
-  box.textContent='Checking franchise purchases and sales…';
+  box.textContent='Checking branch ingredient stock and promotional sales…';
   try{
    const data=await api('promotions/'+participants.dataset.campaignParticipants+'/participants');
-   box.innerHTML='<h3>Franchise promotional participation</h3><div class="table-scroll"><table><thead><tr><th>Franchise</th><th>Required supplies received</th><th>Promotional sales</th></tr></thead><tbody>'+
-    (data.participants||[]).map(row=>'<tr><td><strong>'+esc(row.owner)+'</strong><small>Workspace #'+row.workspaceId+'</small></td>'+
-      '<td>'+(row.purchased?'Purchased':'Not yet qualified')+'<small>'+row.supplies.map(x=>esc(x.name)+': '+x.quantity+' received, '+x.requiredPerSale+' needed').join(' · ')+'</small></td>'+
+   box.innerHTML='<h3>Franchise promotional participation</h3><p>Branches can sell immediately when their ingredients are sufficient—no supply purchase required.</p><div class="table-scroll"><table><thead><tr><th>Franchise / Branch</th><th>Available ingredients</th><th>Promotional sales</th></tr></thead><tbody>'+
+    (data.participants||[]).map(row=>'<tr><td><strong>'+esc(row.owner)+'</strong><small>'+esc(row.branch||'Branch')+' · Workspace #'+row.workspaceId+'</small></td>'+
+      '<td>'+(row.eligible?'Ready to sell':'Not enough branch stock')+'<small>'+row.supplies.map(x=>esc(x.name)+': '+Number(x.available||0)+' '+esc(x.uom||'')+' on hand, '+Number(x.requiredPerSale||0)+' needed'+(x.matched?'':' · item/unit not matched')).join(' · ')+'</small></td>'+
       '<td>'+Number(row.sold||0)+' units · '+Number(row.orders||0)+' transactions</td></tr>').join('')+
     '</tbody></table></div>';
   }catch(err){box.textContent=err.message}
