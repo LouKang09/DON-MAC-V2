@@ -74,7 +74,7 @@ assert(scoped&&typeof scoped.request==='function');
  assert.equal(calls.find(c=>c.path==='/api/live/checkout').body.branchId,901);
  const dashboardResult=await scoped.request('/api/dashboard?view=hourly&branchId=901',{},state);
  assert.equal(dashboardResult.rangeActual,0);
- await assert.rejects(scoped.request('/api/backups',{},state),/not yet been migrated/i);
+ await assert.rejects(scoped.request('/api/backups',{},state),/specific action is unavailable in the isolated POS/i);
  const finance=await scoped.request('/api/finance/transactions?branchId=901',{},state);
  assert.equal(finance.total,0);
  const expense=await scoped.request('/api/finance/expenses?branchId=901',{},state);
