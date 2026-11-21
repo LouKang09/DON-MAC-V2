@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.42-promo-copy-spacing-20261121';
+  const VERSION = '1.6.43-all-branch-promo-20261121';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -51,7 +51,7 @@
       loadCss('salesReportV1541Css', '/sales-report-v1541.css');
       loadCss('ownerSalesV1542Css', '/owner-sales-v1542.css');
       loadCss('devPlansV1543Css', '/dev-plans-v1543.css');
-      loadCss('posCatalogV1544Css', '/pos-catalog-v1544.css?v=20261121-promo-copy-spacious');
+      loadCss('posCatalogV1544Css', '/pos-catalog-v1544.css?v=20261121-all-branches');
       loadCss('catalogIconsPackagesV1545Css', '/catalog-icons-packages-v1545.css');
       loadCss('posCatalogTilesV1546Css', '/pos-catalog-tiles-v1546.css');
       loadCss('topbarGreenV1549Css', '/topbar-green-v1549.css');
@@ -136,7 +136,7 @@
       if(currentView==='view-supply')await window.donmacSupply?.open?.();
       if(currentView==='view-chat')window.donmacChat?.refreshContacts?.();
       loadCss('posFinanceV20261107','/pos-finance.css');
-      loadCss('posCatalogV1544Css','/pos-catalog-v1544.css?v=20261121-promo-copy-spacious');
+      loadCss('posCatalogV1544Css','/pos-catalog-v1544.css?v=20261121-all-branches');
       loadCss('posCategoryAdminCss','/pos-categories-admin.css');
       await loadScript('/pos-categories-admin.js?v=20261116-isolated');
       await loadScript('/catalog-batch-v1544.js?v=20261115-isolated');
