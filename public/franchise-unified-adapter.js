@@ -230,7 +230,7 @@
     gross:raw.gross||0,discounts:raw.discounts||0,actual:raw.actual||0,
     grossProfit:Number(raw.actual||0)-products.reduce((n,x)=>n+x.costing,0),
     refund:raw.refund||0,deletedCount:raw.deletedCount||0,
-    products,promos:[],transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
+    products,promos:(raw.promos||[]).map(p=>({name:p.name,qty:Number(p.qty||0),gross:Number(p.gross||0),adjustment:Number(p.adjustment||0),actual:Number(p.actual||0)})),transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
   }
   if(p==='/api/reports/cashiers'&&method==='GET'){
    // Staff cannot enumerate other branches or private employee accounts.
