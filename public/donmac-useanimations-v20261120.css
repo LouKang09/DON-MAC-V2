@@ -550,3 +550,62 @@ html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"]:not(.dm-u
 @media(prefers-reduced-motion:reduce){
  #app #view-inventory .inv-operation-transfer .inv-transfer-map-icon{animation:none!important;will-change:auto!important}
 }
+
+
+/* Category artwork is raster/static by design; give the actual six POS illustrations
+   visible independent movement, including without hover. Lottie handles control glyphs. */
+@keyframes dm-category-coffee-steam{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  35%{transform:translateY(-4px) rotate(-3deg)}
+  70%{transform:translateY(-1px) rotate(2deg)}
+}
+@keyframes dm-category-noncoffee-shake{
+  0%,100%{transform:rotate(0deg) translateY(0)}
+  30%{transform:rotate(4deg) translateY(-2px)}
+  65%{transform:rotate(-3deg) translateY(1px)}
+}
+@keyframes dm-category-food-bounce{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%{transform:translateY(-5px) rotate(5deg)}
+}
+@keyframes dm-category-addons-rise{
+  0%,100%{transform:translateY(1px) scale(1)}
+  50%{transform:translateY(-5px) scale(1.045)}
+}
+@keyframes dm-category-promos-pulse{
+  0%,100%{transform:rotate(-7deg) scale(.98)}
+  50%{transform:rotate(7deg) scale(1.07)}
+}
+@keyframes dm-category-packages-rock{
+  0%,100%{transform:rotate(0deg) translateY(0)}
+  30%{transform:rotate(-5deg) translateY(-3px)}
+  70%{transform:rotate(5deg) translateY(-1px)}
+}
+html body #app #view-pos #categoryTabs .category-tile .category-symbol > .category-icon{
+  display:block!important;
+  transform-origin:center bottom!important;
+  will-change:transform;
+}
+html body #app #view-pos #categoryTabs .category-coffee .category-symbol>.category-icon{
+  animation:dm-category-coffee-steam 2.3s ease-in-out infinite!important;
+}
+html body #app #view-pos #categoryTabs .category-noncoffee .category-symbol>.category-icon{
+  animation:dm-category-noncoffee-shake 2.7s ease-in-out infinite!important;
+}
+html body #app #view-pos #categoryTabs .category-food .category-symbol>.category-icon{
+  animation:dm-category-food-bounce 2.6s ease-in-out infinite!important;
+}
+html body #app #view-pos #categoryTabs .category-addons .category-symbol>.category-icon{
+  animation:dm-category-addons-rise 2.4s ease-in-out infinite!important;
+}
+html body #app #view-pos #categoryTabs .category-promos .category-symbol>.category-icon{
+  animation:dm-category-promos-pulse 2.5s ease-in-out infinite!important;
+}
+html body #app #view-pos #categoryTabs .category-packages .category-symbol>.category-icon{
+  animation:dm-category-packages-rock 2.8s ease-in-out infinite!important;
+}
+@media(prefers-reduced-motion:reduce){
+ html body #app #view-pos #categoryTabs .category-tile .category-symbol>.category-icon{
+   animation:none!important;transform:none!important;will-change:auto!important;
+ }
+}
