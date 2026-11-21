@@ -10,9 +10,11 @@
   // Never persist customer/owner sales in browser storage.
   const ACCOUNT_SESSION_KEY='donmac-pos-account-session-v2';
   let sessionGeneration=0;
+  let catalogRequestGeneration=0;
   window.donmacSessionGeneration=()=>sessionGeneration;
   function discardPreviousAccount(){
     sessionGeneration++;
+    catalogRequestGeneration++;
     state.catalog=null;state.inventory=[];state.report=null;state.costing=null;state.dashboard=null;
     state.adminProducts=[];state.adminIngredients=[];state.adminPromos=[];state.adminPackages=[];state.promoBranchId=null;
     state.recipeRows=[];state.compositionRows=[];state.branches=[];state.userList=[];
@@ -603,7 +605,33 @@
     if(changed)state.pendingSaleRequestId=null;
     return changed;
   }
-  async function loadCatalog(){state.catalog=await api('/api/catalog');const changed=reconcileCartWithCatalog();renderTabs();renderPromo();renderCatalog();renderOrder();await refreshQuote();if(changed)toast('Order updated because a catalog item is no longer available.');}
+  async function loadCatalog(){
+    const request=++catalogRequestGeneration,session=sessionGeneration;
+    const expectedBranch=Number(state.posBranchId||state.user?.branchId||0);
+    const path=state.user?.liveMode?'/api/catalog?branchId='+encodeURIComponent(expectedBranch):'/api/catalog';
+    const catalog=await api(path);
+    if(request!==catalogRequestGeneration||session!==sessionGeneration)return;
+    if(state.user?.liveMode&&Number(catalog.branchId)!==expectedBranch)
+      throw new Error('Catalog branch mismatch. Refresh before selling.');
+    state.catalog=catalog;
+    const changed=reconcileCartWithCatalog();
+    renderTabs();renderPromo();renderCatalog();renderOrder();
+    await refreshQuote();
+    if(changed)toast('Order updated because a catalog item is no longer available.');
+  }
+  async function switchPosBranch(branch){
+    const next=Number(branch);
+    if(!state.user||!Number.isSafeInteger(next)||next<1||next===state.posBranchId)return;
+    state.posBranchId=next;
+    catalogRequestGeneration++;
+    state.catalog=null;state.adminPromos=[];
+    resetOrderState({render:false});
+    $('catalogGrid')?.replaceChildren();
+    $('promoBanner')?.classList.add('hidden');
+    $('categoryTabs')?.replaceChildren();
+    try{await loadCatalog();}
+    catch(error){toast('Unable to load this branch\'s menu: '+error.message);}
+  }
   window.refreshPosCatalogCategories=loadCatalog;
 
   // Lightweight SVG artwork; animation lives in CSS and never modifies cart state.
@@ -2659,7 +2687,7 @@
   }
 
   function initBranchControls(){
-   $('posBranch').onchange=()=>{state.posBranchId=Number($('posBranch').value||0);};
+   $('posBranch').onchange=()=>{void switchPosBranch($('posBranch').value);};
    $('newRole').onchange=toggleUserBranch;$('branchFormClear').onclick=clearBranchForm;
    $('branchForm').addEventListener('submit',async e=>{
      e.preventDefault();await withFormLock(e.currentTarget,async()=>{
@@ -2673,8 +2701,8 @@
    $('applyTrend').onclick=loadDashboard;$('dashboardBranch').onchange=()=>{
       const selected=Number($('dashboardBranch').value||0);
       if(state.user?.role==='Admin'&&state.branches.some(x=>x.id===selected&&x.active)){
-        state.posBranchId=selected;
         $('posBranch').value=String(selected);
+        void switchPosBranch(selected);
         refreshPosDailyCount();
       }
       loadDashboard();
