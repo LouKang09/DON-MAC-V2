@@ -14,7 +14,9 @@
   background-size:600% 100%;
   /* Do not set background-position here: the category-specific rule owns it. */
   image-rendering:auto;
-  transform:none!important;
+  /* Never force transform:none here: it overrides the animated category art
+     even when CSS keyframes are running (including when animation is important). */
+  transform-origin:center center;
 }
 #view-pos #categoryTabs .category-tile .category-icon-coffee {background-position:0% 0%}
 #view-pos #categoryTabs .category-tile .category-icon-noncoffee {background-position:20% 0%}
