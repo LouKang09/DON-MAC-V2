@@ -18,7 +18,8 @@
   const groupMap = {main:'grid',team:'users',transactions:'fileText',management:'settings'};
   const animated = new WeakMap();
   const live = new Set();
-  let catalog = {}, observer, scanning = false, scanPending = false;
+  let catalog = {}, observer, scanPending = false;
+  const diagnostics = {loadedBundles:0, mounted:0, failed:0, lastError:null};
   const loadCatalog = async () => {
     const files = ['/animations/donmac-nav-icons.json',
       '/animations/donmac-action-icons.json',
@@ -28,6 +29,7 @@
       if (!r.ok) throw new Error('Icon bundle unavailable: '+url);
       return r.json();
     }));
+    diagnostics.loadedBundles=response.filter(x=>x.status==='fulfilled').length;
     catalog = Object.assign({}, ...response.filter(x=>x.status==='fulfilled').map(x=>x.value));
     if (!Object.keys(catalog).length) throw new Error('No icon animation bundles loaded');
   };
@@ -58,7 +60,7 @@
     let item;
     try {
       item=window.lottie.loadAnimation({
-        container:slot,renderer:'svg',loop:true,autoplay:false,animationData:clone,
+        container:slot,renderer:'svg',loop:true,autoplay:true,animationData:clone,
         rendererSettings:{progressiveLoad:false,preserveAspectRatio:'xMidYMid meet'}
       });
     } catch(e) {
@@ -66,35 +68,50 @@
     }
     const record={el,item,original,slot};
     animated.set(el,item);live.add(record);
-    item.addEventListener('DOMLoaded',() => {
-      if (!el.isConnected || !el.contains(original) ||
-          el.dataset.dmUaMounted!=='pending' || reduce?.matches) return;
-      // One icon in the original position: physically replace the old SVG.
+    let committed=false;
+    const commit=()=>{
+      if(committed||!el.isConnected||!original.isConnected||!slot.isConnected||
+         el.dataset.dmUaMounted!=='pending'||reduce?.matches)return;
+      // DOMLoaded is emitted by lottie-web after its SVG is built. Some
+      // versions emit it before the caller attaches an event listener:
+      // also accept an already populated SVG and data_ready.
+      if(!slot.querySelector('svg'))return;
+      committed=true;
       original.replaceWith(slot);
       slot.style.removeProperty('position');
       slot.style.removeProperty('visibility');
       el.classList.add('dm-ua-mounted');
       el.dataset.dmUaMounted='ready';
-      item.goToAndPlay(0,true);
-      // Analytics rebuilds its navigation after a click. Start the newly
-      // selected icon's animation once its Lottie SVG has mounted.
-      if(el.matches(':hover,:focus-visible')||
-         el.closest('button:hover,button:focus-visible')||
-         (el.matches('.rd-nav-glyph')&&el.closest('button[data-aa-section].active'))){
-        requestAnimationFrame(()=>{
-          if(el.isConnected&&!reduce?.matches)try{item.goToAndPlay(0,true)}catch(_){}
-        });
+      diagnostics.mounted++;
+      try{item.goToAndPlay(0,true)}catch(error){
+        diagnostics.lastError=String(error?.message||error);
       }
-    });
-    item.addEventListener('data_failed',() => {
-      if (!original.isConnected && slot.isConnected) slot.replaceWith(original);
+    };
+    const failed=error=>{
+      if(committed)return;
+      diagnostics.failed++;
+      diagnostics.lastError=String(error?.message||error||'Lottie icon could not mount');
+      if (!original.isConnected && slot.isConnected)slot.replaceWith(original);
       else slot.remove();
       el.classList.remove('dm-ua-mounted');
       animated.delete(el);
       live.delete(record);
       delete el.dataset.dmUaMounted;
       try{item.destroy()}catch(_){}
-    });
+    };
+    item.addEventListener('DOMLoaded',commit);
+    item.addEventListener('data_ready',commit);
+    item.addEventListener('data_failed',failed);
+    item.addEventListener('error',failed);
+    // Ensure that icons remain visible even when the player emitted
+    // DOMLoaded synchronously. Do not leave 'pending' icons forever.
+    requestAnimationFrame(commit);
+    setTimeout(()=>{
+      if(!committed&&el.dataset.dmUaMounted==='pending'){
+        commit();
+        if(!committed)failed('Lottie SVG was not created');
+      }
+    },2000);
   }
   function scan() {
     if (reduce?.matches || !window.lottie?.loadAnimation) return;
@@ -174,7 +191,10 @@
     if(e.matches) disable();
     else scheduleScan();
   });
-  window.donmacAnimatedIcons={refresh:scheduleScan};
+  window.donmacAnimatedIcons={refresh:scheduleScan,
+    status:()=>({...diagnostics,availableIcons:Object.keys(catalog).length,
+      activePlayers:live.size,reducedMotion:!!reduce?.matches,
+      lottieAvailable:!!window.lottie?.loadAnimation})};
   loadCatalog().then(()=>{
     scan();
     const nav=document.getElementById('mainNav');
@@ -194,7 +214,8 @@
         n.matches?.(selector)||n.querySelector?.(selector)))))scheduleScan();
     });
     bodyObserver.observe(document.body,{childList:true,subtree:true});
-  }).catch(()=>{
+  }).catch(error=>{
+    diagnostics.lastError=String(error?.message||error);
     // Keep native SVGs visible if the bundles are temporarily unavailable.
     // A refresh/revisit can retry without requiring users to clear their cache.
     window.donmacAnimatedIcons.refresh=()=>loadCatalog().then(scheduleScan).catch(()=>{});
