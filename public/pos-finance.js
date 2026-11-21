@@ -22,10 +22,29 @@
  function transactionSummaryPending(){
   $('financeTransactionCount').textContent='…';
   $('financeTransactionTotal').textContent='…';
+  $('financeProductsSoldQuantity').textContent='…';
+  $('financeProductsSoldBody').innerHTML='<tr><td colspan="3" class="dm-finance-products-empty">Loading matching products sold…</td></tr>';
   $('financeTransactionCount').closest('.pos-finance-summary')?.setAttribute('aria-busy','true');
+  $('financeProductsSoldBody').closest('.dm-finance-products')?.setAttribute('aria-busy','true');
  }
  function transactionSummaryReady(){
   $('financeTransactionCount').closest('.pos-finance-summary')?.setAttribute('aria-busy','false');
+  $('financeProductsSoldBody').closest('.dm-finance-products')?.setAttribute('aria-busy','false');
+ }
+ function renderProductsSold(products){
+  const entries=Array.isArray(products)?products.filter(x=>
+   x&&typeof x.name==='string'&&Number.isFinite(Number(x.quantity))&&Number(x.quantity)>0):[];
+  const qty=n=>Number(n).toLocaleString('en-PH',{maximumFractionDigits:3});
+  const itemType=kind=>({
+   product:'Product',package:'Package',addon:'Add-on',addOn:'Add-on',
+   officePromo:'Promotion',promo:'Promotion'
+  }[kind]||'Item');
+  $('financeProductsSoldQuantity').textContent=qty(entries.reduce((sum,x)=>sum+Number(x.quantity),0));
+  $('financeProductsSoldBody').innerHTML=entries.map(x=>
+   '<tr><td><strong>'+esc(x.name)+'</strong></td>'+
+   '<td><span class="dm-finance-item-type">'+esc(itemType(x.kind))+'</span></td>'+
+   '<td class="num">'+qty(x.quantity)+'</td></tr>'
+  ).join('')||'<tr><td colspan="3" class="dm-finance-products-empty">No completed products sold match these filters.</td></tr>';
  }
  function canManageExpenses(){return window.donmacFinanceAccess?.manageExpenses===true;}
  function enforceHistoryBounds(){
@@ -119,6 +138,7 @@
     // branch, status, and start/end-date WHERE clause as the ledger rows.
     $('financeTransactionCount').textContent=Number(data.total||0).toLocaleString('en-PH');
     $('financeTransactionTotal').textContent=peso(data.salesTotal);
+    renderProductsSold(data.products);
     transactionSummaryReady();
     $('financeTransactionsBody').innerHTML=(data.rows||[]).map(r=>{
      const voided=r.status==='Voided'||r.status==='Deleted';
@@ -170,6 +190,8 @@
     $('financeTransactionsBody').innerHTML='<tr><td colspan="9">'+esc(err.message)+'</td></tr>';
     $('financeTransactionCount').textContent='—';
     $('financeTransactionTotal').textContent='—';
+    $('financeProductsSoldQuantity').textContent='—';
+    $('financeProductsSoldBody').innerHTML='<tr><td colspan="3" class="dm-finance-products-empty">'+esc(err.message)+'</td></tr>';
     transactionSummaryReady();
    }
    else message(err.message,true);
