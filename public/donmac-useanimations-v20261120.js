@@ -196,6 +196,12 @@
   document.addEventListener('pointerout',e=>{
     for(const el of targets(e))if(!el.contains(e.relatedTarget))reset(el);
   },true);
+  document.addEventListener('change',e=>{
+    if(e.target?.id==='regRequestedPlan'){
+      const glyph=e.target.closest('.auth-plan-select-wrap')?.querySelector('.dm-plan-animated-chevron');
+      if(glyph)play(glyph);
+    }
+  },true);
   document.addEventListener('focusin',e=>{targets(e).forEach(play);},true);
   document.addEventListener('focusout',e=>{targets(e).forEach(reset);},true);
   document.addEventListener('click',e=>{
