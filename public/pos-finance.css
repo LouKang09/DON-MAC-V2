@@ -42,3 +42,66 @@
 .pos-finance-table .dm-void-action svg{width:1.1rem;height:1.1rem;flex:0 0 1.1rem}
 .pos-finance-table .dm-void-action .dm-ua-icon{filter:invert(100%)}
 .pos-finance-table .dm-void-unavailable{color:#8d9b92}
+
+
+/* Transactions: sold line-items across the full filtered date/cashier result. */
+#view-transactions .dm-finance-products{
+  margin:1rem 0 1.35rem;padding:clamp(.85rem,1.4vw,1.2rem);
+  border:1px solid #cce2d3;background:#f8fbf8;border-radius:14px;min-width:0;
+}
+#view-transactions .dm-finance-products-heading{
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;
+  padding:0 .15rem .8rem;
+}
+#view-transactions .dm-finance-products-heading h4{
+  margin:.15rem 0 .25rem;color:#12482f;font-size:clamp(1rem,1.5vw,1.15rem);
+}
+#view-transactions .dm-finance-products-heading p.muted{
+  margin:0;max-width:75ch;line-height:1.5;
+}
+#view-transactions .dm-finance-products-total{
+  display:flex;flex-direction:column;justify-content:center;align-items:flex-end;
+  border:1px solid #c5e0ce;background:#eaf5ed;border-radius:10px;
+  padding:.55rem .85rem;min-width:8.5rem;
+}
+#view-transactions .dm-finance-products-total small{
+  color:#47775a;font-size:.7rem;font-weight:750;
+}
+#view-transactions .dm-finance-products-total strong{
+  color:#075d38;font-size:1.35rem;line-height:1.4;font-variant-numeric:tabular-nums;
+}
+#view-transactions .dm-finance-products-list{
+  overflow:auto;max-height:350px;border:1px solid #d7e8db;border-radius:10px;
+  background:white;scrollbar-color:#a3c6ae transparent;
+}
+#view-transactions .dm-finance-products-table{
+  width:100%;border-collapse:collapse;min-width:420px;
+}
+#view-transactions .dm-finance-products-table th{
+  position:sticky;top:0;z-index:1;background:#eef6f0;
+  text-align:left;color:#3a624c;font-size:.72rem;font-weight:850;
+  letter-spacing:.025em;padding:.8rem .9rem;
+}
+#view-transactions .dm-finance-products-table td{
+  padding:.7rem .9rem;border-top:1px solid #eef3ef;
+  color:#234d36;font-size:.82rem;
+}
+#view-transactions .dm-finance-products-table tbody tr:nth-child(even){background:#fbfdfb}
+#view-transactions .dm-finance-products-table td strong{font-weight:750;overflow-wrap:anywhere}
+#view-transactions .dm-finance-products-table .num{
+  text-align:right;font-variant-numeric:tabular-nums;font-weight:850;white-space:nowrap;
+}
+#view-transactions .dm-finance-item-type{
+  display:inline-flex;border-radius:7px;padding:.2rem .45rem;
+  background:#e9f4ed;color:#316849;font-size:.72rem;font-weight:750;
+}
+#view-transactions .dm-finance-products-empty{
+  text-align:center!important;color:#698174!important;
+  font-weight:550!important;padding:1.3rem!important;
+}
+#view-transactions .dm-finance-products[aria-busy="true"]{opacity:.78}
+@media(max-width:600px){
+ #view-transactions .dm-finance-products-heading{align-items:stretch}
+ #view-transactions .dm-finance-products-total{align-items:flex-start}
+ #view-transactions .dm-finance-products-list{max-height:290px}
+}
