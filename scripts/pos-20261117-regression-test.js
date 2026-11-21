@@ -88,6 +88,13 @@ async function main(){
  await assert.rejects(insights.settings(db,scope,'BUSINESS'),{status:409});
  const dom=new JSDOM(html,{url:'https://donmacpos.com/',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window;
+ // jsdom has no native viewport media query API; model desktop for the
+ // payroll and navigation regression without altering browser behavior.
+ w.matchMedia=w.matchMedia||((query)=>({
+  media:query,matches:/min-width:\\s*(?:7[0-9]{2}|[89][0-9]{2}|\\d{4})px/.test(query),
+  onchange:null,addListener(){},removeListener(){},
+  addEventListener(){},removeEventListener(){},dispatchEvent(){return false}
+ }));
  w.fetch=async()=>({ok:true,json:async()=>({enabled:false,plan:'PRO',message:'Add-on required',
   addon:{fee:0,status:'UNPAID'}})});
  w.donmacAuthenticatedRole='Admin';
