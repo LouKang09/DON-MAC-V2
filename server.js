@@ -2200,8 +2200,9 @@ async function handleApi(req,res,url){
       const payload={period:'daily',target:today,cashier:franchiseLive.admin?'ALL':user.username,
         transactionCount:Number(summary.transaction_count||0),deletedCount:0,
         gross,adjustment:gross-actual,actual,products,promos:report.promos,transactions:receipts};
-      const lines=salesReportLines(payload,'Don Macchiatos - '+branch.name+' - Daily Sales Report');
-      if(!showReceipts)lines.push({text:'Receipt details require Transactions access.'});
+      const lines=salesReportLines(payload,'Don Macchiatos - '+branch.name+' - Daily Sales Report',
+        {includeTransactions:false,costLabel:'In-Store Expense'});
+
       const pdf=makePdf(lines,{title:'Daily Branch Sales Report'});
       return binary(res,200,pdf,'application/pdf',
         {'Content-Disposition':'inline; filename="'+filename+'"','Cache-Control':'no-store'});
