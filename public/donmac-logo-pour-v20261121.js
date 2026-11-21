@@ -1,47 +1,68 @@
-/* Don Macchiatos login barista: user-supplied SVG on hover/tap.
- * The visible original IMG stays in the DOM; no SVG DOMParser or replacement.
- * A fresh external animated-SVG resource replays its own timeline on each gesture.
+/* Don Macchiatos login logo — user's exact SVG.
+ * The idle asset is extracted from the same vector paths as the animated asset.
+ * Ease the idle artwork into its final scale before starting SMIL pouring.
+ * Leaving hover restores idle immediately; the scale eases gently to rest.
  */
 (()=>{
  'use strict';
- const animated='/donmac-logo-hover-original.svg?v=uploaded-20261121';
+ const idle='/donmac-logo-hover-still.svg?v=20261121-framed-v1';
+ const animated='/donmac-logo-hover-original.svg?v=20261121-framed-v1';
+ const ZOOM_MS=280;
+ const POUR_MS=4800;
  let cycle=0;
  function init(){
-  document.querySelectorAll('#authScreen .auth-brand-panel img.auth-brand-logo').forEach(img=>{
+  document.querySelectorAll('#authScreen .auth-brand-panel > img.auth-brand-logo').forEach(img=>{
    if(img.dataset.dmPourBound==='1')return;
    img.dataset.dmPourBound='1';
    img.tabIndex=0;
    img.setAttribute('role','button');
-   img.setAttribute('aria-label','Don Macchiatos logo — hover, tap or press Enter to see coffee pour');
+   img.setAttribute('aria-label','Don Macchiatos logo — hover or tap to pour coffee');
    img.title='Hover or tap to pour coffee';
-   const original=img.getAttribute('src')||'/donmac-logo-hires.svg';
-   let playing=false,finish=0;
+   let phase='idle',prep=0,finish=0;
+   let hasPointer=false;
+   // The HTML already uses the identical still frame. The fallback remains
+   // the original logo if this new asset is unexpectedly unavailable.
+   const fallback=img.getAttribute('src')||idle;
+   function clearTimers(){clearTimeout(prep);clearTimeout(finish);}
    function restore(){
-    clearTimeout(finish);
-    playing=false;
-    img.src=original;
-    img.classList.remove('dm-pour-active');
+    clearTimers();
+    if(phase==='idle')return;
+    phase='idle';
+    img.src=fallback;
+    img.classList.remove('dm-pour-preparing','dm-pour-active');
    }
    function play(){
-    if(playing||document.documentElement.classList.contains('dm-icon-motion-off'))return;
-    playing=true;
-    img.classList.add('dm-pour-active');
-    const next=animated+'&cycle='+(++cycle);
-    // A distinct URL restarts the supplied SVG's own 4.8-second animation from frame 0.
-    img.src=next;
-    finish=setTimeout(restore,4850);
+    if(phase!=='idle'||document.documentElement.classList.contains('dm-icon-motion-off'))return;
+    phase='preparing';
+    img.classList.add('dm-pour-preparing');
+    prep=setTimeout(()=>{
+     if(phase!=='preparing')return;
+     phase='pouring';
+     img.classList.remove('dm-pour-preparing');
+     img.classList.add('dm-pour-active');
+     // Each unique URL restarts the supplied SVG's built-in 4.8s timeline.
+     img.src=animated+'&cycle='+(++cycle);
+     finish=setTimeout(restore,POUR_MS);
+    },ZOOM_MS);
    }
-   img.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')play()});
-   // Leaving the logo stops the pour immediately — don't wait for the
-   // remaining SVG frames or the original 4.8s restore timer.
-   img.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')restore()});
+   img.addEventListener('pointerenter',e=>{
+    if(e.pointerType==='touch')return;
+    hasPointer=true;
+    play();
+   });
+   img.addEventListener('pointerleave',e=>{
+    if(e.pointerType==='touch')return;
+    hasPointer=false;
+    restore();
+   });
    img.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')play()});
-   img.addEventListener('focus',play);
+   img.addEventListener('focus',()=>{if(!hasPointer)play()});
+   img.addEventListener('blur',()=>{if(!hasPointer)restore()});
    img.addEventListener('keydown',e=>{
     if(e.key==='Enter'||e.key===' '){e.preventDefault();play()}
    });
    img.addEventListener('error',()=>{
-    if(playing)restore();
+    if(phase!=='idle')restore();
    });
   });
  }
