@@ -1,10 +1,10 @@
-/* Don Macchiatos login barista: reliable hover/tap animation.
+/* Don Macchiatos login barista: user-supplied SVG on hover/tap.
  * The visible original IMG stays in the DOM; no SVG DOMParser or replacement.
  * A fresh external animated-SVG resource replays its own timeline on each gesture.
  */
 (()=>{
  'use strict';
- const animated='/donmac-logo-pour.svg?v=20261121-pour-v2';
+ const animated='/donmac-logo-hover-original.svg?v=uploaded-20261121';
  let cycle=0;
  function init(){
   document.querySelectorAll('#authScreen .auth-brand-panel img.auth-brand-logo').forEach(img=>{
@@ -27,9 +27,9 @@
     playing=true;
     img.classList.add('dm-pour-active');
     const next=animated+'&cycle='+(++cycle);
-    // A distinct resource URL makes the SVG's own CSS timeline start at frame 0.
+    // A distinct URL restarts the supplied SVG's own 4.8-second animation from frame 0.
     img.src=next;
-    finish=setTimeout(restore,2050);
+    finish=setTimeout(restore,4850);
    }
    img.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')play()});
    img.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')play()});
