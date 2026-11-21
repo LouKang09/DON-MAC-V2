@@ -492,10 +492,14 @@ html body #app #mainNav .dm-guide-nav-row:has(> .dm-attendance-entry[aria-hidden
   52%{transform:translateY(0) rotate(5deg) scale(1.05)}
   78%{transform:translateY(-1px) rotate(-3deg) scale(1.02)}
 }
-#app #view-inventory .inv-operation-transfer:hover .inv-transfer-map-icon,
-#app #view-inventory .inv-operation-transfer:focus-within .inv-transfer-map-icon,
-#app #view-inventory .inv-operation-transfer.active .inv-transfer-map-icon{
+/* Only the Transfer Inventory action moves, never the decorative card icon. */
+#app #view-inventory #inventoryTransferTab:hover > .inv-transfer-map-icon,
+#app #view-inventory #inventoryTransferTab:focus-visible > .inv-transfer-map-icon,
+#app #view-inventory #inventoryTransferTab.active > .inv-transfer-map-icon{
   animation:dm-transfer-map-open .88s ease-in-out 1;
+}
+#app #view-inventory .inv-operation-transfer .inv-operation-top > .inv-transfer-map-icon{
+  animation:none!important;transform:none!important;will-change:auto!important;
 }
 @media(max-width:940px){
   #app #view-inventory .inv-operation-transfer .inv-operation-top > .inv-transfer-map-icon{
