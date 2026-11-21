@@ -857,3 +857,17 @@ html body #authScreen .auth-brand-panel > svg.dm-pour-logo:focus-visible{
   width:auto;max-width:260px;height:175px;max-height:100%;
  }
 }
+
+
+/* The uploaded animated SVG has a larger intrinsic white margin than the
+   original static portrait. Match its visible ink bounds without rewriting
+   the user's SVG paths, animation timings, or original artwork.
+   Changes are restricted to the active login-logo state on all portals. */
+html body #authScreen .auth-brand-panel > img.auth-brand-logo.dm-pour-active{
+  transform:translate(2.2%,-3%) scale(1.19)!important;
+  transform-origin:center center!important;
+  transition:none!important;
+}
+html body #authScreen .auth-brand-panel > img.auth-brand-logo:not(.dm-pour-active){
+  transition:none!important;
+}
