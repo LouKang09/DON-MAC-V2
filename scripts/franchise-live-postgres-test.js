@@ -414,11 +414,11 @@ async function run(){
   .find(x=>x.id===copied.id);
  assert.equal(destPromo.name,'Branch Offer');
  assert.equal(destPromo.price,150);
+ await assert.rejects(liveCatalog.copyPromo(db,ctxA,101,freshPromo.id,destBranch),{status:409});
  await liveCatalog.savePromo(db,ctxA,destBranch,copied.id,{
   name:'Branch Offer Copy',inclusion:'Coffee + Food',price:125,foodLimit:1,coffeeLimit:1,active:true});
  assert.equal((await liveCatalog.manage(db,ctxA,{branchId:101})).promos
   .find(x=>x.id===freshPromo.id).price,150,'Source promo remains independent');
- await assert.rejects(liveCatalog.copyPromo(db,ctxA,101,freshPromo.id,destBranch),{status:409});
  await assert.rejects(liveCatalog.copyPromo(db,ctxB,101,freshPromo.id,201),{status:403});
  // No purchase/credit is required for a Main Office campaign. A branch with
  // matching name+UOM inventory can sell and is atomically debited at checkout.
