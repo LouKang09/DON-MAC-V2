@@ -304,6 +304,9 @@
   $('reportPayments').innerHTML=(report.payments||[]).map(x=>
    '<tr><td>'+escape(x.mode)+'</td><td>'+x.count+'</td><td>'+money(x.amount)+'</td></tr>').join('')||
    '<tr><td colspan="3">No payments in this period.</td></tr>';
+  $('reportPromos').innerHTML=(report.promos||[]).map(x=>
+   '<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.gross)+'</td><td>'+money(x.adjustment)+'</td><td>'+money(x.actual)+'</td></tr>').join('')||
+   '<tr><td colspan="5">No completed POS promotion transactions in this period.</td></tr>';
   $('reportProducts').innerHTML=(report.products||[]).map(x=>
    '<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.gross)+'</td><td>'+money(x.costing)+'</td></tr>').join('')||
    '<tr><td colspan="4">No products sold in this period.</td></tr>';
