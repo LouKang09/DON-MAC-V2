@@ -2288,9 +2288,7 @@
 
   async function loadBackups(){
     try{
-      const [d,preview]=await Promise.all([
-        api('/api/backups'),api('/api/backups/retention-preview')
-      ]);
+      const d=await api('/api/backups');
       $('backupNote').textContent=d.supported
         ?'SQLite native backup and restore are available. Download copies to a separate safe location.'
         :'This installation runs PostgreSQL. Use Download Data Archive to save a read-only copy of business data. Native full-database backups and one-click restore require separate PostgreSQL backup infrastructure.';
@@ -2301,10 +2299,7 @@
         '<tr><td colspan="4" class="muted">No native server backups to list. Business data can be exported using Download Data Archive.</td></tr>';
       $('backupBody').querySelectorAll('[data-restore]').forEach(b=>
         b.onclick=()=>restoreBackup(b.dataset.restore));
-      $('retentionDemoEnabled').checked=preview.demoEnabled;
-      $('retentionFrequency').value=preview.frequency;
-      $('retentionFrequency').disabled=!preview.demoEnabled;
-      $('retentionBackupStatus').textContent=preview.note;
+      $('retentionBackupStatus').textContent='Sales history follows your active plan. Data Archive exports are manual; no automatic off-site backup is enabled.';
       await refreshArchiveComparison();
     }catch(err){toast(err.message);}
   }
@@ -2314,23 +2309,6 @@
     link.download='DonMac_Data_Archive.json';
     document.body.appendChild(link);link.click();link.remove();
     toast('Requesting business data archive. Keep the downloaded file in a secure location.');
-  });
-  $('retentionDemoEnabled').addEventListener('change',e=>{
-    $('retentionFrequency').disabled=!e.target.checked;
-  });
-  $('saveRetentionPreference').onclick=()=>withActionLock('save-retention',async()=>{
-    const button=$('saveRetentionPreference');
-    button.disabled=true;
-    try{
-      const p=await api('/api/backups/retention-preview',{
-        method:'PUT',
-        body:{demoEnabled:$('retentionDemoEnabled').checked,
-          frequency:$('retentionFrequency').value}
-      });
-      $('retentionBackupStatus').textContent=p.note;
-      toast('Development retention preference saved. No subscription or automated backup was activated.');
-    }catch(err){toast(err.message);}
-    finally{button.disabled=false;}
   });
 
   $('createBackup').onclick=()=>withActionLock('create-backup',async()=>{try{const d=await api('/api/backups',{method:'POST',timeoutMs:60000});toast(`Backup created: ${d.name}`);await loadBackups();}catch(err){toast(err.message);}});
