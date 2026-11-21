@@ -196,12 +196,17 @@
   document.addEventListener('pointerout',e=>{
     for(const el of targets(e))if(!el.contains(e.relatedTarget))reset(el);
   },true);
-  document.addEventListener('change',e=>{
-    if(e.target?.id==='regRequestedPlan'){
-      const glyph=e.target.closest('.auth-plan-select-wrap')?.querySelector('.dm-plan-animated-chevron');
-      if(glyph)play(glyph);
-    }
-  },true);
+  // Native <select> events do not bubble from a button. Trigger both real
+  // animated plan glyphs when opening/changing the dropdown on any device.
+  const playPlanIcons=target=>{
+    if(target?.id!=='regRequestedPlan')return;
+    target.closest('.auth-plan-select-wrap')?.querySelectorAll(
+      '.dm-plan-animated-mark,.dm-plan-animated-chevron'
+    ).forEach(play);
+  };
+  document.addEventListener('pointerdown',e=>playPlanIcons(e.target),true);
+  document.addEventListener('focusin',e=>playPlanIcons(e.target),true);
+  document.addEventListener('change',e=>playPlanIcons(e.target),true);
   document.addEventListener('focusin',e=>{targets(e).forEach(play);},true);
   document.addEventListener('focusout',e=>{targets(e).forEach(reset);},true);
   document.addEventListener('click',e=>{
