@@ -188,7 +188,7 @@ async function load(){
 $('officeCampaignForm').addEventListener('submit',async e=>{
  e.preventDefault();const btn=$('officeCampaignCreate');if(btn.disabled)return;
  const requirements=selectedIngredients.filter(x=>x.kind==='catalog').map(x=>({productId:x.id,unitsPerSale:x.qty}));
- if(!requirements.length){ingredientFeedback('Select at least one Supply Catalog ingredient so franchise delivery eligibility can be verified. Typed items are descriptive only.');return;}
+ if(!requirements.length){ingredientFeedback('Select at least one Supply Catalog ingredient to define required stock per sale. Branches qualify using their on-hand inventory; no purchase is required. Typed items are descriptive only.');return;}
  const description=ingredientDescription();
  if(description.length>900){ingredientFeedback('The generated ingredient description is too long. Remove or shorten some ingredients.');return;}
  btn.disabled=true;
