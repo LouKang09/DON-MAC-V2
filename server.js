@@ -13,7 +13,6 @@ const devSubscription = require('./lib/development-subscriptions');
 const platformAccounts = require('./lib/platform-accounts');
 const branchPlans = require('./lib/franchise-branch-plans');
 const officePromotions = require('./lib/office-promotions');
-const retireObsoletePosPromos = require('./lib/retire-obsolete-pos-promos');
 const platformAdminAuth = require('./lib/platform-admin-auth');
 const officeOriginProxy = require('./lib/office-origin-proxy');
 const platformBilling = require('./lib/platform-billing');
@@ -2514,7 +2513,7 @@ async function main(){
    console.log('[Authorized test1 Main POS activation]',JSON.stringify(changed));
   }
   await franchiseTestOperations.migrate(db);await franchiseLiveSales.migrate(db);await franchiseLiveExpenses.migrate(db);await franchisePayrollEntitlement.migrate(db);await franchiseAttendance.migrate(db);await franchisePayrollLedger.migrate(db);await platformBilling.migrate(db);await posFinance.migrate(db);
-  await businessStoreDetail.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const promoCleanup=await retireObsoletePosPromos.run(db);console.log('[Legacy POS Promo Cleanup]',JSON.stringify(promoCleanup));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
+  await businessStoreDetail.migrate(db);const marlouCopy=await branchCatalogSeeding.prepareMarlou(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Branch Catalog Phase 2 Preparation]',JSON.stringify(marlouCopy));const testStockReset=await marlouTestStockReset.apply(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Marlou Test Stock Reset]',JSON.stringify(testStockReset));await ensureAutomaticBackup();const retiredDemo=await retireLegacyDemoAccounts.retire(db).catch(error=>({status:'blocked',reason:error.message}));console.log('[Admin Authorized Demo Retirement]',JSON.stringify(retiredDemo));const backupTimer=setInterval(()=>ensureAutomaticBackup().catch(err=>console.error('Automatic backup failed:',err.message)),60*60*1000);backupTimer.unref?.();const status=await appStatus();
   const server=http.createServer(async(req,res)=>{
     try{
       const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
