@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.44-animated-icons-promo-cleanup-20261121';
+  const VERSION = '1.6.45-branch-safe-animated-pos-20261121';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
