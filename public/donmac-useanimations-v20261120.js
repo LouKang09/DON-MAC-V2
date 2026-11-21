@@ -178,7 +178,13 @@
     return [...found];
   };
   document.addEventListener('pointerover',e=>{
-    for(const el of targets(e))if(!el.contains(e.relatedTarget))play(el);
+    // Do not retrigger when moving between the SVG, label and button.
+    // Browser pointerover is emitted for child elements as well as buttons.
+    for(const el of targets(e)){
+      const control=el.closest('button,[role="button"]')||el;
+      if(e.relatedTarget instanceof Node && control.contains(e.relatedTarget))continue;
+      play(el);
+    }
   },true);
   // Leaving the button never restarts an animation.
   document.addEventListener('pointerout',e=>{
