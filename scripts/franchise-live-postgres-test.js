@@ -6,6 +6,7 @@ const isolatedSchema=require('../lib/branch-isolated-schema');
 const liveScope=require('../lib/franchise-live-scope');
 const liveCatalog=require('../lib/franchise-live-catalog');
 const liveSales=require('../lib/franchise-live-sales');
+const officePromotions=require('../lib/office-promotions');
 const expenses=require('../lib/franchise-live-expenses');
 const finance=require('../lib/franchise-live-finance');
 const scopedSystemLogs=require('../lib/franchise-live-system-logs');
@@ -51,6 +52,8 @@ async function setup(){
  await db.exec('CREATE TABLE chat_workspace_branches(workspace_id BIGINT REFERENCES chat_workspaces(id),branch_id BIGINT REFERENCES branches(id),PRIMARY KEY(workspace_id,branch_id))');
  await db.exec('CREATE TABLE franchise_test_accounts(request_id TEXT PRIMARY KEY,user_id BIGINT,workspace_id BIGINT,branch_id BIGINT,created_at TEXT,created_by TEXT)');
  await db.exec('CREATE TABLE platform_account_plans(workspace_id BIGINT PRIMARY KEY,status TEXT,plan TEXT,amount NUMERIC(12,2),base_amount NUMERIC(12,2),next_payment_date TEXT)');
+ await db.exec('CREATE TABLE supply_products(id INTEGER PRIMARY KEY,name TEXT NOT NULL,uom TEXT NOT NULL,active BOOLEAN NOT NULL DEFAULT TRUE)');
+ await db.exec('CREATE TABLE sales(id BIGSERIAL PRIMARY KEY,status TEXT NOT NULL DEFAULT \'Sold\')');
  await db.exec('CREATE TABLE branch_catalog_provisioning(workspace_id BIGINT NOT NULL,branch_id BIGINT NOT NULL,PRIMARY KEY(workspace_id,branch_id))');
  await db.query("INSERT INTO users(id,username,login_username,role,active,branch_id,full_name) VALUES"+
   "(1,'ownerA','ownerA','Admin',TRUE,NULL,'A Owner'),"+
@@ -71,6 +74,7 @@ async function setup(){
  await accountModes.register(db,10,'NEW','isolated PostgreSQL test');
  await accountModes.register(db,20,'NEW','isolated PostgreSQL test');
  for(const stmt of isolatedSchema.statements('postgres'))await db.exec(stmt);
+ await officePromotions.migrate(db);
  await liveSales.migrate(db);await expenses.migrate(db);await cashierAccess.migrate(db);
  await incoming.migrate(db);
  await db.query("INSERT INTO branch_categories(workspace_id,branch_id,name,active) VALUES(10,101,'Coffee',TRUE),(20,201,'Coffee',TRUE)");
@@ -401,6 +405,52 @@ async function run(){
  await incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'});
  assert.equal(await stock(10,destBranch,destIngredient),0.05);
  await assert.rejects(incoming.process(db,ownerA,transfer.id,'receive',{deliveredBy:'Courier'}),{status:409});
+ // Copy a franchise promo without sharing records or overwriting the target branch.
+ const freshPromo=await liveCatalog.savePromo(db,ctxA,101,0,{
+  name:'Branch Offer',inclusion:'Coffee + Food',price:150,foodLimit:1,coffeeLimit:1,active:true});
+ const copied=await liveCatalog.copyPromo(db,ctxA,101,freshPromo.id,destBranch);
+ assert.equal(copied.branchId,destBranch);
+ const destPromo=(await liveCatalog.manage(db,ctxA,{branchId:destBranch})).promos
+  .find(x=>x.id===copied.id);
+ assert.equal(destPromo.name,'Branch Offer');
+ assert.equal(destPromo.price,150);
+ await liveCatalog.savePromo(db,ctxA,destBranch,copied.id,{
+  name:'Branch Offer Copy',inclusion:'Coffee + Food',price:125,foodLimit:1,coffeeLimit:1,active:true});
+ assert.equal((await liveCatalog.manage(db,ctxA,{branchId:101})).promos
+  .find(x=>x.id===freshPromo.id).price,150,'Source promo remains independent');
+ await assert.rejects(liveCatalog.copyPromo(db,ctxA,101,freshPromo.id,destBranch),{status:409});
+ await assert.rejects(liveCatalog.copyPromo(db,ctxB,101,freshPromo.id,201),{status:403});
+ // No purchase/credit is required for a Main Office campaign. A branch with
+ // matching name+UOM inventory can sell and is atomically debited at checkout.
+ await db.query("INSERT INTO supply_products(id,name,uom,active) VALUES(991,'Promo Beans','EA',TRUE)");
+ const stockRow=(await db.query("INSERT INTO branch_ingredients(workspace_id,branch_id,code,display_name,uom,stock_qty,low_stock_threshold,unit_cost,active)"+
+  " VALUES(20,201,'PROMO-EA','Promo Beans','EA',2,0,3,TRUE) RETURNING id")).rows[0];
+ const campaign=await officePromotions.create(db,{
+  title:'Weekend Bean Offer',buttonName:'Beans Special',description:'Branch stock',
+  price:15,startsAt:new Date(Date.now()-60000).toISOString(),
+  endsAt:new Date(Date.now()+86400000).toISOString(),
+  requirements:[{productId:991,unitsPerSale:1}]
+ },'Main Office');
+ const available=await officePromotions.forWorkspace(db,20,201);
+ assert.equal(available.find(x=>x.id===campaign.id).eligible,true);
+ assert.equal((await officePromotions.forWorkspace(db,10,101)).find(x=>x.id===campaign.id).eligible,false);
+ const line={kind:'officePromo',id:campaign.id,qty:1};
+ const quote=await liveSales.quote(db,ctxCashierB,{branchId:201,items:[line]});
+ assert.equal(quote.actual,15);
+ const campaignSale=await liveSales.sale(db,ctxCashierB,{
+  clientRequestId:uuid(),branchId:201,items:[line],paymentMode:'Cash',
+  tender:20,orderType:'Take Away'});
+ assert.equal(campaignSale.ok,true);
+ assert.equal(await stock(20,201,Number(stockRow.id)),1);
+ assert.equal((await officePromotions.forWorkspace(db,20,201)).find(x=>x.id===campaign.id).remaining,1);
+ await assert.rejects(liveSales.quote(db,ctxCashierB,{branchId:201,
+  items:[{kind:'officePromo',id:campaign.id,qty:2}]}),{status:409});
+ await liveSales.sale(db,ctxCashierB,{clientRequestId:uuid(),branchId:201,
+  items:[line],paymentMode:'Cash',tender:20,orderType:'Take Away'});
+ assert.equal(await stock(20,201,Number(stockRow.id)),0);
+ assert.equal((await officePromotions.forWorkspace(db,20,201)).find(x=>x.id===campaign.id).eligible,false);
+ assert.equal((await db.query('SELECT COUNT(*) AS n FROM office_campaign_live_sales WHERE campaign_id=$1',
+  [campaign.id])).rows[0].n,'2');
  console.log('PASS: scoped supplier receipt, transfer Accept/Receive, foreign franchise denial and no double stock credit.');
  console.log('PASS PostgreSQL: actual branch-isolated sale, price/recipe edits, cashier account, concurrent oversell protection, refunds and per-franchise reports.');
 }
