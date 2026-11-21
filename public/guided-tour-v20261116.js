@@ -241,7 +241,7 @@
   const clearPanel=()=>{
     if(!panel)return;
     panel.replaceChildren();
-    panel.classList.remove('dm-guide-centered');
+    panel.classList.remove('dm-guide-centered','dm-guide-browser');
     panel.style.cssText='';
   };
   const addButton=(parent,text,onClick,kind)=>{
