@@ -40,6 +40,8 @@ const db={engine:'postgres',
    return{rows:[{count:0,total_sales:0}]};
   }
   if(sql.startsWith('SELECT s.id,s.reference,s.sold_at'))return{rows:[]};
+  if(sql.startsWith('SELECT i.product_name_snapshot AS name'))
+   return{rows:[{name:'Don Darko',kind:'product',quantity:'3'}]};
   if(sql.startsWith('SELECT COUNT(*) AS count,COALESCE(SUM(e.'))return{rows:[{count:0}]};
   if(sql.startsWith('SELECT e.*,b.name AS branch_name'))return{rows:[]};
   if(sql.startsWith('INSERT INTO pos_expenses('))return{rows:[{id:'test-record'}]};
@@ -61,8 +63,11 @@ async function main(){
  const ledger=await finance.transactions(db,users[2],{branchId:'101'});
  assert.equal(ledger.branches.length,1);
  assert.equal(ledger.branches[0].id,101);
+ assert.deepEqual(ledger.products,[{name:'Don Darko',kind:'product',quantity:3}]);
  const financeQueries=calls.filter(x=>x.sql.includes('FROM sales s JOIN chat_workspace_branches'));
- assert(financeQueries.length===2);
+ assert.equal(financeQueries.length,3,'Counts, ledger and sold items must all use franchise scope');
+ assert(financeQueries.find(x=>x.sql.startsWith('SELECT i.product_name_snapshot AS name'))
+  .sql.includes("LOWER(s.status)='sold'"),'Voided receipts cannot enter product quantities');
  assert(financeQueries.every(x=>x.args.includes(101)),'Sales cannot escape the cashier branch');
  await assert.rejects(finance.transactions(db,users[2],{branchId:'102'}),{status:403});
  const expenses=await finance.expenses(db,users[2],{});
