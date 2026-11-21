@@ -92,14 +92,8 @@
   flex:0 0 1.1875rem!important;
 }
 
-@media(prefers-reduced-motion:reduce){
- #app .dm-ua-icon{display:none!important}
- #app .dm-ua-mounted > svg.nav-icon,
- #app .dm-ua-mounted > svg:first-child:not(.topbar-profile-chevron),
- #app #mainNav .dm-nav-group-toggle.dm-ua-mounted .dm-nav-group-icon > svg{
-  display:block!important;
- }
-}
+/* Motion is controlled by the explicit POS setting, not by silently hiding
+   Lottie icons on Windows PCs with reduced-motion preferences. */
 
 /* Context icons replace native SVGs in the original footprint. */
 #app button[data-dm-icon] > .dm-ua-native,
@@ -321,10 +315,9 @@ html body #app:not(.sidebar-collapsed) > .sidebar #mainNav .dm-guide-inline > .d
 #app #whatsNewButton.is-ringing>.dm-ua-native{
   animation:dm-supply-bell-ring 1.05s ease-in-out 2;
 }
-@media(prefers-reduced-motion:reduce){
- #platformApp .dm-ua-icon,#officeApp .dm-ua-icon{display:none!important}
- #app #whatsNewButton>.dm-ua-icon svg,
- #app #whatsNewButton>.dm-ua-native{animation:none!important;will-change:auto!important}
+html.dm-icon-motion-off #app #whatsNewButton>.dm-ua-icon svg,
+html.dm-icon-motion-off #app #whatsNewButton>.dm-ua-native{
+ animation:none!important;will-change:auto!important
 }
 
 
@@ -464,9 +457,7 @@ html body #app #mainNav .dm-guide-nav-row:has(> .dm-attendance-entry[aria-hidden
   min-height:0!important;height:0!important;
   padding:0!important;margin:0!important;gap:0!important;
 }
-@media(prefers-reduced-motion:reduce){
- #app #view-advanced .rd-nav-glyph > .dm-ua-icon {animation:none!important}
-}
+html.dm-icon-motion-off #app #view-advanced .rd-nav-glyph > .dm-ua-icon{animation:none!important}
 
 
 /* 2026-11-21: inventory map symbol and exact catalog refresh centering. */
@@ -547,9 +538,7 @@ html body #app #view-catalog button.dm-refresh[data-dm-icon="refresh"]:not(.dm-u
     max-width:38px!important;max-height:38px!important;flex-basis:38px!important;
   }
 }
-@media(prefers-reduced-motion:reduce){
- #app #view-inventory .inv-operation-transfer .inv-transfer-map-icon{animation:none!important;will-change:auto!important}
-}
+html.dm-icon-motion-off #app #view-inventory .inv-operation-transfer .inv-transfer-map-icon{animation:none!important;will-change:auto!important}
 
 
 /* Category artwork is raster/static by design; give the actual six POS illustrations
@@ -604,10 +593,8 @@ html body #app #view-pos #categoryTabs .category-promos .category-symbol>.catego
 html body #app #view-pos #categoryTabs .category-packages .category-symbol>.category-icon{
   animation:dm-category-packages-rock 2.8s ease-in-out infinite!important;
 }
-@media(prefers-reduced-motion:reduce){
- html body #app #view-pos #categoryTabs .category-tile .category-symbol>.category-icon{
-   animation:none!important;transform:none!important;will-change:auto!important;
- }
+html.dm-icon-motion-off body #app #view-pos #categoryTabs .category-tile .category-symbol>.category-icon{
+ animation:none!important;transform:none!important;will-change:auto!important;
 }
 
 
@@ -624,3 +611,14 @@ html body #app #supplyNotificationsButton.dm-ua-mounted > .dm-ua-context svg{
 }
 /* The six POS category illustrations above intentionally keep their
    continuous animations; none of these rules targets category artwork. */
+
+/* The account preference is available on desktop, tablet and mobile. */
+#view-account .dm-icon-motion-settings{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:.8rem;padding:1.1rem 1.3rem;
+}
+#view-account .dm-icon-motion-settings h3{margin:0 0 .25rem;font-size:1rem}
+#view-account .dm-icon-motion-settings p{margin:.2rem 0;color:var(--text-muted,#57635c)}
+#view-account .dm-icon-motion-switch{display:inline-flex;align-items:center;gap:.65rem;font-weight:600}
+#view-account .dm-icon-motion-switch input{width:1.1rem;height:1.1rem;accent-color:#075d38}
+#view-account #dmIconMotionStatus{font-size:.8rem}
