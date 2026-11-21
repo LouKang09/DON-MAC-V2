@@ -23,12 +23,13 @@
     const files = ['/animations/donmac-nav-icons.json',
       '/animations/donmac-action-icons.json',
       '/animations/donmac-secondary-icons.json'];
-    const response = await Promise.all(files.map(async url => {
-      const r = await fetch(url, {credentials:'same-origin'});
+    const response = await Promise.allSettled(files.map(async url => {
+      const r = await fetch(url, {credentials:'same-origin',cache:'no-store'});
       if (!r.ok) throw new Error('Icon bundle unavailable: '+url);
       return r.json();
     }));
-    catalog = Object.assign({}, ...response);
+    catalog = Object.assign({}, ...response.filter(x=>x.status==='fulfilled').map(x=>x.value));
+    if (!Object.keys(catalog).length) throw new Error('No icon animation bundles loaded');
   };
   const play = el => {
     if (reduce?.matches) return;
@@ -76,7 +77,9 @@
       item.goToAndStop(0,true);
       // Analytics rebuilds its navigation after a click. Start the newly
       // selected icon's animation once its Lottie SVG has mounted.
-      if(el.matches('.rd-nav-glyph')&&el.closest('button[data-aa-section].active')){
+      if(el.matches(':hover,:focus-visible')||
+         el.closest('button:hover,button:focus-visible')||
+         (el.matches('.rd-nav-glyph')&&el.closest('button[data-aa-section].active'))){
         requestAnimationFrame(()=>{
           if(el.isConnected&&!reduce?.matches)try{item.goToAndPlay(0,true)}catch(_){}
         });
@@ -190,5 +193,9 @@
         n.matches?.(selector)||n.querySelector?.(selector)))))scheduleScan();
     });
     bodyObserver.observe(document.body,{childList:true,subtree:true});
-  }).catch(()=>{/* Native SVGs remain functional if an icon bundle fails. */});
+  }).catch(()=>{
+    // Keep native SVGs visible if the bundles are temporarily unavailable.
+    // A refresh/revisit can retry without requiring users to clear their cache.
+    window.donmacAnimatedIcons.refresh=()=>loadCatalog().then(scheduleScan).catch(()=>{});
+  });
 })();
