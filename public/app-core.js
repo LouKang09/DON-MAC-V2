@@ -176,7 +176,9 @@
     $('app').classList.add('hidden');$('authScreen').classList.remove('hidden');
     $('authTitle').textContent=setupRequired?'Create Owner Account':'Welcome Back, Please login to your account';
     $('authHint').textContent=setupRequired?'Set up the first Owner account to access your POS.':'';
-    $('authSubmit').textContent=setupRequired?'Create Owner':'Sign In';
+    const signInLabel=$('authSubmit').querySelector(':scope > span:not(.dm-ua-icon)');
+    if(signInLabel)signInLabel.textContent=setupRequired?'Create Owner':'Sign In';
+    else $('authSubmit').textContent=setupRequired?'Create Owner':'Sign In';
     $('authPassword').autocomplete=setupRequired?'new-password':'current-password';
     window.donmacLoginExperience?.show('login');
     $('authSignupPrompt')?.classList.toggle('hidden',!!setupRequired);
