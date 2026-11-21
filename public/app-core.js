@@ -2278,17 +2278,37 @@
    e.preventDefault();const form=e.currentTarget;
    await withFormLock(form,async()=>{
     const id=Number($('promoEditId').value||0),
+     viewBranch=Number($('promoBranchFilter').value||state.promoBranchId||state.posBranchId),
+     target=id?String(viewBranch):$('promoPublishTarget').value,
+     allBranches=!id&&!!window.donmacFranchiseUnified&&target==='all',
+     targetBranch=allBranches?viewBranch:Number(target||viewBranch),
      body={name:$('promoName').value.trim(),inclusion:$('promoInclusion').value.trim(),
       price:Number($('promoPrice').value),foodLimit:Number($('promoFood').value),
       coffeeLimit:Number($('promoCoffee').value),active:$('promoActive').checked,
-      branchId:Number($('promoBranchFilter').value||state.promoBranchId||state.posBranchId)};
+      branchId:targetBranch};
+    if(allBranches){
+     const count=(state.branches||[]).filter(b=>b.active).length;
+     if(!count){toast('No active branches are available.');return;}
+     if(!await window.donmacPrompt.confirm(
+      'Create '+body.name+' in all '+count+' active branches? Each branch will receive an independently editable promo. Existing promos will not be overwritten.',
+      {title:'Confirm All Branches',confirmText:'Create for All',cancelText:'Cancel'}))return;
+     body.targetBranches='all';
+    }
     try{
      const saved=id?await api('/api/admin/promos/'+id,{method:'PUT',body}):
       await api('/api/admin/promos',{method:'POST',body});
-     toast(id?'Promo updated.':'Promo added.');
+     if(!id&&!allBranches){
+      state.promoBranchId=targetBranch;
+      $('promoBranchFilter').value=String(targetBranch);
+     }
+     toast(id?'Promo updated.':allBranches?
+      'Promo created for '+Number(saved.count||0)+' active branches.':'Promo added.');
      await loadAdminAll();await loadCatalog();
-     // Leave a newly saved promo selected so it can immediately be copied.
-     const readyId=Number(saved?.id||id||0);
+     // Leave the newly published promo selected in the viewed branch.
+     // Copy to Branch remains available on that individual record.
+     const readyId=allBranches?
+      Number(saved.created?.find(p=>Number(p.branchId)===Number(state.promoBranchId))?.id||0):
+      Number(saved?.id||id||0);
      if(readyId&&state.adminPromos.some(p=>Number(p.id)===readyId))editPromo(readyId);
      else clearPromoForm();
     }catch(err){toast(err.message);}
