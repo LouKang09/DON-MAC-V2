@@ -210,3 +210,36 @@
 #view-catalog #saveComposition:hover { background:#134d34; }
 #view-catalog #recipeAdd .catalog-btn-icon,
 #view-catalog #compositionAdd .catalog-btn-icon { color:#fff; }
+
+/* Isolated franchise promo editor: target branch and independent copy action. */
+#view-catalog #admin-promos #promoBranchWrap:not(.hidden){
+ display:flex;flex-direction:column;gap:.4rem;
+ padding:.8rem;background:#f1f8f3;border:1px solid #d3e6d8;border-radius:.7rem;
+}
+#view-catalog #admin-promos #promoBranchWrap select,
+#view-catalog #admin-promos #promoCopyTarget{
+ width:100%;min-width:0;background:#fff;color:#14482e;
+ border:1px solid #c8dacd;border-radius:.55rem;
+ padding:.65rem .75rem;
+}
+#view-catalog #admin-promos #promoBranchWrap small{
+ font-size:.72rem;line-height:1.4;font-weight:500;
+}
+#view-catalog #admin-promos .dm-promo-copy:not(.hidden){
+ display:grid;grid-template-columns:minmax(0,1fr) auto;
+ gap:.8rem;align-items:end;
+ margin-top:.55rem;padding:1rem;
+ background:#f2faf4;border:1px dashed #a5cbb0;border-radius:.75rem;
+}
+#view-catalog #admin-promos .dm-promo-copy label{
+ min-width:0;display:flex;flex-direction:column;gap:.4rem;
+}
+#view-catalog #admin-promos .dm-promo-copy button{
+ min-height:2.65rem;background:#075d38;border:1px solid #075d38;
+ color:white;border-radius:.6rem;font-weight:800;white-space:normal;
+}
+@media(max-width:680px){
+ #view-catalog #admin-promos .dm-promo-copy:not(.hidden){
+   grid-template-columns:minmax(0,1fr);
+ }
+}
