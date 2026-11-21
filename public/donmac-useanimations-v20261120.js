@@ -4,7 +4,12 @@
 (() => {
   'use strict';
   if (window.donmacAnimatedIcons) return;
-  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  // All icon animations are user-triggered. Do not replace their artwork based
+  // on the Windows/browser system motion setting; let users opt out explicitly.
+  const motionStorageKey='donmac-icon-motion-v1';
+  let motionEnabled=true;
+  try{motionEnabled=window.localStorage.getItem(motionStorageKey)!=='off'}catch(_){}
+  document.documentElement.classList.toggle('dm-icon-motion-off',!motionEnabled);
   const navMap = {
     dashboard:'grid',pos:'shoppingCart',inventory:'package',chat:'messageCircle',
     transactions:'fileText',expenses:'dollarSign',reports:'barChart',
@@ -33,11 +38,12 @@
     diagnostics.loadedBundles=response.filter(x=>x.status==='fulfilled').length;
     catalog = Object.assign({}, ...response.filter(x=>x.status==='fulfilled').map(x=>x.value));
     if (!Object.keys(catalog).length) throw new Error('No icon animation bundles loaded');
+    syncMotionControl();
   };
   // Exactly one Lottie playback per interaction. Hover, focus, and click
   // often arrive together, particularly on touch and hybrid laptops.
   const play = el => {
-    if (reduce?.matches || document.hidden) return;
+    if (!motionEnabled || document.hidden) return;
     const record = records.get(el);
     if (!record || !record.ready || record.playing ||
         !el.isConnected || el.disabled || el.hidden ||
@@ -80,7 +86,7 @@
     let committed=false;
     const commit=()=>{
       if(committed||!el.isConnected||!original.isConnected||!slot.isConnected||
-         el.dataset.dmUaMounted!=='pending'||reduce?.matches)return;
+         el.dataset.dmUaMounted!=='pending'||!motionEnabled)return;
       // DOMLoaded is emitted by lottie-web after its SVG is built. Some
       // versions emit it before the caller attaches an event listener:
       // also accept an already populated SVG and data_ready.
@@ -126,7 +132,7 @@
     },2000);
   }
   function scan() {
-    if (reduce?.matches || !window.lottie?.loadAnimation) return;
+    if (!motionEnabled || !window.lottie?.loadAnimation) return;
     const nav=document.getElementById('mainNav');
     if(nav){
       nav.querySelectorAll('button.nav[data-view]').forEach(button => {
@@ -216,13 +222,39 @@
     }
     live.clear();
   };
-  reduce?.addEventListener?.('change', e=>{
-    if(e.matches) disable();
-    else scheduleScan();
-  });
-  window.donmacAnimatedIcons={refresh:scheduleScan,
+  const syncMotionControl=()=>{
+    const input=document.getElementById('dmIconMotionEnabled');
+    if(input)input.checked=motionEnabled;
+    const detail=document.getElementById('dmIconMotionStatus');
+    if(detail)detail.textContent=motionEnabled
+      ? 'Animated icons enabled · '+diagnostics.loadedBundles+' packs loaded'
+      : 'Animations paused on this device; original icons remain visible';
+  };
+  const setEnabled=value=>{
+    motionEnabled=!!value;
+    try{window.localStorage.setItem(motionStorageKey,motionEnabled?'on':'off')}catch(_){}
+    document.documentElement.classList.toggle('dm-icon-motion-off',!motionEnabled);
+    if(!motionEnabled)disable();
+    else if(Object.keys(catalog).length)scheduleScan();
+    else loadCatalog().then(scheduleScan).catch(error=>{
+      diagnostics.lastError=String(error?.message||error);
+    });
+    syncMotionControl();
+  };
+  const bindMotionControl=()=>{
+    const input=document.getElementById('dmIconMotionEnabled');
+    if(!input || input.dataset.dmMotionBound)return;
+    input.dataset.dmMotionBound='1';
+    input.addEventListener('change',()=>setEnabled(input.checked));
+    syncMotionControl();
+  };
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',bindMotionControl,{once:true});
+  else bindMotionControl();
+  window.donmacAnimatedIcons={refresh:scheduleScan,setEnabled,
     status:()=>({...diagnostics,availableIcons:Object.keys(catalog).length,
-      activePlayers:live.size,reducedMotion:!!reduce?.matches,
+      activePlayers:live.size,motionEnabled,
+      systemReducedMotion:!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
       lottieAvailable:!!window.lottie?.loadAnimation})};
   loadCatalog().then(()=>{
     scan();
