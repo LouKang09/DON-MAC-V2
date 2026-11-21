@@ -310,3 +310,41 @@
    padding:.9rem;
  }
 }
+
+/* New promotion targeting. Keeps viewing/editing separate from publishing. */
+#view-catalog #admin-promos #promoPublishWrap:not(.hidden){
+ display:flex;
+ flex-direction:column;
+ gap:.38rem;
+ min-width:0;
+ padding:.85rem;
+ background:#f3f9f5;
+ border:1px solid #d3e6d8;
+ border-radius:.7rem;
+ color:#184d32;
+}
+#view-catalog #admin-promos #promoPublishWrap #promoPublishTarget{
+ display:block;
+ width:100%;
+ min-width:0;
+ min-height:2.7rem;
+ box-sizing:border-box;
+ background:#fff;
+ color:#14482e;
+ border:1px solid #c8dacd;
+ border-radius:.55rem;
+ padding:.65rem .75rem;
+ font-size:.83rem;
+ font-weight:700;
+}
+#view-catalog #admin-promos #promoPublishWrap #promoPublishTarget:focus-visible{
+ outline:2px solid #075d38;
+ outline-offset:2px;
+}
+#view-catalog #admin-promos #promoPublishWrap small{
+ display:block;
+ font-size:.73rem;
+ line-height:1.5;
+ font-weight:500;
+ color:#52715e;
+}
