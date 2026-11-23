@@ -47,6 +47,7 @@ const franchiseLiveScope=require('./lib/franchise-live-scope');
 const franchiseLiveSales=require('./lib/franchise-live-sales');
 const franchiseLiveExpenses=require('./lib/franchise-live-expenses');
 const franchiseLiveRouter=require('./lib/franchise-live-router');
+const franchiseLiveExports=require('./lib/franchise-live-report-exports');
 const franchisePayrollEntitlement=require('./lib/franchise-payroll-entitlement');
 const franchiseAttendance=require('./lib/franchise-attendance');
 const franchisePayrollLedger=require('./lib/franchise-payroll-ledger');
@@ -2195,6 +2196,26 @@ async function handleApi(req,res,url){
       const pdf=makePdf(lines,{title:'Daily Branch Sales Report'});
       return binary(res,200,pdf,'application/pdf',
         {'Content-Disposition':'inline; filename="'+filename+'"','Cache-Control':'no-store'});
+    }
+    // Report file responses must be emitted as binary, never passed through
+    // JSON or the globally-shared report handlers below.
+    if(method==='GET'&&(p==='/api/live/reports/sales.pdf'||
+        p==='/api/live/reports/costing.pdf')){
+      const kind=p.endsWith('/costing.pdf')?'costing':'sales';
+      const document=await franchiseLiveExports.pdfReport(db,franchiseLive,user,url.searchParams,kind);
+      return binary(res,200,document.buffer,'application/pdf',
+        {'Content-Disposition':'attachment; filename="'+document.filename+'"',
+         'Cache-Control':'no-store'});
+    }
+    if(method==='GET'&&p==='/api/live/historical-sales/policy'){
+      const policy=await franchiseLiveExports.historyPolicy(db,franchiseLive,user);
+      return json(res,200,policy,safeHeaders({'Cache-Control':'no-store'}));
+    }
+    if(method==='GET'&&p==='/api/live/historical-sales/export.csv'){
+      const archive=await franchiseLiveExports.historyCsv(db,franchiseLive,user,url.searchParams);
+      return binary(res,200,archive.buffer,'text/csv; charset=utf-8',
+        {'Content-Disposition':'attachment; filename="'+archive.filename+'"',
+         'Cache-Control':'no-store'});
     }
     if(p.startsWith('/api/live/')){
       const response=await franchiseLiveRouter.run(db,franchiseLive,user,method,url,
