@@ -222,7 +222,7 @@
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
     .then(() => loadScript('/franchise-unified-adapter.js'))
-    .then(() => loadScript('/app-core.js'))
+    .then(() => loadScript('/app-core.js?v=20261123-report-downloads'))
     .then(() => {
       watchForAuthenticatedApp();
       setTimeout(() => {
