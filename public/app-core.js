@@ -1854,8 +1854,44 @@
   async function viewTransaction(reference){return withActionLock(`view-sale:${reference}`,async()=>{const dialog=$('transactionDialog');$('transactionReference').textContent=reference;$('transactionStatus').textContent='';$('transactionDetailBody').innerHTML='<div class="empty-state">Loading transaction details…</div>';if(!dialog.open)dialog.showModal();try{renderTransactionDetail(await api(`/api/sales/${encodeURIComponent(reference)}`));}catch(err){$('transactionDetailBody').innerHTML=`<div class="empty-state"><div><b>Unable to load transaction</b>${esc(err.message)}</div></div>`;toast(err.message);}});}
   window.donmacOpenTransactionDetail=viewTransaction;
   $('transactionClose').onclick=()=>safeCloseDialog('transactionDialog');$('transactionDialog').addEventListener('click',e=>{if(e.target===$('transactionDialog'))safeCloseDialog('transactionDialog');});
-  $('salesPdf').onclick=()=>window.open('/api/reports/sales.pdf?'+reportQuery(),'_blank');
-  $('costingPdf').onclick=()=>window.open('/api/reports/costing.pdf?'+reportQuery(),'_blank');
+  // File downloads bypass the JSON compatibility adapter. Live franchises must
+  // fetch their own scoped binary endpoint; never open globally-shared PDFs.
+  async function downloadReportPdf(kind){
+    const button=$(kind==='sales'?'salesPdf':'costingPdf');
+    if(button.disabled)return;
+    if(!state.user?.liveMode){
+      window.open('/api/reports/'+kind+'.pdf?'+reportQuery(),'_blank','noopener');
+      return;
+    }
+    const userAtStart=state.user;
+    button.disabled=true;
+    const date=$('reportDate').value||manilaToday();
+    const period=$('reportPeriod').value;
+    try{
+      const url='/api/live/reports/'+kind+'.pdf?'+reportQuery();
+      const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
+      if(!response.ok){
+        const body=await response.json().catch(()=>({}));
+        throw new Error(body.error||'Unable to download this report.');
+      }
+      const type=response.headers.get('content-type')||'';
+      if(!type.toLowerCase().includes('application/pdf'))
+        throw new Error('The report service did not return a PDF.');
+      const blob=await response.blob();
+      if(state.user!==userAtStart)throw new Error('Your account changed. Open the report again.');
+      const objectUrl=URL.createObjectURL(blob),link=document.createElement('a');
+      const branch=$('reportBranch')?.value||'all';
+      link.href=objectUrl;
+      link.download='DonMac_'+(kind==='sales'?'Sales':'Costing')+'_'+
+        period+'_'+date+(branch==='all'?'':'_Branch_'+branch)+'.pdf';
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
+      toast((kind==='sales'?'Sales':'Costing')+' Report downloaded.');
+    }catch(err){toast(err.message||'Report download failed.');}
+    finally{button.disabled=false;}
+  }
+  $('salesPdf').onclick=()=>downloadReportPdf('sales');
+  $('costingPdf').onclick=()=>downloadReportPdf('costing');
 
   let dashboardRequestId=0;
   async function loadDashboard(){
