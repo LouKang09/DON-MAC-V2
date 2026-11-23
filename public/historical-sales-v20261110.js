@@ -3,14 +3,24 @@
 const $=id=>document.getElementById(id);
 if(!$('historicalExportYear'))return;
 const y=$('historicalExportYear'),b=$('historicalExportBranch'),msg=$('historicalExportStatus');
+const live=()=>window.donmacFranchiseUnified===true;
 const current=Number(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Manila',year:'numeric'}).format(new Date()));
 for(let i=current;i>=2000;i--){const o=document.createElement('option');o.value=i;o.textContent=i;y.add(o);}
 let loaded=false;
 function note(s,error=false){msg.textContent=s;msg.style.color=error?'#ac2525':'#37654b';}
 async function load(){
  try{
-  const [p,br]=await Promise.all([fetch('/api/historical-sales/policy',{credentials:'same-origin',cache:'no-store'}),fetch('/api/branches',{credentials:'same-origin',cache:'no-store'})]);
-  if(!p.ok||!br.ok)throw Error('Sign in to view historical export options.');
+  const scoped=live();
+  const [p,br]=await Promise.all([
+   fetch(scoped?'/api/live/historical-sales/policy':'/api/historical-sales/policy',
+    {credentials:'same-origin',cache:'no-store'}),
+   fetch(scoped?'/api/live/status':'/api/branches',
+    {credentials:'same-origin',cache:'no-store'})
+  ]);
+  if(!p.ok||!br.ok){
+   const body=await (p.ok?br:p).json().catch(()=>({}));
+   throw Error(body.error||'Your historical sales access could not be loaded. Please sign in again.');
+  }
   const policy=await p.json(),data=await br.json(),prior=b.value;b.replaceChildren();
   const all=document.createElement('option');all.value='all';all.textContent='All branches';b.add(all);
   for(const x of data.branches||[]){const o=document.createElement('option');o.value=x.id;o.textContent=x.name;b.add(o);}
@@ -23,10 +33,11 @@ $('historicalExportDownload').addEventListener('click',async()=>{
  const button=$('historicalExportDownload');button.disabled=true;
  try{
   const q=new URLSearchParams({year:y.value,branchId:b.value});
-  const r=await fetch('/api/historical-sales/export.csv?'+q.toString(),{credentials:'same-origin',cache:'no-store'});
+  const endpoint=live()?'/api/live/historical-sales/export.csv':'/api/historical-sales/export.csv';
+  const r=await fetch(endpoint+'?'+q.toString(),{credentials:'same-origin',cache:'no-store'});
   if(!r.ok){const error=await r.json().catch(()=>({}));throw Error(error.error||'Export failed.');}
   const link=document.createElement('a'),url=URL.createObjectURL(await r.blob());
-  link.href=url;link.download='DonMac_Sales_'+y.value+'.csv';document.body.append(link);link.click();link.remove();
+  link.href=url;link.download='DonMac_Sales_'+y.value+(b.value==='all'?'':'_Branch_'+b.value)+'.csv';document.body.append(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);note('Your historical sales CSV has been downloaded.');
  }catch(e){note(e.message,true);}finally{button.disabled=false;}
 });
