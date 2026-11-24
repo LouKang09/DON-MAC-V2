@@ -45,6 +45,31 @@
  }
  function clear(){close(false);payload=null;context=null;title.textContent='';scope.textContent='';}
  back.addEventListener('click',()=>close(true));
+ content.addEventListener('submit',async event=>{
+  if(event.target?.id!=='dmShiftDepositForm')return;
+  event.preventDefault();
+  if(current!=='today'||context?.role!=='User'||!valid())return;
+  const amountInput=$('dmShiftDepositAmount'),status=$('dmShiftDepositStatus');
+  const amount=Number(amountInput?.value);
+  if(!amountInput?.value||!Number.isFinite(amount)||amount<0||
+    amount>99999999.99||Math.abs(amount*100-Math.round(amount*100))>0.00001){
+   if(status)status.textContent='Enter a valid peso amount with up to two decimal places.';
+   return;
+  }
+  const button=event.target.querySelector('button[type="submit"]');
+  if(button?.disabled)return;
+  if(button)button.disabled=true;
+  if(status)status.textContent='Saving your end-of-shift deposit…';
+  const run=activeRequest;
+  try{
+   await context.request('/api/dashboard/shift-deposits',{method:'POST',body:{amount}});
+   if(run===activeRequest&&valid()&&current==='today')await open('today',null);
+  }catch(error){
+   if(run===activeRequest&&valid()&&status)status.textContent=error.message||'Unable to record deposit.';
+  }finally{
+   if(button&&button.isConnected)button.disabled=false;
+  }
+ });
  summary.addEventListener('click',event=>{
   const btn=event.target.closest('button[data-dm-kpi]');
   if(btn&&summary.contains(btn)&&valid())open(btn.dataset.dmKpi,btn);
@@ -98,11 +123,17 @@
    ['Completed net POS sales · before costs',money(d.rangeActual)]
   ];
   const special={
-   revenue:[2,11,6,3,4,0],
+   revenue:[['Net revenue · after Cost of Goods',fmt(d.rangeRevenueNet)],
+    ['Cost of Goods',fmt(d.rangeStoreExpenses)],
+    ['Discount',money(d.rangeDiscount)],
+    ['Completed POS sales after discounts',money(d.rangeActual)],
+    ['Gross revenue before discounts',money(d.rangeGross)],
+    ['Completed orders',count(d.rangeTransactions)]],
    orders:[0,1,11,3,4],
-   today:[['Today Sales after entered expenses',fmt(m.todayNetAfterExpenses)],
+   today:[['Today net sales · after expenses',fmt(m.todayNetAfterExpenses)],
     ['Today completed POS sales',money(m.todayActual)],
-    ['Today staff-entered expenses',fmt(m.todayExpenses)],
+    ['Store Expenses',fmt(m.todayExpenses)],
+    ['Sale Deposit Amount',d.shiftDepositError?'Unavailable':d.shiftDeposits?.total==null?'Not recorded':money(d.shiftDeposits.total)],
     ['Today gross sales',money(m.todayGross)],
     ['Today completed orders',count(m.todayTransactions)]],
    month:[['Period net sales',money(m.monthActual)],['Period gross revenue',money(m.monthGross)],
@@ -147,23 +178,40 @@
  }
  function categoryPanel(d,key){
   if(['expenses','deposited','alerts'].includes(key))return'';
-  let amounts=(d.categoryTrends||[]).map(x=>({
-   name:x.name,amount:(x.values||[]).reduce((s,v)=>s+number(v),0)
-  })).filter(x=>x.amount>0);
-  let note='Net sales per menu category in the detailed period, allocated from completed sales.';
-  if(!amounts.length&&d.categorySales?.length){
-   amounts=d.categorySales.map(x=>({name:x.name,amount:number(x.amount)}));
-   note='Current month gross sales mix; not necessarily the selected reporting period.';
+  const groups=new Map();
+  for(const item of d.categoryItems||[]){
+   const name=String(item.category||'Other');
+   if(!groups.has(name))groups.set(name,[]);
+   groups.get(name).push({name:String(item.name||'Unnamed item'),
+    quantity:number(item.quantity),net:number(item.net)});
   }
-  amounts.sort((a,b)=>b.amount-a.amount);
-  const total=amounts.reduce((s,x)=>s+x.amount,0);
+  let amounts=(d.categoryTrends||[]).map(x=>({
+   name:x.name,amount:(x.values||[]).reduce((sum,v)=>sum+number(v),0)
+  }));
+  for(const [name,items] of groups){
+   if(!amounts.some(x=>x.name===name))
+    amounts.push({name,amount:items.reduce((sum,item)=>sum+item.net,0)});
+  }
+  const note='Net sales in the selected period; expand a category to see sold menu items and quantities.';
+  amounts=amounts.filter(x=>x.amount>0||groups.has(x.name)).sort((a,b)=>b.amount-a.amount);
   if(!amounts.length)return panel('Menu category breakdown',empty('No completed category sales in this period.'),note);
-  const bars=amounts.map(x=>'<div class="dm-kpi-bar-row"><div><strong>'+esc(x.name)+'</strong><span>'+money(x.amount)+
-   ' · '+pct(x.amount,total)+'</span></div><div class="dm-kpi-bar-track"><span style="width:'+
-   Math.max(1,Math.min(100,100*x.amount/Math.max(1,total))).toFixed(2)+'%"></span></div></div>').join('');
+  const total=amounts.reduce((sum,x)=>sum+x.amount,0);
+  const bars=amounts.map(group=>{
+   const items=(groups.get(group.name)||[]).sort((a,b)=>b.net-a.net||a.name.localeCompare(b.name));
+   const productLines=items.length?items.map(item=>
+    '<li><span>'+esc(item.name)+'</span><span>'+esc(count(item.quantity))+' sold</span>'+
+    '<strong>'+esc(money(item.net))+'</strong></li>').join(''):
+    '<li class="dm-category-noitems">Item details are not available for this period.</li>';
+   return '<details class="dm-kpi-category"><summary>'+
+    '<span class="dm-category-title">'+esc(group.name)+
+    '<span class="dm-category-caret" aria-hidden="true">⌄</span></span>'+
+    '<span class="dm-category-amount">'+esc(money(group.amount))+' · '+esc(pct(group.amount,total))+'</span>'+
+    '<span class="dm-kpi-bar-track" aria-hidden="true"><span style="width:'+
+    Math.max(0,Math.min(100,total>0?100*group.amount/total:0)).toFixed(2)+'%"></span></span>'+
+    '</summary><ul class="dm-category-items">'+productLines+'</ul></details>';
+  }).join('');
   return panel('Menu category breakdown',bars,note);
  }
-
  // The headline activity visual applies to all seven dashboard drill-downs.
  // Only the permitted, signed-in branch scope is fetched. Expenses and stock
  // have no historical hourly series, so those pages show contextual net sales.
@@ -329,16 +377,6 @@
   });
   await load();
  }
- function recentPanel(d){
-  const data=d.recentTransactions||[];
-  const body=data.length?'<div class="dm-kpi-table-scroll"><table><thead><tr><th>Reference</th><th>Cashier</th>'+
-   '<th>Payment</th><th>Net amount</th></tr></thead><tbody>'+
-   data.slice(0,8).map(x=>'<tr><th scope="row">'+esc(x.reference||'—')+'</th><td>'+esc(x.cashier||'—')+
-    '</td><td>'+esc(x.paymentMode||'—')+'</td><td class="dm-kpi-number">'+money(x.amount)+'</td></tr>').join('')+
-   '</tbody></table></div>':empty('No recent completed transactions.');
-  return panel('Recent completed transactions',body,
-   'Up to eight most recent completed sales; this activity list can extend beyond the selected date window.');
- }
  function stockPanel(rows,main){
   const low=rows.length?rows.flatMap(x=>(x.data.lowStock||[]).map(z=>({...z,branch:x.name}))):
    (main.lowStock||[]).map(x=>({...x,branch:'Selected scope'}));
@@ -423,6 +461,18 @@
    if(key==='today'||key==='month'&&(context.role==='Admin'||context.live))
     main=await context.request(query(period,context.selectedBranch==='all'?null:context.selectedBranch));
    if(run!==activeRequest||!valid())return;
+   if(key==='today'){
+    const params=new URLSearchParams({date:period.to});
+    if(context.selectedBranch&&context.selectedBranch!=='all')params.set('branchId',context.selectedBranch);
+    try{
+     const shiftDeposits=await context.request('/api/dashboard/shift-deposits?'+params);
+     if(run!==activeRequest||!valid())return;
+     main={...main,shiftDeposits};
+    }catch(error){
+     if(run!==activeRequest||!valid())return;
+     main={...main,shiftDepositError:error.message||'Cannot load shift deposits'};
+    }
+   }
    const isAdmin=context.role==='Admin';
    const branches=(context.branches||[]).filter(b=>b&&b.active!==false&&Number(b.id)>0);
    const compare=isAdmin&&branches.length>1;
@@ -456,6 +506,31 @@
     'Branch data could not be retrieved; missing rows are excluded from the comparison total.');
    if(key==='alerts')body+=stockPanel(rows,main);
    else{
+    if(key==='today'){
+     const deposit=main.shiftDeposits;
+     if(context.role==='User'&&!main.shiftDepositError){
+      const amount=deposit?.mineAmount==null?'':String(deposit.mineAmount);
+      body+=panel('End-of-shift Sale Deposit Amount',
+       '<form id="dmShiftDepositForm" class="dm-shift-deposit-form">'+
+       '<label for="dmShiftDepositAmount">Amount deposited (₱)</label>'+
+       '<div class="dm-shift-deposit-controls"><input id="dmShiftDepositAmount" type="number" min="0" max="99999999.99" step="0.01" inputmode="decimal" required value="'+esc(amount)+'"/>'+
+       '<button type="submit">'+(deposit?.mineAmount==null?'Record deposit':'Update my deposit')+'</button></div>'+
+       '<p id="dmShiftDepositStatus" role="status">'+
+       (deposit?.mineRecordedAt?'Last saved: '+esc(new Date(deposit.mineRecordedAt).toLocaleString('en-PH',{timeZone:'Asia/Manila'})):'No deposit entered yet for today.')+
+       '</p></form>',
+       'Enter your actual end-of-shift sale deposit. Your entry is recorded against your account and assigned branch; edits are audited. This is not automatic bank verification.');
+     }else if(main.shiftDepositError){
+      body+=panel('Sale Deposit Amount unavailable',empty(main.shiftDepositError),
+       'Other sales figures remain available; no deposit amount is estimated.');
+     }else{
+      body+=panel('Recorded Sale Deposit Amount',
+       '<div class="dm-kpi-tiles">'+
+       box('Total cashier entries',count(deposit?.count||0))+
+       box('Staff-reported sale deposit',deposit?.total==null?'Not recorded':money(deposit.total))+
+       '</div>',
+       'Total of cashier-entered end-of-shift amounts for the selected branch scope; not bank-confirmed.');
+     }
+    }
     if(key==='expenses')body+=ingredientCostPanel(main);
     if(key==='deposited'){
      body+=depositFormulaPanel(main);
@@ -463,12 +538,13 @@
     }
     if(run!==activeRequest||!valid())return;
     body+=categoryPanel(main,key);
-    if(['revenue','orders','today','month','discount','deposited'].includes(key))body+=recentPanel(main);
    }
    if(run!==activeRequest||!valid())return;
-   body+=timelinePanel(main,key);
+   // Owners keep the chart and Interval controls. Cashiers see the KPI breakdown
+   // without the redundant gross-sales activity chart.
+   if(isAdmin)body+=timelinePanel(main,key);
    content.innerHTML=body;
-   await mountActivityChart(main,period,key,run);
+   if(isAdmin)await mountActivityChart(main,period,key,run);
   }catch(error){
    if(run!==activeRequest||!valid())return;
    content.innerHTML=panel('Unable to load the breakdown',empty(error.message||'Please retry.'),
