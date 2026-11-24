@@ -16,7 +16,7 @@
  const idByCategory={rent:'financeRent',stocks:'financeStocks',salary:'financeSalary',
   transportation:'financeTransportation',electricity:'financeElectricity',ice:'financeIce',
   water:'financeWater',misc:'financeMisc'};
- const state={transactions:{page:1,branches:[],loading:false,queued:false},expenses:{page:1,branches:[],loading:false}};
+ const state={transactions:{page:1,branches:[],loading:false,queued:false},expenses:{page:1,branches:[],loading:false,queued:false}};
  // These totals always describe ALL records matching the current filters,
  // not only the ten transactions on the visible page.
  function transactionSummaryPending(){
@@ -116,18 +116,22 @@
  async function load(kind){
   if(!sessionStillValid())return;
   if(state[kind].loading){
-   if(kind==='transactions')state.transactions.queued=true;
+   state[kind].queued=true;
    return;
   }
   state[kind].loading=true;
   const requestQuery=query(kind);
   if(kind==='transactions')transactionSummaryPending();
+  else{
+   const chart=$('financeExpenseCategoryChart');
+   if(chart)chart.closest('.dm-ledger-category-panel')?.setAttribute('aria-busy','true');
+  }
   try{
    const data=await api(financeApiBase+'/'+kind+'?'+requestQuery);
    if(!sessionStillValid())return; // Never render previous account results.
    // Do not overwrite results for newer search text or filter selections.
-   if(kind==='transactions'&&requestQuery!==query('transactions')){
-    state.transactions.queued=true;
+   if(requestQuery!==query(kind)){
+    state[kind].queued=true;
     return;
    }
    state[kind].page=Math.min(Math.max(1,state[kind].page),Math.max(1,Math.ceil(Number(data.total||0)/10)));
@@ -160,6 +164,16 @@
     window.donmacAnimatedIcons?.refresh?.();
     renderPager('financeTransactionPages',Math.max(1,Math.ceil(Number(data.total||0)/10)),kind);
    }else{
+    const chart=$('financeExpenseCategoryChart');
+    if(chart){
+     if(data.summary&&window.donmacExpensePie){
+      chart.innerHTML=window.donmacExpensePie.markup(data.summary);
+      window.donmacExpensePie.mount(chart);
+     }else{
+      chart.textContent='Complete expense category totals are unavailable. Refresh the Expenses Ledger.';
+     }
+     chart.closest('.dm-ledger-category-panel')?.setAttribute('aria-busy','false');
+    }
     bindBranchOptions($('financeExpenseBranch'),data.branches||[],false);
     bindBranchOptions($('financeExpenseFilterBranch'),data.branches||[],true);
     $('financeExpenseTotal').textContent=peso(data.grandTotal);
@@ -183,8 +197,8 @@
    }
   }catch(err){
    if(!sessionStillValid())return;
-   if(kind==='transactions'&&requestQuery!==query('transactions')){
-    state.transactions.queued=true;return;
+   if(requestQuery!==query(kind)){
+    state[kind].queued=true;return;
    }
    if(kind==='transactions'){
     $('financeTransactionsBody').innerHTML='<tr><td colspan="9">'+esc(err.message)+'</td></tr>';
@@ -194,12 +208,19 @@
     $('financeProductsSoldBody').innerHTML='<tr><td colspan="3" class="dm-finance-products-empty">'+esc(err.message)+'</td></tr>';
     transactionSummaryReady();
    }
-   else message(err.message,true);
+   else{
+    message(err.message,true);
+    const chart=$('financeExpenseCategoryChart');
+    if(chart){
+     chart.textContent='Unable to load expense categories: '+err.message;
+     chart.closest('.dm-ledger-category-panel')?.setAttribute('aria-busy','false');
+    }
+   }
   }finally{
    state[kind].loading=false;
-   if(kind==='transactions'&&state.transactions.queued){
-    state.transactions.queued=false;
-    load('transactions');
+   if(state[kind].queued){
+    state[kind].queued=false;
+    load(kind);
    }
   }
  }
