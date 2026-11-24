@@ -128,7 +128,7 @@
       // Shared Main Office procurement catalog; orders and conversations are
       // still filtered by the authenticated franchise workspace on the server.
       await loadScript('/supply-franchise.js?v=20261116-live-franchise');
-      await loadScript('/internal-chat.js?v=20261116-live-franchise');
+      await loadScript('/internal-chat.js?v=20261124-race-fix');
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
       // The initial sidebar view may have been selected before these
       // enhancement modules finished loading. Open its data immediately.
@@ -191,7 +191,7 @@
       await loadScript('/advanced-analytics-v20261108.js');
       await loadScript('/pos-categories-admin.js');
       await loadScript('/catalog-batch-v1544.js');
-      await loadScript('/internal-chat.js');
+      await loadScript('/internal-chat.js?v=20261124-race-fix');
       await loadScript('/refresh-controls-v20261107.js');
       await loadScript('/notifications-campaigns-v20261108.js');
       window.donmacChat?.loggedIn(window.donmacChatUserId||null);
