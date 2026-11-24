@@ -232,6 +232,14 @@
   new MutationObserver(()=>{if(activeView()&&selectedBranch()!==currentBranch)void load(true)})
    .observe(branch,{childList:true,subtree:true});
  }
+ const app=document.getElementById('app');
+ if(app&&typeof MutationObserver!=='undefined'){
+  // Logout/account switching sets app inert/hidden and nulls the role.
+  // Erase former Owner recipe-cost data before any cashier can sign in.
+  new MutationObserver(()=>{
+   if(!ownerOnly()||app.classList.contains('hidden')||app.inert)clearSensitiveUsage();
+  }).observe(app,{attributes:true,attributeFilter:['class','inert','aria-hidden']});
+ }
  window.addEventListener('pageshow',()=>{
   if(!ownerOnly())clearSensitiveUsage();
   else if(activeView())void load(false);
