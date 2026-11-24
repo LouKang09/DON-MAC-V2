@@ -153,6 +153,8 @@
       d.shiftDeposits?.total==null?'Not recorded':money(d.shiftDeposits.total)],
     ['Deposited Sales - calculated',
       d.rangeDepositExpenses==null?'Not available':money(number(d.rangeActual)-number(d.rangeDepositExpenses))],
+    ['Staff-entered Expenses',
+      d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses)],
     ['Staff Expenses / Net Sales %',
       d.rangeDepositExpenses==null?'Not available':pct(d.rangeDepositExpenses,d.rangeActual)]],
    discount:[4,3,11,['Discount rate / gross',pct(d.rangeDiscount,d.rangeGross)],0],
