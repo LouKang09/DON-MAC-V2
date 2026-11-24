@@ -1,0 +1,76 @@
+/* Shared actual-ledger expense pie visualization, responsive for POS/ledger. */
+.dm-expense-pie{
+ display:grid;grid-template-columns:minmax(13rem,.85fr) minmax(0,1.15fr);
+ align-items:center;gap:clamp(1rem,3vw,2rem);padding:.6rem 0;
+}
+.dm-expense-pie-chart{display:grid;gap:.8rem;justify-items:center;min-width:0}
+.dm-expense-pie-chart svg{display:block;width:min(100%,15rem);height:auto;overflow:visible}
+.dm-expense-pie-slice{
+ cursor:pointer;outline:none;transform-origin:120px 120px;
+ transition:transform .16s ease,opacity .16s ease,filter .16s ease;
+}
+.dm-expense-pie-slice.dm-expense-pie-active,
+.dm-expense-pie-slice:focus-visible{
+ transform:scale(1.045);filter:drop-shadow(0 2px 4px rgba(4,55,29,.23));
+}
+.dm-expense-pie:has(.dm-expense-pie-active) .dm-expense-pie-slice:not(.dm-expense-pie-active){opacity:.64}
+.dm-expense-pie-tooltip{display:grid;gap:.15rem;text-align:center;min-height:3.6rem}
+.dm-expense-pie-tooltip > span{color:#507161;font-weight:760;font-size:.8rem}
+.dm-expense-pie-tooltip > strong{color:#075d38;font-size:clamp(1.05rem,2vw,1.5rem);font-variant-numeric:tabular-nums}
+.dm-expense-pie-tooltip > small{color:#657f70;font-size:.75rem}
+.dm-expense-pie-legend{display:grid;gap:.4rem;min-width:0}
+.dm-expense-pie-legend-row{
+ appearance:none;cursor:pointer;display:grid;
+ grid-template-columns:1rem minmax(0,1fr) auto 3rem;gap:.55rem;
+ align-items:center;width:100%;padding:.58rem .7rem;
+ border:1px solid #e0ebe2;background:#fff;color:#27523a;
+ border-radius:.6rem;text-align:left;font:inherit;
+ transition:background .15s ease,border-color .15s ease;
+}
+.dm-expense-pie-legend-row.dm-expense-pie-active,
+.dm-expense-pie-legend-row:hover,
+.dm-expense-pie-legend-row:focus-visible{
+ border-color:#59ab7e;background:#f0faf3;outline-offset:2px;
+}
+.dm-expense-pie-swatch{display:block;width:.88rem;height:.88rem;border-radius:.25rem}
+.dm-expense-pie-legend-label{font-size:.81rem;overflow-wrap:anywhere}
+.dm-expense-pie-legend-row strong{font-size:.82rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dm-expense-pie-legend-row small{text-align:right;color:#6b8675;font-size:.75rem;font-variant-numeric:tabular-nums}
+.dm-expense-pie-empty{padding:1.1rem;color:#688073;background:#f4f9f5;border-radius:.7rem}
+#view-expenses .dm-ledger-category-panel{
+ border:1px solid #d9e9de;border-radius:.9rem;background:#fff;
+ padding:clamp(1rem,2vw,1.5rem);margin:1rem 0 1.3rem;
+ box-shadow:0 .18rem .7rem rgba(7,93,56,.045);
+}
+#view-expenses .dm-ledger-category-panel h4{
+ margin:0 0 .3rem;color:#174e35;font-size:1.03rem;font-weight:790;
+}
+#view-expenses .dm-ledger-category-panel p{margin:.2rem 0 1rem;color:#6a7f70;font-size:.8rem}
+#view-expenses .dm-ledger-category-panel[aria-busy="true"]{opacity:.65}
+@media(max-width:760px){
+ .dm-expense-pie{grid-template-columns:minmax(0,1fr);gap:.8rem}
+ .dm-expense-pie-legend-row{grid-template-columns:1rem minmax(0,1fr) auto 3rem}
+}
+@media(max-width:380px){
+ .dm-expense-pie-legend-row{grid-template-columns:1rem minmax(0,1fr) auto}
+ .dm-expense-pie-legend-row small{grid-column:3}
+}
+@media(prefers-reduced-motion:reduce){
+ .dm-expense-pie-slice,.dm-expense-pie-legend-row{transition:none}
+}
+/* Center menu-category expand arrows independently of the font baseline.
+   The previous ⌄ character rendered as a low v outside its circular badge. */
+#dmKpiDetail .dm-category-caret{
+ display:inline-flex!important;align-items:center!important;
+ justify-content:center!important;width:1.5rem!important;
+ height:1.5rem!important;min-width:1.5rem!important;min-height:1.5rem!important;
+ padding:0!important;margin:0!important;box-sizing:border-box!important;
+ line-height:1!important;vertical-align:middle!important;align-self:center!important;
+ position:static!important;transform:none;overflow:hidden!important;
+}
+#dmKpiDetail .dm-category-caret svg{
+ display:block!important;width:.9rem!important;height:.9rem!important;
+ flex:0 0 .9rem!important;margin:auto!important;
+ stroke:currentColor!important;fill:none!important;stroke-width:2.4!important;
+}
+#dmKpiDetail details[open] .dm-category-caret{transform:rotate(180deg)}
