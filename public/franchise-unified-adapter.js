@@ -71,6 +71,16 @@
    const d=await live('/api/live/dashboard?view=hourly&branchId='+encodeURIComponent(selected()));
    return{count:Number(d.rangeTransactions||0)};
   }
+  if(p==='/api/dashboard/shift-deposits'&&(method==='GET'||method==='POST')){
+   const target='/api/live/dashboard/shift-deposits';
+   const params=new URLSearchParams(url.searchParams);
+   if(method==='GET'){
+    if(params.get('branchId')&&params.get('branchId')!=='all')
+     params.set('branchId',String(scopedBranch(state,params.get('branchId'))));
+    return live(target+(params.size?'?'+params.toString():''),'GET');
+   }
+   return live(target,'POST',{amount:data.amount});
+  }
   if(p==='/api/dashboard'&&method==='GET'){
    const query=new URLSearchParams(url.searchParams);
    if(query.get('branchId'))query.set('branchId',String(scopedBranch(state,query.get('branchId'))));
