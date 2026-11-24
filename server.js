@@ -1417,7 +1417,7 @@ async function dashboardData(params={},branchId=null,user=null){
   // Today Sales uses today's ledger entries, independently of dashboard trend dates.
   const todayExpensePromise=trendResult.from===today&&trendResult.to===today?
     expensePromise:expensesFor(today,today);
-  const [trendRows,rangeTotalsR,totalExpenses,ingredientCost,todayExpenses]=await Promise.all([
+  const [trendRows,rangeTotalsR,totalExpenses,ingredientCost,todayExpenses,categoryItemRows]=await Promise.all([
     db.query('SELECT s.id,s.sold_at,s.gross,s.actual,si.line_total,si.is_add_on,si.is_package,p.category '+
       'FROM sales s JOIN sale_items si ON si.sale_id=s.id LEFT JOIN products p ON p.id=si.product_id '+
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
@@ -1428,7 +1428,15 @@ async function dashboardData(params={},branchId=null,user=null){
       branchClause,trendArgs),
     expensePromise,
     dashboardFinancials.legacyIngredientCost(db,workspace,branchId,startUtc,endUtc),
-    todayExpensePromise
+    todayExpensePromise,
+    db.query('SELECT si.product_name_snapshot AS name,si.is_add_on,si.is_package,p.category,'+
+      'COALESCE(SUM(si.quantity),0) AS qty,'+
+      'COALESCE(SUM(CASE WHEN s.gross>0 THEN si.line_total*s.actual/s.gross ELSE 0 END),0) AS amount '+
+      'FROM sale_items si JOIN sales s ON s.id=si.sale_id '+
+      'LEFT JOIN products p ON p.id=si.product_id '+
+      'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+branchClause+
+      ' GROUP BY si.product_name_snapshot,si.is_add_on,si.is_package,p.category '+
+      'ORDER BY amount DESC LIMIT 1000',trendArgs)
   ]);
   const rangeTotals=rangeTotalsR.rows[0]||{};
   const categoryNames=['Coffee','Non Coffee','Food','Add-ons','Packages','Other'];
@@ -1516,7 +1524,11 @@ async function dashboardData(params={},branchId=null,user=null){
     rangeDepositExpenses:totalExpenses,
     // Displays entered expenses only, not a reconciled bank deposit.
     rangeDepositedSales:totalExpenses,
-    branchId,categoryTrends,performanceProducts,
+    branchId,categoryTrends,
+    categoryItems:categoryItemRows.rows.map(x=>({
+      category:bool(x.is_add_on)?'Add-ons':bool(x.is_package)?'Packages':x.category||'Other',
+      name:x.name,quantity:Number(x.qty||0),net:money(Number(x.amount||0))
+    })),performanceProducts,
     topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:null})),
     lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount})),recentTransactions};
 }
