@@ -146,7 +146,7 @@
       loadCss('planDashboardV1570Css','/plan-dashboard-v1570.css');
       await loadScript('/plan-dashboard-v1570.js?v=20261117-live-plan');
       await loadScript('/dashboard-experience-v1573.js?v=20261107c');
-      await loadScript('/pos-finance.js?v=20261115-isolated');
+      await loadScript('/pos-finance.js?v=20261125-category-pie');
       await loadScript('/refresh-controls-v20261107.js');
       await loadScript('/notifications-campaigns-v20261108.js?v=20261117-live-bell');
       const view=document.querySelector('.view.active')?.id;
