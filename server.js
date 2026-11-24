@@ -1408,15 +1408,17 @@ async function dashboardData(params={},branchId=null,user=null){
   const startUtc=new Date(trendResult.from+'T00:00:00+08:00').toISOString();
   const endUtc=new Date(addDays(trendResult.to,1)+'T00:00:00+08:00').toISOString();
   const trendArgs=['Sold',startUtc,endUtc,scopeId];
-  const expensesFor=(from,to)=>user?.role==='Admin'?
+  const expenseDataFor=(from,to)=>user?.role==='Admin'?
     posFinance.expenses(db,user,{start:from,end:to,
-      ...(branchId==null?{}:{branchId})}).then(x=>x.grandTotal)
+      ...(branchId==null?{}:{branchId})})
       .catch(error=>{console.warn('Dashboard expenses unavailable:',error.message);return null;}):
     Promise.resolve(null);
-  const expensePromise=expensesFor(trendResult.from,trendResult.to);
+  // Reuse the EXACT ledger result for amount and categories.
+  const expenseDataPromise=expenseDataFor(trendResult.from,trendResult.to);
+  const expensePromise=expenseDataPromise.then(x=>x?.grandTotal??null);
   // Today Sales uses today's ledger entries, independently of dashboard trend dates.
   const todayExpensePromise=trendResult.from===today&&trendResult.to===today?
-    expensePromise:expensesFor(today,today);
+    expensePromise:expenseDataFor(today,today).then(x=>x?.grandTotal??null);
   const [trendRows,rangeTotalsR,totalExpenses,ingredientCost,todayExpenses,categoryItemRows]=await Promise.all([
     db.query('SELECT s.id,s.sold_at,s.gross,s.actual,si.line_total,si.is_add_on,si.is_package,p.category '+
       'FROM sales s JOIN sale_items si ON si.sale_id=s.id LEFT JOIN products p ON p.id=si.product_id '+
@@ -1522,6 +1524,7 @@ async function dashboardData(params={},branchId=null,user=null){
     rangeRevenueNet:dashboardFinancials.revenueAfterCost(trendResult.rangeActual,ingredientCost),
     rangeTotalStoreExpenses:dashboardFinancials.totalStoreExpenses(ingredientCost,totalExpenses),
     rangeDepositExpenses:totalExpenses,
+    rangeExpenseCategories:(await expenseDataPromise)?.summary??null,
     // Displays entered expenses only, not a reconciled bank deposit.
     rangeDepositedSales:totalExpenses,
     branchId,categoryTrends,
