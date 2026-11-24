@@ -110,8 +110,8 @@ async function run(){
  assert.match(ui,/categoryItems/);
  assert.match(ui,/dm-kpi-category/);
  assert.doesNotMatch(ui,/recentPanel\(main\)/);
- assert.match(ui,/if\(isAdmin\)body\+=timelinePanel/);
- assert.match(ui,/if\(isAdmin\)await mountActivityChart/);
+ assert.match(ui,/if\(isAdmin&&key!=='expenses'\)body\+=timelinePanel/);
+ assert.match(ui,/if\(isAdmin&&key!=='expenses'\)await mountActivityChart/);
  assert.match(live,/categoryItems=categoryItemRows.rows.map/);
  assert.match(legacy,/categoryItems:categoryItemRows.rows.map/);
  assert.match(adapter,/\/api\/live\/dashboard\/shift-deposits/);
