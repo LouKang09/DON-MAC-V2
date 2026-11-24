@@ -12,7 +12,7 @@
  const pct=(n,d)=>d>0?(100*Number(n||0)/d).toFixed(1)+'%':'0.0%';
  const number=x=>Number(x||0);
  const titles={revenue:'Total Revenue',orders:'Orders',today:'Today Sales',month:'Month Revenue',
-  expenses:'Store Expenses',deposited:'Deposited Sales',discount:'Discount',alerts:'Low Stock Alerts'};
+  expenses:'Total Store Expenses',deposited:'Deposited Sales',discount:'Discount',alerts:'Low Stock Alerts'};
  const expenses=['rent','stocks','salary','transportation','electricity','ice','water','misc'];
  const detail=document.createElement('section');
  detail.id='dmKpiDetail';detail.className='dm-kpi-detail hidden';
@@ -77,33 +77,39 @@
  }
  const value=(d,key)=>{
   const m=d?.metrics||{};
-  return number(({revenue:d?.rangeActual,orders:d?.rangeTransactions,today:m.todayActual,
-   month:m.monthActual,expenses:d?.rangeStoreExpenses,deposited:d?.rangeDepositedSales,discount:d?.rangeDiscount,
+  return number(({revenue:d?.rangeRevenueNet,orders:d?.rangeTransactions,
+   today:m.todayNetAfterExpenses,month:m.monthActual,expenses:d?.rangeTotalStoreExpenses,
+   deposited:d?.rangeDepositExpenses,discount:d?.rangeDiscount,
    alerts:m.lowStockCount})[key]);
  };
  function overview(d,key){
-  const m=d.metrics||{},metrics=[
+  const m=d.metrics||{},fmt=x=>x==null?'Not available':money(x),metrics=[
    ['Completed orders',count(d.rangeTransactions)],
    ['Average order value',money(d.rangeTransactions?d.rangeActual/d.rangeTransactions:0)],
-   ['Net revenue',money(d.rangeActual)],
-   ['Gross revenue',money(d.rangeGross)],
+   ['Revenue after ingredient costs',fmt(d.rangeRevenueNet)],
+   ['Gross revenue (before discounts)',money(d.rangeGross)],
    ['Discounts',money(d.rangeDiscount)],
-   ['Staff-entered expenses',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses)],
-   ['Store Expenses · sold ingredients',d.rangeStoreExpenses==null?'Not available':money(d.rangeStoreExpenses)],
-   ['Deposited Sales · calculated',d.rangeDepositedSales==null?'Not available':money(d.rangeDepositedSales)],
+   ['Staff-entered expenses',fmt(d.rangeDepositExpenses)],
+   ['Cost Amount · sold ingredients',fmt(d.rangeStoreExpenses)],
+   ['Deposited Sales · staff expense total',fmt(d.rangeDepositExpenses)],
    ['Low-stock ingredients',count(m.lowStockCount)],
-   ['Ingredients monitored',count(m.inventoryCount)]
+   ['Ingredients monitored',count(m.inventoryCount)],
+   ['Total Store Expenses',fmt(d.rangeTotalStoreExpenses)],
+   ['Completed net POS sales · before costs',money(d.rangeActual)]
   ];
   const special={
-   revenue:[2,3,4,0,1,5],
-   orders:[0,1,2,3,4],
-   today:[[ 'Today net sales',money(m.todayActual)],['Today gross sales',money(m.todayGross)],
-    ['Today completed orders',count(m.todayTransactions)],['Average today order',money(m.todayTransactions?m.todayActual/m.todayTransactions:0)]],
-   month:[['Period net revenue',money(m.monthActual)],['Period gross revenue',money(m.monthGross)],
+   revenue:[2,11,6,3,4,0],
+   orders:[0,1,11,3,4],
+   today:[['Today Sales after entered expenses',fmt(m.todayNetAfterExpenses)],
+    ['Today completed POS sales',money(m.todayActual)],
+    ['Today staff-entered expenses',fmt(m.todayExpenses)],
+    ['Today gross sales',money(m.todayGross)],
+    ['Today completed orders',count(m.todayTransactions)]],
+   month:[['Period net sales',money(m.monthActual)],['Period gross revenue',money(m.monthGross)],
     ['Period orders',count(m.monthTransactions)],['Average period order',money(m.monthTransactions?m.monthActual/m.monthTransactions:0)]],
-   expenses:[6,2,0,['Ingredient cost / net sales',pct(d.rangeStoreExpenses,d.rangeActual)]],
-   deposited:[7,2,5,0,['Staff expenses / net sales',pct(d.rangeDepositExpenses,d.rangeActual)]],
-   discount:[4,3,2,['Discount rate / gross',pct(d.rangeDiscount,d.rangeGross)],0],
+   expenses:[10,6,5,['Ingredient cost / completed net sales',pct(d.rangeStoreExpenses,d.rangeActual)]],
+   deposited:[7,5,11,0,['Entered expenses / completed net sales',pct(d.rangeDepositExpenses,d.rangeActual)]],
+   discount:[4,3,11,['Discount rate / gross',pct(d.rangeDiscount,d.rangeGross)],0],
    alerts:[8,9,['Alert rate',pct(m.lowStockCount,m.inventoryCount)]]
   };
   const items=(special[key]||[]).map(x=>typeof x==='number'?metrics[x]:x);
@@ -113,23 +119,28 @@
   if(!rows.length)return empty('No branch comparisons are available for the selected period.');
   const financial=['revenue','today','month','expenses','deposited','discount'].includes(key);
   const metricLabel=key==='orders'?'Completed orders':key==='alerts'?'Low-stock count':
-    key==='expenses'?'Store Expenses':key==='deposited'?'Deposited Sales':
-    key==='discount'?'Discounts':'Net revenue';
+    key==='expenses'?'Total Store Expenses':key==='deposited'?'Deposited Sales':
+    key==='today'?'Sales after staff expenses':key==='revenue'?'Revenue after ingredient costs':
+    key==='discount'?'Discounts':'Net sales';
   let html='<div class="dm-kpi-table-scroll"><table><thead><tr><th>Branch</th><th>'+esc(metricLabel)+
-   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'?'Net revenue':key==='deposited'?'Staff expenses':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
+   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'||key==='deposited'?'Net POS sales':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
   for(const row of rows){
    const d=row.data;
    const extras=key==='alerts'?count(d.metrics?.inventoryCount):key==='orders'?money(d.rangeActual):
-    key==='deposited'?(d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses)):
+    key==='deposited'?money(d.rangeActual):
     count(key==='today'?d.metrics?.todayTransactions:key==='month'?d.metrics?.monthTransactions:d.rangeTransactions);
    html+='<tr'+(row.selected?' class="dm-kpi-selected-branch"':'')+'><th scope="row">'+esc(row.name)+
     (row.selected?' <span class="dm-kpi-current">Selected</span>':'')+'</th><td class="dm-kpi-number">'+
-    ((key==='deposited'&&d.rangeDepositedSales==null)||
-      (key==='expenses'&&d.rangeStoreExpenses==null)?'Not available':
+    ((key==='deposited'&&d.rangeDepositExpenses==null)||
+      (key==='expenses'&&d.rangeTotalStoreExpenses==null)||
+      (key==='revenue'&&d.rangeRevenueNet==null)||
+      (key==='today'&&d.metrics?.todayNetAfterExpenses==null)?'Not available':
      financial?money(value(d,key)):count(value(d,key)))+'</td><td class="dm-kpi-number">'+extras+
     '</td><td class="dm-kpi-number">'+
-    ((key==='deposited'&&d.rangeDepositedSales==null)||
-     (key==='expenses'&&d.rangeStoreExpenses==null)?'—':pct(value(d,key),total))+'</td></tr>';
+    ((key==='deposited'&&d.rangeDepositExpenses==null)||
+     (key==='expenses'&&d.rangeTotalStoreExpenses==null)||
+     (key==='revenue'&&d.rangeRevenueNet==null)||
+     (key==='today'&&d.metrics?.todayNetAfterExpenses==null)?'—':pct(value(d,key),total))+'</td></tr>';
   }
   html+='</tbody></table></div>';
   return html;
@@ -342,18 +353,21 @@
  }
  function ingredientCostPanel(d){
   const estimate=d.rangeStoreExpensesBasis==='current_recipe_estimate';
-  const note=estimate?'Estimated ingredient cost of completed sales based on CURRENT recipes and ingredient prices; legacy receipts have no immutable historical ingredient-cost snapshots.':
-   'Ingredient costs consumed by completed sales from saved receipt and unit-cost snapshots. Not inventory purchases or the operating expense ledger.';
-  return panel('Cost of ingredients sold','<div class="dm-kpi-tiles">'+
-   box('Sold ingredient cost',d.rangeStoreExpenses==null?'Not available':money(d.rangeStoreExpenses))+
-   box('Completed POS orders',count(d.rangeTransactions))+'</div>',note);
+  const note=estimate?'Cost Amount is estimated from CURRENT recipes for legacy completed sales. Older receipts lack immutable historical ingredient-cost snapshots.':
+   'Cost Amount comes from ingredient/recipe cost snapshots for completed sales. Store Expenses comes separately from the entered expense ledger.';
+  return panel('Total Store Expenses breakdown','<div class="dm-kpi-tiles">'+
+   box('Cost Amount · sold recipes',d.rangeStoreExpenses==null?'Not available':money(d.rangeStoreExpenses))+
+   box('Store Expenses · entered by staff',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
+   box('Total Store Expenses',d.rangeTotalStoreExpenses==null?'Not available':money(d.rangeTotalStoreExpenses))+
+   box('Completed POS orders',count(d.rangeTransactions))+'</div>',
+   note+' Totals are scoped to the same selected period and branch.');
  }
  function depositFormulaPanel(d){
-  return panel('Deposited Sales calculation','<div class="dm-kpi-tiles">'+
-   box('Completed net revenue',money(d.rangeActual))+
-   box('Staff-entered expenses',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
-   box('Deposited Sales',d.rangeDepositedSales==null?'Not available':money(d.rangeDepositedSales))+
-   '</div>','Formula: completed net POS revenue minus saved expense ledger entries for the selected reporting period. This is a calculated expectation, not a confirmed bank deposit or shift reconciliation.');
+  return panel('Deposited Sales · expense ledger display','<div class="dm-kpi-tiles">'+
+   box('Displayed amount',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
+   box('Recorded staff-entered expenses',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
+   box('Completed net POS sales · context',money(d.rangeActual))+
+   '</div>','As requested, this card shows the amount entered in Expenses. It is NOT a bank deposit, recorded payment transfer or calculated cash reconciliation.');
  }
  async function expenseCategoryPanel(main,period,run){
   if(context.role!=='Admin'&&!context.permissions.includes('expenses.view'))
@@ -399,7 +413,7 @@
    ?(context.branches.find(b=>String(b.id)===String(context.selectedBranch))?.name||'Selected branch'):'All permitted branches';
   root.classList.add('dm-kpi-detail-open');
   detail.classList.remove('hidden');
-  title.textContent=key==='month'&&context.role!=='Admin'?'Allowed Period Revenue':titles[key];
+  title.textContent=titles[key];
   scope.textContent=period.description+' · '+selectedName;
   content.innerHTML='<p class="dm-kpi-loading">Loading verified dashboard records and branch comparison…</p>';
   if(source){back.focus();detail.scrollIntoView({block:'start',behavior:'instant'});}
