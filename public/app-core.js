@@ -1924,7 +1924,7 @@
        {key:'month',title:'Month Revenue',value:peso(d.metrics.monthActual),
         gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),
         caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
-     {key:'expenses',title:'Total Store Expenses',value:amount(d.rangeTotalStoreExpenses),
+     {key:'expenses',title:'Store Expenses',value:amount(d.rangeTotalStoreExpenses),
        gross:amount(d.rangeStoreExpenses),net:amount(d.rangeDepositExpenses),
        grossLabel:'Cost Amount',netLabel:'Store Expenses',
        caption:'Selected range · recipe costs + entered expenses',glyph:'expense'},
