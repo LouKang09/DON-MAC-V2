@@ -72,8 +72,8 @@ const renderFor=role=>{
  elements.clear();
  const state={dashboard,user:{role,accessPermissions:[],liveMode:true},
   branches:[]};
- const render=new Function('state','$','peso','num','esc','window','sessionGeneration',
-  renderCode+';return renderDashboard;')(state,node,peso,num,esc,windowObj,1);
+ const render=new Function('state','$','peso','num','esc','window','sessionGeneration','api',
+  renderCode+';return renderDashboard;')(state,node,peso,num,esc,windowObj,1,async()=>({}));
  render();
  return node('dashboardSummary').innerHTML;
 };
