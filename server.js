@@ -1407,12 +1407,16 @@ async function dashboardData(params={},branchId=null,user=null){
   const startUtc=new Date(trendResult.from+'T00:00:00+08:00').toISOString();
   const endUtc=new Date(addDays(trendResult.to,1)+'T00:00:00+08:00').toISOString();
   const trendArgs=['Sold',startUtc,endUtc,scopeId];
-  const expensePromise=user?.role==='Admin'?
-    posFinance.expenses(db,user,{start:trendResult.from,end:trendResult.to,
+  const expensesFor=(from,to)=>user?.role==='Admin'?
+    posFinance.expenses(db,user,{start:from,end:to,
       ...(branchId==null?{}:{branchId})}).then(x=>x.grandTotal)
       .catch(error=>{console.warn('Dashboard expenses unavailable:',error.message);return null;}):
     Promise.resolve(null);
-  const [trendRows,rangeTotalsR,totalExpenses,ingredientCost]=await Promise.all([
+  const expensePromise=expensesFor(trendResult.from,trendResult.to);
+  // Today Sales uses today's ledger entries, independently of dashboard trend dates.
+  const todayExpensePromise=trendResult.from===today&&trendResult.to===today?
+    expensePromise:expensesFor(today,today);
+  const [trendRows,rangeTotalsR,totalExpenses,ingredientCost,todayExpenses]=await Promise.all([
     db.query('SELECT s.id,s.sold_at,s.gross,s.actual,si.line_total,si.is_add_on,si.is_package,p.category '+
       'FROM sales s JOIN sale_items si ON si.sale_id=s.id LEFT JOIN products p ON p.id=si.product_id '+
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
@@ -1422,7 +1426,8 @@ async function dashboardData(params={},branchId=null,user=null){
       'WHERE s.status=$1 AND s.sold_at >= $2 AND s.sold_at < $3'+
       branchClause,trendArgs),
     expensePromise,
-    dashboardFinancials.legacyIngredientCost(db,workspace,branchId,startUtc,endUtc)
+    dashboardFinancials.legacyIngredientCost(db,workspace,branchId,startUtc,endUtc),
+    todayExpensePromise
   ]);
   const rangeTotals=rangeTotalsR.rows[0]||{};
   const categoryNames=['Coffee','Non Coffee','Food','Add-ons','Packages','Other'];
@@ -1499,13 +1504,17 @@ async function dashboardData(params={},branchId=null,user=null){
     tableLabel:x.table_label||null,items:itemsBySale.get(Number(x.id))||[]
   }));
   return{today,metrics:{todayActual:todayR.actual,todayGross:todayR.gross,todayTransactions:todayR.transactionCount,
+    todayExpenses,todayNetAfterExpenses:dashboardFinancials.salesAfterExpenses(todayR.actual,todayExpenses),
     monthActual:monthR.actual,monthGross:monthR.gross,monthTransactions:monthR.transactionCount,
     lowStockCount:inv.filter(x=>x.low).length,inventoryCount:inv.length},
     ...trendResult,rangeGross:money(Number(rangeTotals.gross||0)),
     rangeDiscount:money(Number(rangeTotals.discount||0)),rangeExpenses:totalExpenses,
     rangeStoreExpenses:ingredientCost,rangeStoreExpensesBasis:'current_recipe_estimate',
+    rangeRevenueNet:dashboardFinancials.revenueAfterCost(trendResult.rangeActual,ingredientCost),
+    rangeTotalStoreExpenses:dashboardFinancials.totalStoreExpenses(ingredientCost,totalExpenses),
     rangeDepositExpenses:totalExpenses,
-    rangeDepositedSales:dashboardFinancials.depositedSales(trendResult.rangeActual,totalExpenses),
+    // Displays entered expenses only, not a reconciled bank deposit.
+    rangeDepositedSales:totalExpenses,
     branchId,categoryTrends,performanceProducts,
     topProducts:topProducts.map(x=>({name:x.name,qty:x.qty,actual:null})),
     lowStock,categorySales:[...categoryMap].map(([name,amount])=>({name,amount})),recentTransactions};
