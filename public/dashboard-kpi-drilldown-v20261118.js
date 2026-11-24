@@ -117,7 +117,7 @@
    ['Discounts',money(d.rangeDiscount)],
    ['Staff-entered expenses',fmt(d.rangeDepositExpenses)],
    ['Cost Amount · sold ingredients',fmt(d.rangeStoreExpenses)],
-   ['Deposited Sales · staff expense total',fmt(d.rangeDepositExpenses)],
+   ['Sales Deposit Actual',fmt(d.shiftDeposits?.total)],
    ['Low-stock ingredients',count(m.lowStockCount)],
    ['Ingredients monitored',count(m.inventoryCount)],
    ['Total Store Expenses',fmt(d.rangeTotalStoreExpenses)],
@@ -166,7 +166,8 @@
     key==='today'?'Sales after staff expenses':key==='revenue'?'Revenue after ingredient costs':
     key==='discount'?'Discounts':'Net sales';
   let html='<div class="dm-kpi-table-scroll"><table><thead><tr><th>Branch</th><th>'+esc(metricLabel)+
-   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'||key==='deposited'?'Net POS sales':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
+   '</th><th>'+ (key==='alerts'?'Ingredients':key==='orders'?'Net POS sales':
+    key==='deposited'?'Gross Revenue':'Orders')+'</th><th>Share of branch total</th></tr></thead><tbody>';
   for(const row of rows){
    const d=row.data;
    const extras=key==='alerts'?count(d.metrics?.inventoryCount):key==='orders'?money(d.rangeActual):
@@ -246,7 +247,7 @@
   const defaultInterval=d.grain==='daily'?'daily':'hourly';
   const isContext=key==='deposited'||key==='alerts';
   const displayLabel=key==='orders'?'Completed orders':key==='discount'?'Discounts':
-   isContext?'Net sales (context)':'Gross sales';
+   key==='deposited'?'Gross Revenue (context)':isContext?'Net sales (context)':'Gross sales';
   return '<section class="dm-kpi-panel dm-activity-panel" aria-label="Sales activity chart">'+
    '<div class="dm-activity-head"><div><h3 id="dmActivitySeriesName">'+esc(displayLabel)+'</h3>'+
    '<p class="dm-activity-subtitle" id="dmActivityDescription">'+
@@ -269,11 +270,11 @@
   const isOrders=key==='orders',isDiscount=key==='discount';
   const availableGross=(d.trend||[]).every(x=>Number.isFinite(Number(x.gross)));
   const availableDiscount=(d.trend||[]).every(x=>Number.isFinite(Number(x.discount)));
-  const useGross=!isOrders&&!isDiscount&&key!=='expenses'&&key!=='deposited'&&key!=='alerts'&&availableGross;
+  const useGross=!isOrders&&!isDiscount&&key!=='expenses'&&key!=='alerts'&&availableGross;
   const useDiscount=isDiscount&&availableDiscount;
   const field=isOrders?'transactions':useDiscount?'discount':useGross?'gross':'actual';
   const seriesLabel=isOrders?'Completed orders':useDiscount?'Discounts':
-   useGross?'Gross sales':'Net sales';
+   useGross&&key==='deposited'?'Gross Revenue':useGross?'Gross sales':'Net sales';
   let trend=Array.isArray(d.trend)?d.trend:[];
   let points=trend.map(x=>({name:String(x.label||''),value:Math.max(0,number(x[field]))}));
   if(interval==='daily'&&d.grain==='hourly'){
