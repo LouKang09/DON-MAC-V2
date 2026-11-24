@@ -206,7 +206,11 @@
  }
  function saveThread(){
    if(!state.selected)return;
+   // Cache only a few recent threads: inline photo attachments can be large.
+   state.threadCache.delete(state.selected);
    state.threadCache.set(state.selected,{messages:state.messages.slice(),hasMore:state.hasMore});
+   while(state.threadCache.size>12)
+     state.threadCache.delete(state.threadCache.keys().next().value);
  }
  async function refreshThread(force=false){
    const id=state.selected;if(!id||!state.open||!window.donmacChat?.authenticated)return;
