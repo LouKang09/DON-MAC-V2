@@ -12,7 +12,7 @@
  const pct=(n,d)=>d>0?(100*Number(n||0)/d).toFixed(1)+'%':'0.0%';
  const number=x=>Number(x||0);
  const titles={revenue:'Total Revenue',orders:'Orders',today:'Today Sales',month:'Month Revenue',
-  expenses:'Total Store Expenses',deposited:'Deposited Sales',discount:'Discount',alerts:'Low Stock Alerts'};
+  expenses:'Store Expenses',deposited:'Deposited Sales',discount:'Discount',alerts:'Low Stock Alerts'};
  const expenses=['rent','stocks','salary','transportation','electricity','ice','water','misc'];
  const detail=document.createElement('section');
  detail.id='dmKpiDetail';detail.className='dm-kpi-detail hidden';
@@ -140,16 +140,21 @@
    month:[['Period net sales',money(m.monthActual)],['Period gross revenue',money(m.monthGross)],
     ['Period orders',count(m.monthTransactions)],['Average period order',money(m.monthTransactions?m.monthActual/m.monthTransactions:0)]],
    expenses:[
-    ['Total Store Expenses',fmt(d.rangeTotalStoreExpenses)],
     ['Store Expenses Sold Ingredients / Cost of Goods',fmt(d.rangeStoreExpenses)],
-    ['Store Expenses',fmt(d.rangeDepositExpenses)],
-    ['Completed orders',count(d.rangeTransactions)]],
+    ['Net Revenue',fmt(d.rangeRevenueNet)],
+    ['Completed orders',count(d.rangeTransactions)],
+    ['Ingredient Cost / Net Sales %',
+      d.rangeRevenueNet==null||d.rangeStoreExpenses==null?'Not available':
+      pct(d.rangeStoreExpenses,d.rangeRevenueNet)],
+    ['Store Expenses',fmt(d.rangeDepositExpenses)]],
    deposited:[
     ['Gross Revenue',money(d.rangeGross)],
     ['Sales Deposit Actual',d.shiftDepositError?'Unavailable':
       d.shiftDeposits?.total==null?'Not recorded':money(d.shiftDeposits.total)],
-    ['Completed sales after discounts',money(d.rangeActual)],
-    ['Staff-entered expenses',fmt(d.rangeDepositExpenses)]],
+    ['Deposited Sales - calculated',
+      d.rangeDepositExpenses==null?'Not available':money(number(d.rangeActual)-number(d.rangeDepositExpenses))],
+    ['Staff Expenses / Net Sales %',
+      d.rangeDepositExpenses==null?'Not available':pct(d.rangeDepositExpenses,d.rangeActual)]],
    discount:[4,3,11,['Discount rate / gross',pct(d.rangeDiscount,d.rangeGross)],0],
    alerts:[8,9,['Alert rate',pct(m.lowStockCount,m.inventoryCount)]]
   };
@@ -162,7 +167,7 @@
   if(!rows.length)return empty('No branch comparisons are available for the selected period.');
   const financial=['revenue','today','month','expenses','deposited','discount'].includes(key);
   const metricLabel=key==='orders'?'Completed orders':key==='alerts'?'Low-stock count':
-    key==='expenses'?'Total Store Expenses':key==='deposited'?'Sales Deposit Actual':
+    key==='expenses'?'Store Expenses':key==='deposited'?'Sales Deposit Actual':
     key==='today'?'Sales after staff expenses':key==='revenue'?'Revenue after ingredient costs':
     key==='discount'?'Discounts':'Net sales';
   let html='<div class="dm-kpi-table-scroll"><table><thead><tr><th>Branch</th><th>'+esc(metricLabel)+
@@ -406,27 +411,38 @@
   if(context.role!=='Admin'&&!context.permissions.includes('expenses.view'))
    return panel('Expenses by category',empty('Your account does not have permission to view expense ledger categories.'),
     'Only permitted expense records can be displayed.');
-  try{
-   const params=new URLSearchParams({start:period.from,end:period.to,page:'1'});
-   const selection=context.selectedBranch;
-   if(selection&&selection!=='all')params.set('branchId',selection);
-   const data=await context.request('/api/finance/expenses?'+params);
-   if(run!==activeRequest||!valid())return'';
-   // The API summary covers ALL matching ledger rows, not only the first page.
-   const summary=data.summary;
-   if(!summary||typeof summary!=='object')throw Error('Full expense category totals are unavailable. Refresh the page.');
-   const total=expenses.reduce((sum,key)=>sum+number(summary[key]),0);
-   const discrepancy=main.rangeDepositExpenses!=null&&
-    Math.abs(total-number(main.rangeDepositExpenses))>.02;
-   const note=discrepancy?'Dashboard expense dates and ledger category totals differ. Verify the selected date range and branch.':
-    'Actual staff-entered expense amounts for the selected period and branch; hover or focus a pie section to inspect amounts.';
-   const pie=window.donmacExpensePie?.markup(summary);
-   return panel('Expenses by category','<div class="dm-expense-pie-host">'+
-    (pie||empty('Refresh to load the expense category visualization.'))+'</div>',note);
-  }catch(error){
-   return panel('Expenses by category',empty('Unable to load expense categories: '+(error.message||'Please retry.')),
-    'The categories use only expense entries from permitted dates and branches.');
+  let categoryTotals=main.rangeExpenseCategories;
+  // The dashboard carries its OWN ledger category totals from precisely the
+  // same database scope and dates as the expense KPI. An unrelated paginated
+  // finance call previously left this chart empty despite actual expenses.
+  if(!categoryTotals||typeof categoryTotals!=='object'){
+   try{
+    const params=new URLSearchParams({start:period.from,end:period.to,page:'1'});
+    if(context.selectedBranch&&context.selectedBranch!=='all')params.set('branchId',context.selectedBranch);
+    const data=await context.request('/api/finance/expenses?'+params);
+    if(run!==activeRequest||!valid())return'';
+    categoryTotals=data?.summary;
+   }catch(error){
+    return panel('Expenses by category',empty('Unable to load expense categories: '+(error.message||'Please retry.')),
+     'Only expenses from the selected branch and reporting dates are included.');
+   }
   }
+  if(!categoryTotals||typeof categoryTotals!=='object')
+   return panel('Expenses by category',empty('Expense category totals are unavailable for this period.'),
+    'Refresh the dashboard and retry.');
+  const total=expenses.reduce((sum,key)=>sum+number(categoryTotals[key]),0);
+  if(!total&&number(main.rangeDepositExpenses)>0)
+   return panel('Expenses by category',
+    empty('Recorded expenses exist, but their category breakdown could not be reconciled. Please refresh.'),
+    'The displayed expense amount is preserved; no categories have been estimated.');
+  const discrepancy=main.rangeDepositExpenses!=null&&
+   Math.abs(total-number(main.rangeDepositExpenses))>0.02;
+  const note=discrepancy?
+   'The grouped expense amount does not match the ledger total; check the same date and branch filters.':
+   'Actual staff-entered expenses for this reporting period. Hover or focus each segment for its peso amount.';
+  const markup=window.donmacExpensePie?.markup(categoryTotals);
+  return panel('Expenses by category','<div class="dm-expense-pie-host">'+
+   (markup||empty('The expense chart is unavailable. Please refresh.'))+'</div>',note);
  }
  async function open(key,source){
   if(!titles[key]||!valid())return;
