@@ -29,10 +29,15 @@ assert.match(unified,/todayNetAfterExpenses:financial.salesAfterExpenses\(todayT
 assert.match(server,/todayNetAfterExpenses:dashboardFinancials.salesAfterExpenses\(todayR.actual,todayExpenses\)/);
 assert.match(server,/rangeTotalStoreExpenses:dashboardFinancials.totalStoreExpenses\(ingredientCost,totalExpenses\)/);
 assert.match(server,/rangeDepositedSales:totalExpenses/);
-assert.match(drill,/expenses:'Total Store Expenses'/);
+assert.match(drill,/expenses:'Store Expenses'/);
 assert.match(drill,/today:m.todayNetAfterExpenses/);
 assert.match(drill,/revenue:d\?\.rangeRevenueNet/);
 assert.match(drill,/expenses:d\?\.rangeTotalStoreExpenses/);
+assert.match(unified,/rangeExpenseCategories/);
+assert.match(server,/rangeExpenseCategories/);
+assert.match(drill,/Ingredient Cost \/ Net Sales %/);
+assert.match(drill,/Staff Expenses \/ Net Sales %/);
+assert.match(drill,/Deposited Sales - calculated/);
 
 const script=source('public/app-core.js');
 const from=script.indexOf('  function renderDashboard(){');
@@ -83,7 +88,7 @@ assert.match(owner,/>Total Revenue</);
 assert.match(owner,/>₱1050\.00</);
 assert.match(owner,/Cost Amount:<b>₱450\.00<\/b>/);
 assert.match(owner,/Store Expenses:<b>₱125\.00<\/b>/);
-assert.match(owner,/>Total Store Expenses</);
+assert.match(owner,/>Store Expenses</);
 assert.match(owner,/>₱575\.00</);
 assert.match(owner,/>Today Sales</);
 assert.match(owner,/>₱540\.00</);
