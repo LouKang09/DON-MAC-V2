@@ -24,8 +24,26 @@
   if(/^m(l|illiliters?)$/i.test(unit)&&Math.abs(value)>=1000)return num(value/1000)+' L';
   return num(value)+' '+unit;
  };
- const activeView=()=>!!view?.classList.contains('active')&&!document.getElementById('app')?.classList.contains('hidden');
+ // Inventory branch access does not grant the cashier sensitive recipe costs.
+ // The server enforces this independently; the client avoids fetching and
+ // clears any previous Owner session's ingredient-usage DOM and cache.
+ const ownerOnly=()=>window.donmacAuthenticatedRole==='Admin'&&!box.classList.contains('hidden');
+ const activeView=()=>ownerOnly()&&!!view?.classList.contains('active')&&
+  !document.getElementById('app')?.classList.contains('hidden');
  const generation=()=>window.donmacSessionGeneration?.();
+ function clearSensitiveUsage(){
+  ++requestId;
+  if(active)active.abort();
+  active=null;data=null;lastKey='';currentBranch='';loading=false;
+  results.hidden=true;
+  $('inventoryUsageChart').replaceChildren();
+  $('inventoryUsageBody').replaceChildren();
+  for(const id of ['inventoryUsageGross','inventoryUsageNet','inventoryUsageCount',
+   'inventoryUsageScope','inventoryUsageChartScope','inventoryUsageNotes','inventoryUsageTableCaption']){
+   const element=$(id);if(element)element.textContent='';
+  }
+  feedback.hidden=true;feedback.textContent='';
+ }
  const selectedBranch=()=>String(branch?.value||'').trim();
  const scopeLabel=()=>branch?.selectedOptions?.[0]?.textContent?.trim()||'Selected branch';
  function setFeedback(message,isError=false){
@@ -145,6 +163,7 @@
   results.hidden=false;drawTable();drawChart();
  }
  async function load(force=false){
+  if(!ownerOnly()){clearSensitiveUsage();return;}
   if(!activeView())return;
   const id=selectedBranch(),range=period.value;
   if(!/^[1-9]\d*$/.test(id)){
@@ -197,14 +216,27 @@
  // Inventory can be opened after this script loads. Observe only the view
  // activation and branch <option> changes, not unrelated app mutations.
  if(view&&typeof MutationObserver!=='undefined'){
-  new MutationObserver(()=>{if(activeView())void load(false);else if(active)active.abort()})
-   .observe(view,{attributes:true,attributeFilter:['class']});
+  new MutationObserver(()=>{
+   if(!ownerOnly())clearSensitiveUsage();
+   else if(activeView())void load(false);
+   else if(active)active.abort();
+  }).observe(view,{attributes:true,attributeFilter:['class']});
+ }
+ if(typeof MutationObserver!=='undefined'){
+  new MutationObserver(()=>{
+   if(!ownerOnly())clearSensitiveUsage();
+   else if(activeView())void load(true);
+  }).observe(box,{attributes:true,attributeFilter:['class']});
  }
  if(branch&&typeof MutationObserver!=='undefined'){
   new MutationObserver(()=>{if(activeView()&&selectedBranch()!==currentBranch)void load(true)})
    .observe(branch,{childList:true,subtree:true});
  }
- window.addEventListener('pageshow',()=>{if(activeView())void load(false)});
+ window.addEventListener('pageshow',()=>{
+  if(!ownerOnly())clearSensitiveUsage();
+  else if(activeView())void load(false);
+ });
  window.donmacInventoryUsage={refresh:()=>load(true)};
- if(activeView())void load();
+ if(!ownerOnly())clearSensitiveUsage();
+ else if(activeView())void load();
 })();
