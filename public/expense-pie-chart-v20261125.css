@@ -4,9 +4,9 @@
  align-items:center;gap:clamp(1rem,3vw,2rem);padding:.6rem 0;
 }
 .dm-expense-pie-chart{display:grid;gap:.8rem;justify-items:center;min-width:0}
-.dm-expense-pie-chart svg{display:block;width:min(100%,15rem);height:auto;overflow:visible}
+.dm-expense-pie-chart svg{display:block;width:min(100%,19rem);height:auto;overflow:visible}
 .dm-expense-pie-slice{
- cursor:pointer;outline:none;transform-origin:120px 120px;
+ cursor:pointer;outline:none;transform-origin:160px 160px;
  transition:transform .16s ease,opacity .16s ease,filter .16s ease;
 }
 .dm-expense-pie-slice.dm-expense-pie-active,
@@ -74,3 +74,13 @@
  stroke:currentColor!important;fill:none!important;stroke-width:2.4!important;
 }
 #dmKpiDetail details[open] .dm-category-caret{transform:rotate(180deg)}
+
+/* Each slice always displays its own percentage, including small slices
+   which receive a labelled leader outside the ring. */
+.dm-expense-pie-percent{pointer-events:none;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.dm-expense-pie-percent-inside{paint-order:stroke;stroke:rgba(0,0,0,.10);stroke-width:1.15px;stroke-linejoin:round}
+.dm-expense-pie-percent-external text{fill:#183e2d;font-size:12px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.dm-expense-pie-percent-external path{opacity:.92}
+@media(max-width:400px){
+ .dm-expense-pie-chart svg{width:min(100%,17rem)}
+}
