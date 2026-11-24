@@ -83,7 +83,8 @@
  }
  function selectedPeriod(key){
   const today=payload.today||payload.to;
-  if(key==='today')return{view:'hourly',from:today,to:today,description:'Today · Philippine time'};
+  if(key==='today'||key==='deposited'&&context.role==='User')
+   return{view:'hourly',from:today,to:today,description:'Today · Philippine time'};
   if(key==='month'&&context.role==='Admin')return{view:'custom',from:today.slice(0,7)+'-01',to:today,
    description:'Current month to date · Philippine time'};
   if(key==='month'&&context.live){
@@ -104,7 +105,7 @@
   const m=d?.metrics||{};
   return number(({revenue:d?.rangeRevenueNet,orders:d?.rangeTransactions,
    today:m.todayNetAfterExpenses,month:m.monthActual,expenses:d?.rangeTotalStoreExpenses,
-   deposited:d?.rangeDepositExpenses,discount:d?.rangeDiscount,
+   deposited:d?.shiftDeposits?.total,discount:d?.rangeDiscount,
    alerts:m.lowStockCount})[key]);
  };
  function overview(d,key){
@@ -138,8 +139,17 @@
     ['Today completed orders',count(m.todayTransactions)]],
    month:[['Period net sales',money(m.monthActual)],['Period gross revenue',money(m.monthGross)],
     ['Period orders',count(m.monthTransactions)],['Average period order',money(m.monthTransactions?m.monthActual/m.monthTransactions:0)]],
-   expenses:[10,6,5,['Ingredient cost / completed net sales',pct(d.rangeStoreExpenses,d.rangeActual)]],
-   deposited:[7,5,11,0,['Entered expenses / completed net sales',pct(d.rangeDepositExpenses,d.rangeActual)]],
+   expenses:[
+    ['Total Store Expenses',fmt(d.rangeTotalStoreExpenses)],
+    ['Store Expenses Sold Ingredients / Cost of Goods',fmt(d.rangeStoreExpenses)],
+    ['Store Expenses',fmt(d.rangeDepositExpenses)],
+    ['Completed orders',count(d.rangeTransactions)]],
+   deposited:[
+    ['Gross Revenue',money(d.rangeGross)],
+    ['Sales Deposit Actual',d.shiftDepositError?'Unavailable':
+      d.shiftDeposits?.total==null?'Not recorded':money(d.shiftDeposits.total)],
+    ['Completed sales after discounts',money(d.rangeActual)],
+    ['Staff-entered expenses',fmt(d.rangeDepositExpenses)]],
    discount:[4,3,11,['Discount rate / gross',pct(d.rangeDiscount,d.rangeGross)],0],
    alerts:[8,9,['Alert rate',pct(m.lowStockCount,m.inventoryCount)]]
   };
@@ -152,7 +162,7 @@
   if(!rows.length)return empty('No branch comparisons are available for the selected period.');
   const financial=['revenue','today','month','expenses','deposited','discount'].includes(key);
   const metricLabel=key==='orders'?'Completed orders':key==='alerts'?'Low-stock count':
-    key==='expenses'?'Total Store Expenses':key==='deposited'?'Deposited Sales':
+    key==='expenses'?'Total Store Expenses':key==='deposited'?'Sales Deposit Actual':
     key==='today'?'Sales after staff expenses':key==='revenue'?'Revenue after ingredient costs':
     key==='discount'?'Discounts':'Net sales';
   let html='<div class="dm-kpi-table-scroll"><table><thead><tr><th>Branch</th><th>'+esc(metricLabel)+
@@ -160,17 +170,17 @@
   for(const row of rows){
    const d=row.data;
    const extras=key==='alerts'?count(d.metrics?.inventoryCount):key==='orders'?money(d.rangeActual):
-    key==='deposited'?money(d.rangeActual):
+    key==='deposited'?money(d.rangeGross):
     count(key==='today'?d.metrics?.todayTransactions:key==='month'?d.metrics?.monthTransactions:d.rangeTransactions);
    html+='<tr'+(row.selected?' class="dm-kpi-selected-branch"':'')+'><th scope="row">'+esc(row.name)+
     (row.selected?' <span class="dm-kpi-current">Selected</span>':'')+'</th><td class="dm-kpi-number">'+
-    ((key==='deposited'&&d.rangeDepositExpenses==null)||
+    ((key==='deposited'&&d.shiftDeposits?.total==null)||
       (key==='expenses'&&d.rangeTotalStoreExpenses==null)||
       (key==='revenue'&&d.rangeRevenueNet==null)||
       (key==='today'&&d.metrics?.todayNetAfterExpenses==null)?'Not available':
      financial?money(value(d,key)):count(value(d,key)))+'</td><td class="dm-kpi-number">'+extras+
     '</td><td class="dm-kpi-number">'+
-    ((key==='deposited'&&d.rangeDepositExpenses==null)||
+    ((key==='deposited'&&d.shiftDeposits?.total==null)||
      (key==='expenses'&&d.rangeTotalStoreExpenses==null)||
      (key==='revenue'&&d.rangeRevenueNet==null)||
      (key==='today'&&d.metrics?.todayNetAfterExpenses==null)?'—':pct(value(d,key),total))+'</td></tr>';
@@ -206,7 +216,7 @@
     '<li class="dm-category-noitems">Item details are not available for this period.</li>';
    return '<details class="dm-kpi-category"><summary>'+
     '<span class="dm-category-title">'+esc(group.name)+
-    '<span class="dm-category-caret" aria-hidden="true">⌄</span></span>'+
+    '<span class="dm-category-caret" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"/></svg></span></span>'+
     '<span class="dm-category-amount">'+esc(money(group.amount))+' · '+esc(pct(group.amount,total))+'</span>'+
     '<span class="dm-kpi-bar-track" aria-hidden="true"><span style="width:'+
     Math.max(0,Math.min(100,total>0?100*group.amount/total:0)).toFixed(2)+'%"></span></span>'+
@@ -234,7 +244,7 @@
  }
  function timelinePanel(d,key){
   const defaultInterval=d.grain==='daily'?'daily':'hourly';
-  const isContext=key==='expenses'||key==='deposited'||key==='alerts';
+  const isContext=key==='deposited'||key==='alerts';
   const displayLabel=key==='orders'?'Completed orders':key==='discount'?'Discounts':
    isContext?'Net sales (context)':'Gross sales';
   return '<section class="dm-kpi-panel dm-activity-panel" aria-label="Sales activity chart">'+
@@ -391,57 +401,31 @@
   return panel('Ingredients needing attention',body,
    'Alert totals include all monitored ingredients; the dashboard returns up to ten example ingredients per branch.');
  }
- function ingredientCostPanel(d){
-  const estimate=d.rangeStoreExpensesBasis==='current_recipe_estimate';
-  const note=estimate?'Cost Amount is estimated from CURRENT recipes for legacy completed sales. Older receipts lack immutable historical ingredient-cost snapshots.':
-   'Cost Amount comes from ingredient/recipe cost snapshots for completed sales. Store Expenses comes separately from the entered expense ledger.';
-  return panel('Total Store Expenses breakdown','<div class="dm-kpi-tiles">'+
-   box('Cost Amount · sold recipes',d.rangeStoreExpenses==null?'Not available':money(d.rangeStoreExpenses))+
-   box('Store Expenses · entered by staff',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
-   box('Total Store Expenses',d.rangeTotalStoreExpenses==null?'Not available':money(d.rangeTotalStoreExpenses))+
-   box('Completed POS orders',count(d.rangeTransactions))+'</div>',
-   note+' Totals are scoped to the same selected period and branch.');
- }
- function depositFormulaPanel(d){
-  return panel('Deposited Sales · expense ledger display','<div class="dm-kpi-tiles">'+
-   box('Displayed amount',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
-   box('Recorded staff-entered expenses',d.rangeDepositExpenses==null?'Not available':money(d.rangeDepositExpenses))+
-   box('Completed net POS sales · context',money(d.rangeActual))+
-   '</div>','As requested, this card shows the amount entered in Expenses. It is NOT a bank deposit, recorded payment transfer or calculated cash reconciliation.');
- }
  async function expenseCategoryPanel(main,period,run){
   if(context.role!=='Admin'&&!context.permissions.includes('expenses.view'))
-   return panel('Expense categories',empty('Open Expenses Ledger to view detailed spending when your account has permission.'),
-    'The dashboard amount remains visible only within the access granted to this account.');
-  let page=1,total=0,rows=[];
+   return panel('Expenses by category',empty('Your account does not have permission to view expense ledger categories.'),
+    'Only permitted expense records can be displayed.');
   try{
-   while(page<=12){
-    const params=new URLSearchParams({start:period.from,end:period.to,page:String(page)});
-    const selection=context.selectedBranch;
-    if(selection&&selection!=='all')params.set('branchId',selection);
-    const result=await context.request('/api/finance/expenses?'+params);
-    if(run!==activeRequest||!valid())return'';
-    total=Number(result.total||0);
-    rows.push(...(result.rows||[]));
-    if(rows.length>=total||!(result.rows||[]).length)break;
-    page++;
-   }
+   const params=new URLSearchParams({start:period.from,end:period.to,page:'1'});
+   const selection=context.selectedBranch;
+   if(selection&&selection!=='all')params.set('branchId',selection);
+   const data=await context.request('/api/finance/expenses?'+params);
+   if(run!==activeRequest||!valid())return'';
+   // The API summary covers ALL matching ledger rows, not only the first page.
+   const summary=data.summary;
+   if(!summary||typeof summary!=='object')throw Error('Full expense category totals are unavailable. Refresh the page.');
+   const total=expenses.reduce((sum,key)=>sum+number(summary[key]),0);
+   const discrepancy=main.rangeDepositExpenses!=null&&
+    Math.abs(total-number(main.rangeDepositExpenses))>.02;
+   const note=discrepancy?'Dashboard expense dates and ledger category totals differ. Verify the selected date range and branch.':
+    'Actual staff-entered expense amounts for the selected period and branch; hover or focus a pie section to inspect amounts.';
+   const pie=window.donmacExpensePie?.markup(summary);
+   return panel('Expenses by category','<div class="dm-expense-pie-host">'+
+    (pie||empty('Refresh to load the expense category visualization.'))+'</div>',note);
   }catch(error){
-   return panel('Expense categories',empty('Unable to load expense-category records: '+error.message),
-    'Use Expenses Ledger for the detailed history.');
+   return panel('Expenses by category',empty('Unable to load expense categories: '+(error.message||'Please retry.')),
+    'The categories use only expense entries from permitted dates and branches.');
   }
-  const aggregated=expenses.map(cat=>({name:cat.charAt(0).toUpperCase()+cat.slice(1),
-   amount:rows.reduce((v,r)=>v+number(r[cat]),0)})).sort((a,b)=>b.amount-a.amount);
-  const sum=aggregated.reduce((n,x)=>n+x.amount,0);
-  const unfinished=rows.length<total;
-  const body=aggregated.map(x=>'<div class="dm-kpi-bar-row"><div><strong>'+esc(x.name)+
-   '</strong><span>'+money(x.amount)+' · '+pct(x.amount,sum)+'</span></div>'+
-   '<div class="dm-kpi-bar-track"><span style="width:'+(sum?100*x.amount/sum:0).toFixed(2)+'%"></span></div></div>').join('');
-  const discrepancy=!unfinished&&Math.abs(sum-number(main.rangeExpenses))>0.01;
-  const note=unfinished?'Partial: first '+rows.length+' of '+total+' daily branch entries. Open Expenses Ledger for the full breakdown.':
-   discrepancy?'Expense Ledger daily category grouping differs from the dashboard date cutoff; verify totals in Expenses Ledger.':
-   'Recorded expense categories for the detailed period and selected dashboard branch scope.';
-  return panel('Expenses by category',sum?body:empty('No recorded expenses in this period.'),note);
  }
  async function open(key,source){
   if(!titles[key]||!valid())return;
@@ -463,8 +447,10 @@
    if(key==='today'||key==='month'&&(context.role==='Admin'||context.live))
     main=await context.request(query(period,context.selectedBranch==='all'?null:context.selectedBranch));
    if(run!==activeRequest||!valid())return;
-   if(key==='today'){
-    const params=new URLSearchParams({date:period.to});
+   if(key==='today'||key==='deposited'){
+    const params=key==='today'?
+     new URLSearchParams({date:period.to}):
+     new URLSearchParams({from:period.from,to:period.to});
     if(context.selectedBranch&&context.selectedBranch!=='all')params.set('branchId',context.selectedBranch);
     try{
      const shiftDeposits=await context.request('/api/dashboard/shift-deposits?'+params);
@@ -483,10 +469,17 @@
    // the server remain authoritative even when the UI contains an old branch.
    if(compare){
     for(let i=0;i<branches.length;i+=5){
-     const batch=await Promise.allSettled(branches.slice(i,i+5).map(async b=>({
-      id:Number(b.id),name:b.name,data:await context.request(query(period,b.id)),
-      selected:String(context.selectedBranch)===String(b.id)
-     })));
+     const batch=await Promise.allSettled(branches.slice(i,i+5).map(async b=>{
+      const data=await context.request(query(period,b.id));
+      if(key==='deposited'){
+       try{
+        const params=new URLSearchParams({from:period.from,to:period.to,branchId:String(b.id)});
+        data.shiftDeposits=await context.request('/api/dashboard/shift-deposits?'+params);
+       }catch(error){data.shiftDepositError=error.message||'Unable to retrieve shift deposits';}
+      }
+      return{id:Number(b.id),name:b.name,data,
+       selected:String(context.selectedBranch)===String(b.id)};
+     }));
      if(run!==activeRequest||!valid())return;
      batch.forEach((result,j)=>{
       if(result.status==='fulfilled')rows.push(result.value);
@@ -533,20 +526,20 @@
        'Total of cashier-entered end-of-shift amounts for the selected branch scope; not bank-confirmed.');
      }
     }
-    if(key==='expenses')body+=ingredientCostPanel(main);
-    if(key==='deposited'){
-     body+=depositFormulaPanel(main);
+    if(key==='expenses'||key==='deposited')
      body+=await expenseCategoryPanel(main,period,run);
-    }
     if(run!==activeRequest||!valid())return;
     body+=categoryPanel(main,key);
    }
    if(run!==activeRequest||!valid())return;
    // Owners keep the chart and Interval controls. Cashiers see the KPI breakdown
    // without the redundant gross-sales activity chart.
-   if(isAdmin)body+=timelinePanel(main,key);
+   // The Store Expenses drill-down shows actual expense categories in a pie,
+   // not a contextual net-sales chart. Owners retain other activity charts.
+   if(isAdmin&&key!=='expenses')body+=timelinePanel(main,key);
    content.innerHTML=body;
-   if(isAdmin)await mountActivityChart(main,period,key,run);
+   content.querySelectorAll('.dm-expense-pie-host').forEach(host=>window.donmacExpensePie?.mount(host));
+   if(isAdmin&&key!=='expenses')await mountActivityChart(main,period,key,run);
   }catch(error){
    if(run!==activeRequest||!valid())return;
    content.innerHTML=panel('Unable to load the breakdown',empty(error.message||'Please retry.'),
