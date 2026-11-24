@@ -120,7 +120,7 @@
    ['Sales Deposit Actual',fmt(d.shiftDeposits?.total)],
    ['Low-stock ingredients',count(m.lowStockCount)],
    ['Ingredients monitored',count(m.inventoryCount)],
-   ['Total Store Expenses',fmt(d.rangeTotalStoreExpenses)],
+   ['Store Expenses',fmt(d.rangeTotalStoreExpenses)],
    ['Completed net POS sales · before costs',money(d.rangeActual)]
   ];
   const special={
