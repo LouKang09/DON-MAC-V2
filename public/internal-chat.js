@@ -3,7 +3,8 @@
  'use strict';
  const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  if(!$('view-chat'))return;
- const state={contacts:[],selected:0,messages:[],image:null,loading:false,sending:false,refreshing:false,open:false,unreadTimer:null,threadTimer:null,turn:0,hasMore:false};
+ const state={contacts:[],selected:0,messages:[],image:null,loading:false,sending:false,refreshing:false,open:false,unreadTimer:null,threadTimer:null,turn:0,hasMore:false,
+   contactsSeq:0,threadSeq:0,refreshTurn:0,loadingThread:false,threadError:'',threadCache:new Map()};
  const emojis=['❤️','👍','😂','😮','😢','🙏'];
  function mineUserId(){return Number(window.donmacChat?.userId||0);}
  function dateString(value){try{return new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(value));}catch(_){return '';}}
@@ -130,8 +131,11 @@
  }
  async function refreshContacts(){
    if(!window.donmacChat?.authenticated)return;
+   const userId=mineUserId(),serial=++state.contactsSeq;
    try{
      const data=await request('/api/chat/people');
+     // Ignore a slow response from an earlier refresh, login, or account.
+     if(serial!==state.contactsSeq||!window.donmacChat?.authenticated||mineUserId()!==userId)return;
      const groupItems=(data.groups||[]).map(g=>({...g,id:-Number(g.id),groupId:Number(g.id),isGroup:true,groupKind:g.kind,
         username:g.kind==='all'?'All':g.label,label:g.kind==='all'?'All':g.label,
         subtitle:g.kind==='all'?'All Branches · Group Chat':'Branch Group Chat'}));
@@ -143,10 +147,16 @@
      renderContacts();
      if(state.selected&&contactById(state.selected))renderHeader();
      if(state.selected&&!contactById(state.selected)){
-       state.selected=0;state.messages=[];renderHeader();renderMessages();
+       state.selected=0;state.messages=[];state.hasMore=false;
+       state.turn++;state.threadSeq++;state.refreshing=false;
+       state.loadingThread=false;state.threadError='';
+       renderHeader();renderMessages();
      }
    }catch(err){
-     if(state.open)$('chatPeople').innerHTML='<p class="chat-empty">'+esc(err.message)+'</p>';
+     if(serial!==state.contactsSeq||!window.donmacChat?.authenticated||mineUserId()!==userId)return;
+     // A temporary roster failure must not erase conversations already visible.
+     if(!state.contacts.length&&state.open)$('chatPeople').innerHTML='<p class="chat-empty">'+esc(err.message)+'</p>';
+     else console.warn('Team roster refresh:',err);
    }
  }
  function renderHeader(){
@@ -188,39 +198,84 @@
      return;
    }
    const list=state.messages.map(renderMessage).join('');
-   box.innerHTML=(state.hasMore?'<button type="button" id="chatLoadEarlier" class="chat-load-earlier">Load earlier messages</button>':'')+
-     (list||'<div class="chat-thread-start">No messages yet. Say hello!</div>');
+   const empty=state.loadingThread?'<div class="chat-thread-start" role="status">Loading conversation…</div>':
+     state.threadError?'<div class="chat-thread-start" role="alert">Could not load messages. <button type="button" id="chatRetryThread">Retry</button></div>':
+     '<div class="chat-thread-start">No messages yet. Say hello!</div>';
+   box.innerHTML=(state.hasMore?'<button type="button" id="chatLoadEarlier" class="chat-load-earlier">Load earlier messages</button>':'')+(list||empty);
    if(stick||previousBottom<75)box.scrollTop=box.scrollHeight;
  }
+ function saveThread(){
+   if(!state.selected)return;
+   state.threadCache.set(state.selected,{messages:state.messages.slice(),hasMore:state.hasMore});
+ }
  async function refreshThread(force=false){
-   const id=state.selected;if(!id||!state.open||state.refreshing)return;
-   const turn=state.turn;state.refreshing=true;
+   const id=state.selected;if(!id||!state.open||!window.donmacChat?.authenticated)return;
+   const turn=state.turn,userId=mineUserId();
+   // Only coalesce requests for the SAME conversation. An in-flight request
+   // from a previous contact must not block the newly selected thread.
+   if(state.refreshing&&state.refreshTurn===turn&&!force)return;
+   const serial=++state.threadSeq;
+   state.refreshing=true;state.refreshTurn=turn;
+   const after=!force&&state.messages.length?state.messages[state.messages.length-1].id:0;
    try{
-     const after=!force&&state.messages.length?state.messages[state.messages.length-1].id:0;
      const path=id<0?'/api/chat/groups/'+(-id)+'/messages':'/api/chat/messages/'+id;
      const data=await request(path+(after?'?after='+encodeURIComponent(after):''));
-     if(turn!==state.turn||state.selected!==id)return;
+     if(serial!==state.threadSeq||turn!==state.turn||state.selected!==id||
+        !window.donmacChat?.authenticated||mineUserId()!==userId)return;
+     const incoming=Array.isArray(data.messages)?data.messages:[];
      if(after){
-       const seen=new Set(state.messages.map(m=>m.id));
-       const fresh=(data.messages||[]).filter(m=>!seen.has(m.id));
-       if(fresh.length){state.messages=state.messages.concat(fresh);renderMessages();}
+       const byId=new Map(state.messages.map(m=>[Number(m.id),m]));
+       for(const message of incoming)byId.set(Number(message.id),message);
+       if(incoming.length)state.messages=[...byId.values()].sort((a,b)=>Number(a.id)-Number(b.id));
      }else{
-       const oldLength=state.messages.length;
-       state.messages=data.messages||[];state.hasMore=!!data.hasMore;
-       renderMessages({stick:!oldLength});
+       const previousOldest=state.messages[0]?.id;
+       // Soft-deleted messages remain as tombstones on the server. A transient
+       // empty response must not erase an already displayed conversation.
+       if(incoming.length||!state.messages.length){
+         const byId=new Map(state.messages.map(m=>[Number(m.id),m]));
+         for(const message of incoming)byId.set(Number(message.id),message);
+         state.messages=[...byId.values()].sort((a,b)=>Number(a.id)-Number(b.id));
+       }
+       // Preserve pagination progress when earlier pages have been loaded.
+       if(!previousOldest||!incoming.length||Number(previousOldest)>=Number(incoming[0].id))
+         state.hasMore=!!data.hasMore;
      }
-     if((data.messages||[]).some(m=>!m.mine&&!m.readAt)){
-       await request(id<0?'/api/chat/groups/'+(-id)+'/read':'/api/chat/read/'+id,{method:'POST',body:'{}'});
-       refreshContacts().catch(()=>{});
+     state.loadingThread=false;state.threadError='';
+     saveThread();
+     renderMessages({stick:!after&&!state.messages.length});
+     if(incoming.some(m=>!m.mine&&!m.readAt)){
+       // Read receipts are scoped to the same contact; stale responses never mark read.
+       await request(id<0?'/api/chat/groups/'+(-id)+'/read':'/api/chat/read/'+id,
+         {method:'POST',body:'{}'});
+       if(serial===state.threadSeq&&turn===state.turn)refreshContacts().catch(()=>{});
      }
-   }catch(err){notice(err.message);}
-   finally{state.refreshing=false;}
+   }catch(err){
+     if(serial!==state.threadSeq||turn!==state.turn||state.selected!==id)return;
+     state.loadingThread=false;
+     state.threadError=err.message||'Please try again.';
+     notice(state.threadError);
+     renderMessages({stick:false});
+   }finally{
+     if(serial===state.threadSeq){state.refreshing=false;state.refreshTurn=0;}
+   }
  }
  async function setContact(id){
-   if(state.selected===id&&state.open&&$('view-chat').classList.contains('chat-thread-open'))return;
-   state.selected=id;state.messages=[];state.hasMore=false;state.turn++;
-   notice('');renderContacts();renderHeader();renderMessages();
+   const same=state.selected===id;
+   if(same&&state.open&&$('view-chat').classList.contains('chat-thread-open')){
+     // Selecting an open contact is also a manual retry / refresh.
+     await refreshThread(true);return;
+   }
+   if(!same){
+     state.selected=id;state.turn++;state.threadSeq++;
+     state.refreshing=false;state.refreshTurn=0;
+     const cached=state.threadCache.get(id);
+     state.messages=cached?cached.messages.slice():[];
+     state.hasMore=cached?.hasMore||false;
+     state.loadingThread=!cached;state.threadError='';
+   }
+   notice('');renderContacts();renderHeader();renderMessages({stick:false});
    $('view-chat').classList.add('chat-thread-open');
+   // Start immediately, instead of waiting for the 5-second poll.
    await refreshThread(true);
  }
  async function loadEarlier(){
@@ -230,9 +285,10 @@
      const box=$('chatMessages'),prevHeight=box.scrollHeight;
      const url=id<0?'/api/chat/groups/'+(-id)+'/messages':'/api/chat/messages/'+id;
      const data=await request(url+'?before='+first);
-     if(turn!==state.turn)return;
-     state.messages=[...data.messages,...state.messages];
-     state.hasMore=!!data.hasMore;renderMessages({stick:false});
+     if(turn!==state.turn||state.selected!==id||!window.donmacChat?.authenticated)return;
+     const byId=new Map([...state.messages,...(data.messages||[])].map(m=>[Number(m.id),m]));
+     state.messages=[...byId.values()].sort((a,b)=>Number(a.id)-Number(b.id));
+     state.hasMore=!!data.hasMore;saveThread();renderMessages({stick:false});
      box.scrollTop+=box.scrollHeight-prevHeight;
    }catch(err){notice(err.message);}
  }
@@ -302,13 +358,17 @@
    const text=$('chatText').value.trim(),photo=state.image;
    if(!text&&!photo)return;
    state.sending=true;updateSend();notice('');
-   const partner=state.selected;
+   const partner=state.selected,turn=state.turn;
    try{
      const url=partner<0?'/api/chat/groups/'+(-partner)+'/messages':'/api/chat/messages';
      const payload=partner<0?{text,photo}:{recipientId:partner,text,photo};
      await request(url,{method:'POST',body:JSON.stringify(payload)});
-     $('chatText').value='';state.image=null;$('chatPhotoInput').value='';photoPreview();
-     await refreshThread(true);await refreshContacts();
+     // Do not wipe another contact's draft if the user changed threads in flight.
+     if(state.selected===partner&&state.turn===turn){
+       $('chatText').value='';state.image=null;$('chatPhotoInput').value='';photoPreview();
+       await refreshThread(true);
+     }
+     await refreshContacts();
    }catch(err){notice(err.message);}
    finally{state.sending=false;updateSend();}
  }
@@ -334,6 +394,8 @@
    if(!window.donmacChat?.authenticated||state.open)return;
    state.open=true;
    notice('');refreshContacts();renderHeader();renderMessages();
+   // Returning to Messages should fetch immediately and retain cached history.
+   if(state.selected)refreshThread(true);
    stopThread();let cycle=0;
    state.threadTimer=setInterval(()=>{
      if(document.hidden||!state.open)return;
@@ -400,10 +462,15 @@
  else mobileMedia.addListener?.(syncChatLayout);
  function resetSession(){
    close();if(state.unreadTimer){clearInterval(state.unreadTimer);state.unreadTimer=null;}
-   state.contacts=[];state.selected=0;state.messages=[];state.turn++;
+   state.contacts=[];state.selected=0;state.messages=[];state.turn++;state.threadSeq++;state.contactsSeq++;
+   state.refreshing=false;state.refreshTurn=0;state.hasMore=false;
+   state.loadingThread=false;state.threadError='';state.threadCache.clear();
    state.image=null;photoPreview();updateUnread(0);
+   notice('');renderContacts();renderHeader();renderMessages();
  }
  function loggedIn(id){
+   const previous=mineUserId();
+   if(previous&&previous!==Number(id||0))resetSession();
    window.donmacChat.userId=Number(id)||0;
    window.donmacChat.authenticated=!!id;
    if(!id){resetSession();return;}
@@ -456,6 +523,7 @@
    if(e.target.closest('#chatRemovePhoto')){state.image=null;$('chatPhotoInput').value='';photoPreview();}
  });
  $('chatMessages').addEventListener('click',e=>{
+   if(e.target.closest('#chatRetryThread')){refreshThread(true);return;}
    const more=e.target.closest('#chatLoadEarlier');if(more){loadEarlier();return;}
    const pic=e.target.closest('[data-photo-id]');
    if(pic){
