@@ -144,7 +144,9 @@
    alerts:[8,9,['Alert rate',pct(m.lowStockCount,m.inventoryCount)]]
   };
   const items=(special[key]||[]).map(x=>typeof x==='number'?metrics[x]:x);
-  return '<div class="dm-kpi-tiles">'+items.map(([n,v])=>box(n,v)).join('')+'</div>';
+  return '<div class="dm-kpi-tiles">'+items.map(([n,v])=>box(n,v)).join('')+'</div>'+
+   (key==='revenue'&&d.rangeStoreExpensesBasis==='current_recipe_estimate'?
+    '<p class="dm-kpi-empty">Cost of Goods is an estimate based on current recipes for older sales; those historical receipts do not contain immutable recipe-cost snapshots.</p>':'');
  }
  function branchTable(rows,key,total){
   if(!rows.length)return empty('No branch comparisons are available for the selected period.');
