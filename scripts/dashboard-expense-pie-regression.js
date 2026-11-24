@@ -63,6 +63,14 @@ const params=page=>({get:key=>({start:'2026-11-01',end:'2026-11-20',page:String(
  assert.match(html,/Salary/);
  assert.doesNotMatch(html,/undefined|NaN/);
  assert.match(pie.markup({}),/No recorded expenses/);
+ const complete=Object.fromEntries(categories.map(cat=>[cat,100]));
+ const colored=pie.markup(complete);
+ assert.equal((colored.match(/dm-expense-pie-percent dm-expense-pie-percent-inside/g)||[]).length,8);
+ assert.equal(new Set([...colored.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)]
+  .map(match=>match[1].toLowerCase())).size,8);
+ const small=pie.markup({rent:990,stocks:5,salary:5});
+ assert.match(small,/dm-expense-pie-percent-external/);
+ assert.match(small,/0\.5%/);
  const shell=read('public/index.html'),ui=read('public/dashboard-kpi-drilldown-v20261118.js'),
   finance=read('public/pos-finance.js'),style=read('public/expense-pie-chart-v20261125.css');
  assert.match(shell,/financeExpenseCategoryChart/);
@@ -72,6 +80,14 @@ const params=page=>({get:key=>({start:'2026-11-01',end:'2026-11-20',page:String(
  assert.match(ui,/window\.donmacExpensePie\?\.markup\(summary\)/);
  assert.match(ui,/window\.donmacExpensePie\?\.mount\(host\)/);
  assert.match(ui,/Store Expenses Sold Ingredients \/ Cost of Goods/);
+ assert.match(ui,/expenses:'Store Expenses'/);
+ assert.match(ui,/\['Net Revenue',fmt\(d.rangeRevenueNet\)\]/);
+ assert.match(ui,/Ingredient Cost \/ Net Sales %/);
+ assert.match(ui,/Deposited Sales - calculated/);
+ assert.match(ui,/Staff Expenses \/ Net Sales %/);
+ assert.match(ui,/main\.rangeExpenseCategories/);
+ assert.match(read('lib/franchise-unified-dashboard.js'),/rangeExpenseCategories/);
+ assert.match(read('server.js'),/expenseDataPromise/);
  assert.match(ui,/\['Store Expenses',fmt\(d.rangeDepositExpenses\)\]/);
  assert.match(ui,/\['Sales Deposit Actual'/);
  assert.match(ui,/\['Gross Revenue',money\(d.rangeGross\)\]/);
