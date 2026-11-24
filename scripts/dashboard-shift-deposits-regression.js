@@ -32,8 +32,8 @@ const db={
    return{rows:users[args[1]]?.noGrant?[]:[{permission_key:'dashboard.view'}]};
   }
   if(sql.startsWith('SELECT COUNT(*) AS count')){
-   const [workspace,date,branch]=args;
-   const matched=[...rows.values()].filter(r=>r.workspace===workspace&&r.date===date&&
+   const [workspace,from,to,branch]=args;
+   const matched=[...rows.values()].filter(r=>r.workspace===workspace&&r.date>=from&&r.date<=to&&
     (branch==null||r.branch===branch));
    return{rows:[{count:matched.length,total:matched.reduce((s,x)=>s+x.amount,0)}]};
   }
@@ -76,6 +76,10 @@ async function run(){
  await deposits.save(db,asUser(3),{amount:200});
  assert.equal((await deposits.summary(db,asUser(1),{branchId:'7'})).total,123.45);
  assert.equal((await deposits.summary(db,asUser(1),{branchId:'all'})).total,323.45);
+ const date=deposits.day();
+ assert.equal((await deposits.summary(db,asUser(1),{branchId:'all',from:date,to:date})).total,323.45);
+ await blocked(()=>deposits.summary(db,asUser(2),{from:'2026-01-01',to:date}));
+ await blocked(()=>deposits.summary(db,asUser(1),{from:date,to:'2099-01-01'}));
  assert.equal((await deposits.summary(db,asUser(5),{})).total,null);
  await blocked(()=>deposits.summary(db,asUser(2),{branchId:'8'}));
  await blocked(()=>deposits.summary(db,asUser(2),{branchId:'all'}));
