@@ -2404,7 +2404,8 @@ async function handleApi(req,res,url){
   if((method==='GET'||method==='POST')&&p==='/api/dashboard/shift-deposits'){
     const outcome=method==='GET'?
       await shiftDeposits.summary(db,user,{branchId:url.searchParams.get('branchId')||undefined,
-        date:url.searchParams.get('date')||undefined}):
+        date:url.searchParams.get('date')||undefined,from:url.searchParams.get('from')||undefined,
+        to:url.searchParams.get('to')||undefined}):
       await shiftDeposits.save(db,user,await readJson(req,262144));
     return json(res,200,outcome,safeHeaders({'Cache-Control':'no-store'}));
   }
