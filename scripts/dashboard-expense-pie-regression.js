@@ -77,7 +77,7 @@ const params=page=>({get:key=>({start:'2026-11-01',end:'2026-11-20',page:String(
  assert.match(shell,/expense-pie-chart-v20261125\.js/);
  assert.match(finance,/window\.donmacExpensePie\.markup\(data\.summary\)/);
  assert.match(finance,/window\.donmacExpensePie\.mount\(chart\)/);
- assert.match(ui,/window\.donmacExpensePie\?\.markup\(summary\)/);
+ assert.match(ui,/window\.donmacExpensePie\?\.markup\(categoryTotals\)/);
  assert.match(ui,/window\.donmacExpensePie\?\.mount\(host\)/);
  assert.match(ui,/Store Expenses Sold Ingredients \/ Cost of Goods/);
  assert.match(ui,/expenses:'Store Expenses'/);
