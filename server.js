@@ -2344,6 +2344,9 @@ async function handleApi(req,res,url){
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/inventory/usage-summary'){
+    // Inventory access is not permission to view confidential recipe costs.
+    if(user.role!=='Admin')throw Object.assign(
+      new Error('Ingredient usage costing is available to Owner/Admin accounts only.'),{status:403});
     const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));
     if(branchId==null)throw Object.assign(new Error('Choose an authorized inventory branch.'),{status:400});
     const workspaceId=await workspaceIdForUser(user.id);
