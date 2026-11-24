@@ -66,7 +66,7 @@ const params=page=>({get:key=>({start:'2026-11-01',end:'2026-11-20',page:String(
  const complete=Object.fromEntries(categories.map(cat=>[cat,100]));
  const colored=pie.markup(complete);
  assert.equal((colored.match(/dm-expense-pie-percent dm-expense-pie-percent-inside/g)||[]).length,8);
- assert.equal(new Set([...colored.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)]
+ assert.equal(new Set([...colored.matchAll(/<path d="[^"]+" fill="(#[0-9A-Fa-f]{6})"/g)]
   .map(match=>match[1].toLowerCase())).size,8);
  const small=pie.markup({rent:990,stocks:5,salary:5});
  assert.match(small,/dm-expense-pie-percent-external/);
