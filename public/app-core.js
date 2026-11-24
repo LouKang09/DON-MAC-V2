@@ -1909,18 +1909,30 @@
   function renderDashboard(){
    const d=state.dashboard;if(!d)return;
    $('trendPeriodLabel').textContent=(d.grain==='hourly'?'HOURLY · ':'DAILY · ')+d.from+(d.to!==d.from?' TO '+d.to:'');
+   // Sales are recorded net of discounts; the amounts below apply only the
+   // requested additional cost/expense adjustments and never mix the two.
+   const amount=v=>v==null?'—':peso(v);
    const statCards=[
-     {title:'Total Revenue',value:peso(d.rangeActual),gross:peso(d.rangeGross),net:peso(d.rangeActual),caption:d.grain==='hourly'?'Selected day':'Selected range',glyph:'revenue'},
-     {title:'Orders',value:num(d.rangeTransactions,0),caption:'Completed · selected range',glyph:'orders'},
-     {title:'Today Sales',value:peso(d.metrics.todayActual),gross:peso(d.metrics.todayGross),net:peso(d.metrics.todayActual),caption:'Today · completed sales',glyph:'today'},
-     {title:state.user?.role==='User'?'Allowed Period Revenue':'Month Revenue',value:peso(d.metrics.monthActual),gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
-     {title:'Store Expenses',value:d.rangeStoreExpenses==null?'—':peso(d.rangeStoreExpenses),
-       caption:d.rangeStoreExpensesBasis==='current_recipe_estimate'?'Selected range · recipe-cost estimate':'Selected range · ingredients sold',glyph:'expense'},
-     {title:'Deposited Sales',value:d.rangeDepositedSales==null?'—':peso(d.rangeDepositedSales),
-       caption:d.rangeDepositedSales==null?'Expenses unavailable · cannot calculate':'Net sales − staff-entered expenses',glyph:'deposited'},
-     {title:'Discount',value:peso(d.rangeDiscount),caption:'Selected range · completed sales',glyph:'discount'},
-     {title:'Low Stock Alerts',value:num(d.metrics.lowStockCount,0),caption:'Ingredients needing attention',glyph:'alert'}
-   ];
+     {key:'revenue',title:'Total Revenue',value:amount(d.rangeRevenueNet),
+       gross:amount(d.rangeGross),net:amount(d.rangeRevenueNet),
+       caption:d.grain==='hourly'?'Selected day · after ingredient costs':'Selected range · after ingredient costs',glyph:'revenue'},
+     {key:'orders',title:'Orders',value:num(d.rangeTransactions,0),caption:'Completed · selected range',glyph:'orders'},
+     {key:'today',title:'Today Sales',value:amount(d.metrics.todayNetAfterExpenses),
+       gross:amount(d.metrics.todayGross),net:amount(d.metrics.todayNetAfterExpenses),
+       caption:'Today · after entered expenses',glyph:'today'},
+     state.user?.role==='User'?null:
+       {key:'month',title:'Month Revenue',value:peso(d.metrics.monthActual),
+        gross:peso(d.metrics.monthGross),net:peso(d.metrics.monthActual),
+        caption:num(d.metrics.monthTransactions,0)+' completed orders',glyph:'month'},
+     {key:'expenses',title:'Total Store Expenses',value:amount(d.rangeTotalStoreExpenses),
+       gross:amount(d.rangeStoreExpenses),net:amount(d.rangeDepositExpenses),
+       grossLabel:'Cost Amount',netLabel:'Store Expenses',
+       caption:'Selected range · recipe costs + entered expenses',glyph:'expense'},
+     {key:'deposited',title:'Deposited Sales',value:amount(d.rangeDepositExpenses),
+       caption:'Net sales - staff-entered sales',glyph:'deposited'},
+     {key:'discount',title:'Discount',value:peso(d.rangeDiscount),caption:'Selected range · completed sales',glyph:'discount'},
+     {key:'alerts',title:'Low Stock Alerts',value:num(d.metrics.lowStockCount,0),caption:'Ingredients needing attention',glyph:'alert'}
+   ].filter(Boolean);
    const statIcons={
      revenue:'<path d="M3 8h18v12H3zM3 11h18M7 16h3"/><path d="M7 4h10v4"/>',
      orders:'<path d="M5 4h14v16l-2.5-1.5L14 20l-2.5-1.5L9 20l-2-1.5L5 20V4z"/><path d="M9 9h6M9 13h6"/>',
@@ -1931,11 +1943,11 @@
      discount:'<path d="M3 11V4h7l11 11-7 7L3 11z"/><circle cx="7.5" cy="8" r="1.3"/>',
      alert:'<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.4h.01"/>'
    };
-   const metricKeys=['revenue','orders','today','month','expenses','deposited','discount','alerts'];
+   const metricKeys=statCards.map(card=>card.key);
    const dashboardCardsMarkup=statCards.map((c,i)=>'<button type="button" class="summary-card dm-kpi-button'+(c.gross?' dash-financial-card':'')+'" data-dm-kpi="'+metricKeys[i]+'" aria-label="View '+esc(c.title)+' breakdown">'+
       '<div class="dash-card-main"><div class="dash-summary-label"><span class="dash-summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+statIcons[c.glyph]+'</svg></span><span>'+esc(c.title)+'</span></div>'+
       '<strong>'+c.value+'</strong><small>'+esc(c.caption)+'</small></div>'+
-      (c.gross?'<div class="dash-gross-net" aria-label="Gross and net sales"><span>Gross:<b>'+c.gross+'</b></span><span>Net:<b>'+c.net+'</b></span></div>':'')+
+      (c.gross?'<div class="dash-gross-net" aria-label="'+esc(c.grossLabel||'Gross')+' and '+esc(c.netLabel||'Net')+' amounts"><span>'+esc(c.grossLabel||'Gross')+':<b>'+c.gross+'</b></span><span>'+esc(c.netLabel||'Net')+':<b>'+c.net+'</b></span></div>':'')+
       '<span class="dm-kpi-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span></button>').join('');
    // Reuse KPI elements after refresh/navigation. Replacing them on every
    // dashboard visit destroyed and remounted the animated SVG, causing blink.
@@ -1960,6 +1972,12 @@
        if(card.gross&&totals.length===2){
          totals[0].textContent=card.gross;
          totals[1].textContent=card.net;
+         const labels=button.querySelectorAll('.dash-gross-net span');
+         if(labels.length===2){
+           if(labels[0].firstChild)labels[0].firstChild.nodeValue=(card.grossLabel||'Gross')+':';
+           if(labels[1].firstChild)labels[1].firstChild.nodeValue=(card.netLabel||'Net')+':';
+           labels[0].parentElement?.setAttribute('aria-label',(card.grossLabel||'Gross')+' and '+(card.netLabel||'Net')+' amounts');
+         }
        }
      }
    }else{
