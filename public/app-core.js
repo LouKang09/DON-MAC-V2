@@ -937,7 +937,7 @@
     const branchId=selectedInventoryBranch();
     if(!branchId){toast('Choose an active inventory branch first.');return;}
     const inventoryGranted=state.user?.role==='Admin'||state.user?.accessPermissions?.includes('inventory.view');
-    const auditTask=inventoryGranted?loadMovements():Promise.resolve();
+    const auditTask=state.user?.role==='Admin'?loadMovements():Promise.resolve();
     const incomingTask=inventoryGranted?loadIncomingSupplies():Promise.resolve();
     try{
       const response=await api('/api/inventory?branchId='+encodeURIComponent(branchId));
@@ -1552,6 +1552,13 @@
   });
 
   async function loadMovements(){
+    if(state.user?.role!=='Admin'){
+      auditUI.groups=[];auditUI.expanded.clear();auditUI.page=1;
+      $('movementBody').replaceChildren();
+      $('auditPageControls').replaceChildren();
+      $('auditPageInfo').textContent='';
+      return;
+    }
     try{
       const d=await api('/api/inventory/movements?limit=1000&branchId='+encodeURIComponent(selectedInventoryBranch()));
       auditUI.groups=groupInventoryMovements(Array.isArray(d.items)?d.items:[]);
@@ -1746,14 +1753,23 @@
   async function loadReport(){
     if(!$('reportDate').value)$('reportDate').value=manilaToday();
     const request=++reportUI.request,qs=reportQuery();
+    const owner=state.user?.role==='Admin';
     $('reportLoadingStatus').textContent='Loading Sales Report…';
     try{
-      const [report,costing]=await Promise.all([
-        api('/api/reports/sales?'+qs),api('/api/reports/costing?'+qs)
-      ]);
+      // A cashier may read approved sales only. Never fetch recipe costing.
+      const reportTask=api('/api/reports/sales?'+qs);
+      const costingTask=owner?api('/api/reports/costing?'+qs):Promise.resolve(null);
+      const [report,costing]=await Promise.all([reportTask,costingTask]);
       if(request!==reportUI.request)return;
-      state.report=report;state.costing=costing;resetReportPages();
-      renderReport();renderCosting();
+      state.report=report;
+      state.costing=owner?costing:null;
+      resetReportPages();
+      if(!owner){
+        $('costingList').replaceChildren();$('costingTotal').textContent='';
+        $('reportTransactions').replaceChildren();
+      }
+      renderReport();
+      if(owner)renderCosting();
       $('reportLoadingStatus').textContent='Updated · '+$('reportPeriod').selectedOptions[0].text+
         ' · '+$('reportDate').value;
     }catch(err){
@@ -1785,15 +1801,50 @@
     if(kind==='ingredients')renderCosting();
     else renderReport();
   });
-  function renderReport(){const r=state.report;if(!r)return;$('reportSummary').innerHTML=[
-    ['All Transactions',r.allTransactionCount??r.transactionCount,'All recorded sales including voided transactions.'],
-    ['Gross Sales',peso(r.gross),'Gross sales from non-voided transactions.'],
-    ['Discounts',peso(r.discounts??0),'Discounts on non-voided sales.'],
-    ['Net Sales',peso(r.actual),'Net sales after adjustments, excluding voided transactions.'],
-    ['Gross Profit',peso(r.grossProfit??0),'Net sales minus product costing.'],
-    ['Refund',peso(r.refund??0),'Value of voided sales; not confirmation that cash was repaid.'],
-    ['Deleted',r.deletedCount,'Number of deleted or voided transactions.']
-  ].map(([a,b,help])=>`<div class="summary-card" title="${esc(help)}"><span>${a}</span><strong>${b}</strong></div>`).join('');$('reportProducts').innerHTML=reportPageSlice('products',r.products).map(x=>`<tr><td>${esc(x.name)}${x.isAddOn?' <span class="badge">ADD-ON</span>':''}${x.isPackage?' <span class="badge">PACKAGE</span>':''}</td><td class="num">${num(x.qty,2)}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjusted)}</td><td class="num">${peso(x.actual)}</td><td class="num">${peso(x.costing)}</td><td class="num">${peso(x.net)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No sales for this period.</td></tr>';$('reportPromos').innerHTML=reportPageSlice('promos',r.promos).map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';$('reportTransactions').innerHTML=reportPageSlice('transactions',r.transactions).map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.cashier||'')}</td><td class="${x.status==='Deleted'?'stock-low':'stock-ok'}">${esc(x.status)}</td><td>${esc(x.paymentMode||'')}</td><td>${esc(x.remark||'')}</td><td>${esc(formatDateTime(x.soldAt))}</td><td class="num">${peso(x.gross)}</td><td class="num">${peso(x.adjustment)}</td><td class="num">${peso(x.actual)}</td><td><button class="table-btn" data-view-sale="${encodeURIComponent(x.reference)}">View</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';$('reportTransactions').querySelectorAll('[data-view-sale]').forEach(b=>b.onclick=()=>viewTransaction(decodeURIComponent(b.dataset.viewSale)));}
+  function renderReport(){
+    const r=state.report;if(!r)return;
+    const owner=state.user?.role==='Admin';
+    $('reportSummary').innerHTML=[
+      ['All Transactions',r.allTransactionCount??r.transactionCount,'All recorded transactions, including voided sales.'],
+      ['Gross Sales',peso(r.gross),'Gross sales from completed transactions.'],
+      ['Discounts',peso(r.discounts??0),'Discounts on completed sales.'],
+      ['Net Sales',peso(r.actual),'Completed sales after transaction adjustments.'],
+      ['In-store Expenses',r.inStoreExpenses==null?'Unavailable':peso(r.inStoreExpenses),
+        'Cost of ingredients/recipes consumed by sold products.'],
+      ['Refund',peso(r.refund??0),'Value of voided sales; not confirmation that cash was repaid.'],
+      ['Deposited Amount',r.depositedAmount==null?'Not recorded':peso(r.depositedAmount),
+        'Total cashier-entered end-of-shift sale deposits for this reporting period and branch.']
+    ].map(([a,b,help])=>'<div class="summary-card" title="'+esc(help)+'"><span>'+esc(a)+
+      '</span><strong>'+esc(String(b))+'</strong></div>').join('');
+    const rows=reportPageSlice('products',Array.isArray(r.products)?r.products:[]);
+    $('reportProducts').innerHTML=rows.map(x=>'<tr><td>'+esc(x.name)+
+      (x.isAddOn?' <span class="badge">ADD-ON</span>':'')+
+      (x.isPackage?' <span class="badge">PACKAGE</span>':'')+
+      '</td><td class="num">'+num(x.qty,2)+'</td>'+
+      '<td class="num">'+peso(x.gross)+'</td>'+
+      '<td class="num">'+peso(x.adjusted)+'</td>'+
+      '<td class="num">'+peso(x.actual)+'</td>'+
+      (owner?'<td class="num">'+peso(x.costing)+'</td><td class="num">'+peso(x.net)+'</td>':'')+
+      '</tr>').join('')||'<tr><td colspan="'+(owner?'7':'5')+
+      '" class="muted">No sales for this period.</td></tr>';
+    $('reportPromos').innerHTML=reportPageSlice('promos',Array.isArray(r.promos)?r.promos:[])
+      .map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+num(x.qty,0)+
+      '</td><td class="num">'+peso(x.gross)+'</td><td class="num">'+peso(x.adjustment)+
+      '</td><td class="num">'+peso(x.actual)+'</td></tr>').join('')||
+      '<tr><td colspan="5" class="muted">No promo purchases for this period.</td></tr>';
+    if(!owner){$('reportTransactions').replaceChildren();return;}
+    $('reportTransactions').innerHTML=reportPageSlice('transactions',r.transactions||[])
+      .map(x=>'<tr><td>'+esc(x.reference)+'</td><td>'+esc(x.cashier||'')+
+      '</td><td class="'+(x.status==='Deleted'?'stock-low':'stock-ok')+'">'+esc(x.status)+
+      '</td><td>'+esc(x.paymentMode||'')+'</td><td>'+esc(x.remark||'')+
+      '</td><td>'+esc(formatDateTime(x.soldAt))+'</td><td class="num">'+peso(x.gross)+
+      '</td><td class="num">'+peso(x.adjustment)+'</td><td class="num">'+peso(x.actual)+
+      '</td><td><button class="table-btn" data-view-sale="'+encodeURIComponent(x.reference)+
+      '">View</button></td></tr>').join('')||
+      '<tr><td colspan="10" class="muted">No transaction logs.</td></tr>';
+    $('reportTransactions').querySelectorAll('[data-view-sale]').forEach(button=>
+      button.onclick=()=>viewTransaction(decodeURIComponent(button.dataset.viewSale)));
+  }
   function renderCosting(){
     const r=state.costing;if(!r)return;
     $('costingTotal').textContent='Total Cost: '+peso(r.totalCost);
