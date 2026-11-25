@@ -342,8 +342,9 @@
   return '<section class="dm-kpi-panel dm-activity-panel" aria-label="Sales activity chart">'+
    '<div class="dm-activity-head"><div><h3 id="dmActivitySeriesName">'+esc(displayLabel)+'</h3>'+
    '<p class="dm-activity-subtitle" id="dmActivityDescription">'+
-   (isContext?'Completed POS net sales for context; not a historical cost or deposit series.':
-    'Completed POS sales from the selected dashboard branch scope.')+'</p></div>'+
+   (isContext||key==='expenses'?
+    'Line/Bar show contextual POS sales activity. Pie uses recorded expense, deposit, or branch values where available.':
+    'Completed POS sales from the selected dashboard branches. Pie shows distribution of available report values.')+'</p></div>'+
    '<div class="dm-activity-controls">'+
    '<label for="dmActivityType">Chart Type<select id="dmActivityType" aria-label="Chart type">'+
    '<option value="line"'+(chosenChartType==='line'?' selected':'')+'>Line</option>'+
