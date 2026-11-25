@@ -228,19 +228,28 @@
    }
    const totalProductGross=(raw.products||[]).reduce((n,x)=>n+Number(x.gross||0),0);
    const ratio=totalProductGross>0?Number(raw.actual||0)/totalProductGross:0;
+   const isStaff=state.user?.role==='User';
    const products=(raw.products||[]).map(x=>{
     const adjusted=Number(x.gross||0)*(1-ratio);
     const actual=Number(x.gross||0)*ratio;
-    return{name:x.name,qty:x.qty,gross:Number(x.gross||0),
-      adjusted,actual,costing:Number(x.costing||0),net:actual-Number(x.costing||0)};
+    const base={name:x.name,qty:x.qty,gross:Number(x.gross||0),adjusted,actual};
+    return isStaff?base:{...base,costing:Number(x.costing||0),net:actual-Number(x.costing||0)};
    });
-   const transactions=raw.transactions||[];
-   return{period,transactionCount:raw.transactionCount,
+   const transactions=isStaff?[]:raw.transactions||[];
+   const result={period,transactionCount:raw.transactionCount,
     allTransactionCount:raw.allTransactionCount??raw.transactionCount,
     gross:raw.gross||0,discounts:raw.discounts||0,actual:raw.actual||0,
-    grossProfit:Number(raw.actual||0)-products.reduce((n,x)=>n+x.costing,0),
-    refund:raw.refund||0,deletedCount:raw.deletedCount||0,
-    products,promos:(raw.promos||[]).map(p=>({name:p.name,qty:Number(p.qty||0),gross:Number(p.gross||0),adjustment:Number(p.adjustment||0),actual:Number(p.actual||0)})),transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
+    inStoreExpenses:raw.inStoreExpenses??null,
+    depositedAmount:raw.depositedAmount??null,depositEntryCount:raw.depositEntryCount??0,
+    refund:raw.refund||0,
+    products,promos:(raw.promos||[]).map(p=>({name:p.name,qty:Number(p.qty||0),
+      gross:Number(p.gross||0),adjustment:Number(p.adjustment||0),actual:Number(p.actual||0)})),
+    transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
+   if(!isStaff){
+    result.grossProfit=Number(raw.actual||0)-products.reduce((n,x)=>n+x.costing,0);
+    result.deletedCount=raw.deletedCount||0;
+   }
+   return result;
   }
   if(p==='/api/reports/cashiers'&&method==='GET'){
    // Staff cannot enumerate other branches or private employee accounts.
