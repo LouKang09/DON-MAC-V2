@@ -3,7 +3,7 @@
  'use strict';
  const $=id=>document.getElementById(id),box=$('inventoryUsageSummary');
  if(!box||window.donmacInventoryUsage)return;
- const view=$('view-inventory'),branch=$('inventoryBranch'),period=$('inventoryUsagePeriod'),
+ const view=$('view-inventory'),branch=$('inventoryBranch'),usageBranch=$('inventoryUsageBranch'),period=$('inventoryUsagePeriod'),
   chart=$('inventoryUsageChartType'),start=$('inventoryUsageStart'),end=$('inventoryUsageEnd'),
   feedback=$('inventoryUsageFeedback'),results=$('inventoryUsageResults');
  const colors=['#087e4a','#e39b47','#2591a1','#8a6abe','#cf6c63','#698f45','#b986b0','#4d86bb'];
@@ -35,6 +35,7 @@
   ++requestId;
   if(active)active.abort();
   active=null;data=null;lastKey='';currentBranch='';loading=false;
+  if(usageBranch){usageBranch.replaceChildren();usageBranch.dataset.signature='';}
   results.hidden=true;
   $('inventoryUsageChart').replaceChildren();
   $('inventoryUsageBody').replaceChildren();
@@ -44,8 +45,21 @@
   }
   feedback.hidden=true;feedback.textContent='';
  }
- const selectedBranch=()=>String(branch?.value||'').trim();
- const scopeLabel=()=>branch?.selectedOptions?.[0]?.textContent?.trim()||'Selected branch';
+ const selectedBranch=()=>String(usageBranch?.value||branch?.value||'').trim();
+ const scopeLabel=()=>usageBranch?.selectedOptions?.[0]?.textContent?.trim()||'Selected branch';
+ function syncUsageBranches(preferred){
+  if(!branch||!usageBranch)return;
+  const previous=preferred||usageBranch.value||branch.value;
+  const options=[...branch.options].filter(x=>/^[1-9]\\d*$/.test(String(x.value)));
+  const signature=options.map(x=>x.value+'|'+x.textContent).join(';');
+  if(usageBranch.dataset.signature!==signature){
+   usageBranch.replaceChildren(...options.map(x=>new Option(x.textContent,x.value)));
+   usageBranch.dataset.signature=signature;
+  }
+  usageBranch.value=options.some(x=>x.value===previous)?previous:
+    options.some(x=>x.value===branch.value)?branch.value:options[0]?.value||'';
+ }
+ syncUsageBranches();
  function setFeedback(message,isError=false){
   feedback.textContent=String(message);feedback.classList.toggle('is-error',isError);
   feedback.hidden=!message;
@@ -165,6 +179,7 @@
  async function load(force=false){
   if(!ownerOnly()){clearSensitiveUsage();return;}
   if(!activeView())return;
+  syncUsageBranches();
   const id=selectedBranch(),range=period.value;
   if(!/^[1-9]\d*$/.test(id)){
    requestId++;if(active)active.abort();data=null;results.hidden=true;
@@ -199,12 +214,12 @@
  start.max=t;end.max=t;start.value=isoAdd(t,-29);end.value=t;
  const onBranch=()=>{
   lastKey='';
-  // The replenish form updates inventoryBranch.value in another change
-  // handler. A microtask observes that final branch, not the previous one.
-  queueMicrotask(()=>void load(true));
+  // A change to the main Inventory branch updates this local filter.
+  queueMicrotask(()=>{syncUsageBranches(branch?.value);void load(true)});
  };
  branch?.addEventListener('change',onBranch);
  $('replenishReceivingBranch')?.addEventListener('change',onBranch);
+ usageBranch?.addEventListener('change',()=>{lastKey='';void load(true)});
  period.addEventListener('change',()=>{
   $('inventoryUsageCustom').hidden=period.value!=='custom';
   if(period.value!=='custom')void load(true);
@@ -229,7 +244,7 @@
   }).observe(box,{attributes:true,attributeFilter:['class']});
  }
  if(branch&&typeof MutationObserver!=='undefined'){
-  new MutationObserver(()=>{if(activeView()&&selectedBranch()!==currentBranch)void load(true)})
+  new MutationObserver(()=>{syncUsageBranches();if(activeView()&&selectedBranch()!==currentBranch)void load(true)})
    .observe(branch,{childList:true,subtree:true});
  }
  const app=document.getElementById('app');
