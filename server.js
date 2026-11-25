@@ -1925,18 +1925,33 @@ function officeSessionToken(req){
  if(signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return null;
  try{
   const data=JSON.parse(Buffer.from(payload,'base64url').toString('utf8'));
-  return data.role==='main-office'&&data.exp>Date.now()&&data.exp<Date.now()+13*3600*1000?data:null;
+  return ['main-office','warehouse-staff'].includes(data.role)&&data.exp>Date.now()&&data.exp<Date.now()+13*3600*1000?data:null;
  }catch(_){return null;}
 }
 async function supplyOfficeAuth(req){
- const data=officeSessionToken(req);if(!data)return false;
+ const data=officeSessionToken(req);if(!data)return null;
+ if(data.role==='warehouse-staff'){
+  const found=await supplyWarehouse.findStaff(db,data.staffId);
+  return found&&found.active&&found.credentialVersion===data.credentialVersion?
+   {role:'warehouse-staff',id:found.id,username:found.username,staffRole:found.role}:null;
+ }
  const record=await officeCredential();
- return data.credentialVersion===(record?.version||'bootstrap');
+ return data.credentialVersion===(record?.version||'bootstrap')?
+  {role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME||'Main Office'}:null;
 }
 function issueSupplyOfficeSession(credentialVersion='bootstrap'){
  const secret=process.env.SUPPLY_OFFICE_SESSION_KEY;
  const payload=Buffer.from(JSON.stringify({role:'main-office',exp:Date.now()+12*3600*1000,
     credentialVersion,id:crypto.randomBytes(16).toString('hex')})).toString('base64url');
+ const signature=crypto.createHmac('sha256',secret).update(payload).digest('hex');
+ const secure=process.env.NODE_ENV==='production'||process.env.COOKIE_SECURE==='true'?'; Secure':'';
+ return 'supply_office_session='+payload+'.'+signature+'; HttpOnly; SameSite=Lax; Path=/api/supply/office; Max-Age=43200'+secure;
+}
+function issueSupplyStaffSession(staff){
+ const secret=process.env.SUPPLY_OFFICE_SESSION_KEY;
+ const payload=Buffer.from(JSON.stringify({role:'warehouse-staff',staffId:staff.id,
+  credentialVersion:staff.credentialVersion,exp:Date.now()+12*3600*1000,
+  id:crypto.randomBytes(16).toString('hex')})).toString('base64url');
  const signature=crypto.createHmac('sha256',secret).update(payload).digest('hex');
  const secure=process.env.NODE_ENV==='production'||process.env.COOKIE_SECURE==='true'?'; Secure':'';
  return 'supply_office_session='+payload+'.'+signature+'; HttpOnly; SameSite=Lax; Path=/api/supply/office; Max-Age=43200'+secure;
@@ -1955,13 +1970,24 @@ async function handleOfficeApi(req,res,p,method){
     checkLoginRate(req,'supply-office-'+user);
     const record=await officeCredential();
     const validUser=String(process.env.SUPPLY_OFFICE_USERNAME||'').toLowerCase()===user.toLowerCase();
-    if(!validUser||!process.env.SUPPLY_OFFICE_SESSION_KEY||
-       !officePasswordMatches(pass,record))
-      return json(res,401,{error:'Invalid Main Office credentials.'},safeHeaders());
+    if(!process.env.SUPPLY_OFFICE_SESSION_KEY)
+      return json(res,503,{error:'Main Office sessions are not configured.'},safeHeaders());
+    if(validUser&&officePasswordMatches(pass,record)){
+      clearLoginRate(req,'supply-office-'+user);
+      return json(res,200,{ok:true,role:'main-office',mustChangePassword:!record},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(record?.version||'bootstrap')}));
+    }
+    const staff=await supplyWarehouse.authenticateStaff(db,user,pass);
+    if(!staff)return json(res,401,{error:'Invalid Main Office credentials.'},safeHeaders());
     clearLoginRate(req,'supply-office-'+user);
-    return json(res,200,{ok:true,role:'main-office',mustChangePassword:!record},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(record?.version||'bootstrap')}));
+    return json(res,200,{ok:true,role:'warehouse-staff',staffRole:staff.role,username:staff.username,
+      mustChangePassword:false},safeHeaders({'Set-Cookie':issueSupplyStaffSession(staff)}));
   }
-  if(!await supplyOfficeAuth(req))return json(res,401,{error:'Main Office sign-in required.'},safeHeaders());
+  const officePrincipal=await supplyOfficeAuth(req);
+  if(!officePrincipal)return json(res,401,{error:'Main Office sign-in required.'},safeHeaders());
+  if(officePrincipal.role==='warehouse-staff'&&
+    !p.startsWith('/api/supply/office/warehouse/')&&
+    p!=='/api/supply/office/me'&&p!=='/api/supply/office/logout')
+    return json(res,403,{error:'Warehouse staff cannot access Main Office billing, approval or administration functions.'},safeHeaders());
   if(method==='POST'&&p==='/api/supply/office/change-password'){
     const body=await readJson(req);
     const oldPassword=String(body.currentPassword||''),newPassword=String(body.newPassword||'');
@@ -1975,11 +2001,14 @@ async function handleOfficeApi(req,res,p,method){
     return json(res,200,{ok:true,mustChangePassword:false},safeHeaders({'Set-Cookie':issueSupplyOfficeSession(updated.version)}));
   }
   const activeCredential=await officeCredential();
-  if(!activeCredential&&p!=='/api/supply/office/me'&&p!=='/api/supply/office/logout')
+  if(!activeCredential&&officePrincipal.role==='main-office'&&p!=='/api/supply/office/me'&&p!=='/api/supply/office/logout')
     return json(res,403,{error:'Change the temporary Main Office password before managing requests.'},safeHeaders());
   if(method==='POST'&&p==='/api/supply/office/logout')
     return json(res,200,{ok:true},safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
-  if(method==='GET'&&p==='/api/supply/office/me')return json(res,200,{role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME,mustChangePassword:!activeCredential},safeHeaders());
+  if(method==='GET'&&p==='/api/supply/office/me')
+    return json(res,200,officePrincipal.role==='warehouse-staff'?
+      {role:'warehouse-staff',staffRole:officePrincipal.staffRole,username:officePrincipal.username,mustChangePassword:false}:
+      {role:'main-office',username:process.env.SUPPLY_OFFICE_USERNAME,mustChangePassword:!activeCredential},safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/billing/me')
     return json(res,200,await platformBilling.tenantSummary(db,'SUPPLY_OFFICE','supply-office'),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='POST'&&p==='/api/supply/office/billing/checkout')
