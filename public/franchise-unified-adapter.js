@@ -222,7 +222,7 @@
    const requested=String(url.searchParams.get('period')||'daily');
    const period={daily:'day',weekly:'week',monthly:'month',yearly:'year'}[requested];
    if(!period)throw fail('Choose Daily, Weekly, Monthly, or Yearly.',400);
-   const reportParams=new URLSearchParams({range:period,branchId:String(scopedBranch(state,url.searchParams.get('branchId')))});
+   const reportParams=new URLSearchParams({range:period,branchId:String(scopedBranch(state,url.searchParams.get('branchId')==='all'?null:url.searchParams.get('branchId')))});
    if(url.searchParams.get('date'))reportParams.set('date',url.searchParams.get('date'));
    const reportQuery=reportParams.toString();
    // Server checks the cashier's grant and maximum history duration.
