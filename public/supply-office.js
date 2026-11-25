@@ -100,7 +100,7 @@ function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
  for(const section of ['dashboard','requests','distribution','franchisees','catalog','promotions','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({dashboard:'Distribution Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
+ $('officePageHeading').textContent=({dashboard:'Central Warehouse Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
  $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
  if(name==='dashboard')loadDistributionDashboard();
@@ -314,7 +314,7 @@ async function loadDistributionDashboard(){
   $('distTopName').textContent=d.topProducts?.[0]?.name||'No requests yet';
   $('distCostNote').textContent=d.netRevenue===null?
    'Net revenue cannot be calculated: '+Number(d.unknownCostLines||0)+' delivered line(s) have no recorded purchase cost. Record unit costs for future orders.':
-   'Net revenue equals fulfilled supply sales plus urgent fees minus recorded product costs. Franchise royalties are excluded.';
+   'Gross profit equals fulfilled supply sales plus urgent fees minus recorded item purchase costs, before warehouse overhead. Franchise royalties are excluded.';
   const products=d.topProducts||[],max=Math.max(1,...products.map(p=>Number(p.quantity)||0));
   $('distTopProducts').innerHTML=products.map(p=>
    '<div class="distribution-top-row"><span>'+esc(p.name)+'</span><div class="distribution-top-track"><i style="width:'+Math.max(2,Math.round(100*Number(p.quantity)/max))+'%"></i></div><strong>'+Number(p.quantity).toLocaleString('en-PH')+' units</strong></div>'
