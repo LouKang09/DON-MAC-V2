@@ -266,7 +266,11 @@
     }
     return[...map.values()];
    };
-   const raw={period,branchId:all?'all':ids[0],transactionCount:sum('transactionCount'),
+   const firstPeriod=values[0]||{};
+   const manilaDay=iso=>new Date(Date.parse(iso)+8*3600000).toISOString().slice(0,10);
+   const from=firstPeriod.since?manilaDay(firstPeriod.since):null;
+   const to=firstPeriod.until?manilaDay(new Date(Date.parse(firstPeriod.until)-86400000).toISOString()):null;
+   const raw={period,rangeStart:from,rangeEnd:to,branchId:all?'all':ids[0],transactionCount:sum('transactionCount'),
     allTransactionCount:sum('allTransactionCount'),gross:sum('gross'),discounts:sum('discounts'),
     actual:sum('actual'),inStoreExpenses:sum('inStoreExpenses'),refund:sum('refund'),
     deletedCount:sum('deletedCount'),depositEntryCount:sum('depositEntryCount'),
@@ -282,7 +286,7 @@
     const base={name:x.name,qty:x.qty,gross:Number(x.gross||0),adjusted,actual};
     return isStaff?base:{...base,costing:Number(x.costing||0),net:actual-Number(x.costing||0)};
    });
-   const result={period,transactionCount:raw.transactionCount,
+   const result={period,rangeStart:raw.rangeStart,rangeEnd:raw.rangeEnd,transactionCount:raw.transactionCount,
     allTransactionCount:raw.allTransactionCount,gross:raw.gross,discounts:raw.discounts,
     actual:raw.actual,inStoreExpenses:raw.inStoreExpenses,
     depositedAmount:raw.depositedAmount,depositEntryCount:raw.depositEntryCount,
