@@ -49,6 +49,7 @@ const franchiseLiveExpenses=require('./lib/franchise-live-expenses');
 const franchiseLiveRouter=require('./lib/franchise-live-router');
 const franchiseLiveExports=require('./lib/franchise-live-report-exports');
 const shiftDeposits=require('./lib/franchise-shift-deposits');
+const chartPrefs=require('./lib/dashboard-chart-preferences');
 const reportFinancialPrivacy=require('./lib/report-financial-privacy');
 const franchisePayrollEntitlement=require('./lib/franchise-payroll-entitlement');
 const franchiseAttendance=require('./lib/franchise-attendance');
@@ -2439,6 +2440,13 @@ async function handleApi(req,res,url){
       safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/dashboard/plan-insights')return json(res,200,await planDashboardInsights(user,url.searchParams.get('branchId')),safeHeaders());
+  if((method==='GET'||method==='PUT')&&p==='/api/dashboard/chart-preferences'){
+    requireAdminRole(user);
+    return json(res,200,await chartPrefs.settings(db,{
+      workspaceId:await workspaceIdForUser(user.id),userId:user.id,admin:true
+    },method==='PUT'?await readJson(req,4096):undefined),
+    safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/dashboard'){const branchId=await branchSupport.salesScope(db,user,url.searchParams.get('branchId'));if(user.role==='Admin'&&branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);return json(res,200,await dashboardData(Object.fromEntries(url.searchParams),branchId,user),safeHeaders());}
   if((method==='GET'||method==='POST')&&p==='/api/dashboard/shift-deposits'){
     const outcome=method==='GET'?
