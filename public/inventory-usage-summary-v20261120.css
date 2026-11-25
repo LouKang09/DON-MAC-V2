@@ -136,20 +136,30 @@
  flex-wrap:wrap;gap:clamp(1rem,4vw,3rem);padding:.65rem;
 }
 #view-inventory .inv-usage-pie{
- width:clamp(10rem,24vw,14rem);aspect-ratio:1;
- border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
- box-shadow:0 4px 13px rgba(9,72,38,.08);
+ position:relative;width:clamp(11rem,26vw,16rem);aspect-ratio:1;
+ display:grid;place-items:center;flex:0 0 auto;
+ filter:drop-shadow(0 .25rem .5rem rgba(9,72,38,.10));
 }
-#view-inventory .inv-usage-pie>div{
- width:71%;height:71%;background:#fff;border-radius:50%;
+#view-inventory .inv-usage-pie svg{display:block;width:100%;height:100%;overflow:visible}
+#view-inventory .inv-usage-pie-segment{
+ cursor:pointer;transition:stroke-width .2s ease,filter .2s ease;
+ outline:none;
+}
+#view-inventory .inv-usage-pie-segment:is(:hover,:focus-visible,.is-active){
+ stroke-width:39;filter:brightness(1.06) drop-shadow(0 0 2px rgba(2,65,30,.3));
+}
+#view-inventory .inv-usage-pie-center{
+ position:absolute;inset:31%;border-radius:50%;pointer-events:none;
  display:flex;flex-direction:column;align-items:center;justify-content:center;
- gap:.2rem;text-align:center;padding:.4rem;box-sizing:border-box;
+ text-align:center;gap:.22rem;padding:.2rem;box-sizing:border-box;
 }
-#view-inventory .inv-usage-pie strong{
- color:#075d38;font-size:clamp(.93rem,1.5vw,1.22rem);
- overflow-wrap:anywhere;
+#view-inventory .inv-usage-pie-center strong{
+ color:#075d38;font-size:clamp(.85rem,1.4vw,1.18rem);
+ overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
 }
-#view-inventory .inv-usage-pie small{font-size:.65rem;color:#6c8473}
+#view-inventory .inv-usage-pie-center small{
+ color:#6c8473;font-size:.62rem;line-height:1.3;overflow-wrap:anywhere;
+}
 #view-inventory .inv-usage-pie-legend{
  width:min(100%,22rem);display:grid;gap:.55rem;
 }
@@ -165,6 +175,17 @@
  overflow-wrap:anywhere;
 }
 #view-inventory .inv-usage-pie-legend b{color:#214e32}
+#view-inventory .inv-usage-pie-legend-row{
+ cursor:pointer;padding:.33rem .48rem;border-radius:.45rem;
+ transition:background .2s ease,transform .2s ease;
+}
+#view-inventory .inv-usage-pie-legend-row:is(:hover,:focus-visible,.is-active){
+ background:#edf8f0;transform:translateX(.2rem);outline:2px solid transparent;
+}
+@media(prefers-reduced-motion:reduce){
+ #view-inventory .inv-usage-pie-segment,
+ #view-inventory .inv-usage-pie-legend-row{transition:none}
+}
 #view-inventory .inv-usage-empty{
  color:#759080;font-size:.8rem;text-align:center;
  padding:2.2rem 1rem;margin:0;
