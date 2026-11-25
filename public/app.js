@@ -221,7 +221,7 @@
   // Authentication and the proven POS core always load first.
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
-    .then(() => loadScript('/franchise-unified-adapter.js?v=20261125-chart-preferences'))
+    .then(() => loadScript('/franchise-unified-adapter.js?v=20261125-branch-report-fix'))
     .then(() => loadScript('/app-core.js?v=20261125-audit-owner-only'))
     .then(() => {
       watchForAuthenticatedApp();
