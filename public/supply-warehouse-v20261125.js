@@ -17,11 +17,19 @@ const localDay=()=>{
 const dayShift=(s,n)=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 const fmt=d=>d?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(new Date(d)):'—';
 const tabs=[['overview','Stock & Reorder'],['purchasing','Purchasing & Receiving'],['movements','Stock Movements'],
- ['batches','Batches & Expiry'],['fulfillment','Fulfillment'],['claims','Returns & Claims'],['finance','Warehouse Finance']];
-let active='overview',data=null,orders=[],loading=false,receiving=null,editingReorder=null,
+ ['batches','Batches & Expiry'],['fulfillment','Fulfillment'],['claims','Returns & Claims'],['finance','Warehouse Finance'],['staff','Staff & Roles']];
+let active='overview',data=null,orders=[],staffList=[],loading=false,receiving=null,editingReorder=null,
  receiptRows=1,financeData=null,financeFrom=dayShift(localDay(),-29),financeTo=localDay();
 const base='/api/supply/office/warehouse';
-const tabHtml=()=>tabs.map(([id,label])=>
+const allowedTabs=()=>{
+ const role=data?.staffRole||'MAIN_OFFICE';
+ const permissions={MAIN_OFFICE:['overview','purchasing','movements','batches','fulfillment','claims','finance','staff'],
+  WAREHOUSE_MANAGER:['overview','purchasing','movements','batches','fulfillment','claims','finance'],
+  PURCHASING:['overview','purchasing'],INVENTORY:['overview','purchasing','movements','batches','claims'],
+  FULFILLMENT:['overview','fulfillment','claims'],FINANCE:['overview','finance']};
+ return permissions[role]||['overview'];
+};
+const tabHtml=()=>tabs.filter(([id])=>allowedTabs().includes(id)).map(([id,label])=>
  '<button type="button" class="warehouse-op-tab'+(active===id?' active':'')+
  '" data-warehouse-tab="'+id+'" aria-current="'+(active===id?'page':'false')+'">'+label+'</button>').join('');
 const valid=()=>!$('officeApp').classList.contains('hidden')&&!root.classList.contains('hidden');
@@ -40,7 +48,9 @@ async function load(force=false){
  loading=true;notice('Loading warehouse stock, purchases and audit records…');
  try{
   data=await request('/overview');
+  if(!allowedTabs().includes(active))active='overview';
   if(active==='claims'||active==='fulfillment')await loadOrders();
+  if(active==='staff')await loadStaff();
   if(active==='finance')await loadFinance();
   notice('Warehouse records updated · '+new Date().toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'}));
   render();
@@ -48,9 +58,11 @@ async function load(force=false){
  finally{loading=false}
 }
 async function loadOrders(){
- const r=await fetch('/api/supply/office/orders',{credentials:'same-origin',cache:'no-store'});
- if(!r.ok)throw Error('Unable to retrieve franchise orders for warehouse reference.');
- orders=(await r.json()).orders||[];
+ const r=await request('/orders');
+ orders=r.orders||[];
+}
+async function loadStaff(){
+ const r=await request('/staff');staffList=r.staff||[];
 }
 async function loadFinance(){
  financeData=await request('/finance?'+new URLSearchParams({from:financeFrom,to:financeTo}));
@@ -83,7 +95,7 @@ function overview(){
   '<tr><th scope="row">'+esc(p.name)+'<small>'+esc(p.uom)+'</small></th><td>'+num(p.available)+'</td><td>'+num(p.reserved)+'</td><td>'+num(p.inTransit)+
   '</td><td>'+num(p.purchaseIncoming)+'</td><td>'+(p.configured?num(p.reorderPoint):'<span class="wh-pill neutral">Not configured</span>')+
   '</td><td><span class="wh-pill '+(p.suggestedPurchase>0?'warning':'ok')+'">'+num(p.suggestedPurchase)+'</span></td>'+
-  '<td><button type="button" class="btn outline wh-tiny" data-act="reorder" data-id="'+p.id+'">Set levels</button></td></tr>').join('');
+  '<td>'+(allowedTabs().includes('movements')?'<button type="button" class="btn outline wh-tiny" data-act="reorder" data-id="'+p.id+'">Set levels</button>':'—')+'</td></tr>').join('');
  const selected=data.inventory.find(p=>p.id===editingReorder);
  const form=selected?'<form class="wh-form wh-subform" id="whReorderForm"><h4>Reorder planning · '+esc(selected.name)+'</h4>'+
   '<input type="hidden" name="productId" value="'+selected.id+'"/>'+
@@ -117,7 +129,8 @@ function receiptForm(order){
  '<button type="button" class="btn outline" data-act="cancel-receive">Cancel</button></div></form></section>';
 }
 function purchasing(){
- return'<div class="wh-grid-two"><section class="wh-section"><h3>Add Supplier</h3>'+
+ const receivingOnly=data?.staffRole==='INVENTORY';
+ return(receivingOnly?'':'<div class="wh-grid-two"><section class="wh-section"><h3>Add Supplier</h3>'+
  '<form class="wh-form" id="whSupplierForm"><label>Supplier name<input name="name" maxlength="120" required/></label>'+
  '<label>Contact person<input name="contact" maxlength="100"/></label>'+
  '<label>Phone<input name="phone" maxlength="50" inputmode="tel"/></label>'+
@@ -131,7 +144,7 @@ function purchasing(){
  '<label>Notes<input name="note" maxlength="1000" placeholder="Delivery instructions"/></label>'+
  '<div class="wh-line-head"><h4>Purchase items</h4><button type="button" class="btn outline wh-tiny" data-act="add-line">+ Add item</button></div>'+
  '<div id="whPurchaseLines">'+poLine(0)+'</div>'+
- '<button class="btn solid">Create purchase order</button></form></section></div>'+
+ '<button class="btn solid">Create purchase order</button></form></section></div>')+
  '<section class="wh-section"><h3>Purchase Orders & Receipts</h3>'+
  '<div class="wh-table-wrap"><table><thead><tr><th>Reference</th><th>Supplier</th><th>Status</th><th>Received / Ordered</th><th>Expected</th><th>Action</th></tr></thead><tbody>'+
  data.purchases.map(o=>{const ordered=o.lines.reduce((a,l)=>a+Number(l.ordered_qty),0),received=o.lines.reduce((a,l)=>a+Number(l.received_qty),0);
@@ -216,18 +229,46 @@ function fulfillment(){
  '<div id="whFulfillmentHistory"><p class="wh-muted">Select an order to see its picking and delivery events.</p></div>'+
  '</section></div>';
 }
+const whRoleOptions=['WAREHOUSE_MANAGER','PURCHASING','INVENTORY','FULFILLMENT','FINANCE'];
+function staff(){
+ const list=staffList.map(person=>
+  '<tr><th scope="row">'+esc(person.fullName)+'<small>'+esc(person.username)+'</small></th>'+
+  '<td>'+esc(person.role.replaceAll('_',' '))+'</td><td>'+ (person.active?'Active':'Disabled')+'</td>'+
+  '<td class="wh-staff-actions"><button type="button" class="btn outline wh-tiny" data-act="toggle-staff" data-id="'+esc(person.id)+'" data-active="'+(person.active?'1':'0')+'" data-role="'+esc(person.role)+'">'+
+   (person.active?'Disable':'Enable')+'</button>'+
+  '<button type="button" class="btn outline wh-tiny" data-act="reset-staff" data-id="'+esc(person.id)+'">Reset password</button></td></tr>').join('');
+ return '<div class="wh-grid-two"><section class="wh-section"><h3>Add Warehouse Employee</h3>'+
+  '<p class="wh-muted">Each employee receives only the warehouse actions assigned to their role. Main Office approvals and billing are not accessible.</p>'+
+  '<form id="whStaffForm" class="wh-form"><label>Full name<input name="fullName" minlength="2" maxlength="120" required/></label>'+
+  '<label>Username<input name="username" minlength="3" maxlength="80" pattern="[A-Za-z0-9_.-]+" autocomplete="off" required/></label>'+
+  '<label>Role<select name="role">'+whRoleOptions.map(r=>option(r,r.replaceAll('_',' '))).join('')+'</select></label>'+
+  '<label>Temporary password (minimum 10 characters)<input name="password" type="password" minlength="10" maxlength="128" autocomplete="new-password" required/></label>'+
+  '<button type="submit" class="btn solid">Create staff account</button></form></section>'+
+  '<section class="wh-section"><h3>Role access</h3>'+
+  '<p class="wh-muted"><strong>Warehouse Manager:</strong> all warehouse operations except creating staff accounts.</p>'+
+  '<p class="wh-muted"><strong>Purchasing:</strong> supplier and purchase orders, stock overview.</p>'+
+  '<p class="wh-muted"><strong>Inventory:</strong> verified receiving, stock corrections, expiry and reorder settings.</p>'+
+  '<p class="wh-muted"><strong>Fulfillment:</strong> picking/packing, dispatch and claims.</p>'+
+  '<p class="wh-muted"><strong>Finance:</strong> warehouse operating expenses and financial reports.</p>'+
+  '<p class="wh-muted">Role changes and deactivation revoke all existing staff sessions. Only Main Office may manage staff credentials.</p></section></div>'+
+  '<section class="wh-section"><h3>Warehouse Team</h3><div class="wh-table-wrap"><table>'+
+  '<thead><tr><th>Staff member</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+  (list||empty('No warehouse staff accounts yet.',4))+'</tbody></table></div></section>';
+}
 function render(){
  if(!data)return;
+ if(!allowedTabs().includes(active))active='overview';
  $('warehouseOperationsTabs').innerHTML=tabHtml();
- const body={overview,purchasing,movements,batches,finance,claims,fulfillment}[active];
+ const body={overview,purchasing,movements,batches,finance,claims,fulfillment,staff}[active];
  $('warehouseOperationsBody').innerHTML=body?body():'';
 }
 async function changeTab(tab){
- if(!tabs.some(t=>t[0]===tab))return;
+ if(!allowedTabs().includes(tab))return;
  active=tab;receiving=null;editingReorder=null;
  if(!data){await load();return}
  if(tab==='claims'||tab==='fulfillment'){try{await loadOrders()}catch(err){notice(err.message,true)}}
  if(tab==='finance'){try{await loadFinance()}catch(err){notice(err.message,true)}}
+ if(tab==='staff'){try{await loadStaff()}catch(err){notice(err.message,true)}}
  render();
 }
 async function mutate(path,method,payload,msg){
@@ -239,7 +280,12 @@ async function mutate(path,method,payload,msg){
 const fields=form=>Object.fromEntries(new FormData(form).entries());
 async function submit(form){
  const id=form.id,d=fields(form);
- if(id==='whSupplierForm'){
+ if(id==='whStaffForm'){
+  await mutate('/staff','POST',d,'Warehouse employee created. Share the temporary password securely.');
+  await loadStaff();render();
+ }else if(id==='whStaffPasswordForm'){
+  await mutate('/change-password','POST',d,'Password changed. Sign in again.');
+ }else if(id==='whSupplierForm'){
   if(!d.name?.trim())throw Error('Enter supplier name.');
   await mutate('/suppliers','POST',d,'Supplier registered.');
  }else if(id==='whPurchaseForm'){
@@ -289,7 +335,20 @@ $('warehouseOperationsTabs')?.addEventListener('click',event=>{
 $('warehouseOperationsBody')?.addEventListener('click',event=>{
  const node=event.target.closest('[data-act]');if(!node)return;
  const act=node.dataset.act;
- if(act==='reorder')editingReorder=Number(node.dataset.id);
+ if(act==='toggle-staff'){
+  const active=node.dataset.active==='1',id=node.dataset.id;
+  if(!window.confirm((active?'Disable':'Enable')+' this warehouse staff account?'))return;
+  void mutate('/staff/'+encodeURIComponent(id),'PUT',{active:!active,role:node.dataset.role},
+   'Staff account '+(active?'disabled':'enabled')+'.').then(async()=>{await loadStaff();render()}).catch(e=>notice(e.message,true));
+  return;
+ }else if(act==='reset-staff'){
+  const password=window.prompt('Enter a new temporary password for this employee (minimum 10 characters):');
+  if(password===null)return;
+  if(password.length<10){notice('Use at least 10 characters.',true);return;}
+  void mutate('/staff/'+encodeURIComponent(node.dataset.id)+'/reset-password','POST',{password},
+   'Password reset. Existing staff sessions are invalidated.').then(async()=>{await loadStaff();render()}).catch(e=>notice(e.message,true));
+  return;
+ }else if(act==='reorder')editingReorder=Number(node.dataset.id);
  else if(act==='cancel-reorder')editingReorder=null;
  else if(act==='receive')receiving=node.dataset.id;
  else if(act==='cancel-receive')receiving=null;
