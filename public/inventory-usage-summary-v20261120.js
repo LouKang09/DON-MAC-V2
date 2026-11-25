@@ -123,31 +123,45 @@
   if(!total)return'<p class="inv-usage-empty">No completed-sale ingredient costs to distribute.</p>';
   const shown=list.slice(0,7),rest=list.slice(7).reduce((a,x)=>a+Number(x.netCost||0),0);
   if(rest>0)shown.push({name:'Other ingredients',netCost:rest});
+  const point=(percent,radius)=>{
+   const radians=(percent/100*360-90)*Math.PI/180;
+   return{x:130+radius*Math.cos(radians),y:120+radius*Math.sin(radians)};
+  };
   let cursor=0;
-  const rings=shown.map((item,i)=>{
-   const portion=Number(item.netCost)/total*100;
-   const start=cursor;cursor+=portion;
-   const label=esc(item.name);
-   return'<circle class="inv-usage-pie-segment" tabindex="0" data-pie-index="'+i+
-    '" data-pie-label="'+label+'" data-pie-value="'+esc(currency(item.netCost))+
-    '" data-pie-percent="'+portion.toFixed(1)+'%" cx="100" cy="100" r="72" '+
-    'fill="none" stroke="'+colors[i%colors.length]+'" stroke-width="30" '+
+  const slices=shown.map((item,i)=>{
+   const portion=Number(item.netCost)/total*100,start=cursor,mid=start+portion/2;
+   cursor+=portion;
+   const label=esc(item.name),value=esc(currency(item.netCost));
+   // Labels stay visible even without hover; small segments receive leader lines.
+   const small=portion<8,inside=point(mid,78),edge=point(mid,101),outside=point(mid,121);
+   const anchor=outside.x>=130?'start':'end';
+   const labels=small?
+    '<path class="inv-usage-pie-guide" d="M'+edge.x.toFixed(1)+' '+edge.y.toFixed(1)+
+    ' L'+outside.x.toFixed(1)+' '+outside.y.toFixed(1)+'" stroke="'+colors[i%colors.length]+'"/>'+
+    '<text class="inv-usage-pie-label outside" x="'+outside.x.toFixed(1)+'" y="'+
+     outside.y.toFixed(1)+'" text-anchor="'+anchor+'">'+portion.toFixed(1)+'%</text>':
+    '<text class="inv-usage-pie-label inside" x="'+inside.x.toFixed(1)+'" y="'+
+     inside.y.toFixed(1)+'" text-anchor="middle">'+portion.toFixed(1)+'%</text>';
+   return'<g data-pie-index="'+i+'" data-pie-label="'+label+'" data-pie-value="'+value+
+    '" data-pie-percent="'+portion.toFixed(1)+'%" tabindex="0" role="group" '+
+    'aria-label="'+label+', '+value+', '+portion.toFixed(1)+' percent">'+
+    '<circle class="inv-usage-pie-segment" cx="130" cy="120" r="78" '+
+    'fill="none" stroke="'+colors[i%colors.length]+'" stroke-width="46" '+
     'pathLength="100" stroke-dasharray="'+portion.toFixed(5)+' '+(100-portion).toFixed(5)+
-    '" stroke-dashoffset="'+(-start).toFixed(5)+'" transform="rotate(-90 100 100)" '+
-    'aria-label="'+label+' '+esc(currency(item.netCost))+' ('+portion.toFixed(1)+'%)">'+
-    '<title>'+label+' · '+esc(currency(item.netCost))+' · '+portion.toFixed(1)+'%</title></circle>';
+    '" stroke-dashoffset="'+(-start).toFixed(5)+'" transform="rotate(-90 130 120)"/>'+
+    labels+'<title>'+label+' · '+value+' · '+portion.toFixed(1)+'%</title></g>';
   }).join('');
   const legend=shown.map((item,i)=>{
    const portion=Number(item.netCost)/total*100;
    return'<div class="inv-usage-pie-legend-row" tabindex="0" data-pie-index="'+i+
     '" data-pie-label="'+esc(item.name)+'" data-pie-value="'+esc(currency(item.netCost))+
     '" data-pie-percent="'+portion.toFixed(1)+'%"><i style="background:'+
-    colors[i%colors.length]+'"></i><span>'+esc(item.name)+'</span><b>'+
-    portion.toFixed(1)+'%</b></div>';
+    colors[i%colors.length]+'"></i><span>'+esc(item.name)+'</span><strong>'+
+    currency(item.netCost)+'</strong><b>'+portion.toFixed(1)+'%</b></div>';
   }).join('');
   return'<div class="inv-usage-pie-layout"><div class="inv-usage-pie" role="group" '+
-   'aria-label="Ingredient cost breakdown"><svg viewBox="0 0 200 200" '+
-   'aria-label="Hover or focus each slice for ingredient details" role="img">'+rings+'</svg>'+
+   'aria-label="Ingredient cost breakdown"><svg viewBox="-26 -27 312 294" '+
+   'aria-label="Ingredient distribution with visible percentage labels" role="img">'+slices+'</svg>'+
    '<div class="inv-usage-pie-center"><strong data-pie-center-value>'+currency(total)+
    '</strong><small data-pie-center-label>Net ingredient cost</small></div></div>'+
    '<div class="inv-usage-pie-legend">'+legend+'</div></div>';
