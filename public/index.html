@@ -554,8 +554,9 @@
         </div>
         <section id="inventoryUsageSummary" class="card spaced inv-usage-summary admin-only hidden" aria-label="Ingredients consumed by completed sales">
           <div class="inv-usage-head">
-            <div><p class="eyebrow">SOLD INGREDIENT CONSUMPTION</p><h3>Ingredients Usage Summary</h3><p class="muted">Ingredient quantities used by sold products, excluding supplier purchases and stock transfers. Follows the Inventory Branch selected above.</p></div>
+            <div><p class="eyebrow">SOLD INGREDIENT CONSUMPTION</p><h3>Ingredients Usage Summary</h3><p class="muted">Ingredient quantities used by sold products, excluding supplier purchases and stock transfers. Select a branch below without scrolling to the main Inventory selector.</p></div>
             <div class="inv-usage-controls">
+              <label>Branch<select id="inventoryUsageBranch" aria-label="Ingredient usage branch"><option value="">Choose branch</option></select></label>
               <label>Period<select id="inventoryUsagePeriod"><option value="day">Today</option><option value="week">Last 7 days</option><option value="month">This month</option><option value="custom">Custom range</option></select></label>
               <label>Chart Type<select id="inventoryUsageChartType"><option value="line">Line</option><option value="tile">Tile</option><option value="pie">Pie</option></select></label>
               <button id="inventoryUsageApply" type="button" class="primary">Apply</button>
