@@ -35,7 +35,7 @@
   ++requestId;
   if(active)active.abort();
   active=null;data=null;lastKey='';currentBranch='';loading=false;
-  if(usageBranch){usageBranch.replaceChildren();usageBranch.dataset.signature='';}
+  if(usageBranch){usageBranch.replaceChildren(new Option('Choose branch',''));usageBranch.dataset.signature='';}
   results.hidden=true;
   $('inventoryUsageChart').replaceChildren();
   $('inventoryUsageBody').replaceChildren();
@@ -50,7 +50,7 @@
  function syncUsageBranches(preferred){
   if(!branch||!usageBranch)return;
   const previous=preferred||usageBranch.value||branch.value;
-  const options=[...branch.options].filter(x=>/^[1-9]\\d*$/.test(String(x.value)));
+  const options=[...branch.options].filter(x=>/^[1-9]\d*$/.test(String(x.value)));
   const signature=options.map(x=>x.value+'|'+x.textContent).join(';');
   if(usageBranch.dataset.signature!==signature){
    usageBranch.replaceChildren(...options.map(x=>new Option(x.textContent,x.value)));
