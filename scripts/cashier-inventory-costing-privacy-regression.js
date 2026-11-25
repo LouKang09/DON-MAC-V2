@@ -18,7 +18,7 @@ const drill=source('public/dashboard-kpi-drilldown-v20261118.js');
 assert.match(html,/<section id="inventoryUsageSummary" class="[^"]*\badmin-only hidden\b/);
 assert.match(html,/<h3>Ingredients Usage Summary<\/h3>/);
 assert.match(html,/<h4>Ingredients Consumed in Sales<\/h4>/);
-assert.match(html,/<div class="card spaced inv-audit-card">/);
+assert.match(html,/<div id="inventoryAuditSection" class="card spaced inv-audit-card admin-only hidden" hidden inert aria-hidden="true">/);
 assert.match(core,/querySelectorAll\('\.admin-only,\.staff-hidden'\)/);
 assert.match(core,/x\.classList\.toggle\('hidden',state\.user\.role!=='Admin'\)/);
 assert.match(usage,/window\.donmacAuthenticatedRole==='Admin'/);
