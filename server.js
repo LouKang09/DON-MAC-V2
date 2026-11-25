@@ -2033,41 +2033,107 @@ async function handleOfficeApi(req,res,p,method){
   // and the mandatory first-login password change gate.
   const whBase='/api/supply/office/warehouse';
   const whActor=process.env.SUPPLY_OFFICE_USERNAME||'Main Office';
+  // Warehouse roles are enforced on the server. UI hiding is not authorization.
+  const officeOwner=officePrincipal.role==='main-office';
+  const whRole=officeOwner?'MAIN_OFFICE':officePrincipal.staffRole;
+  const warehouseActor=officeOwner?whActor:officePrincipal.username;
+  const warehousePermissions=Object.freeze({
+    MAIN_OFFICE:['read','purchase','receive','inventory','fulfillment','finance','claims','staff'],
+    WAREHOUSE_MANAGER:['read','purchase','receive','inventory','fulfillment','finance','claims'],
+    PURCHASING:['read','purchase'],
+    INVENTORY:['read','receive','inventory','claims'],
+    FULFILLMENT:['read','fulfillment','claims'],
+    FINANCE:['read','finance']
+  });
+  const warehouseAllowed=(action)=>warehousePermissions[whRole]?.includes(action)===true;
+  const requireWarehouseAction=(action)=>{
+    if(!warehouseAllowed(action))throw Object.assign(new Error('Your warehouse role cannot perform this action.'),{status:403});
+  };
+  if(method==='GET'&&p===whBase+'/staff'){
+    requireWarehouseAction('staff');
+    return json(res,200,{staff:await supplyWarehouse.staff(db)},safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p===whBase+'/staff'){
+    requireWarehouseAction('staff');
+    return json(res,201,await supplyWarehouse.createStaff(db,await readJson(req),
+      process.env.SUPPLY_OFFICE_USERNAME||''),safeHeaders());
+  }
+  const staffAccount=p.match(/^\/api\/supply\/office\/warehouse\/staff\/([a-f0-9-]{36})(?:\/(reset-password))?$/i);
+  if(staffAccount&&method==='PUT'&&!staffAccount[2]){
+    requireWarehouseAction('staff');
+    return json(res,200,await supplyWarehouse.updateStaff(db,staffAccount[1],await readJson(req)),safeHeaders());
+  }
+  if(staffAccount&&method==='POST'&&staffAccount[2]==='reset-password'){
+    requireWarehouseAction('staff');
+    return json(res,200,await supplyWarehouse.resetStaffPassword(db,staffAccount[1],
+      String((await readJson(req)).password||'')),safeHeaders());
+  }
+  if(method==='POST'&&p===whBase+'/change-password'){
+    if(officeOwner)throw Object.assign(new Error('Main Office password must be changed in Security settings.'),{status:400});
+    const body=await readJson(req);
+    const result=await supplyWarehouse.changeStaffPassword(db,officePrincipal.id,
+      String(body.currentPassword||''),String(body.newPassword||''));
+    return json(res,200,{...result,signInAgain:true},
+      safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
+  }
   if(method==='GET'&&p===whBase+'/overview'){
+    requireWarehouseAction('read');
     const [suppliers,purchases,inventory,movements,batches,expenses,returns]=await Promise.all([
       supplyWarehouse.suppliers(db),supplyWarehouse.purchaseOrders(db),
       supplyWarehouse.inventory(db),supplyWarehouse.movements(db,100),
       supplyWarehouse.batches(db),supplyWarehouse.expenses(db),
       supplyWarehouse.returns(db)]);
-    return json(res,200,{suppliers,purchases,inventory,movements,batches,expenses,returns},safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,200,{suppliers:warehouseAllowed('purchase')||warehouseAllowed('receive')?suppliers:[],
+      purchases:warehouseAllowed('purchase')||warehouseAllowed('receive')?purchases:[],
+      inventory,movements:warehouseAllowed('inventory')?movements:[],batches:warehouseAllowed('inventory')?batches:[],
+      expenses:warehouseAllowed('finance')?expenses:[],returns:warehouseAllowed('claims')?returns:[],
+      staffRole:whRole},safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='POST'&&p===whBase+'/suppliers')
-    return json(res,201,await supplyWarehouse.createSupplier(db,await readJson(req),whActor),safeHeaders());
-  if(method==='POST'&&p===whBase+'/purchases')
-    return json(res,201,await supplyWarehouse.createPurchase(db,await readJson(req),whActor),safeHeaders());
+  if(method==='POST'&&p===whBase+'/suppliers'){
+    requireWarehouseAction('purchase');
+    return json(res,201,await supplyWarehouse.createSupplier(db,await readJson(req),warehouseActor),safeHeaders());
+  }
+  if(method==='POST'&&p===whBase+'/purchases'){
+    requireWarehouseAction('purchase');
+    return json(res,201,await supplyWarehouse.createPurchase(db,await readJson(req),warehouseActor),safeHeaders());
+  }
   const whReceive=p.match(/^\/api\/supply\/office\/warehouse\/purchases\/([a-f0-9-]{36})\/receive$/i);
-  if(method==='POST'&&whReceive)
-    return json(res,200,await supplyWarehouse.receive(db,whReceive[1],await readJson(req),whActor),safeHeaders());
-  if(method==='POST'&&p===whBase+'/adjust')
-    return json(res,200,await supplyWarehouse.adjust(db,await readJson(req),whActor),safeHeaders());
+  if(method==='POST'&&whReceive){
+    requireWarehouseAction('receive');
+    return json(res,200,await supplyWarehouse.receive(db,whReceive[1],await readJson(req),warehouseActor),safeHeaders());
+  }
+  if(method==='POST'&&p===whBase+'/adjust'){
+    requireWarehouseAction('inventory');
+    return json(res,200,await supplyWarehouse.adjust(db,await readJson(req),warehouseActor),safeHeaders());
+  }
   const whReorder=p.match(/^\/api\/supply\/office\/warehouse\/reorder\/(\d+)$/);
-  if(method==='PUT'&&whReorder)
+  if(method==='PUT'&&whReorder){
+    requireWarehouseAction('inventory');
     return json(res,200,await supplyWarehouse.setReorder(db,whReorder[1],await readJson(req)),safeHeaders());
-  if(method==='POST'&&p===whBase+'/expenses')
-    return json(res,201,await supplyWarehouse.addExpense(db,await readJson(req),whActor),safeHeaders());
-  if(method==='POST'&&p===whBase+'/returns')
-    return json(res,201,await supplyWarehouse.createReturn(db,await readJson(req),whActor),safeHeaders());
+  }
+  if(method==='POST'&&p===whBase+'/expenses'){
+    requireWarehouseAction('finance');
+    return json(res,201,await supplyWarehouse.addExpense(db,await readJson(req),warehouseActor),safeHeaders());
+  }
+  if(method==='POST'&&p===whBase+'/returns'){
+    requireWarehouseAction('claims');
+    return json(res,201,await supplyWarehouse.createReturn(db,await readJson(req),warehouseActor),safeHeaders());
+  }
   if(method==='GET'&&p===whBase+'/finance'){
+    requireWarehouseAction('finance');
     const params=new URL(req.url,'http://localhost').searchParams;
     return json(res,200,await supplyWarehouse.finance(db,params.get('from'),params.get('to')),safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p===whBase+'/fulfillment'){
+    requireWarehouseAction('fulfillment');
     const id=new URL(req.url,'http://localhost').searchParams.get('orderId');
     if(!/^[a-f0-9-]{36}$/i.test(id||''))return json(res,400,{error:'Choose a valid order.'});
     return json(res,200,{events:await supplyWarehouse.fulfillment(db,id)},safeHeaders({'Cache-Control':'no-store'}));
   }
-  if(method==='POST'&&p===whBase+'/fulfillment')
-    return json(res,201,await supplyWarehouse.addFulfillment(db,await readJson(req),whActor),safeHeaders());
+  if(method==='POST'&&p===whBase+'/fulfillment'){
+    requireWarehouseAction('fulfillment');
+    return json(res,201,await supplyWarehouse.addFulfillment(db,await readJson(req),warehouseActor),safeHeaders());
+  }
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db,true),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
