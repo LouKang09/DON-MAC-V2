@@ -1,0 +1,204 @@
+/* Don Mac POS: tablet and phone spacing for operational screens.
+ * Scoped to six main POS views. Do not alter the checkout or desktop.
+ */
+@media screen and (max-width: 1199px){
+  #view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports{
+    box-sizing:border-box;min-width:0;max-width:100%;
+  }
+  #view-inventory :is(.inventory-redesign,.inv-main-card,.inv-stock-operations,.inv-usage-summary),
+  #view-transactions :is(.pos-finance-shell,.dm-finance-products),
+  #view-expenses .pos-finance-shell,
+  #view-payroll :is(.dm-payroll-manager,.dm-payroll-panel),
+  #view-reports :is(.report-toolbar-compact,.report-results-card){
+    box-sizing:border-box;min-width:0;max-width:100%;
+  }
+  #view-inventory .inv-main-card,
+  #view-inventory .inv-stock-operations,
+  #view-inventory .inv-usage-summary,
+  #view-transactions .pos-finance-shell,
+  #view-expenses .pos-finance-shell,
+  #view-reports .report-toolbar-compact,
+  #view-reports .report-results-card{
+    padding:clamp(15px,2vw,24px);
+  }
+  /* Inventory: branch, search and filters occupy real grid cells. */
+  #view-inventory .inv-toolbar{align-items:flex-start;gap:13px;flex-wrap:wrap}
+  #view-inventory .inv-toolbar-right{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:11px!important;align-items:end;width:100%;flex:1 1 100%;
+    min-width:0;max-width:100%;
+  }
+  #view-inventory #inventoryBranchWrap{grid-column:span 1;min-width:0;width:100%;max-width:none}
+  #view-inventory .inv-search-control{
+    grid-column:span 2;min-width:0;width:100%;max-width:none;
+  }
+  #view-inventory .inv-select-wrap{min-width:0;width:100%;max-width:none}
+  #view-inventory .inv-toolbar-right :is(select,input){
+    box-sizing:border-box;min-width:0;max-width:100%;width:100%;
+    min-height:44px;
+  }
+  #view-inventory .inv-table-scroll,
+  #view-inventory .inv-audit-scroll,
+  #view-inventory .inv-usage-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #view-inventory .inv-table{min-width:690px}
+  #view-inventory .inv-operations-body .form-card{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;
+  }
+  #view-inventory .inv-operations-body .form-card label{min-width:0}
+  #view-inventory .inv-usage-controls{gap:10px;align-items:end}
+  #view-inventory .inv-usage-controls label{flex:1 1 145px}
+  #view-inventory .inv-usage-controls :is(select,input){width:100%;min-width:0}
+  #view-inventory .inv-usage-head{gap:15px}
+  /* Transaction ledger: avoid seven crowded controls along a single row. */
+  #view-transactions .dm-transaction-filters{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:15px 14px;align-items:end;
+  }
+  #view-transactions .dm-transaction-filters label,
+  #view-expenses .pos-finance-filters label{
+    width:100%;min-width:0;margin:0;
+  }
+  #view-transactions .dm-transaction-filter-actions{display:flex;justify-content:flex-start}
+  #view-transactions .dm-transaction-filters :is(input,select),
+  #view-expenses .pos-finance-filters :is(input,select),
+  #view-expenses .pos-finance-form :is(input,select){
+    box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px;
+  }
+  #view-transactions .pos-finance-summary,
+  #view-expenses .pos-finance-summary{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+  }
+  #view-transactions .pos-finance-summary>div,
+  #view-expenses .pos-finance-summary>div{min-width:0}
+  #view-transactions .dm-finance-products-heading{gap:16px}
+  #view-transactions .dm-finance-products-list,
+  #view-transactions .table-wrap,
+  #view-expenses .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #view-transactions .pos-finance-table,
+  #view-expenses .pos-finance-table{width:max-content;min-width:100%}
+  /* Expenses: 2-column data entry and a separate responsive filter row. */
+  #view-expenses .pos-finance-form{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px 14px;padding:18px;margin-block:18px 22px;
+  }
+  #view-expenses .pos-finance-form>.pos-finance-note{grid-column:1/-1}
+  #view-expenses .pos-finance-form>button[type="submit"]{justify-self:start}
+  #view-expenses .pos-finance-filters{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:13px 14px;
+  }
+  #view-expenses .pos-finance-filters>button{justify-self:start;min-width:125px}
+  /* Payroll: avoid squeezing long cutoff and payslip fields into one row. */
+  #view-payroll .dm-payroll-manager{padding:clamp(14px,2vw,21px);gap:18px;margin-top:14px}
+  #view-payroll #dmPayrollReady{gap:18px}
+  #view-payroll .dm-payroll-panel{padding:clamp(15px,2vw,22px);gap:16px}
+  #view-payroll .dm-payroll-filters{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    align-items:end;gap:15px 13px;
+  }
+  #view-payroll .dm-payroll-filters label{min-width:0;width:100%;margin:0}
+  #view-payroll .dm-payroll-filters :is(input,select){
+    box-sizing:border-box;min-width:0;max-width:100%;width:100%;
+    min-height:44px;
+  }
+  #view-payroll #dmPayrollSlipPanel .dm-payroll-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-payroll .dm-payroll-filters>button{min-height:44px;align-self:end}
+  #view-payroll .dm-payroll-columns{grid-template-columns:minmax(0,1fr);gap:20px}
+  #view-payroll .dm-payroll-columns>div{min-width:0}
+  #view-payroll .dm-payroll-row{grid-template-columns:minmax(0,1fr) minmax(92px,132px) 36px;gap:9px}
+  #view-payroll .dm-payroll-row input{min-width:0;width:100%;min-height:40px}
+  #view-payroll .dm-payroll-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+  #view-payroll .dm-payroll-stats>span{min-width:0}
+  #view-payroll .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #view-payroll .dm-payroll-table{min-width:680px}
+  #view-payroll .dm-payroll-buttons{align-items:center;gap:11px}
+  #view-payroll .dm-payroll-buttons button{min-height:44px}
+  /* Sales Report: 2x2 filters, easy-to-tap downloads, tidy export controls. */
+  #view-reports .report-filter-fields{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:15px 14px;width:100%;max-width:none;
+  }
+  #view-reports .report-field{min-width:0;max-width:100%;gap:7px}
+  #view-reports .report-field :is(input,select),
+  #view-reports .report-cashier-select summary{
+    box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px;
+  }
+  #view-reports .report-downloads{gap:12px;align-items:center}
+  #view-reports .report-downloads .report-download{min-height:44px}
+  #view-reports .historical-sales-export{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:end!important;gap:14px!important;padding:18px!important;
+  }
+  #view-reports .historical-sales-export>div:first-child{grid-column:1/-1}
+  #view-reports .historical-sales-export>label{
+    display:grid;gap:7px;min-width:0;max-width:100%;margin:0;
+  }
+  #view-reports .historical-sales-export select{box-sizing:border-box;width:100%;min-height:44px;max-width:100%}
+  #view-reports .historical-sales-export>button{grid-column:1/-1;justify-self:start;min-height:44px}
+  #view-reports .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+  #view-reports .report-results-card .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #view-reports .report-results-card table{min-width:680px}
+  /* Prevent browser-native date controls from growing outside the column. */
+  #view-inventory :is(input,select,textarea),
+  #view-transactions :is(input,select),
+  #view-expenses :is(input,select),
+  #view-payroll :is(input,select),
+  #view-reports :is(input,select){
+    max-width:100%;box-sizing:border-box;
+  }
+}
+@media screen and (max-width: 700px){
+  #view-inventory .inv-toolbar-right{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;
+  }
+  #view-inventory #inventoryBranchWrap,
+  #view-inventory .inv-search-control{grid-column:1/-1}
+  #view-inventory .inv-operations-body .form-card{grid-template-columns:minmax(0,1fr)}
+  #view-inventory .inv-operations-body .form-card label:has(textarea){grid-column:auto}
+  #view-inventory .inv-usage-controls label{flex:1 1 100%}
+  #view-inventory .inv-usage-controls #inventoryUsageApply{width:100%}
+  #view-transactions .dm-transaction-filters,
+  #view-expenses .pos-finance-filters,
+  #view-expenses .pos-finance-form,
+  #view-reports .report-filter-fields{grid-template-columns:minmax(0,1fr)}
+  #view-expenses .pos-finance-form>.pos-finance-note{grid-column:1}
+  #view-transactions .dm-transaction-filter-actions button,
+  #view-expenses .pos-finance-filters>button,
+  #view-expenses .pos-finance-form>button[type="submit"]{width:100%}
+  #view-transactions .pos-finance-summary,
+  #view-expenses .pos-finance-summary{grid-template-columns:minmax(0,1fr)}
+  #view-transactions .dm-finance-products-total{align-items:flex-start;width:100%}
+  #view-payroll .dm-payroll-filters,
+  #view-payroll #dmPayrollSlipPanel .dm-payroll-filters{
+    grid-template-columns:minmax(0,1fr);gap:12px;
+  }
+  #view-payroll .dm-payroll-filters>button{width:100%}
+  #view-payroll .dm-payroll-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-payroll .dm-payroll-row{grid-template-columns:minmax(0,1fr) 88px 32px;gap:6px}
+  #view-payroll .dm-payroll-buttons{display:grid;grid-template-columns:minmax(0,1fr)}
+  #view-payroll .dm-payroll-buttons button{width:100%}
+  #view-payroll .dm-payroll-summary{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  #view-payroll .dm-payroll-summary strong{margin-left:0}
+  #view-reports .report-downloads{display:grid;grid-template-columns:minmax(0,1fr)}
+  #view-reports .report-downloads .report-download{width:100%}
+  #view-reports .historical-sales-export{grid-template-columns:minmax(0,1fr)}
+  #view-reports .historical-sales-export>div:first-child,
+  #view-reports .historical-sales-export>button{grid-column:1}
+  #view-reports .historical-sales-export>button{width:100%}
+  #view-reports .summary-grid{grid-template-columns:minmax(0,1fr)}
+  #view-reports .report-pagination{align-items:flex-start}
+  #view-inventory .inv-usage-summary,
+  #view-transactions .pos-finance-shell,
+  #view-expenses .pos-finance-shell,
+  #view-payroll .dm-payroll-manager,
+  #view-reports .report-toolbar-compact{padding:14px}
+  #view-payroll .dm-payroll-panel{padding:14px}
+}
+@media screen and (max-width: 420px){
+  #view-inventory .inv-toolbar-right .inv-select-wrap{grid-column:1/-1}
+  #view-payroll .dm-payroll-stats{grid-template-columns:minmax(0,1fr)}
+  #view-inventory .inv-pagination,
+  #view-transactions .pos-finance-pagination,
+  #view-expenses .pos-finance-pagination{justify-content:flex-start;gap:8px}
+}
