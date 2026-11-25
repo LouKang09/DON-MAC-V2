@@ -78,6 +78,7 @@ const params=page=>({get:key=>({start:'2026-11-01',end:'2026-11-20',page:String(
  assert.match(finance,/window\.donmacExpensePie\.markup\(data\.summary\)/);
  assert.match(finance,/window\.donmacExpensePie\.mount\(chart\)/);
  assert.match(ui,/window\.donmacExpensePie\?\.markup\(categoryTotals\)/);
+ assert.match(ui,/body\+=await expenseCategoryPanel\(main,period,run\)/);
  assert.match(ui,/window\.donmacExpensePie\?\.mount\(host\)/);
  assert.match(ui,/Store Expenses Sold Ingredients \/ Cost of Goods/);
  assert.match(ui,/expenses:'Store Expenses'/);
@@ -92,7 +93,7 @@ const params=page=>({get:key=>({start:'2026-11-01',end:'2026-11-20',page:String(
  assert.match(ui,/\['Sales Deposit Actual'/);
  assert.match(ui,/\['Gross Revenue',money\(d.rangeGross\)\]/);
  assert.doesNotMatch(ui,/ingredientCostPanel\(main\)/);
- assert.match(ui,/key!=='expenses'\)body\+=timelinePanel/);
+ assert.match(ui,/if\(isAdmin\)body\+=timelinePanel/);
  assert.match(ui,/viewBox="0 0 24 24" focusable="false"/);
  assert.match(style,/#dmKpiDetail \.dm-category-caret svg/);
  console.log('PASS page-independent expense category totals, pie interactions, dashboard and ledger integration');
