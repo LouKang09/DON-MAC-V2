@@ -256,10 +256,21 @@
     // Only owners establish opening stock; transfers require a Business plan
     // and another active branch, both validated independently on the server.
     const inventoryAllowed=isAdmin||userGrants.includes('inventory.view');
-    for(const selector of ['#incomingSupplyPanel','.inv-operation-launch','.inv-audit-card']){
+    for(const selector of ['#incomingSupplyPanel','.inv-operation-launch']){
       document.querySelectorAll('#view-inventory '+selector).forEach(element=>{
         element.classList.toggle('hidden',!inventoryAllowed);
       });
+    }
+    // Inventory operations are cashier-grantable, but the entire movement
+    // audit container must only exist in the Owner/Admin visual experience.
+    // Keep the HTML hidden attribute as well as the class to withstand CSS
+    // display overrides and any grant-based role refresh.
+    const inventoryAuditSection=$('inventoryAuditSection');
+    if(inventoryAuditSection){
+      inventoryAuditSection.hidden=!isAdmin;
+      inventoryAuditSection.inert=!isAdmin;
+      inventoryAuditSection.classList.toggle('hidden',!isAdmin);
+      inventoryAuditSection.setAttribute('aria-hidden',String(!isAdmin));
     }
     if($('replenishEntryType')){
       const initial=$('replenishEntryType').querySelector('option[value="INITIAL_STOCK"]');
