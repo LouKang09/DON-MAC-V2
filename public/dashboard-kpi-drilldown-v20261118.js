@@ -70,30 +70,30 @@
   chartSettingsStatus('Unsaved changes. Select Save chart preferences.');
  });
  settingsSave?.addEventListener('click',async()=>{
-  if(!context||context.role!=='Admin'||!valid())return;
+  if(!settingsValid())return;
   settingsSave.disabled=true;
   chartSettingsStatus('Saving your chart preferences…');
   try{
    const result=await context.request('/api/dashboard/chart-preferences',{
     method:'PUT',body:chartPreferences
    });
-   if(!valid())return;
+   if(!settingsValid())return;
    chartPreferences={
     defaultType:chartTypes.includes(result.defaultType)?result.defaultType:'line',
     overrides:result.overrides||{}
    };
    renderChartPreferences();
    chartSettingsStatus('Saved for this Owner account. Your dashboard drill-downs will use these defaults.');
-  }catch(error){if(valid())chartSettingsStatus('Unable to save: '+(error.message||'Please retry.'))}
+  }catch(error){if(settingsValid())chartSettingsStatus('Unable to save: '+(error.message||'Please retry.'))}
   finally{settingsSave.disabled=false;}
  });
  async function loadChartPreferences(){
-  if(!context||context.role!=='Admin'||!valid())return;
+  if(!settingsValid())return;
   const session=context.session,run=++chartSettingsLoading;
   chartSettingsStatus('Loading your saved chart defaults…');
   try{
    const pref=await context.request('/api/dashboard/chart-preferences');
-   if(run!==chartSettingsLoading||!valid()||context.session!==session)return;
+   if(run!==chartSettingsLoading||!settingsValid()||context.session!==session)return;
    chartPreferences={
     defaultType:chartTypes.includes(pref?.defaultType)?pref.defaultType:'line',
     overrides:Object.fromEntries(Object.entries(pref?.overrides||{}).filter(
@@ -102,10 +102,13 @@
    renderChartPreferences();
    chartSettingsStatus('Saved defaults loaded. Select a category to customize its chart.');
   }catch(error){
-   if(run===chartSettingsLoading&&valid())
+   if(run===chartSettingsLoading&&settingsValid())
     chartSettingsStatus('Could not load chart defaults: '+(error.message||'Please retry.'));
   }
  }
+ const settingsValid=()=>!!context&&context.role==='Admin'&&
+  !app.classList.contains('hidden')&&!app.inert&&
+  (!window.donmacSessionGeneration||window.donmacSessionGeneration()===context.session);
  const valid=()=>{
   if(!payload||!context||app.classList.contains('hidden')||app.inert||!root.classList.contains('active'))return false;
   return !window.donmacSessionGeneration||window.donmacSessionGeneration()===context.session;
