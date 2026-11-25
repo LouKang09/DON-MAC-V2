@@ -2049,6 +2049,16 @@ async function handleOfficeApi(req,res,p,method){
   const requireWarehouseAction=(action)=>{
     if(!warehouseAllowed(action))throw Object.assign(new Error('Your warehouse role cannot perform this action.'),{status:403});
   };
+  if(method==='GET'&&p===whBase+'/orders'){
+    requireWarehouseAction('read');
+    if(!officeOwner&&!['WAREHOUSE_MANAGER','FULFILLMENT','INVENTORY'].includes(whRole))
+      throw Object.assign(new Error('Order references are limited to fulfillment and inventory roles.'),{status:403});
+    const orders=await db.query("SELECT o.id,o.status,o.branch_id,b.name AS branch_name,o.created_at "+
+      "FROM supply_orders o LEFT JOIN branches b ON b.id=o.branch_id "+
+      "WHERE o.status IN ('APPROVED','PREPARING','DISPATCHED','DELIVERED','COMPLETED') "+
+      "ORDER BY o.updated_at DESC LIMIT 200");
+    return json(res,200,{orders:orders.rows},safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p===whBase+'/staff'){
     requireWarehouseAction('staff');
     return json(res,200,{staff:await supplyWarehouse.staff(db)},safeHeaders({'Cache-Control':'no-store'}));
