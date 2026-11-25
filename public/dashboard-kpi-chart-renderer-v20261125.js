@@ -25,7 +25,7 @@
    key==='alerts'?'Gross Revenue (sales context)':'Gross Revenue';
  }
  const scalar=(d,key)=>({
-  revenue:d?.rangeRevenueNet,orders:d?.rangeTransactions,today:d?.metrics?.todayNetAfterExpenses,
+  revenue:d?.rangeRevenueNet,orders:d?.rangeTransactions,today:d?.metrics?.todayActual ?? d?.rangeActual,
   month:d?.metrics?.monthActual,expenses:d?.rangeTotalStoreExpenses,
   deposited:d?.shiftDeposits?.total,discount:d?.rangeDiscount,
   alerts:d?.metrics?.lowStockCount
@@ -68,7 +68,15 @@
     name:d.name,amount:Math.max(0,value(scalar(d.data,key)))
    }));
    subtitle=key==='deposited'?'Recorded cashier deposits by branch':
+    key==='today'?'Today completed POS sales by branch · before operating expenses':
     'Selected metric across permitted branches';
+  }else if(key==='today'){
+   // A single authorized branch still has a share. Hourly trend buckets are
+   // not a replacement for the actual completed-sales total for that branch.
+   const d=dataset[0]?.data||main;
+   categories=[{name:dataset[0]?.name||'Selected branch',
+    amount:Math.max(0,value(scalar(d,'today')))}];
+   subtitle='Today completed POS sales · before operating expenses';
   }else if(key==='deposited'){
    categories=[{name:'Recorded cashier deposits',amount:Math.max(0,value(main?.shiftDeposits?.total))}];
    subtitle='Recorded deposits for this period; not bank-confirmed';
