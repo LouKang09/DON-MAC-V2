@@ -1797,7 +1797,7 @@
       renderReport();
       if(owner)renderCosting();
       $('reportLoadingStatus').textContent='Updated · '+$('reportPeriod').selectedOptions[0].text+
-        ' · '+$('reportDate').value;
+        ' · '+(report.rangeStart&&report.rangeEnd?report.rangeStart+' to '+report.rangeEnd:$('reportDate').value);
     }catch(err){
       if(request!==reportUI.request)return;
       $('reportLoadingStatus').textContent='Could not load reports: '+err.message;
