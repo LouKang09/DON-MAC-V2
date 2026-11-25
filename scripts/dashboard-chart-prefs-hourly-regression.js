@@ -42,7 +42,7 @@ async function run(){
   {sold_at:'2026-11-24T01:40:00.000Z',actual:200,gross:230,discount_amount:30,branch:4,workspace:12},
   {sold_at:'2026-11-24T02:30:00.000Z',actual:50,gross:50,discount_amount:0,branch:4,workspace:12},
   {sold_at:'2026-11-24T01:30:00.000Z',actual:700,gross:700,discount_amount:0,branch:5,workspace:12},
-  {sold_at:'2026-11-24T01:30:00.000Z',actual:7000,gross:7000,discount_amount:0,branch:4,workspace:13}
+  {sold_at:'2026-11-24T01:30:00.000Z',actual:7000,gross:7000,discount_amount:0,branch:6,workspace:13}
  ];
  const sqlChecks=[];
  const data={query:async(sql,args)=>{
