@@ -45,10 +45,24 @@ async function api(path,options={}){
  if(!result.ok){if(result.status===401){$('officeApp').classList.add('hidden');$('officeLogin').classList.remove('hidden');}throw Error(data.error||'Request failed ('+result.status+')');}
  return data;
 }
-function loggedIn(ok,requiresPasswordChange=false){
+let officeRole='main-office';
+function loggedIn(ok,requiresPasswordChange=false,role=officeRole){
+ officeRole=ok&&role==='warehouse-staff'?'warehouse-staff':'main-office';
+ for(const item of document.querySelectorAll('[data-office-page]')){
+  const allowed=officeRole!=='warehouse-staff'||item.dataset.officePage==='warehouse';
+  item.classList.toggle('hidden',!allowed);
+ }
+
  $('officeLogin').classList.toggle('hidden',ok);
  $('officeApp').classList.toggle('hidden',!ok);
- if(ok&&!requiresPasswordChange){refresh();if(!timer)timer=setInterval(refresh,30000);}else if(timer){clearInterval(timer);timer=null;}
+ if(ok&&!requiresPasswordChange){
+  if(officeRole==='warehouse-staff'){
+   if(timer){clearInterval(timer);timer=null;}
+   selectPage('warehouse');
+  }else{
+   refresh();if(!timer)timer=setInterval(refresh,30000);
+  }
+ }else if(timer){clearInterval(timer);timer=null;}
  if(!ok){$('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();}
 }
 $('officeLoginForm').addEventListener('submit',async e=>{
@@ -56,7 +70,7 @@ $('officeLoginForm').addEventListener('submit',async e=>{
  try{
   const data=await api('/api/supply/office/login',{method:'POST',body:JSON.stringify({username:$('officeUsername').value,password:$('officePassword').value})});
   $('officeSignedInAs').textContent=$('officeUsername').value;$('officePassword').value='';
-  loggedIn(!!data.ok,!!data.mustChangePassword);
+  loggedIn(!!data.ok,!!data.mustChangePassword,data.role);
   if(data.mustChangePassword){selectPage('security');notice('Change the temporary password before managing supply requests.');}
  }catch(err){$('officeLoginError').textContent=err.message;}
 });
@@ -97,6 +111,7 @@ $('officeLogout').onclick=async()=>{
  loggedIn(false);
 };
 function selectPage(name){
+ if(officeRole==='warehouse-staff'&&name!=='warehouse')return;
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
  for(const section of ['dashboard','requests','distribution','franchisees','warehouse','catalog','promotions','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
@@ -539,5 +554,5 @@ $('officeMessageForm').onsubmit=async e=>{
   $('officeChatPreview').classList.add('hidden');await openOrder(current.id,true);
  }catch(err){notice(err.message,true);}
 };
-api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true,!!u.mustChangePassword);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
+api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true,!!u.mustChangePassword,u.role);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
 })();
