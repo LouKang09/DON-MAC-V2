@@ -47,6 +47,7 @@ function cards(d){
    detail:t.grossProfit==null?num(t.unknownCostLines)+' delivered line(s) missing cost':
     'Gross margin '+(t.marginPercent==null?'—':t.marginPercent.toFixed(1)+'%'),m:'grossProfit'},
   {label:'Delivered Orders',value:num(t.deliveredOrders),detail:'Completed warehouse distributions',m:'orders'},
+  {label:'Requests Received',value:num(t.ordersRequested),detail:'New franchise requests in selected date range',to:'warehouseBacklogHeading'},
   {label:'Units Distributed',value:num(t.units),detail:'Total fulfilled supply packs / units',m:'units'},
   {label:'Requesting Franchisees',value:num(t.requestingFranchisees),detail:'Unique owners supplied in period',to:'warehouseBranchSection'},
   {label:'Urgent Orders',value:num(t.urgentOrders),detail:'Delivered urgent requests',m:'urgentOrders'},
@@ -234,6 +235,12 @@ $('warehouseApply').addEventListener('click',()=>void load());
 $('warehouseRefresh').addEventListener('click',()=>void load());
 $('warehouseChartType').addEventListener('change',chart);
 $('warehouseInterval').addEventListener('change',chart);
+$('page-dashboard').addEventListener('click',event=>{
+ const button=event.target.closest('[data-warehouse-nav]');
+ if(!button)return;
+ const page=button.dataset.warehouseNav;
+ if(['requests','catalog'].includes(page))document.querySelector('[data-office-page="'+page+'"]')?.click();
+});
 $('warehouseKpis').addEventListener('click',event=>{
  const button=event.target.closest('button');
  if(!button||!result)return;
