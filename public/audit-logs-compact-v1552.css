@@ -77,3 +77,12 @@
   #view-inventory .inv-audit-unified-toolbar,
   #view-logs .system-logs-pagination{display:none!important}
 }
+
+/* Only Owner/Admin may reveal the entire inventory audit card. Cashier
+   inventory.view grants stock operations, never movement-history audit UI. */
+html body #app #view-inventory #inventoryAuditSection[hidden],
+html body #app #view-inventory #inventoryAuditSection.hidden{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
