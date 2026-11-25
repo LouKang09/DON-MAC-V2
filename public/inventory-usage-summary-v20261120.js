@@ -124,18 +124,52 @@
   const shown=list.slice(0,7),rest=list.slice(7).reduce((a,x)=>a+Number(x.netCost||0),0);
   if(rest>0)shown.push({name:'Other ingredients',netCost:rest});
   let cursor=0;
-  const slices=shown.map((r,i)=>{
-   const from=cursor;cursor+=Number(r.netCost)/total*100;
-   return colors[i%colors.length]+' '+from.toFixed(3)+'% '+cursor.toFixed(3)+'%';
-  });
-  return'<div class="inv-usage-pie-layout"><div class="inv-usage-pie" role="img" aria-label="'+
-   esc(shown.map(r=>r.name+': '+currency(r.netCost)).join(', '))+
-   '" style="background:conic-gradient('+slices.join(',')+')"><div><strong>'+
-   currency(total)+'</strong><small>Net ingredient cost</small></div></div>'+
-   '<div class="inv-usage-pie-legend">'+shown.map((r,i)=>'<div><i style="background:'+
-    colors[i%colors.length]+'"></i><span>'+esc(r.name)+'</span><b>'+
-    (Number(r.netCost)/total*100).toFixed(1)+'%</b></div>').join('')+'</div></div>';
+  const rings=shown.map((item,i)=>{
+   const portion=Number(item.netCost)/total*100;
+   const start=cursor;cursor+=portion;
+   const label=esc(item.name);
+   return'<circle class="inv-usage-pie-segment" tabindex="0" data-pie-index="'+i+
+    '" data-pie-label="'+label+'" data-pie-value="'+esc(currency(item.netCost))+
+    '" data-pie-percent="'+portion.toFixed(1)+'%" cx="100" cy="100" r="72" '+
+    'fill="none" stroke="'+colors[i%colors.length]+'" stroke-width="30" '+
+    'pathLength="100" stroke-dasharray="'+portion.toFixed(5)+' '+(100-portion).toFixed(5)+
+    '" stroke-dashoffset="'+(-start).toFixed(5)+'" transform="rotate(-90 100 100)" '+
+    'aria-label="'+label+' '+esc(currency(item.netCost))+' ('+portion.toFixed(1)+'%)">'+
+    '<title>'+label+' · '+esc(currency(item.netCost))+' · '+portion.toFixed(1)+'%</title></circle>';
+  }).join('');
+  const legend=shown.map((item,i)=>{
+   const portion=Number(item.netCost)/total*100;
+   return'<div class="inv-usage-pie-legend-row" tabindex="0" data-pie-index="'+i+
+    '" data-pie-label="'+esc(item.name)+'" data-pie-value="'+esc(currency(item.netCost))+
+    '" data-pie-percent="'+portion.toFixed(1)+'%"><i style="background:'+
+    colors[i%colors.length]+'"></i><span>'+esc(item.name)+'</span><b>'+
+    portion.toFixed(1)+'%</b></div>';
+  }).join('');
+  return'<div class="inv-usage-pie-layout"><div class="inv-usage-pie" role="group" '+
+   'aria-label="Ingredient cost breakdown"><svg viewBox="0 0 200 200" '+
+   'aria-label="Hover or focus each slice for ingredient details" role="img">'+rings+'</svg>'+
+   '<div class="inv-usage-pie-center"><strong data-pie-center-value>'+currency(total)+
+   '</strong><small data-pie-center-label>Net ingredient cost</small></div></div>'+
+   '<div class="inv-usage-pie-legend">'+legend+'</div></div>';
  }
+ function highlightPie(item){
+  const root=$('inventoryUsageChart');
+  const selected=item?.closest?.('[data-pie-index]');
+  const index=selected?.dataset.pieIndex;
+  for(const element of root.querySelectorAll('[data-pie-index]'))
+   element.classList.toggle('is-active',index!==undefined&&element.dataset.pieIndex===index);
+  const value=root.querySelector('[data-pie-center-value]'),
+   label=root.querySelector('[data-pie-center-label]');
+  if(!value||!label)return;
+  value.textContent=selected?selected.dataset.pieValue:currency(data?.totals?.netCost||0);
+  label.textContent=selected?selected.dataset.pieLabel+' · '+selected.dataset.piePercent:'Net ingredient cost';
+ }
+ $('inventoryUsageChart').addEventListener('mouseover',event=>highlightPie(event.target));
+ $('inventoryUsageChart').addEventListener('focusin',event=>highlightPie(event.target));
+ $('inventoryUsageChart').addEventListener('mouseleave',()=>highlightPie(null));
+ $('inventoryUsageChart').addEventListener('focusout',event=>{
+  if(!event.relatedTarget?.closest?.('#inventoryUsageChart'))highlightPie(null);
+ });
  function drawChart(){
   if(!data)return;
   $('inventoryUsageChart').innerHTML=chart.value==='pie'?pieChart():chart.value==='tile'?tileChart():lineChart();
