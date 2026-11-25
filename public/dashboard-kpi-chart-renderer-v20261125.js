@@ -72,6 +72,9 @@
   }else if(key==='deposited'){
    categories=[{name:'Recorded cashier deposits',amount:Math.max(0,value(main?.shiftDeposits?.total))}];
    subtitle='Recorded deposits for this period; not bank-confirmed';
+  }else if(key==='alerts'){
+   categories=[{name:'Low-stock ingredients',amount:Math.max(0,value(main?.metrics?.lowStockCount))}];
+   subtitle='Current low-stock ingredient count (not a sales activity series)';
   }else{
    const data=dataset[0]?.data;
    categories=(data?.trend||[]).map(p=>({name:String(p.label),amount:Math.max(0,value(p[metricField(key)]))}));
@@ -81,11 +84,28 @@
   categories=categories.filter(x=>Number.isFinite(x.amount)&&x.amount>0);
   if(!categories.length)return '<p class="dm-kpi-empty">No recorded values available for this pie chart.</p>';
   const total=categories.reduce((sum,x)=>sum+x.amount,0);
+  const formatShare=(key==='orders'||key==='alerts')?qty:peso;
   let angle=0;
   const slices=categories.map((p,i)=>{
    const from=angle,to=i===categories.length-1?360:angle+360*p.amount/total;angle=to;
    return {...p,index:i,from,to,share:100*p.amount/total,color:colors[i%colors.length]};
   });
+  // Stagger outside labels on each side to prevent small-slice percentage
+  // callouts from overlapping when 10+ time slots are represented.
+  const outside=new Map();
+  for(const side of ['left','right']){
+   const entries=slices.filter(x=>x.share<8&&slices.length>1).map(x=>{
+    const pt=pointOnPie((x.from+x.to)/2,137);
+    return{index:x.index,side:pt.x<158?'left':'right',x:pt.x,y:pt.y};
+   }).filter(x=>x.side===side).sort((a,b)=>a.y-b.y);
+   let nextY=9;
+   for(const entry of entries){entry.y=Math.max(entry.y,nextY);nextY=entry.y+15;}
+   if(entries.length&&entries[entries.length-1].y>305){
+    let maxY=305;
+    for(let i=entries.length-1;i>=0;i--){entries[i].y=Math.min(entries[i].y,maxY);maxY=entries[i].y-15;}
+   }
+   for(const entry of entries)outside.set(entry.index,entry);
+  }
   const svg=slices.map(p=>{
    const text=p.share.toFixed(1)+'%';
    let shape='';
@@ -97,28 +117,31 @@
    }
    const small=p.share<8&&slices.length>1;
    const mark=pointOnPie((p.from+p.to)/2,small?137:68);
+   const outsidePoint=outside.get(p.index);
    const label=small?
     '<path d="M '+fix(pointOnPie((p.from+p.to)/2,112).x)+' '+
      fix(pointOnPie((p.from+p.to)/2,112).y)+' L '+fix(mark.x)+' '+fix(mark.y)+
+     '" L '+fix(mark.x)+' '+fix(outsidePoint?.y??mark.y)+
      '" fill="none" stroke="'+p.color+'" stroke-width="1.8"/>'+
-    '<text x="'+fix(mark.x+(mark.x>158?7:-7))+'" y="'+fix(mark.y)+
+    '<text x="'+fix(mark.x+(mark.x>158?7:-7))+'" y="'+fix(outsidePoint?.y??mark.y)+
      '" text-anchor="'+(mark.x>158?'start':'end')+'" class="dm-kpi-pie-outside" dominant-baseline="middle">'+text+'</text>':
     '<text x="'+fix(mark.x)+'" y="'+fix(mark.y)+'" text-anchor="middle" dominant-baseline="middle"'+
-     ' class="dm-kpi-pie-inside">'+text+'</text>';
+     ' class="dm-kpi-pie-inside" style="fill:'+
+     ([1,4,6,9].includes(p.index%colors.length)?'#1a3529':'#ffffff')+'">'+text+'</text>';
    return '<g class="dm-kpi-pie-slice" data-kpi-slice="'+p.index+'" tabindex="0" role="button" '+
-    'aria-label="'+esc(p.name+': '+peso(p.amount)+' ('+text+')')+'">'+shape+
-    '<title>'+esc(p.name+' · '+peso(p.amount)+' · '+text)+'</title></g>'+label;
+    'aria-label="'+esc(p.name+': '+formatShare(p.amount)+' ('+text+')')+'">'+shape+
+    '<title>'+esc(p.name+' · '+formatShare(p.amount)+' · '+text)+'</title></g>'+label;
   }).join('');
   const legend=slices.map(p=>'<button type="button" class="dm-kpi-pie-legend-row" data-kpi-slice="'+
    p.index+'" aria-label="'+esc(p.name+' '+peso(p.amount))+'">'+
    '<span class="dm-kpi-pie-swatch" style="background:'+p.color+'"></span>'+
-   '<span>'+esc(p.name)+'</span><strong>'+esc(key==='orders'||key==='alerts'?qty(p.amount):peso(p.amount))+
+   '<span>'+esc(p.name)+'</span><strong>'+esc(formatShare(p.amount))+
    '</strong><small>'+p.share.toFixed(1)+'%</small></button>').join('');
-  return '<div class="dm-kpi-pie-shell" data-pie-total="'+esc(peso(total))+'">'+
+  return '<div class="dm-kpi-pie-shell" data-pie-total="'+esc(formatShare(total))+'">'+
    '<div class="dm-kpi-pie-drawing"><svg viewBox="0 0 320 320" role="group" '+
    'aria-label="Interactive category percentages pie chart">'+svg+'</svg>'+
    '<p id="dmKpiPieSelected" role="status">Total · '+
-   esc(key==='orders'||key==='alerts'?qty(total):peso(total))+'</p></div>'+
+   esc(formatShare(total))+'</p></div>'+
    '<div class="dm-kpi-pie-legend">'+legend+'</div></div>'+
    '<p class="dm-kpi-pie-caption">'+esc(subtitle)+'</p>';
  }
@@ -147,7 +170,7 @@
   if(!n)return '<p class="dm-kpi-empty">No completed transactions in this selected range.</p>';
   const w=Math.max(950,n*40+165),h=355,L=112,R=35,T=36,B=86;
   const left=L,right=w-R,bottom=h-B,top=T,dy=bottom-top;
-  const money=key!=='orders'&&key!=='alerts';
+  const money=key!=='orders';
   const maximum=Math.max(0,...bundles.flatMap(b=>b.points.map(p=>p.value)));
   const step=(()=>{
    const ideal=Math.max(1,Math.ceil(maximum/4)),power=10**Math.floor(Math.log10(ideal));
