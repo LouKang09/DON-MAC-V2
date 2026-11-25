@@ -574,7 +574,9 @@
        'Total of cashier-entered end-of-shift amounts for the selected branch scope; not bank-confirmed.');
      }
     }
-    if(key==='deposited'||key==='expenses'&&!isAdmin)
+    // Preserve the established Expenses by Category pie for every Owner,
+   // even when the optional activity visualization defaults to Line/Bar.
+   if(key==='deposited'||key==='expenses')
      body+=await expenseCategoryPanel(main,period,run);
     if(run!==activeRequest||!valid())return;
     body+=categoryPanel(main,key);
