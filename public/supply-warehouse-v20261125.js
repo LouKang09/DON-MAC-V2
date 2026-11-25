@@ -233,8 +233,8 @@ const whRoleOptions=['WAREHOUSE_MANAGER','PURCHASING','INVENTORY','FULFILLMENT',
 function staff(){
  const list=staffList.map(person=>
   '<tr><th scope="row">'+esc(person.fullName)+'<small>'+esc(person.username)+'</small></th>'+
-  '<td>'+esc(person.role.replaceAll('_',' '))+'</td><td>'+ (person.active?'Active':'Disabled')+'</td>'+
-  '<td class="wh-staff-actions"><button type="button" class="btn outline wh-tiny" data-act="toggle-staff" data-id="'+esc(person.id)+'" data-active="'+(person.active?'1':'0')+'" data-role="'+esc(person.role)+'">'+
+  '<td><select class="wh-staff-role" aria-label="Role for '+esc(person.username)+'" data-staff-id="'+esc(person.id)+'">'+whRoleOptions.map(role=>option(role,role.replaceAll('_',' '),role===person.role)).join('')+'</select></td><td>'+ (person.active?'Active':'Disabled')+'</td>'+
+  '<td class="wh-staff-actions"><button type="button" class="btn outline wh-tiny" data-act="save-staff-role" data-id="'+esc(person.id)+'" data-active="'+(person.active?'1':'0')+'">Save role</button><button type="button" class="btn outline wh-tiny" data-act="toggle-staff" data-id="'+esc(person.id)+'" data-active="'+(person.active?'1':'0')+'" data-role="'+esc(person.role)+'">'+
    (person.active?'Disable':'Enable')+'</button>'+
   '<button type="button" class="btn outline wh-tiny" data-act="reset-staff" data-id="'+esc(person.id)+'">Reset password</button></td></tr>').join('');
  return '<div class="wh-grid-two"><section class="wh-section"><h3>Add Warehouse Employee</h3>'+
@@ -346,18 +346,36 @@ $('warehouseOperationsTabs')?.addEventListener('click',event=>{
 $('warehouseOperationsBody')?.addEventListener('click',event=>{
  const node=event.target.closest('[data-act]');if(!node)return;
  const act=node.dataset.act;
- if(act==='toggle-staff'){
+ if(act==='save-staff-role'){
+  const role=$('warehouseOperationsBody').querySelector('[data-staff-id="'+node.dataset.id+'"]')?.value;
+  if(!role)return;
+  void mutate('/staff/'+encodeURIComponent(node.dataset.id),'PUT',{active:node.dataset.active==='1',role},
+   'Staff role saved. Existing sessions revoked.').then(async()=>{await loadStaff();render()}).catch(e=>notice(e.message,true));
+  return;
+ }else if(act==='toggle-staff'){
   const active=node.dataset.active==='1',id=node.dataset.id;
-  if(!window.confirm((active?'Disable':'Enable')+' this warehouse staff account?'))return;
-  void mutate('/staff/'+encodeURIComponent(id),'PUT',{active:!active,role:node.dataset.role},
-   'Staff account '+(active?'disabled':'enabled')+'.').then(async()=>{await loadStaff();render()}).catch(e=>notice(e.message,true));
+  const confirmed=window.donmacPrompt?
+   window.donmacPrompt.confirm((active?'Disable':'Enable')+' this warehouse staff account?',{
+    title:'Warehouse Staff Access',confirmText:active?'Disable Access':'Enable Access',cancelText:'Cancel',variant:active?'danger':'default'
+   }):Promise.resolve(window.confirm((active?'Disable':'Enable')+' this warehouse staff account?'));
+  void Promise.resolve(confirmed).then(ok=>{
+   if(!ok)return;
+   return mutate('/staff/'+encodeURIComponent(id),'PUT',{active:!active,role:node.dataset.role},
+    'Staff account '+(active?'disabled':'enabled')+'.').then(async()=>{await loadStaff();render()});
+  }).catch(e=>notice(e.message,true));
   return;
  }else if(act==='reset-staff'){
-  const password=window.prompt('Enter a new temporary password for this employee (minimum 10 characters):');
-  if(password===null)return;
-  if(password.length<10){notice('Use at least 10 characters.',true);return;}
-  void mutate('/staff/'+encodeURIComponent(node.dataset.id)+'/reset-password','POST',{password},
-   'Password reset. Existing staff sessions are invalidated.').then(async()=>{await loadStaff();render()}).catch(e=>notice(e.message,true));
+  const dialog=window.donmacPrompt?
+   window.donmacPrompt.input('Enter the new temporary password for this employee.',{
+    title:'Reset Warehouse Password',inputLabel:'Temporary password (minimum 10 characters)',
+    minLength:10,maxLength:128,confirmText:'Reset Password',cancelText:'Cancel',variant:'warning'
+   }):Promise.resolve(window.prompt('Enter a new temporary password (at least 10 characters):'));
+  void Promise.resolve(dialog).then(password=>{
+   if(password===null)return;
+   if(password.length<10)throw Error('Use at least 10 characters.');
+   return mutate('/staff/'+encodeURIComponent(node.dataset.id)+'/reset-password','POST',{password},
+    'Password reset. Existing staff sessions are invalidated.').then(async()=>{await loadStaff();render()});
+  }).catch(e=>notice(e.message,true));
   return;
  }else if(act==='reorder')editingReorder=Number(node.dataset.id);
  else if(act==='cancel-reorder')editingReorder=null;
