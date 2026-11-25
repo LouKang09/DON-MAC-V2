@@ -93,3 +93,14 @@
  #page-warehouse .wh-line label:first-child{grid-column:1}
  #page-warehouse .wh-horizontal label{max-width:100%;width:100%;flex:1 1 100%}
 }
+
+/* Warehouse staff administration – compact on tablet without oversized fields. */
+#page-warehouse .wh-staff-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;min-width:190px}
+#page-warehouse .wh-staff-actions .btn{min-height:34px;white-space:nowrap}
+#page-warehouse .wh-staff-role{width:190px;max-width:100%;min-height:36px;padding:7px 9px;font-size:12px}
+#page-warehouse .wh-staff-actions button[data-act="toggle-staff"][data-active="1"]{color:#953438;border-color:#e7c5c6;background:#fff8f8}
+#page-warehouse .wh-form input[type="password"]{max-width:420px}
+@media(max-width:720px){
+ #page-warehouse .wh-staff-role{min-width:145px}
+ #page-warehouse .wh-staff-actions{min-width:160px}
+}
