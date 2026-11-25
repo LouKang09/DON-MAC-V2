@@ -25,6 +25,7 @@ const franchiseRequests = require('./lib/public-franchise-requests');
 const franchiseEmailVerification = require('./lib/franchise-email-verification');
 const franchiseStaging = require('./lib/franchise-tenant-staging');
 const supplyChain = require('./lib/supply-chain');
+const supplyWarehouse = require('./lib/supply-warehouse');
 const supplyAnalytics = require('./lib/supply-analytics');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
@@ -1998,6 +1999,46 @@ async function handleOfficeApi(req,res,p,method){
   }
   if(method==='POST'&&p==='/api/supply/office/products')
     return json(res,201,await supplyChain.createProduct(db,await readJson(req)),safeHeaders());
+
+  // Protected central-warehouse endpoints. This block is after supplyOfficeAuth
+  // and the mandatory first-login password change gate.
+  const whBase='/api/supply/office/warehouse';
+  const whActor=process.env.SUPPLY_OFFICE_USERNAME||'Main Office';
+  if(method==='GET'&&p===whBase+'/overview'){
+    const [suppliers,purchases,inventory,movements,batches,expenses,returns]=await Promise.all([
+      supplyWarehouse.suppliers(db),supplyWarehouse.purchaseOrders(db),
+      supplyWarehouse.inventory(db),supplyWarehouse.movements(db,100),
+      supplyWarehouse.batches(db),supplyWarehouse.expenses(db),
+      supplyWarehouse.returns(db)]);
+    return json(res,200,{suppliers,purchases,inventory,movements,batches,expenses,returns},safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p===whBase+'/suppliers')
+    return json(res,201,await supplyWarehouse.createSupplier(db,await readJson(req),whActor),safeHeaders());
+  if(method==='POST'&&p===whBase+'/purchases')
+    return json(res,201,await supplyWarehouse.createPurchase(db,await readJson(req),whActor),safeHeaders());
+  const whReceive=p.match(/^\/api\/supply\/office\/warehouse\/purchases\/([a-f0-9-]{36})\/receive$/i);
+  if(method==='POST'&&whReceive)
+    return json(res,200,await supplyWarehouse.receive(db,whReceive[1],await readJson(req),whActor),safeHeaders());
+  if(method==='POST'&&p===whBase+'/adjust')
+    return json(res,200,await supplyWarehouse.adjust(db,await readJson(req),whActor),safeHeaders());
+  const whReorder=p.match(/^\/api\/supply\/office\/warehouse\/reorder\/(\d+)$/);
+  if(method==='PUT'&&whReorder)
+    return json(res,200,await supplyWarehouse.setReorder(db,whReorder[1],await readJson(req)),safeHeaders());
+  if(method==='POST'&&p===whBase+'/expenses')
+    return json(res,201,await supplyWarehouse.addExpense(db,await readJson(req),whActor),safeHeaders());
+  if(method==='POST'&&p===whBase+'/returns')
+    return json(res,201,await supplyWarehouse.createReturn(db,await readJson(req),whActor),safeHeaders());
+  if(method==='GET'&&p===whBase+'/finance'){
+    const params=new URL(req.url,'http://localhost').searchParams;
+    return json(res,200,await supplyWarehouse.finance(db,params.get('from'),params.get('to')),safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='GET'&&p===whBase+'/fulfillment'){
+    const id=new URL(req.url,'http://localhost').searchParams.get('orderId');
+    if(!/^[a-f0-9-]{36}$/i.test(id||''))return json(res,400,{error:'Choose a valid order.'});
+    return json(res,200,{events:await supplyWarehouse.fulfillment(db,id)},safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p===whBase+'/fulfillment')
+    return json(res,201,await supplyWarehouse.addFulfillment(db,await readJson(req),whActor),safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db,true),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
