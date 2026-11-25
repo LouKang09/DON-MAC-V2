@@ -2231,11 +2231,22 @@ async function handleApi(req,res,url){
       const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',
         year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
       const filename='Sales_Daily_'+today+'.pdf';
+      const [soldCost,deposited]=await Promise.all([
+        dashboardFinancials.liveIngredientCost(db,franchiseLive.workspaceId,[branch.id],
+          report.since,new Date().toISOString()),
+        reportFinancialPrivacy.depositedAmount(db,{
+          workspaceId:franchiseLive.workspaceId,branchId:branch.id,
+          from:today,to:new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10)
+        })
+      ]);
       const payload={period:'daily',target:today,cashier:franchiseLive.admin?'ALL':user.username,
         transactionCount:Number(summary.transaction_count||0),deletedCount:0,
-        gross,adjustment:gross-actual,actual,products,promos:report.promos,transactions:[]};
+        depositedAmount:deposited.amount,inStoreExpenses:soldCost,
+        gross,adjustment:gross-actual,actual,products:franchiseLive.admin?
+          products:products.map(reportFinancialPrivacy.publicProduct),
+        promos:report.promos,transactions:[]};
       const lines=salesReportLines(payload,'Don Macchiatos - '+branch.name+' - Daily Sales Report',
-        {includeTransactions:false,costLabel:'In-Store Expense'});
+        {includeTransactions:false,includeCosting:franchiseLive.admin,costLabel:'In-Store Expense'});
 
       const pdf=makePdf(lines,{title:'Daily Branch Sales Report'});
       return binary(res,200,pdf,'application/pdf',
