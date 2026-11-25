@@ -25,6 +25,7 @@ const franchiseRequests = require('./lib/public-franchise-requests');
 const franchiseEmailVerification = require('./lib/franchise-email-verification');
 const franchiseStaging = require('./lib/franchise-tenant-staging');
 const supplyChain = require('./lib/supply-chain');
+const supplyAnalytics = require('./lib/supply-analytics');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
 const historicalSales = require('./lib/historical-sales-access');
@@ -1984,6 +1985,13 @@ async function handleOfficeApi(req,res,p,method){
     return json(res,200,await platformBilling.requestCheckout(db,'SUPPLY_OFFICE','supply-office',
       process.env.PAYMONGO_OFFICE_RETURN_URL||'https://donmacpos.com/supply-chain?billing=return'),safeHeaders({'Cache-Control':'no-store'}));
   if(method==='GET'&&p==='/api/supply/office/dashboard')return json(res,200,await supplyChain.operationsDashboard(db),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='GET'&&p==='/api/supply/office/analytics'){
+    const params=new URL(req.url,'http://localhost').searchParams;
+    return json(res,200,await supplyAnalytics.analytics(db,{
+      period:params.get('period')||'last30',from:params.get('from'),to:params.get('to'),
+      branchId:params.get('branchId')||'all'
+    }),safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='GET'&&p==='/api/supply/office/distributions'){
     const page=new URL(req.url,'http://localhost').searchParams.get('page');
     return json(res,200,await supplyChain.distributionHistory(db,page),safeHeaders({'Cache-Control':'no-store'}));
