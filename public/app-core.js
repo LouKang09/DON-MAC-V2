@@ -217,6 +217,18 @@
       x.classList.toggle('hidden',state.user.role!=='User'));
     const userGrants=Array.isArray(state.user.accessPermissions)?state.user.accessPermissions:[];
     const isAdmin=state.user.role==='Admin';
+    if(!isAdmin){
+      // Do not leave a previous Owner's report/cost/audit HTML in a newly
+      // signed-in cashier's document while the first staff report loads.
+      state.report=null;state.costing=null;
+      for(const id of ['reportProducts','reportTransactions','costingList',
+        'movementBody','auditPageControls']){
+        $(id)?.replaceChildren();
+      }
+      $('costingTotal').textContent='';
+      $('auditPageInfo').textContent='';
+      $('reportSummary').replaceChildren();
+    }
     window.donmacCashierPermissions=isAdmin?[]:[...userGrants];
     $('reportCashierSelect')?.classList.toggle('hidden',!isAdmin);
     if(!isAdmin){
@@ -1561,6 +1573,7 @@
     }
     try{
       const d=await api('/api/inventory/movements?limit=1000&branchId='+encodeURIComponent(selectedInventoryBranch()));
+      if(state.user?.role!=='Admin')return;
       auditUI.groups=groupInventoryMovements(Array.isArray(d.items)?d.items:[]);
       renderMovements();
     }catch(err){
@@ -1754,13 +1767,15 @@
     if(!$('reportDate').value)$('reportDate').value=manilaToday();
     const request=++reportUI.request,qs=reportQuery();
     const owner=state.user?.role==='Admin';
+    const session=window.donmacSessionGeneration?.();
     $('reportLoadingStatus').textContent='Loading Sales Report…';
     try{
       // A cashier may read approved sales only. Never fetch recipe costing.
       const reportTask=api('/api/reports/sales?'+qs);
       const costingTask=owner?api('/api/reports/costing?'+qs):Promise.resolve(null);
       const [report,costing]=await Promise.all([reportTask,costingTask]);
-      if(request!==reportUI.request)return;
+      if(request!==reportUI.request||owner!==(state.user?.role==='Admin')||
+        session!==window.donmacSessionGeneration?.())return;
       state.report=report;
       state.costing=owner?costing:null;
       resetReportPages();
