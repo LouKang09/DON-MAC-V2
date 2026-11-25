@@ -99,19 +99,20 @@ $('officeLogout').onclick=async()=>{
 function selectPage(name){
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
- for(const section of ['dashboard','requests','distribution','franchisees','catalog','promotions','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({dashboard:'Central Warehouse Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
+ for(const section of ['dashboard','requests','distribution','franchisees','warehouse','catalog','promotions','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
+ $('officePageHeading').textContent=({dashboard:'Central Warehouse Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',warehouse:'Central Warehouse',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
  $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
  if(name==='dashboard')loadDistributionDashboard();
  if(name==='distribution')loadDistributionHistory();
  if(name==='billing')window.donmacTenantBilling?.load(true);
+ if(name==='warehouse')window.donmacWarehouse?.load();
  if(name==='catalog')loadCatalog();
  if(name==='promotions')window.officeCampaignUI?.load();
  if(name==='settings')loadSettings();
 }
 document.querySelectorAll('[data-office-page]').forEach(b=>b.onclick=()=>selectPage(b.dataset.officePage));
-$('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else if(activePage==='dashboard')loadDistributionDashboard();else if(activePage==='distribution')loadDistributionHistory();else if(activePage==='catalog')loadCatalog();else refresh();};
+$('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else if(activePage==='dashboard')loadDistributionDashboard();else if(activePage==='distribution')loadDistributionHistory();else if(activePage==='catalog')loadCatalog();else if(activePage==='warehouse')window.donmacWarehouse?.load();else refresh();};
 const refreshIcon="<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 11a9 9 0 1 1-2.51-6.33\"/><path d=\"M21 3v6h-6\"/></svg>";
 $('officeRefresh').innerHTML=refreshIcon;
 $('officeRefresh').classList.add('office-round-refresh');
@@ -353,7 +354,7 @@ function renderCatalog(){
  '<td><input aria-label="Unit of measure for '+esc(p.name)+'" class="office-uom" maxlength="80" value="'+esc(p.uom)+'"></td>'+
  '<td><input class="office-price" aria-label="Franchise price for '+esc(p.name)+'" type="number" min="0.01" max="1000000" step="0.01" value="'+Number(p.price).toFixed(2)+'"></td>'+
  '<td><input class="office-cost" aria-label="Unit cost for '+esc(p.name)+'" type="number" min="0" step="0.01" placeholder="Unknown" value="'+(p.costPrice==null?'':Number(p.costPrice).toFixed(2))+'"></td>'+
- '<td><input class="office-stock" aria-label="Available stock for '+esc(p.name)+'" type="number" min="0" max="10000000" step="1" value="'+p.stockQty+'"></td>'+
+ '<td><input class="office-stock" aria-label="Available stock for '+esc(p.name)+'" type="number" min="0" max="10000000" step="1" data-original-qty="'+p.stockQty+'" value="'+p.stockQty+'"></td>'+
  '<td><input class="office-promo-price" aria-label="Promo price for '+esc(p.name)+'" type="number" min="0.01" step="0.01" placeholder="No promo" value="'+(p.promoPrice==null?'':Number(p.promoPrice).toFixed(2))+'"></td>'+
  '<td><input class="office-promo-enabled" type="checkbox" aria-label="Enable promo for '+esc(p.name)+'" '+(p.promoActive?'checked':'')+'></td>'+
  '<td><button type="button" class="btn solid office-product-save" data-office-save="'+p.id+'">Save</button></td></tr>'
@@ -365,7 +366,7 @@ function renderCatalog(){
  $('officeCatalogBody').querySelectorAll('[data-office-save]').forEach(button=>button.onclick=async()=>{
   const row=button.closest('tr');const id=Number(button.dataset.officeSave);
   const details={uom:row.querySelector('.office-uom').value,price:row.querySelector('.office-price').value,costPrice:row.querySelector('.office-cost').value,
-   stockQty:row.querySelector('.office-stock').value,promoPrice:row.querySelector('.office-promo-price').value,
+   stockQty:row.querySelector('.office-stock').value,originalStockQty:row.querySelector('.office-stock').dataset.originalQty,promoPrice:row.querySelector('.office-promo-price').value,
    promoActive:row.querySelector('.office-promo-enabled').checked};
   button.disabled=true;
   try{
