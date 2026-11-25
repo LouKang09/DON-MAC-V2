@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="icon" type="image/svg+xml" href="/donmac-favicon-unified-v20261121.svg?v=2" /><link rel="shortcut icon" type="image/svg+xml" href="/donmac-favicon-unified-v20261121.svg?v=2"><link rel="stylesheet" href="/donmac-useanimations-v20261120.css?v=20"/><link rel="stylesheet" href="/supply-office.css?v=1.6.03"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/><link rel="stylesheet" href="/tenant-billing.css?v=1"/><link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1"/><link rel="stylesheet" href="/coffee-workspace-theme-v20261107.css?v=3"/>  <link rel="stylesheet" href="/responsive-foundation-v20261118.css?v=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#171d1b"/><title>Don Macchiatos — Main Office Supply Chain</title><link rel="icon" type="image/svg+xml" href="/donmac-favicon-unified-v20261121.svg?v=2" /><link rel="shortcut icon" type="image/svg+xml" href="/donmac-favicon-unified-v20261121.svg?v=2"><link rel="stylesheet" href="/donmac-useanimations-v20261120.css?v=20"/><link rel="stylesheet" href="/supply-office.css?v=1.6.03"/><link rel="stylesheet" href="/supply-office-dashboard-v20261125.css?v=1"/><link rel="stylesheet" href="/auth-login-v1574.css?v=1.6.02"/><link rel="stylesheet" href="/office-login-pos.css?v=1.0.0"/><link rel="stylesheet" href="/tenant-billing.css?v=1"/><link rel="stylesheet" href="/refresh-controls-v20261107.css?v=1"/><link rel="stylesheet" href="/coffee-workspace-theme-v20261107.css?v=3"/>  <link rel="stylesheet" href="/responsive-foundation-v20261118.css?v=1">
   <link rel="stylesheet" href="/donmac-unified-prompts-v20261120.css?v=1" />
   <script src="/donmac-unified-prompts-v20261120.js?v=2"></script>
 </head><body>
@@ -37,7 +37,50 @@
 <div class="portal-heading"><span class="portal-logo"><img src="/donmac-logo-hires.svg" alt="Don Macchiatos logo" width="70" height="70" decoding="async"></span><div class="portal-heading-copy"><span class="portal-eyebrow">SUPPLY CHAIN</span><h1 id="officePageHeading">Purchase requests</h1><span id="officeClock" class="portal-date"></span></div></div>
 <div class="top-controls"><button class="btn outline" id="officeRefresh" type="button" title="Refresh current page" aria-label="Refresh current page"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11a9 9 0 1 1-2.51-6.33"/><path d="M21 3v6h-6"/></svg></button></div></header>
     <div id="officeNotice" class="notice hidden" role="status"></div>
-    <section class="office-page hidden" id="page-dashboard"><div class="panel"><div class="panel-head"><div><p class="eyebrow">MAIN OFFICE</p><h2>Distribution Dashboard</h2><p class="muted">Fulfilled shipments and recorded franchise requests.</p></div></div><div class="distribution-metrics"><div><small>Completed distributions</small><strong id="distOrders">—</strong></div><div><small>Units distributed</small><strong id="distUnits">—</strong></div><div><small>Requesting franchisees</small><strong id="distFranchisees">—</strong></div><div><small>Supply revenue</small><strong id="distRevenue">—</strong></div><div><small>Net revenue after costs</small><strong id="distNet">—</strong></div><div><small>Top requested product</small><strong id="distTopName">—</strong></div></div><p class="distribution-note" id="distCostNote">Net revenue needs a recorded purchase cost for every delivered item.</p><div class="distribution-top-products"><h3>Most requested supplies</h3><div id="distTopProducts">No requests yet.</div></div></div></section>
+    <section class="office-page hidden" id="page-dashboard"><section class="panel warehouse-analytics" aria-labelledby="warehouseHeading">
+  <div class="panel-head warehouse-heading"><div>
+    <p class="eyebrow">CENTRAL WAREHOUSE · OPERATIONAL INSIGHTS</p>
+    <h2 id="warehouseHeading">Supply Chain Analytics</h2>
+    <p class="muted">Wholesale distributions, stock and franchise fulfillment—not franchise POS revenue.</p>
+    </div><button type="button" class="btn outline" id="warehouseRefresh">↻ Refresh</button></div>
+  <div class="warehouse-controls" role="group" aria-label="Warehouse reporting filters">
+    <label>Period<select id="warehousePeriod"><option value="today">Today</option><option value="week">Last 7 days</option><option value="last30" selected>Last 30 days</option><option value="month">This month</option><option value="year">Year to date</option><option value="custom">Custom range</option></select></label>
+    <label>Franchise Branch<select id="warehouseBranch"><option value="all">All branches</option></select></label>
+    <div id="warehouseCustomDates" class="warehouse-custom-dates" hidden><label>From<input id="warehouseFrom" type="date"/></label><label>To<input id="warehouseTo" type="date"/></label></div>
+    <button type="button" class="btn solid" id="warehouseApply">Apply</button>
+  </div>
+  <p id="warehouseStatus" class="warehouse-status" role="status" aria-live="polite">Select Dashboard to load warehouse insights.</p>
+  <div id="warehouseKpis" class="warehouse-kpis" aria-label="Warehouse KPI cards"></div>
+  <div class="warehouse-charts">
+    <section class="warehouse-chart-panel" aria-labelledby="warehouseChartHeading">
+      <div class="warehouse-chart-header">
+        <div><h3 id="warehouseChartHeading">Supply revenue activity</h3><p id="warehouseChartNote" class="muted">Completed distributions by period.</p></div>
+        <div class="warehouse-chart-controls">
+          <label>Chart Type<select id="warehouseChartType"><option value="line">Line</option><option value="bar">Bar</option><option value="pie">Pie</option></select></label>
+          <label>Interval<select id="warehouseInterval"><option value="day">Daily</option><option value="week">Weekly</option><option value="month">Monthly</option></select></label>
+        </div>
+      </div><div class="warehouse-plot" id="warehousePlot" aria-live="polite"></div>
+    </section>
+    <section class="warehouse-chart-panel" aria-labelledby="warehouseBacklogHeading">
+      <div class="warehouse-chart-header"><div><h3 id="warehouseBacklogHeading">Fulfillment Queue</h3><p class="muted">Open requests right now, independent of report dates.</p></div></div>
+      <div class="warehouse-backlog" id="warehouseBacklog"></div>
+    </section>
+  </div>
+  <div class="warehouse-breakdowns">
+    <section class="warehouse-detail-card" id="warehouseBranchSection">
+      <div class="warehouse-section-title"><h3>Distribution by Branch</h3><p class="muted">Delivered supply orders during the selected date range.</p></div>
+      <div class="warehouse-table-scroll"><table><thead><tr><th>Franchise / Branch</th><th>Orders</th><th>Units</th><th>Supply Revenue</th><th>Gross Profit</th></tr></thead><tbody id="warehouseBranchRows"></tbody></table></div>
+    </section>
+    <section class="warehouse-detail-card" id="warehouseProductSection">
+      <div class="warehouse-section-title"><h3>Top Distributed Supplies</h3><p class="muted">Fulfilled items and their warehouse selling value.</p></div>
+      <div class="warehouse-table-scroll"><table><thead><tr><th>Item</th><th>Quantity</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="warehouseProductRows"></tbody></table></div>
+    </section>
+    <section class="warehouse-detail-card" id="warehouseStockSection">
+      <div class="warehouse-section-title"><h3>Warehouse Inventory Exceptions</h3><p class="muted">Current stockouts and missing supplier costs. Reorder thresholds are not configured yet.</p></div>
+      <div class="warehouse-exceptions"><div><h4>Out of Stock</h4><div id="warehouseStockAlerts"></div></div><div><h4>Missing Purchase Cost</h4><div id="warehouseMissingCosts"></div></div></div>
+    </section>
+  </div>
+</section><details class="panel warehouse-lifetime"><summary>All-time distribution snapshot <small>Lifetime totals · independent of date filters</small></summary><div class="distribution-metrics"><div><small>Completed distributions</small><strong id="distOrders">—</strong></div><div><small>Units distributed</small><strong id="distUnits">—</strong></div><div><small>Requesting franchisees</small><strong id="distFranchisees">—</strong></div><div><small>Supply revenue</small><strong id="distRevenue">—</strong></div><div><small>Net revenue after costs</small><strong id="distNet">—</strong></div><div><small>Top requested product</small><strong id="distTopName">—</strong></div></div><p class="distribution-note" id="distCostNote">Net revenue needs a recorded purchase cost for every delivered item.</p><div class="distribution-top-products"><h3>Most requested supplies</h3><div id="distTopProducts">No requests yet.</div></div></details></section>
     <section class="office-page" id="page-requests">
       <div class="stats"><div class="stat"><small>All requests</small><strong id="statTotal">0</strong></div><div class="stat"><small>Needs review</small><strong id="statPending">0</strong></div><div class="stat"><small>On hold</small><strong id="statHold">0</strong></div><div class="stat"><small>In fulfillment</small><strong id="statActive">0</strong></div></div>
       <div class="panel"><div class="panel-head"><div><h2>Franchise purchase orders</h2><p class="muted">Review payment proofs, update each stage, and reply to the franchise.</p></div><div class="filters"><input type="search" id="officeSearch" placeholder="Search reference, franchise, branch…"/><select id="officeStatusFilter"><option value="">All statuses</option><option>PENDING_REVIEW</option><option>APPEAL_REVIEW</option><option>APPROVED</option><option>ON_HOLD</option><option>DENIED</option><option>PREPARING</option><option>DISPATCHED</option><option>DELIVERED</option><option>COMPLETED</option></select></div></div>
@@ -177,4 +220,4 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=1.6.02-unified-prompts" defer></script><script src="/office-campaign-ui-v20261108.js?v=6" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=6" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script></body></html>
+<script src="/supply-office.js?v=1.6.02-unified-prompts" defer></script><script src="/supply-office-dashboard-v20261125.js?v=1"></script><script src="/office-campaign-ui-v20261108.js?v=6" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=6" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script></body></html>
