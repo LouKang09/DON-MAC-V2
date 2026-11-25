@@ -221,8 +221,8 @@
   // Authentication and the proven POS core always load first.
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
-    .then(() => loadScript('/franchise-unified-adapter.js?v=20261125-shift-deposits'))
-    .then(() => loadScript('/app-core.js?v=20261125-expense-detail-corrected'))
+    .then(() => loadScript('/franchise-unified-adapter.js?v=20261125-cashier-reports'))
+    .then(() => loadScript('/app-core.js?v=20261125-cashier-reports'))
     .then(() => {
       watchForAuthenticatedApp();
       setTimeout(() => {
