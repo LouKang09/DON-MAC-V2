@@ -185,3 +185,44 @@
   #dmKpiDetail .dm-activity-svg{min-width:0!important;width:100%!important;}
   #dmKpiDetail .dm-activity-controls{display:none!important;}
 }
+/* Owner's global and category-specific dashboard chart preferences. */
+#view-account .dm-chart-preference-settings{display:grid;gap:1.1rem;padding:clamp(1rem,2vw,1.5rem);margin:1rem 0;background:#fff;border:1px solid #dce8df;border-radius:1rem}
+#view-account .dm-chart-settings-header h3{font-weight:800;color:#075d38;font-size:1.14rem;margin:0 0 .4rem}
+#view-account .dm-chart-settings-header p{font-size:.85rem;color:#63796c;margin:0;line-height:1.5}
+#view-account .dm-chart-settings-grid{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr));gap:clamp(.65rem,1.4vw,1.25rem);align-items:end}
+#view-account .dm-chart-settings-grid label{display:grid;gap:.4rem;color:#255d3e;font-size:.8rem;font-weight:730;min-width:0}
+#view-account .dm-chart-settings-grid select{min-height:2.8rem;min-width:0;width:100%;padding:.65rem .85rem;border-radius:.66rem;border:1px solid #c8dbcf;background:#fff;color:#173f2a;font-size:.85rem}
+#view-account .dm-chart-settings-grid select:disabled{background:#f3f7f5;color:#81968a}
+#view-account .dm-chart-settings-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.85rem}
+#view-account .dm-chart-settings-actions button{border-radius:.65rem;min-height:2.75rem;padding:.7rem 1rem;background:#075d38;color:white;font-weight:760}
+#view-account .dm-chart-settings-actions p{margin:0;font-size:.79rem;color:#576f60}
+/* Distinct smooth lines and legends when comparing several branches. */
+#dmKpiDetail .dm-kpi-chart-branch-legend{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;margin:1rem 0 .4rem;color:#315840;font-size:.8rem}
+#dmKpiDetail .dm-kpi-chart-branch-legend span{display:inline-flex;align-items:center;gap:.4rem}
+#dmKpiDetail .dm-kpi-chart-branch-legend i{width:.75rem;height:.75rem;display:inline-block;border-radius:50%}
+#dmKpiDetail .dm-activity-line{stroke-width:3px;stroke-linecap:round;stroke-linejoin:round;fill:none;vector-effect:non-scaling-stroke}
+#dmKpiDetail .dm-activity-marker{fill:#fff;stroke-width:2.3;vector-effect:non-scaling-stroke}
+#dmKpiDetail .dm-activity-marker:focus-visible{outline:2px solid #257c5c;outline-offset:2px}
+/* Permanent percentages and interactive labels on KPI distribution charts. */
+#dmKpiDetail .dm-kpi-pie-shell{display:grid;grid-template-columns:minmax(14rem,.9fr) minmax(0,1.1fr);align-items:center;gap:clamp(1rem,3vw,2.5rem);padding:.8rem .25rem}
+#dmKpiDetail .dm-kpi-pie-drawing{display:grid;justify-items:center;gap:.1rem;min-width:0}
+#dmKpiDetail .dm-kpi-pie-drawing svg{display:block;width:min(100%,22rem);height:auto;overflow:visible}
+#dmKpiDetail #dmKpiPieSelected{margin:.2rem 0 .75rem;font-size:1rem;font-weight:800;color:#075d38;text-align:center;overflow-wrap:anywhere}
+#dmKpiDetail .dm-kpi-pie-inside{font:bold 12px system-ui,sans-serif;fill:white;stroke:#143b2d;stroke-width:.3px;paint-order:stroke;pointer-events:none}
+#dmKpiDetail .dm-kpi-pie-outside{font:bold 12px system-ui,sans-serif;fill:#183e2d;stroke:#fff;stroke-width:3px;paint-order:stroke;pointer-events:none}
+#dmKpiDetail .dm-kpi-pie-slice{cursor:pointer;transform-origin:158px 158px;transition:transform .17s ease,filter .17s ease}
+#dmKpiDetail .dm-kpi-pie-slice:hover,#dmKpiDetail .dm-kpi-pie-slice.dm-kpi-pie-selected,#dmKpiDetail .dm-kpi-pie-slice:focus-visible{transform:scale(1.035);filter:drop-shadow(0 3px 4px rgba(0,40,30,.2));outline:0}
+#dmKpiDetail .dm-kpi-pie-legend{display:grid;align-content:center;gap:.45rem;min-width:0}
+#dmKpiDetail .dm-kpi-pie-legend-row{width:100%;display:grid;grid-template-columns:.85rem minmax(0,1fr) auto 3.2rem;gap:.6rem;align-items:center;border:1px solid #dfece3;background:#fff;border-radius:.65rem;padding:.65rem .75rem;text-align:left;color:#28563d;font-size:.83rem;cursor:pointer}
+#dmKpiDetail .dm-kpi-pie-legend-row strong{white-space:nowrap;font-variant-numeric:tabular-nums;color:#075d38}
+#dmKpiDetail .dm-kpi-pie-legend-row small{font-variant-numeric:tabular-nums;color:#648173;text-align:right}
+#dmKpiDetail .dm-kpi-pie-legend-row:hover,#dmKpiDetail .dm-kpi-pie-legend-row.dm-kpi-pie-selected,#dmKpiDetail .dm-kpi-pie-legend-row:focus-visible{background:#effaf2;border-color:#42a375;outline-offset:2px}
+#dmKpiDetail .dm-kpi-pie-swatch{display:block;width:.8rem;height:.8rem;border-radius:.2rem}
+#dmKpiDetail .dm-kpi-pie-caption{color:#638073;font-size:.77rem;padding:.2rem .3rem;margin:.4rem 0 .9rem}
+@media(max-width:760px){
+ #view-account .dm-chart-settings-grid{grid-template-columns:minmax(0,1fr)}
+ #dmKpiDetail .dm-kpi-pie-shell{grid-template-columns:minmax(0,1fr);gap:.6rem}
+ #dmKpiDetail .dm-kpi-pie-drawing svg{width:min(100%,19rem)}
+ #dmKpiDetail .dm-kpi-pie-legend-row{grid-template-columns:.8rem minmax(0,1fr) auto 2.6rem}
+}
+@media(prefers-reduced-motion:reduce){#dmKpiDetail .dm-kpi-pie-slice{transition:none}}
