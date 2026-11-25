@@ -222,36 +222,76 @@
    const requested=String(url.searchParams.get('period')||'daily');
    const period={daily:'day',weekly:'week',monthly:'month',yearly:'year'}[requested];
    if(!period)throw fail('Choose Daily, Weekly, Monthly, or Yearly.',400);
-   const reportParams=new URLSearchParams({range:period,branchId:String(scopedBranch(state,url.searchParams.get('branchId')==='all'?null:url.searchParams.get('branchId')))});
-   if(url.searchParams.get('date'))reportParams.set('date',url.searchParams.get('date'));
-   const reportQuery=reportParams.toString();
-   // Server checks the cashier's grant and maximum history duration.
-   const raw=await live('/api/live/report?'+reportQuery);
+   const all=state.user?.role==='Admin'&&
+     (!url.searchParams.has('branchId')||url.searchParams.get('branchId')==='all');
+   // All-branches is an aggregate of separately authorized branch reports,
+   // NEVER an implicit fallback to the current POS branch.
+   const branches=all?(await status()).branches.map(b=>Number(b.id)):
+    [scopedBranch(state,url.searchParams.get('branchId'))];
+   const ids=[...new Set(branches.filter(n=>Number.isSafeInteger(n)&&n>0))];
+   if(!ids.length)throw fail('No authorized branches available for this report.',400);
+   const parameters=id=>{
+    const q=new URLSearchParams({range:period,branchId:String(id)});
+    if(url.searchParams.get('date'))q.set('date',url.searchParams.get('date'));
+    return q.toString();
+   };
    if(p==='/api/reports/costing'){
-    return live('/api/live/report/costing?'+reportQuery);
+    const values=await Promise.all(ids.map(id=>live('/api/live/report/costing?'+parameters(id))));
+    if(values.length===1)return values[0];
+    const grouped=new Map();
+    for(const r of values)for(const ingredient of r.ingredients||[]){
+     const key=ingredient.name+'|'+ingredient.uom;
+     const existing=grouped.get(key)||{...ingredient,totalQty:0,totalCost:0,details:[],reconstructed:false};
+     existing.totalQty+=Number(ingredient.totalQty||0);
+     existing.totalCost+=Number(ingredient.totalCost||0);
+     existing.reconstructed ||= ingredient.reconstructed===true;
+     existing.details.push(...(ingredient.details||[]));
+     grouped.set(key,existing);
+    }
+    return{branchId:'all',totalCost:values.reduce((n,r)=>n+Number(r.totalCost||0),0),
+     ingredients:[...grouped.values()].sort((a,b)=>b.totalCost-a.totalCost),
+     reconstructed:values.some(r=>r.reconstructed),unattributed:values.reduce((n,r)=>n+Number(r.unattributed||0),0),
+     note:'Combined ingredient usage across all authorized branches; historical estimates remain labelled.'};
    }
-   const totalProductGross=(raw.products||[]).reduce((n,x)=>n+Number(x.gross||0),0);
-   const ratio=totalProductGross>0?Number(raw.actual||0)/totalProductGross:0;
+   const values=await Promise.all(ids.map(id=>live('/api/live/report?'+parameters(id))));
+   const sum=field=>values.reduce((n,r)=>n+Number(r[field]||0),0);
+   const grouped=(field,key)=>{
+    const map=new Map();
+    for(const r of values)for(const row of r[field]||[]){
+     const label=String(row[key]||'');
+     const current=map.get(label)||{...row};
+     if(map.has(label))for(const [k,v] of Object.entries(row))
+      if(k!==key&&typeof v==='number')current[k]=Number(current[k]||0)+v;
+     map.set(label,current);
+    }
+    return[...map.values()];
+   };
+   const raw={period,branchId:all?'all':ids[0],transactionCount:sum('transactionCount'),
+    allTransactionCount:sum('allTransactionCount'),gross:sum('gross'),discounts:sum('discounts'),
+    actual:sum('actual'),inStoreExpenses:sum('inStoreExpenses'),refund:sum('refund'),
+    deletedCount:sum('deletedCount'),depositEntryCount:sum('depositEntryCount'),
+    depositedAmount:values.some(r=>r.depositedAmount!=null)?sum('depositedAmount'):null,
+    products:grouped('products','name'),promos:grouped('promos','name'),
+    transactions:values.flatMap(r=>r.transactions||[]).sort((a,b)=>String(b.soldAt).localeCompare(String(a.soldAt)))};
+   const totalProductGross=raw.products.reduce((n,x)=>n+Number(x.gross||0),0);
+   const ratio=totalProductGross>0?raw.actual/totalProductGross:0;
    const isStaff=state.user?.role==='User';
-   const products=(raw.products||[]).map(x=>{
+   const products=raw.products.map(x=>{
     const adjusted=Number(x.gross||0)*(1-ratio);
     const actual=Number(x.gross||0)*ratio;
     const base={name:x.name,qty:x.qty,gross:Number(x.gross||0),adjusted,actual};
     return isStaff?base:{...base,costing:Number(x.costing||0),net:actual-Number(x.costing||0)};
    });
-   const transactions=isStaff?[]:raw.transactions||[];
    const result={period,transactionCount:raw.transactionCount,
-    allTransactionCount:raw.allTransactionCount??raw.transactionCount,
-    gross:raw.gross||0,discounts:raw.discounts||0,actual:raw.actual||0,
-    inStoreExpenses:raw.inStoreExpenses??null,
-    depositedAmount:raw.depositedAmount??null,depositEntryCount:raw.depositEntryCount??0,
-    refund:raw.refund||0,
-    products,promos:(raw.promos||[]).map(p=>({name:p.name,qty:Number(p.qty||0),
-      gross:Number(p.gross||0),adjustment:Number(p.adjustment||0),actual:Number(p.actual||0)})),
-    transactions:transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
+    allTransactionCount:raw.allTransactionCount,gross:raw.gross,discounts:raw.discounts,
+    actual:raw.actual,inStoreExpenses:raw.inStoreExpenses,
+    depositedAmount:raw.depositedAmount,depositEntryCount:raw.depositEntryCount,
+    refund:raw.refund,products,promos:raw.promos.map(p=>({name:p.name,qty:Number(p.qty||0),
+     gross:Number(p.gross||0),adjustment:Number(p.adjustment||0),actual:Number(p.actual||0)})),
+    transactions:isStaff?[]:raw.transactions.map(t=>({...t,status:t.status==='Voided'?'Deleted':t.status}))};
    if(!isStaff){
-    result.grossProfit=Number(raw.actual||0)-products.reduce((n,x)=>n+x.costing,0);
-    result.deletedCount=raw.deletedCount||0;
+    result.grossProfit=raw.actual-products.reduce((n,x)=>n+Number(x.costing||0),0);
+    result.deletedCount=raw.deletedCount;
    }
    return result;
   }
