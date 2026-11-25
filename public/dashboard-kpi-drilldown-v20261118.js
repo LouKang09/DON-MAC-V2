@@ -410,6 +410,12 @@
      key==='orders'?'Completed orders':key==='discount'?'Applied discounts':
      (key==='deposited'||key==='expenses'||key==='alerts'?'Gross sales · context':'Gross sales');
     renderer.draw(plot,{datasets,key,interval:mode,type:type.value,main});
+    // Store Expenses already has a persistent category pie. When the new
+    // optional activity chart is also Pie, show only one copy of that breakdown.
+    if(key==='expenses'){
+     const existing=content.querySelector('.dm-expense-pie-host')?.closest('.dm-kpi-panel');
+     if(existing)existing.hidden=type.value==='pie';
+    }
    }catch(error){
     if(fetchId!==sequence||requestId!==activityLoadSequence||run!==activeRequest||!valid())return;
     plot.innerHTML=empty('Sales activity chart unavailable: '+(error.message||'Please retry.'));
