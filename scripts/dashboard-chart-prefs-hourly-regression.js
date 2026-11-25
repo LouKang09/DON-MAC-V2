@@ -79,9 +79,10 @@ async function run(){
  assert.match(partial,/\bC\b/);
  assert.doesNotMatch(partial,/NaN|undefined/);
  const datasets=[
-  {name:'Main Branch',data:hourly},
+  {name:'Main Branch',data:{...hourly,rangeRevenueNet:350}},
   {name:'North Branch',data:{
-   ...hourly,trend:hourly.trend.map((x,i)=>({...x,gross:i===9?640:0}))
+   ...hourly,rangeRevenueNet:640,
+   trend:hourly.trend.map((x,i)=>({...x,gross:i===9?640:0}))
   }}
  ];
  const chart=renderer.series(datasets,'revenue','hourly');
