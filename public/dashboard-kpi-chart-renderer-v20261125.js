@@ -121,7 +121,7 @@
    const label=small?
     '<path d="M '+fix(pointOnPie((p.from+p.to)/2,112).x)+' '+
      fix(pointOnPie((p.from+p.to)/2,112).y)+' L '+fix(mark.x)+' '+fix(mark.y)+
-     '" L '+fix(mark.x)+' '+fix(outsidePoint?.y??mark.y)+
+     ' L '+fix(mark.x)+' '+fix(outsidePoint?.y??mark.y)+
      '" fill="none" stroke="'+p.color+'" stroke-width="1.8"/>'+
     '<text x="'+fix(mark.x+(mark.x>158?7:-7))+'" y="'+fix(outsidePoint?.y??mark.y)+
      '" text-anchor="'+(mark.x>158?'start':'end')+'" class="dm-kpi-pie-outside" dominant-baseline="middle">'+text+'</text>':
@@ -133,7 +133,7 @@
     '<title>'+esc(p.name+' · '+formatShare(p.amount)+' · '+text)+'</title></g>'+label;
   }).join('');
   const legend=slices.map(p=>'<button type="button" class="dm-kpi-pie-legend-row" data-kpi-slice="'+
-   p.index+'" aria-label="'+esc(p.name+' '+peso(p.amount))+'">'+
+   p.index+'" aria-label="'+esc(p.name+' '+formatShare(p.amount))+'">'+
    '<span class="dm-kpi-pie-swatch" style="background:'+p.color+'"></span>'+
    '<span>'+esc(p.name)+'</span><strong>'+esc(formatShare(p.amount))+
    '</strong><small>'+p.share.toFixed(1)+'%</small></button>').join('');
