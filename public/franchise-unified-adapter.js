@@ -81,6 +81,8 @@
    }
    return live(target,'POST',{amount:data.amount});
   }
+  if(p==='/api/dashboard/chart-preferences'&&(method==='GET'||method==='PUT'))
+   return live('/api/live/dashboard/chart-preferences',method,method==='PUT'?data:undefined);
   if(p==='/api/dashboard'&&method==='GET'){
    const query=new URLSearchParams(url.searchParams);
    if(query.get('branchId'))query.set('branchId',String(scopedBranch(state,query.get('branchId'))));
