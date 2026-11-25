@@ -17,16 +17,16 @@ const localDay=()=>{
 const dayShift=(s,n)=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 const fmt=d=>d?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeZone:'Asia/Manila'}).format(new Date(d)):'—';
 const tabs=[['overview','Stock & Reorder'],['purchasing','Purchasing & Receiving'],['movements','Stock Movements'],
- ['batches','Batches & Expiry'],['fulfillment','Fulfillment'],['claims','Returns & Claims'],['finance','Warehouse Finance'],['staff','Staff & Roles']];
+ ['batches','Batches & Expiry'],['fulfillment','Fulfillment'],['claims','Returns & Claims'],['finance','Warehouse Finance'],['staff','Staff & Roles'],['password','My Password']];
 let active='overview',data=null,orders=[],staffList=[],loading=false,receiving=null,editingReorder=null,
  receiptRows=1,financeData=null,financeFrom=dayShift(localDay(),-29),financeTo=localDay();
 const base='/api/supply/office/warehouse';
 const allowedTabs=()=>{
  const role=data?.staffRole||'MAIN_OFFICE';
  const permissions={MAIN_OFFICE:['overview','purchasing','movements','batches','fulfillment','claims','finance','staff'],
-  WAREHOUSE_MANAGER:['overview','purchasing','movements','batches','fulfillment','claims','finance'],
-  PURCHASING:['overview','purchasing'],INVENTORY:['overview','purchasing','movements','batches','claims'],
-  FULFILLMENT:['overview','fulfillment','claims'],FINANCE:['overview','finance']};
+  WAREHOUSE_MANAGER:['overview','purchasing','movements','batches','fulfillment','claims','finance','password'],
+  PURCHASING:['overview','purchasing','password'],INVENTORY:['overview','purchasing','movements','batches','claims','password'],
+  FULFILLMENT:['overview','fulfillment','claims','password'],FINANCE:['overview','finance','password']};
  return permissions[role]||['overview'];
 };
 const tabHtml=()=>tabs.filter(([id])=>allowedTabs().includes(id)).map(([id,label])=>
@@ -255,11 +255,20 @@ function staff(){
   '<thead><tr><th>Staff member</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
   (list||empty('No warehouse staff accounts yet.',4))+'</tbody></table></div></section>';
 }
+function password(){
+ return '<section class="wh-section"><h3>Change My Password</h3>'+
+ '<p class="wh-muted">Changing your password invalidates existing staff sessions. You will sign in again with your new credentials.</p>'+
+ '<form id="whStaffPasswordForm" class="wh-form" style="max-width:420px">'+
+ '<label>Current password<input type="password" name="currentPassword" minlength="10" autocomplete="current-password" required/></label>'+
+ '<label>New password<input type="password" name="newPassword" minlength="10" maxlength="128" autocomplete="new-password" required/></label>'+
+ '<label>Confirm password<input type="password" name="confirmation" minlength="10" maxlength="128" autocomplete="new-password" required/></label>'+
+ '<button class="btn solid" type="submit">Update Password & Sign Out</button></form></section>';
+}
 function render(){
  if(!data)return;
  if(!allowedTabs().includes(active))active='overview';
  $('warehouseOperationsTabs').innerHTML=tabHtml();
- const body={overview,purchasing,movements,batches,finance,claims,fulfillment,staff}[active];
+ const body={overview,purchasing,movements,batches,finance,claims,fulfillment,staff,password}[active];
  $('warehouseOperationsBody').innerHTML=body?body():'';
 }
 async function changeTab(tab){
@@ -284,7 +293,9 @@ async function submit(form){
   await mutate('/staff','POST',d,'Warehouse employee created. Share the temporary password securely.');
   await loadStaff();render();
  }else if(id==='whStaffPasswordForm'){
-  await mutate('/change-password','POST',d,'Password changed. Sign in again.');
+  if(d.newPassword!==d.confirmation)throw Error('New passwords do not match.');
+  await request('/change-password','POST',d);
+  window.location.reload();
  }else if(id==='whSupplierForm'){
   if(!d.name?.trim())throw Error('Enter supplier name.');
   await mutate('/suppliers','POST',d,'Supplier registered.');
