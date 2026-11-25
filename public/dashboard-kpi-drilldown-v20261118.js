@@ -26,6 +26,86 @@
  summary.after(detail);
  const content=$('dmKpiContent'),title=$('dmKpiTitle'),scope=$('dmKpiScope'),back=$('dmKpiBack');
  let payload=null,context=null,current=null,activeRequest=0,previousFocus=null;
+ const chartKeys=Object.keys(titles);
+ const chartTypes=['line','bar','pie'];
+ let chartPreferences={defaultType:'line',overrides:{}},chartSettingsSession=null;
+ let chartSettingsLoading=0;
+ const chartTypeFor=key=>chartPreferences.overrides[key]||chartPreferences.defaultType;
+ const settingField=id=>document.getElementById(id);
+ function renderChartPreferences(){
+  const target=settingField('dmChartPreferenceTarget'),type=settingField('dmChartPreferenceType'),
+   override=settingField('dmChartPreferenceOverride');
+  if(!target||!type||!override)return;
+  const key=target.value;
+  override.disabled=key==='all';
+  if(key==='all'){
+   override.value='inherit';type.value=chartPreferences.defaultType;type.disabled=false;
+  }else{
+   override.value=chartPreferences.overrides[key]?'custom':'inherit';
+   type.value=chartTypeFor(key);type.disabled=override.value!=='custom';
+  }
+ }
+ function chartSettingsStatus(message){
+  const status=settingField('dmChartPreferenceStatus');
+  if(status)status.textContent=message;
+ }
+ const settingsTarget=settingField('dmChartPreferenceTarget'),
+  settingsType=settingField('dmChartPreferenceType'),
+  settingsOverride=settingField('dmChartPreferenceOverride'),
+  settingsSave=settingField('dmChartPreferenceSave');
+ settingsTarget?.addEventListener('change',renderChartPreferences);
+ settingsOverride?.addEventListener('change',()=>{
+  const key=settingsTarget?.value;
+  if(!chartKeys.includes(key))return;
+  if(settingsOverride.value==='inherit')delete chartPreferences.overrides[key];
+  else chartPreferences.overrides[key]=settingsType?.value||chartPreferences.defaultType;
+  renderChartPreferences();
+  chartSettingsStatus('Unsaved changes. Select Save chart preferences.');
+ });
+ settingsType?.addEventListener('change',()=>{
+  if(!chartTypes.includes(settingsType.value))return;
+  if(settingsTarget?.value==='all')chartPreferences.defaultType=settingsType.value;
+  else if(chartKeys.includes(settingsTarget?.value)&&settingsOverride?.value==='custom')
+   chartPreferences.overrides[settingsTarget.value]=settingsType.value;
+  chartSettingsStatus('Unsaved changes. Select Save chart preferences.');
+ });
+ settingsSave?.addEventListener('click',async()=>{
+  if(!context||context.role!=='Admin'||!valid())return;
+  settingsSave.disabled=true;
+  chartSettingsStatus('Saving your chart preferences…');
+  try{
+   const result=await context.request('/api/dashboard/chart-preferences',{
+    method:'PUT',body:chartPreferences
+   });
+   if(!valid())return;
+   chartPreferences={
+    defaultType:chartTypes.includes(result.defaultType)?result.defaultType:'line',
+    overrides:result.overrides||{}
+   };
+   renderChartPreferences();
+   chartSettingsStatus('Saved for this Owner account. Your dashboard drill-downs will use these defaults.');
+  }catch(error){if(valid())chartSettingsStatus('Unable to save: '+(error.message||'Please retry.'))}
+  finally{settingsSave.disabled=false;}
+ });
+ async function loadChartPreferences(){
+  if(!context||context.role!=='Admin'||!valid())return;
+  const session=context.session,run=++chartSettingsLoading;
+  chartSettingsStatus('Loading your saved chart defaults…');
+  try{
+   const pref=await context.request('/api/dashboard/chart-preferences');
+   if(run!==chartSettingsLoading||!valid()||context.session!==session)return;
+   chartPreferences={
+    defaultType:chartTypes.includes(pref?.defaultType)?pref.defaultType:'line',
+    overrides:Object.fromEntries(Object.entries(pref?.overrides||{}).filter(
+     ([key,type])=>chartKeys.includes(key)&&chartTypes.includes(type)))
+   };
+   renderChartPreferences();
+   chartSettingsStatus('Saved defaults loaded. Select a category to customize its chart.');
+  }catch(error){
+   if(run===chartSettingsLoading&&valid())
+    chartSettingsStatus('Could not load chart defaults: '+(error.message||'Please retry.'));
+  }
+ }
  const valid=()=>{
   if(!payload||!context||app.classList.contains('hidden')||app.inert||!root.classList.contains('active'))return false;
   return !window.donmacSessionGeneration||window.donmacSessionGeneration()===context.session;
@@ -448,7 +528,7 @@
  }
  async function open(key,source){
   if(!titles[key]||!valid())return;
-  if(source){previousFocus=source;chosenChartType='line';}
+  if(source){previousFocus=source;chosenChartType=chartTypeFor(key);}
   const run=++activeRequest;
   current=key;
   const period=selectedPeriod(key);
@@ -567,6 +647,13 @@
  }
  function sync(data,nextContext){
   payload=data;
+  const incoming=nextContext?.session;
+  if(incoming!==chartSettingsSession){
+   chartSettingsSession=incoming;
+   chartPreferences={defaultType:'line',overrides:{}};
+   renderChartPreferences();
+   if(nextContext?.role==='Admin')Promise.resolve().then(loadChartPreferences);
+  }
   context={...nextContext,branches:Array.isArray(nextContext?.branches)?nextContext.branches.slice():[],
    permissions:Array.isArray(nextContext?.permissions)?nextContext.permissions.slice():[]};
   if(current&&valid())open(current,null);
