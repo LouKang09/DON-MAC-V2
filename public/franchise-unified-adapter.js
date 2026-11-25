@@ -220,13 +220,15 @@
   }
   if((p==='/api/reports/sales'||p==='/api/reports/costing')&&method==='GET'){
    const requested=String(url.searchParams.get('period')||'daily');
-   const period={daily:'day',weekly:'week',monthly:'month'}[requested];
-   if(!period)throw fail('Choose Daily, Weekly, or Monthly for this isolated franchise report.',403);
+   const period={daily:'day',weekly:'week',monthly:'month',yearly:'year'}[requested];
+   if(!period)throw fail('Choose Daily, Weekly, Monthly, or Yearly.',400);
+   const reportParams=new URLSearchParams({range:period,branchId:String(scopedBranch(state,url.searchParams.get('branchId')))});
+   if(url.searchParams.get('date'))reportParams.set('date',url.searchParams.get('date'));
+   const reportQuery=reportParams.toString();
    // Server checks the cashier's grant and maximum history duration.
-   const raw=await live('/api/live/report?range='+period+'&branchId='+encodeURIComponent(scopedBranch(state)));
+   const raw=await live('/api/live/report?'+reportQuery);
    if(p==='/api/reports/costing'){
-    return live('/api/live/report/costing?range='+period+
-      '&branchId='+encodeURIComponent(scopedBranch(state)));
+    return live('/api/live/report/costing?'+reportQuery);
    }
    const totalProductGross=(raw.products||[]).reduce((n,x)=>n+Number(x.gross||0),0);
    const ratio=totalProductGross>0?Number(raw.actual||0)/totalProductGross:0;
