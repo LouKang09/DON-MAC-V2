@@ -1,0 +1,95 @@
+/* Central Warehouse. Compact desktop/tablet controls and scrollable records. */
+#page-warehouse .warehouse-management{min-width:0;padding:clamp(16px,2.1vw,24px)}
+#page-warehouse .warehouse-management>.panel-head{align-items:flex-start;gap:14px;flex-wrap:wrap}
+#page-warehouse .warehouse-management>.panel-head h2{margin:4px 0;color:#104d33}
+#page-warehouse .warehouse-management>.panel-head .muted{max-width:82ch}
+#page-warehouse .warehouse-ops-notice{color:#347353;font-size:.75rem;min-height:18px;line-height:1.5;margin:8px 0 12px}
+#page-warehouse .warehouse-ops-notice.error{color:#ad333d}
+#page-warehouse .warehouse-ops-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:8px;
+ background:#f2f8f2;border:1px solid #dce8dd;border-radius:13px;margin:12px 0 20px}
+#page-warehouse .warehouse-op-tab{border:1px solid transparent;background:transparent;color:#49654f;
+ padding:10px 13px;min-height:39px;font-size:.75rem;font-weight:760;border-radius:10px;white-space:normal;line-height:1.2}
+#page-warehouse .warehouse-op-tab:hover,#page-warehouse .warehouse-op-tab:focus-visible{background:#e2f2e7;color:#135a3b}
+#page-warehouse .warehouse-op-tab.active{color:white;background:#0b6640;border-color:#0b6640}
+#page-warehouse .warehouse-ops-body{display:grid;gap:16px;min-width:0}
+#page-warehouse .wh-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+#page-warehouse .wh-metric{min-width:0;border-radius:13px;border:1px solid #d7e8db;
+ background:linear-gradient(130deg,#eff9f1,#fff);padding:14px 15px;display:grid;gap:4px}
+#page-warehouse .wh-metric small{font-size:.71rem;font-weight:800;color:#3b6650}
+#page-warehouse .wh-metric strong{font-size:clamp(1.1rem,1.8vw,1.6rem);color:#0b633c;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+#page-warehouse .wh-metric>span{font-size:.67rem;color:#7d9080}
+#page-warehouse .wh-section{min-width:0;border:1px solid #d9e8db;border-radius:15px;background:white;padding:clamp(14px,1.8vw,20px)}
+#page-warehouse .wh-section h3{font-size:1rem;color:#134e34;margin:0 0 12px}
+#page-warehouse .wh-section h4{font-size:.83rem;color:#1c543b;margin:0 0 10px}
+#page-warehouse .wh-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#page-warehouse .wh-head p{margin:0 0 12px;line-height:1.5;font-size:.73rem;color:#718474}
+#page-warehouse .wh-muted{font-size:.75rem;color:#758579;line-height:1.65}
+#page-warehouse .wh-footnote{font-size:.71rem;color:#78917d;line-height:1.6;margin:12px 0 0}
+#page-warehouse .wh-grid-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+#page-warehouse .wh-table-wrap{max-width:100%;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e0eae2;border-radius:11px}
+#page-warehouse .wh-table-wrap table{width:100%;min-width:730px;border-collapse:collapse}
+#page-warehouse .wh-table-wrap th,#page-warehouse .wh-table-wrap td{border-bottom:1px solid #e6ede6;vertical-align:middle;text-align:left;padding:11px 12px;font-size:.74rem;color:#355d46;line-height:1.45}
+#page-warehouse .wh-table-wrap thead th{font-size:.68rem;white-space:nowrap;background:#f6faf6;color:#52715c;text-transform:uppercase;letter-spacing:.02em}
+#page-warehouse .wh-table-wrap tbody th{font-weight:750;max-width:235px;overflow-wrap:anywhere;color:#174b33}
+#page-warehouse .wh-table-wrap tbody th small{display:block;margin:3px 0 0;color:#839283;font-weight:500}
+#page-warehouse .wh-table-wrap tbody td:not(:last-child){font-variant-numeric:tabular-nums}
+#page-warehouse .wh-table-wrap tbody tr:hover{background:#f8fbf8}
+#page-warehouse .wh-table-wrap tbody td small{display:block;overflow-wrap:anywhere;font-size:.68rem;color:#829184;margin-top:4px}
+#page-warehouse .wh-pill{display:inline-block;border-radius:99px;padding:5px 8px;font-size:.67rem;font-weight:800;white-space:nowrap}
+#page-warehouse .wh-pill.neutral{background:#edf0ed;color:#6a796b}
+#page-warehouse .wh-pill.warning{background:#fff1d6;color:#926013}
+#page-warehouse .wh-pill.danger{background:#fde7e4;color:#ae4333}
+#page-warehouse .wh-pill.ok{background:#e4f4e7;color:#23734c}
+#page-warehouse .wh-tiny{min-height:33px;padding:6px 9px;font-size:.69rem;border-radius:8px;white-space:nowrap}
+#page-warehouse .wh-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;align-items:end;max-width:100%}
+#page-warehouse .wh-form label{font-size:.72rem;color:#46654f;min-width:0;gap:6px}
+#page-warehouse .wh-form :is(input,select,textarea),#page-warehouse .wh-receive-line :is(input,select){min-width:0;width:100%;max-width:100%;box-sizing:border-box;min-height:40px;font-size:.76rem}
+#page-warehouse .wh-form label:has(textarea),#page-warehouse .wh-form .wh-wide{grid-column:1/-1}
+#page-warehouse .wh-form>.btn{justify-self:start;min-height:41px;white-space:normal}
+#page-warehouse .wh-form.wh-horizontal{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:12px;align-items:end}
+#page-warehouse .wh-horizontal label{flex:0 1 170px;max-width:185px}
+#page-warehouse .wh-line-head{display:flex;justify-content:space-between;gap:10px;align-items:center;grid-column:1/-1}
+#page-warehouse .wh-line-head h4{margin:0}
+#page-warehouse #whPurchaseLines{display:grid;gap:9px;grid-column:1/-1}
+#page-warehouse .wh-line{display:grid;grid-template-columns:minmax(160px,2fr) minmax(78px,1fr) minmax(105px,1fr) 37px;gap:8px;align-items:end;background:#f7fbf8;border-radius:10px;padding:8px}
+#page-warehouse .wh-line label{font-size:.69rem}
+#page-warehouse .wh-line button{min-height:40px;font-size:1rem;padding:4px}
+#page-warehouse .wh-subform{padding:15px;background:#f4faf5;border:1px solid #cfe4d5;border-radius:12px;margin-top:14px;min-width:0}
+#page-warehouse form.wh-subform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end}
+#page-warehouse .wh-subform h4,#page-warehouse .wh-subform>.wh-actions{grid-column:1/-1}
+#page-warehouse .wh-receive-line{display:grid;grid-template-columns:minmax(130px,1.5fr) minmax(70px,.7fr) minmax(120px,1.1fr) minmax(120px,.9fr);gap:10px;align-items:end;margin:10px 0}
+#page-warehouse .wh-receive-line strong{font-size:.76rem;color:#214e36}
+#page-warehouse .wh-receive-line strong small{display:block;color:#839087;margin-top:4px}
+#page-warehouse .wh-receive-line label{font-size:.7rem;color:#486e51;min-width:0}
+#page-warehouse .wh-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+#page-warehouse .wh-legend{background:#f1f8f2;color:#557861;font-size:.71rem;line-height:1.7;padding:14px;border-radius:9px}
+#page-warehouse .wh-timeline{border-left:3px solid #209364;margin:12px 0 12px 5px;padding:9px 12px;color:#41664d;background:#f6faf7;border-radius:0 8px 8px 0}
+#page-warehouse .wh-timeline strong{font-size:.75rem;color:#165538}
+#page-warehouse .wh-timeline span{font-size:.69rem;color:#829588;float:right}
+#page-warehouse .wh-timeline p{margin:8px 0;font-size:.73rem;line-height:1.5}
+#page-warehouse .wh-timeline small{font-size:.68rem;overflow-wrap:anywhere}
+@media(max-width:1160px){
+ #page-warehouse .wh-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #page-warehouse .wh-grid-two{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:720px){
+ #page-warehouse .warehouse-management{padding:14px}
+ #page-warehouse .warehouse-ops-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ #page-warehouse .warehouse-op-tab{flex:0 0 auto;white-space:nowrap}
+ #page-warehouse .wh-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #page-warehouse .wh-section{padding:12px}
+ #page-warehouse .wh-receive-line{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #page-warehouse .wh-receive-line>strong{grid-column:1/-1}
+ #page-warehouse .wh-line{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #page-warehouse .wh-line label:first-child{grid-column:1/-1}
+ #page-warehouse .wh-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:450px){
+ #page-warehouse .wh-metrics{grid-template-columns:minmax(0,1fr)}
+ #page-warehouse .wh-form{grid-template-columns:minmax(0,1fr)}
+ #page-warehouse .wh-form label:has(textarea),#page-warehouse .wh-form .wh-wide{grid-column:1}
+ #page-warehouse .wh-receive-line{grid-template-columns:minmax(0,1fr)}
+ #page-warehouse .wh-line{grid-template-columns:minmax(0,1fr)}
+ #page-warehouse .wh-line label:first-child{grid-column:1}
+ #page-warehouse .wh-horizontal label{max-width:100%;width:100%;flex:1 1 100%}
+}
