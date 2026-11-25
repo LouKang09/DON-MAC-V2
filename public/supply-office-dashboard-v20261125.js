@@ -50,6 +50,7 @@ function cards(d){
   {label:'Requests Received',value:num(t.ordersRequested),detail:'New franchise requests in selected date range',to:'warehouseBacklogHeading'},
   {label:'Units Distributed',value:num(t.units),detail:'Total fulfilled supply packs / units',m:'units'},
   {label:'Requesting Franchisees',value:num(t.requestingFranchisees),detail:'Unique owners supplied in period',to:'warehouseBranchSection'},
+  {label:'Peak Distribution Day',value:t.peakDistributionDay||'No deliveries',detail:num(t.peakDistributionOrders)+' delivered orders on busiest day',m:'orders'},
   {label:'Urgent Orders',value:num(t.urgentOrders),detail:'Delivered urgent requests',m:'urgentOrders'},
   {label:'Open Requests',value:num(t.openRequests),detail:'Current approval + fulfillment backlog',to:'warehouseBacklogHeading'},
   {label:'Out-of-stock SKUs',value:num(t.outOfStockSkus),detail:'Current active warehouse catalog stockouts',to:'warehouseStockSection'},
