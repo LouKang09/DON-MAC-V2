@@ -128,3 +128,6 @@
 @media(prefers-reduced-motion:reduce){
  #page-dashboard .warehouse-kpi,#page-dashboard .warehouse-pie-slice circle{transition:none}
 }
+
+#page-dashboard .warehouse-shortcut{width:auto;max-width:100%;margin-top:10px}
+#page-dashboard .warehouse-detail-card>.warehouse-shortcut{margin:0 0 14px}
