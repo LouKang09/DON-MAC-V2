@@ -63,7 +63,7 @@
     </section>
     <section class="warehouse-chart-panel" aria-labelledby="warehouseBacklogHeading">
       <div class="warehouse-chart-header"><div><h3 id="warehouseBacklogHeading">Fulfillment Queue</h3><p class="muted">Open requests right now, independent of report dates.</p></div></div>
-      <div class="warehouse-backlog" id="warehouseBacklog"></div>
+      <div class="warehouse-backlog" id="warehouseBacklog"></div><button type="button" class="btn outline warehouse-shortcut" data-warehouse-nav="requests">Open Purchase Requests</button>
     </section>
   </div>
   <div class="warehouse-breakdowns">
@@ -77,7 +77,7 @@
     </section>
     <section class="warehouse-detail-card" id="warehouseStockSection">
       <div class="warehouse-section-title"><h3>Warehouse Inventory Exceptions</h3><p class="muted">Current stockouts and missing supplier costs. Reorder thresholds are not configured yet.</p></div>
-      <div class="warehouse-exceptions"><div><h4>Out of Stock</h4><div id="warehouseStockAlerts"></div></div><div><h4>Missing Purchase Cost</h4><div id="warehouseMissingCosts"></div></div></div>
+      <button type="button" class="btn outline warehouse-shortcut" data-warehouse-nav="catalog">Manage Supply Catalog</button><div class="warehouse-exceptions"><div><h4>Out of Stock</h4><div id="warehouseStockAlerts"></div></div><div><h4>Missing Purchase Cost</h4><div id="warehouseMissingCosts"></div></div></div>
     </section>
   </div>
 </section><details class="panel warehouse-lifetime"><summary>All-time distribution snapshot <small>Lifetime totals · independent of date filters</small></summary><div class="distribution-metrics"><div><small>Completed distributions</small><strong id="distOrders">—</strong></div><div><small>Units distributed</small><strong id="distUnits">—</strong></div><div><small>Franchisees who requested supplies</small><strong id="distFranchisees">—</strong></div><div><small>Supply distribution revenue</small><strong id="distRevenue">—</strong></div><div><small>Gross profit before overhead</small><strong id="distNet">—</strong></div><div><small>Top requested product</small><strong id="distTopName">—</strong></div></div><p class="distribution-note" id="distCostNote">Net revenue needs a recorded purchase cost for every delivered item.</p><div class="distribution-top-products"><h3>Most requested supplies</h3><div id="distTopProducts">No requests yet.</div></div></details></section>
