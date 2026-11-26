@@ -142,7 +142,7 @@
   repositionBilling();
  }
  function officeSetup(){
-  move($('officeRefresh'),'#page-requests .panel-head');
+  move($('officeRefresh'),'#page-requests .request-search-refresh');
   repositionBilling();
  }
  function adminSetup(){
