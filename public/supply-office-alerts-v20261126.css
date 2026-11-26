@@ -154,3 +154,12 @@
  #officeApp .office-alert-bell.has-unread:hover>.dm-ua-native,
  #officeApp .office-alert-bell.has-unread:focus-visible>.dm-ua-native{animation:none}
 }
+
+#officeApp #page-dashboard .warehouse-kpi-static{
+ cursor:default!important;
+}
+#officeApp #page-dashboard .warehouse-kpi-static:is(:hover,:focus-visible){
+ transform:none!important;box-shadow:none!important;
+ border-color:#d4e6d9!important;
+}
+#officeApp #page-dashboard .warehouse-kpi-static .warehouse-kpi-arrow{display:none!important}
