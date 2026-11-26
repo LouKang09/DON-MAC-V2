@@ -118,7 +118,10 @@ function selectPage(name){
  $('officePageHeading').textContent=({dashboard:'Central Warehouse Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',warehouse:'Central Warehouse',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
  $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
- if(name==='dashboard')loadDistributionDashboard();
+ if(name==='dashboard'){
+  loadDistributionDashboard();
+  window.donmacWarehouseAnalytics?.refresh?.();
+ }
  if(name==='distribution')loadDistributionHistory();
  if(name==='billing')window.donmacTenantBilling?.load(true);
  if(name==='warehouse')window.donmacWarehouse?.load();
