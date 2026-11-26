@@ -35,7 +35,8 @@
  const mark=(element,name,existing)=>{
   if(!element||!name||element.dataset.dmUaMounted==='ready')return false;
   if(element.dataset.dmIcon&&element.dataset.dmIcon!==name)return false;
-  const native=existing||element.querySelector(':scope > svg:not(.dm-ua-icon svg)');
+  if(element.dataset.dmIcon===name&&element.querySelector(':scope > .dm-ua-native,:scope > .dm-ua-icon'))return false;
+  const native=existing||element.querySelector(':scope > svg');
   element.dataset.dmIcon=name;
   if(native){
    native.classList.add('dm-ua-native');
