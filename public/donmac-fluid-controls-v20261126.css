@@ -307,3 +307,48 @@
 @media(prefers-reduced-motion:reduce){
  #officeApp #page-dashboard .warehouse-selector-chevron{transition:none!important;}
 }
+
+/* POS operational toolbars: keep refresh glyph geometry independent of
+ * neighboring text, breakpoints and browser zoom. Do not affect checkout. */
+#app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+ :is(.card-head,.section-header,.dm-refresh-heading,.inv-toolbar)
+ :is(button.dm-refresh,button[data-dm-icon="refresh"]) {
+ box-sizing:border-box!important;display:inline-flex!important;
+ align-items:center!important;justify-content:center!important;
+ width:2.5625rem!important;height:2.5625rem!important;
+ min-width:2.5625rem!important;min-height:2.5625rem!important;
+ max-width:2.5625rem!important;max-height:2.5625rem!important;
+ flex:0 0 2.5625rem!important;padding:0!important;
+ border-radius:.7rem!important;
+}
+#app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+ :is(.card-head,.section-header,.dm-refresh-heading,.inv-toolbar)
+ :is(button.dm-refresh,button[data-dm-icon="refresh"])
+ :is(.dm-ua-icon,svg.dm-ua-native) {
+ display:inline-grid!important;place-items:center!important;
+ box-sizing:border-box!important;width:1.375rem!important;height:1.375rem!important;
+ min-width:1.375rem!important;min-height:1.375rem!important;
+ max-width:1.375rem!important;max-height:1.375rem!important;
+ flex:0 0 1.375rem!important;margin:0!important;
+}
+#app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+ :is(.card-head,.section-header,.dm-refresh-heading) :is(input[type="search"],.search-input) {
+ box-sizing:border-box!important;flex:0 1 255px!important;
+ width:min(100%,255px)!important;min-width:0!important;max-width:100%!important;
+}
+/* Touch devices get comfortable hit targets; the search retains space before
+ * the trailing refresh icon rather than pushing it out of the card. */
+@media (max-width:699px){
+ #app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+  :is(.card-head,.section-header,.dm-refresh-heading) :is(input[type="search"],.search-input){
+  flex:1 1 175px!important;width:auto!important;max-width:300px!important;
+ }
+ #app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+  :is(.card-head,.section-header,.dm-refresh-heading,.inv-toolbar)
+  :is(button.dm-refresh,button[data-dm-icon="refresh"]){
+  width:2.375rem!important;height:2.375rem!important;
+  min-width:2.375rem!important;min-height:2.375rem!important;
+  max-width:2.375rem!important;max-height:2.375rem!important;
+  flex:0 0 2.375rem!important;
+ }
+}
