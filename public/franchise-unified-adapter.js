@@ -212,7 +212,9 @@
   const receiptKey=p.startsWith('/api/sales/')?p.slice('/api/sales/'.length):'';
   const saleDetail=receiptKey.length===21 && /^BR-[A-F0-9]{18}/.test(receiptKey)?[null,receiptKey]:null;
   if(saleDetail&&method==='GET'){
-   const d=await live('/api/live/transactions/'+saleDetail[1]+qs(selected()));
+   const explicit=url.searchParams.get('branchId');
+   const suffix=explicit?qs(scopedBranch(state,explicit)):state.user?.role==='Admin'?'':qs(selected());
+   const d=await live('/api/live/transactions/'+saleDetail[1]+suffix);
    // Show the scoped receipt's actual stock movements and stored/derived audit
    // history. Never erase server-authoritative live checkout data.
    return{...d,items:(d.items||[]).map(x=>({...x,type:x.kind,unitPrice:x.price,
