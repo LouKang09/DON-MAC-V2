@@ -2021,7 +2021,7 @@ async function handleOfficeApi(req,res,p,method){
     const params=new URL(req.url,'http://localhost').searchParams;
     return json(res,200,await supplyAnalytics.analytics(db,{
       period:params.get('period')||'last30',from:params.get('from'),to:params.get('to'),
-      branchId:params.get('branchId')||'all'
+      branchId:params.get('branchId')||'all',franchiseeId:params.get('franchiseeId')||'all'
     }),safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='GET'&&p==='/api/supply/office/distributions'){
@@ -2033,6 +2033,14 @@ async function handleOfficeApi(req,res,p,method){
   if(method==='POST'&&p==='/api/supply/office/alerts/read'){
     const body=await readJson(req);
     return json(res,200,await supplyOfficeOps.markRead(db,body.keys),safeHeaders());
+  }
+  if(method==='GET'&&p==='/api/supply/office/missing-costs')
+    return json(res,200,await supplyOfficeOps.missingCosts(db),safeHeaders({'Cache-Control':'no-store'}));
+  const costLine=p.match(/^\/api\/supply\/office\/missing-costs\/([a-f0-9-]{36})$/i);
+  if(method==='POST'&&costLine){
+    const body=await readJson(req);
+    return json(res,200,await supplyOfficeOps.reconcileCost(db,costLine[1],body.unitCost,
+      process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
   }
   if(method==='GET'&&p==='/api/supply/office/system-logs'){
     const q=new URL(req.url,'http://localhost').searchParams;
