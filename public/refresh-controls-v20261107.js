@@ -91,13 +91,24 @@
     portal==='admin'?table.closest('.main-card'):
     (table.closest('.view .card, .view .panel')||table.closest('.view .table-wrap, .view .table-scroll'));
   if(!panel)return;
+  // The detail panel has a Close action and separate tabs. A second table-
+  // generated refresh beside Close makes narrow-window layouts overflow.
+  // Refresh its data from the directory header instead.
+  if(portal==='office'&&panel.id==='franchiseDetailPanel')return;
   // One refresh per table container; reuse existing controls and event listeners.
   if(panel.querySelector(':scope > .dm-refresh-toolbar, :scope > .dm-refresh-heading > .dm-refresh'))return;
   if(panel.querySelector('button.dm-refresh'))return;
   const action=panelAction(panel),button=makeRefresh(action);
   button.dataset.dmTableRefresh='1';
   let head=findHeading(panel,table);
-  if(head){head.classList.add('dm-refresh-heading');head.appendChild(button);}
+  if(head){
+   head.classList.add('dm-refresh-heading');
+   // Search and refresh are ONE action cluster at every container width,
+   // not separate flex items that jump below the title on small tablets.
+   const franchiseActions=portal==='office'&&panel.closest('#page-franchisees')?
+    panel.querySelector(':scope > .panel-head > .franchise-directory-actions'):null;
+   (franchiseActions||head).appendChild(button);
+  }
   else {
    const bar=document.createElement('div');bar.className='dm-refresh-toolbar';
    bar.appendChild(button);
