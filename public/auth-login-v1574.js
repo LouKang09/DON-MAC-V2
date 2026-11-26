@@ -110,6 +110,22 @@
  }
  regUsername.addEventListener('blur',usernameAvailable);
  regUsername.addEventListener('input',()=>{++checkSeq;available=false;message('regUsernameStatus','Check username availability before submitting.');});
+ const regEmail=$('regEmail');
+ let emailSeq=0,emailTimer;
+ async function checkSignupEmail(){
+  clearTimeout(emailTimer);
+  const value=regEmail.value.trim(),seq=++emailSeq;
+  if(!value||!regEmail.checkValidity()){message('regEmailStatus','Enter a valid email address.',true);return false;}
+  message('regEmailStatus','Checking email availability…');
+  try{
+   const result=await post('/api/auth/email-available',{email:value});
+   if(seq!==emailSeq||regEmail.value.trim()!==value)return false;
+   message('regEmailStatus',result.available?'Email is available.':result.reason||'This email is already registered.',!result.available);
+   return result.available===true;
+  }catch(err){if(seq===emailSeq)message('regEmailStatus',err.message||'Unable to check email. Try again.',true);return false;}
+ }
+ regEmail.addEventListener('input',()=>{++emailSeq;clearTimeout(emailTimer);message('regEmailStatus','');if(regEmail.value&&regEmail.checkValidity())emailTimer=setTimeout(checkSignupEmail,650);});
+ regEmail.addEventListener('blur',()=>{if(regEmail.value)void checkSignupEmail();});
  const signupPlanDetails={
   FREE:{title:'Free Plan',badge:'PLAN REQUEST',summary:'Entry-level plan. Availability and included features will be confirmed by Admin Control.',features:[]},
   ENTERPRISE:{title:'Enterprise Plan',badge:'CUSTOM PLAN',summary:'Tailored business plan. Pricing and capabilities will be confirmed by Admin Control.',features:[]},
@@ -158,6 +174,7 @@
   btn.disabled=true;
   try{
    if(!available&&!(await usernameAvailable()))throw new Error('Choose an available username.');
+   if(!(await checkSignupEmail()))throw new Error('Use an available email address or try again.');
    const pw=$('regVerifyPassword').value;
    if(pw.length<10||pw.length>128||!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw))throw new Error('Use 10–128 characters with at least one letter and one number.');
    if(pw!==$('regVerifyConfirmPassword').value)throw new Error('Passwords do not match.');
