@@ -352,3 +352,138 @@
   flex:0 0 2.375rem!important;
  }
 }
+
+/* Franchise Purchase Requests: a responsive header identical in interaction
+ * to Franchisee Profile. Controls are right-aligned, not centered under text. */
+#officeApp #page-requests .request-orders-panel {
+ container:dm-request-orders / inline-size;
+ min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-requests .request-orders-heading {
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) auto!important;
+ align-items:start!important;justify-content:stretch!important;
+ gap:clamp(10px,1.4vw,20px)!important;
+ width:100%!important;min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-requests .request-orders-title {
+ min-width:0!important;max-width:100%!important;
+ overflow-wrap:anywhere;
+}
+#officeApp #page-requests .request-orders-title h2 {
+ margin:0 0 5px!important;line-height:1.25!important;
+ font-size:clamp(1.06rem,1.15vw + .5rem,1.35rem)!important;
+}
+#officeApp #page-requests .request-orders-title .muted {
+ max-width:52ch;margin:0!important;line-height:1.5!important;
+}
+#officeApp #page-requests .request-header-actions {
+ display:flex!important;flex-flow:row nowrap!important;
+ align-items:center!important;justify-content:flex-end!important;
+ justify-self:end!important;align-self:start!important;
+ width:auto!important;min-width:0!important;max-width:100%!important;
+ gap:10px!important;margin:0!important;
+}
+#officeApp #page-requests .request-status-wrap {
+ display:flex!important;align-items:center!important;
+ flex:0 0 148px!important;min-width:0!important;width:148px!important;
+ max-width:155px!important;
+}
+#officeApp #page-requests #officeStatusFilter {
+ box-sizing:border-box!important;display:block!important;
+ appearance:none!important;-webkit-appearance:none!important;
+ width:100%!important;max-width:100%!important;min-width:0!important;
+ height:42px!important;min-height:42px!important;
+ padding:8px 34px 8px 12px!important;
+ border:1px solid #ccdfd3!important;border-radius:999px!important;
+ background-color:#fff!important;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231b603e' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;
+ background-repeat:no-repeat!important;background-size:16px 16px!important;
+ background-position:right 11px center!important;
+ font-size:clamp(.75rem,.71rem + .1vw,.875rem)!important;
+ color:#214936!important;line-height:1.3!important;
+}
+#officeApp #page-requests .request-search-refresh.dm-refresh-heading,
+#officeApp #page-requests .request-search-refresh {
+ display:flex!important;flex-flow:row nowrap!important;
+ align-items:center!important;justify-content:flex-end!important;
+ flex:0 1 auto!important;width:auto!important;
+ min-width:0!important;max-width:100%!important;gap:10px!important;
+ flex-wrap:nowrap!important;
+}
+#officeApp #page-requests #officeSearch {
+ box-sizing:border-box!important;display:block!important;
+ flex:0 1 235px!important;width:235px!important;min-width:0!important;
+ max-width:235px!important;height:42px!important;min-height:42px!important;
+ padding:9px 16px!important;margin:0!important;
+ border:1px solid #ccdfd3!important;border-radius:999px!important;
+ background:#fff!important;color:#214936!important;
+ font-size:clamp(.75rem,.71rem + .1vw,.875rem)!important;
+ line-height:1.25!important;text-overflow:ellipsis;
+}
+#officeApp #page-requests .request-search-refresh > #officeRefresh.dm-refresh {
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 41px!important;box-sizing:border-box!important;
+ width:41px!important;min-width:41px!important;max-width:41px!important;
+ height:41px!important;min-height:41px!important;max-height:41px!important;
+ margin:0!important;align-self:center!important;
+ border-radius:11px!important;
+}
+/* Once the content panel narrows, prioritize Search + Refresh on the upper
+ * right. Keep status immediately below instead of pushing Search beneath
+ * the section title. */
+@container dm-request-orders (max-width:880px) {
+ #officeApp #page-requests .request-header-actions {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  justify-items:end!important;row-gap:8px!important;
+ }
+ #officeApp #page-requests .request-search-refresh {
+  grid-row:1!important;max-width:100%!important;
+ }
+ #officeApp #page-requests .request-status-wrap {
+  grid-row:2!important;
+  width:148px!important;justify-self:end!important;
+ }
+ #officeApp #page-requests #officeSearch {
+  flex:1 1 190px!important;width:clamp(150px,21vw,235px)!important;
+  max-width:235px!important;
+ }
+}
+@container dm-request-orders (max-width:580px) {
+ #officeApp #page-requests .request-orders-heading {
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #officeApp #page-requests .request-header-actions {
+  grid-template-columns:minmax(0,1fr) auto!important;
+  width:100%!important;justify-self:stretch!important;column-gap:10px!important;
+  align-items:center!important;
+ }
+ #officeApp #page-requests .request-search-refresh {
+  grid-row:1!important;grid-column:1/-1!important;
+  justify-self:end!important;min-width:0!important;
+ }
+ #officeApp #page-requests #officeSearch {
+  flex:1 1 auto!important;width:min(100%,235px)!important;
+  max-width:235px!important;
+ }
+ #officeApp #page-requests .request-status-wrap {
+  grid-row:2!important;grid-column:1/-1!important;
+  justify-self:end!important;
+ }
+}
+@container dm-request-orders (max-width:380px) {
+ #officeApp #page-requests .request-search-refresh {width:100%!important;}
+ #officeApp #page-requests #officeSearch {
+  flex:1 1 0!important;width:auto!important;max-width:none!important;
+ }
+}
+/* Prevent a stale refresh from appearing as a detached third child of
+ * the purchase request heading after script-driven DOM relocation. */
+#officeApp #page-requests .request-orders-heading > #officeRefresh {
+ display:none!important;
+}
+@media screen and (max-width:720px) {
+ #officeApp #page-requests #officeSearch {font-size:1rem!important;}
+ #officeApp #page-requests #officeStatusFilter {font-size:1rem!important;}
+}
