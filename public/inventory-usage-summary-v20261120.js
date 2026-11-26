@@ -7,6 +7,7 @@
   chart=$('inventoryUsageChartType'),start=$('inventoryUsageStart'),end=$('inventoryUsageEnd'),
   feedback=$('inventoryUsageFeedback'),results=$('inventoryUsageResults');
  const colors=['#087e4a','#e39b47','#2591a1','#8a6abe','#cf6c63','#698f45','#b986b0','#4d86bb'];
+ let tablePage=1;
  let data=null,requestId=0,active=null,currentBranch='',loading=false,lastKey='';
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const currency=x=>'₱'+Number(x||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -34,7 +35,7 @@
  function clearSensitiveUsage(){
   ++requestId;
   if(active)active.abort();
-  active=null;data=null;lastKey='';currentBranch='';loading=false;
+  active=null;data=null;tablePage=1;$('inventoryUsagePages')?.replaceChildren();lastKey='';currentBranch='';loading=false;
   if(usageBranch){usageBranch.replaceChildren(new Option('Choose branch',''));usageBranch.dataset.signature='';}
   results.hidden=true;
   $('inventoryUsageChart').replaceChildren();
@@ -192,7 +193,9 @@
   if(!data)return;
   const term=String($('inventoryUsageSearch').value||'').trim().toLocaleLowerCase();
   const filtered=data.ingredients.filter(x=>(x.name+' '+x.uom+' '+x.products.map(p=>p.name).join(' ')).toLocaleLowerCase().includes(term));
-  const html=filtered.map((r,i)=>{
+  const pages=Math.max(1,Math.ceil(filtered.length/5));
+  tablePage=Math.max(1,Math.min(tablePage,pages));
+  const html=filtered.slice((tablePage-1)*5,tablePage*5).map((r,i)=>{
    const products=r.products||[],known=products.filter(p=>Number(p.qty)>0),
     count=known.reduce((sum,p)=>sum+Number(p.qty||0),0);
    const detail=products.length?
@@ -211,6 +214,8 @@
   $('inventoryUsageBody').innerHTML=html||'<tr><td colspan="6" class="inv-usage-empty">'+
     (term?'No ingredients match this search.':'No completed sales or ingredient use for this selection.')+
     '</td></tr>';
+  const nav=$('inventoryUsagePages');
+  if(nav)nav.innerHTML='<span>Page '+tablePage+' of '+pages+'</span><button type="button" data-usage-page="-1" '+(tablePage===1?'disabled':'')+'>Previous</button><button type="button" data-usage-page="1" '+(tablePage===pages?'disabled':'')+'>Next</button>';
   $('inventoryUsageTableCaption').textContent=filtered.length+' of '+data.ingredients.length+
     ' ingredients · '+data.period.start+' to '+data.period.end;
  }
@@ -252,6 +257,7 @@
    if(!response.ok)throw Error(result.error||'Unable to retrieve ingredient usage.');
    if(token!==requestId||session!==generation()||!activeView()||selectedBranch()!==id)return;
    if(!Array.isArray(result.ingredients)||!Array.isArray(result.days))throw Error('Unexpected ingredient usage response.');
+   if(lastKey!==key)tablePage=1;
    data=result;lastKey=key;setFeedback('');draw();
   }catch(err){
    if(token!==requestId||err.name==='AbortError')return;
@@ -275,7 +281,12 @@
  });
  $('inventoryUsageApply').addEventListener('click',()=>void load(true));
  chart.addEventListener('change',drawChart);
- $('inventoryUsageSearch').addEventListener('input',drawTable);
+ $('inventoryUsageSearch').addEventListener('input',()=>{tablePage=1;drawTable()});
+ $('inventoryUsagePages')?.addEventListener('click',event=>{
+  const btn=event.target.closest('[data-usage-page]');
+  if(!btn||btn.disabled||!ownerOnly()||!data)return;
+  tablePage+=Number(btn.dataset.usagePage);drawTable();
+ });
  // Inventory can be opened after this script loads. Observe only the view
  // activation and branch <option> changes, not unrelated app mutations.
  if(view&&typeof MutationObserver!=='undefined'){
