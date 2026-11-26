@@ -285,3 +285,38 @@ html.dm-icon-motion-off #officeApp .dm-ua-native{display:inline-grid!important}
 #officeApp .btn.outline > .dm-ua-icon{
  filter:invert(29%) sepia(35%) saturate(720%) hue-rotate(94deg);
 }
+
+/* Distribution and subscription pages have no long text inputs, but retain
+ * compact actions and contained, independently scrollable report tables. */
+#officeApp #page-distribution .panel-head{
+ display:flex!important;align-items:flex-start!important;justify-content:space-between!important;
+ gap:13px!important;flex-wrap:wrap!important;
+}
+#officeApp #page-distribution .table-scroll{
+ width:100%!important;max-width:100%!important;overflow-x:auto!important;
+}
+#officeApp #page-billing #tenantBilling{min-width:0;max-width:100%}
+#officeApp #page-billing .tenant-billing-head{
+ display:flex!important;align-items:flex-start!important;gap:14px!important;flex-wrap:wrap!important;
+}
+#officeApp #page-billing .tenant-billing-actions{
+ display:flex!important;align-items:center!important;justify-content:flex-start!important;
+ flex-wrap:wrap!important;gap:10px!important;
+}
+#officeApp #page-billing .tenant-billing-actions button{
+ width:auto!important;max-width:240px!important;min-height:40px!important;
+}
+#officeApp #page-billing .tenant-billing-scroll{
+ max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;
+}
+#officeApp #page-promotions .office-campaign-picker-controls{
+ display:flex!important;align-items:flex-end!important;justify-content:flex-start!important;
+ flex-wrap:wrap!important;gap:10px 12px!important;max-width:100%!important;
+}
+#officeApp #page-promotions .office-campaign-picker-controls > :is(label,div){
+ min-width:0!important;max-width:min(100%,280px)!important;
+}
+@media(max-width:500px){
+ #officeApp #page-billing .tenant-billing-actions button{max-width:100%!important}
+ #officeApp #page-promotions .office-campaign-picker-controls > :is(label,div){max-width:100%!important}
+}
