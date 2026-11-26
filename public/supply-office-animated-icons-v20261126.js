@@ -53,7 +53,7 @@
   ['warehouseRefresh','refresh'],['warehouseOperationsRefresh','refresh'],
   ['warehouseApply','checkCircle'],['tenantBillingReload','refresh'],
   ['officeStatusSave','checkCircle'],['officeNewProductSave','save'],
-  ['officeCampaignClearIcon','trash2'],['franchiseDetailClose','chevronRight']
+  ['officeCampaignClearIcon','trash2']
  ];
  function choose(button){
   if(button.dataset.dmIcon||button.classList.contains('warehouse-kpi')||
