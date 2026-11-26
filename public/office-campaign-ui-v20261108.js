@@ -310,8 +310,8 @@ async function showHistory(id){
  openDialog(historyDialog);
  try{
   const data=await api('promotions/'+id+'/history'),events=data.events||[];
-  const completed=events.filter(e=>e.action==='REACTIVATED'&&Date.parse(e.startsAt)<=Date.now()).length;
-  const queued=events.filter(e=>e.action==='REACTIVATED'&&Date.parse(e.startsAt)>Date.now()).length;
+  const completed=Number(data.startedReactivations||0);
+  const queued=Number(data.upcomingReactivations||0);
   $('officeCampaignHistorySummary').innerHTML=
    '<div><small>Reactivations started</small><strong>'+completed+'</strong></div>'+
    '<div><small>Scheduled reactivations</small><strong>'+queued+'</strong></div>'+
