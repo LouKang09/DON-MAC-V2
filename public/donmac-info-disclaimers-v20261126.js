@@ -36,6 +36,7 @@
  tooltip.setAttribute('role','tooltip');tooltip.hidden=true;
  document.body.appendChild(tooltip);
  let active=null,converted=0,pending=false;
+ const headingIcons=new WeakMap();
  const noteText=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
  const special=el=>el.matches(
   '.office-campaign-inventory-note,.inv-direct-stock-tip,.advanced-data-notice,'+
@@ -84,10 +85,11 @@
  };
  function show(icon){
   if(!icon?.isConnected)return;
-  const source=icon._dmInfoSource;
-  const message=noteText(source);
+  const sources=icon._dmInfoSources||[];
+  const message=sources.map(noteText).filter(Boolean).join('\n\n');
   if(!message){hide();return}
   active=icon;
+  icon.setAttribute('aria-label','Information: '+message);
   tooltip.textContent=message;tooltip.hidden=false;
   icon.classList.add('is-active');
   tooltip.style.visibility='hidden';
@@ -105,6 +107,14 @@
  function mount(el){
   const target=heading(el);if(!target)return;
   const message=noteText(el);
+  const existing=headingIcons.get(target);
+  if(existing&&existing.isConnected){
+   existing._dmInfoSources.push(el);
+   el.classList.add('dm-info-source');
+   el.dataset.dmInfoSource='1';el.setAttribute('aria-hidden','true');
+   converted++;
+   return;
+  }
   const icon=document.createElement('span');
   icon.className='dm-info-hover-icon';
   icon.setAttribute('tabindex','0');
@@ -114,7 +124,8 @@
   icon.setAttribute('title','Hover or focus for information');
   icon.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
    '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>';
-  icon._dmInfoSource=el;
+  icon._dmInfoSources=[el];
+  headingIcons.set(target,icon);
   icon.addEventListener('mouseenter',()=>show(icon));
   icon.addEventListener('mouseleave',()=>{if(active===icon&&!icon.matches(':focus'))hide()});
   icon.addEventListener('focus',()=>show(icon));
