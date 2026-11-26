@@ -1975,7 +1975,6 @@
   let dashboardRequestId=0;
   async function loadDashboard(){
    const requestId=++dashboardRequestId;
-   if(state.subscription?.plan==='FREE'){state.dashboard=null;return;}
    try{
      const q=new URLSearchParams({view:$('trendView').value});
      if($('trendView').value==='custom'){q.set('from',$('trendFrom').value);q.set('to',$('trendTo').value);}
