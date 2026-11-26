@@ -239,3 +239,59 @@
  font-size:11px!important;font-weight:760!important;
  font-family:inherit!important;line-height:1.3!important;
 }
+
+/* Distinct, breathing-room containers for campaign setup and active campaigns */
+#officeApp #page-promotions{
+ display:flex!important;flex-direction:column!important;
+ align-items:stretch!important;gap:clamp(18px,2.3vw,30px)!important;
+ min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-promotions > .panel {
+ box-sizing:border-box!important;max-width:100%!important;min-width:0!important;
+ padding:clamp(18px,2.5vw,30px)!important;
+ margin:0!important;
+ border-radius:16px!important;
+}
+#officeApp #page-promotions > .panel > .panel-head {
+ margin-bottom:clamp(14px,1.5vw,19px)!important;
+ gap:10px!important;align-items:flex-start!important;
+}
+#officeApp #page-promotions > .panel .office-campaign-form{
+ margin:0!important;
+}
+#officeApp #page-promotions > .panel .office-campaign-form .office-campaign-ingredient-composer{
+ margin:7px 0 9px!important;
+}
+#officeApp #page-promotions .office-promo-participants {
+ min-width:118px!important;
+}
+#officeApp #page-promotions .office-promo-participants[aria-expanded="true"]{
+ background:#0b8654!important;border-color:#0b8654!important;
+}
+#officeApp #page-promotions .office-campaign-participants{
+ margin-top:18px!important;padding:17px!important;
+ border:1px solid #d4e8db!important;
+ border-radius:13px!important;background:#f7fbf8!important;
+}
+#officeApp #page-promotions .office-promo-participants-head {
+ display:flex;flex-wrap:wrap;align-items:flex-start;
+ justify-content:space-between;gap:6px 14px;
+ margin-bottom:13px!important;
+}
+#officeApp #page-promotions .office-promo-participants-head h3{
+ font-size:14px!important;color:#14563a!important;
+ line-height:1.4!important;margin:0!important;
+}
+#officeApp #page-promotions .office-promo-participants-head span{
+ font-size:10.5px!important;line-height:1.5!important;
+ color:#5b7864!important;max-width:50ch;
+}
+#officeApp #page-promotions .office-campaign-participants .table-scroll{
+ min-width:0!important;max-width:100%!important;
+ overflow-x:auto!important;-webkit-overflow-scrolling:touch;
+}
+@media(max-width:600px){
+ #officeApp #page-promotions{gap:15px!important}
+ #officeApp #page-promotions > .panel{padding:15px!important}
+ #officeApp #page-promotions .office-campaign-participants{padding:12px!important}
+}
