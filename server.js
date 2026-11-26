@@ -27,6 +27,7 @@ const franchiseStaging = require('./lib/franchise-tenant-staging');
 const supplyChain = require('./lib/supply-chain');
 const supplyWarehouse = require('./lib/supply-warehouse');
 const supplyAnalytics = require('./lib/supply-analytics');
+const supplyOfficeOps = require('./lib/supply-office-operations');
 const supplyRoyalties = require('./lib/supply-royalties');
 const archiveComparison = require('./lib/archive-comparison');
 const historicalSales = require('./lib/historical-sales-access');
@@ -2026,6 +2027,21 @@ async function handleOfficeApi(req,res,p,method){
     const page=new URL(req.url,'http://localhost').searchParams.get('page');
     return json(res,200,await supplyChain.distributionHistory(db,page),safeHeaders({'Cache-Control':'no-store'}));
   }
+  if(method==='GET'&&p==='/api/supply/office/alerts')
+    return json(res,200,await supplyOfficeOps.alerts(db),safeHeaders({'Cache-Control':'no-store'}));
+  if(method==='POST'&&p==='/api/supply/office/alerts/read'){
+    const body=await readJson(req);
+    return json(res,200,await supplyOfficeOps.markRead(db,body.keys),safeHeaders());
+  }
+  if(method==='GET'&&p==='/api/supply/office/system-logs'){
+    const q=new URL(req.url,'http://localhost').searchParams;
+    return json(res,200,await supplyOfficeOps.logs(db,q.get('limit'),q.get('offset')),safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/supply/office/products/bulk'){
+    const body=await readJson(req,300000);
+    return json(res,200,await supplyChain.saveProductsBulk(db,body.products,
+      process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  }
   if(method==='POST'&&p==='/api/supply/office/products')
     return json(res,201,await supplyChain.createProduct(db,await readJson(req)),safeHeaders());
 
@@ -2147,7 +2163,16 @@ async function handleOfficeApi(req,res,p,method){
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db,true),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
   if(method==='PUT'&&productMatch)
-    return json(res,200,await supplyChain.saveProduct(db,Number(productMatch[1]),await readJson(req)),safeHeaders());
+    return json(res,200,await supplyChain.saveProduct(db,Number(productMatch[1]),
+      await readJson(req),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  if(method==='DELETE'&&productMatch)
+    return json(res,200,await supplyChain.archiveProduct(db,Number(productMatch[1]),false,
+      process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  if(method==='POST'&&p.match(/^\/api\/supply\/office\/products\/\d+\/restore$/)){
+    const id=Number(p.split('/')[5]);
+    return json(res,200,await supplyChain.archiveProduct(db,id,true,
+      process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  }
   if(method==='GET'&&p==='/api/supply/office/franchisees')
     return json(res,200,{franchisees:await supplyRoyalties.franchisees(db)},safeHeaders());
   const franchiseProfile=p.match(/^\/api\/supply\/office\/franchisees\/(\d+)$/);
@@ -2804,7 +2829,7 @@ async function listenServer(server,status){
 }
 
 async function main(){
-  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseAccountModes.migrate(db);
+  fs.mkdirSync(BACKUP_DIR,{recursive:true});db=await createDb();await initSchema();await migrateSchema();await seedDatabase();await branchSupport.migrateBranches(db);await internalChat.migrate(db);const isolatedSchemaStatus=await branchIsolatedSchema.migrate(db);console.log('[Branch Isolation Phase 1]',JSON.stringify(isolatedSchemaStatus));await branchCatalogSeeding.migrate(db);await marlouTestStockReset.migrate(db);await branchIncomingSupply.migrate(db);await branchDirectStock.migrate(db);await cashierAccess.migrate(db);await migrateCashierProfiles();await accountRecovery.migrate(db);await supplyChain.migrate(db);await supplyOfficeOps.migrate(db);await officePromotions.migrate(db);await platformAccounts.migrate(db);await franchiseRequests.migrate(db);await franchiseEmailVerification.migrate(db);await franchiseStaging.migrate(db);await franchiseTestAccess.migrate(db);await franchiseAccountModes.migrate(db);
   // Operator-authorized, one-time test1 cutover. OFF by default; never promotes
   // any other franchise. A failed cutover must not take existing POS offline.
   if(process.env.DONMAC_PROMOTE_TEST1_MAIN_POS==='1'){
