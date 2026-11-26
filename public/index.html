@@ -89,6 +89,14 @@
 #app #view-inventory #inventoryUsagePages button{background:#086b42!important;color:#fff!important;border:1px solid #086b42!important;border-radius:.55rem!important;min-width:5rem!important;min-height:2.25rem!important;padding:.4rem .75rem!important;font-size:.75rem!important;font-weight:750!important}
 #app #view-inventory #inventoryUsagePages button:disabled{opacity:.5!important;cursor:not-allowed!important}
 @media(max-width:660px){#app #view-dashboard #dashboardScope .dm-dashboard-branch-group{margin-left:0!important}#app #view-dashboard #dashboardScope.dashboard-account-filter{justify-content:flex-start!important}}
+</style><style>
+#authRegisterPanel #regSubmit{width:min(100%,12rem)!important;min-height:2.5rem!important;justify-self:center!important;margin-inline:auto!important;padding:.45rem .8rem!important}
+#authRegisterPanel #authRegisterForm.hidden,#authRegisterPanel #authRegisterVerifyForm.hidden{display:none!important}
+#authRegisterVerifyForm .signup-otp-heading{text-align:center;margin:.5rem 0 0}
+#authRegisterVerifyForm .auth-secondary-intro{text-align:center}
+#authRegisterVerifyForm .signup-otp-digits{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:clamp(.25rem,1.1vw,.6rem);width:min(100%,21rem);margin:.8rem auto}
+#authRegisterVerifyForm .signup-otp-digits input{box-sizing:border-box!important;min-width:0!important;width:100%!important;aspect-ratio:1;height:auto!important;min-height:0!important;padding:0!important;text-align:center;font-size:1.35rem!important;border:1px solid #bad5c5!important;border-radius:.45rem!important}
+#authRegisterVerifyForm #regVerifySubmit{width:min(100%,12rem)!important;justify-self:center!important;margin-inline:auto!important}
 </style></head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
@@ -121,13 +129,13 @@
           <button type="button" id="authForgotPassword" class="auth-text-action">Forgot password?</button>
         </div>
         <button id="authSubmit" class="primary big auth-submit dm-auth-action" data-dm-icon="logOut" type="submit"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="m13 8 4 4-4 4M8 12h9"/></svg><span>Sign In</span></button>
-        <p class="auth-signup" id="authSignupPrompt">Need a franchise account? <button type="button" id="authSignupButton" class="auth-text-action">Request access</button></p>
+        <p class="auth-signup" id="authSignupPrompt">Need a franchise account? <button type="button" id="authSignupButton" class="auth-text-action">Create Account</button></p>
         <p id="authHelpMessage" class="auth-help-message hidden" role="status"></p>
       </form>
-      <section id="authRegisterPanel" class="auth-secondary-panel hidden" aria-label="Request franchise Owner account">
+      <section id="authRegisterPanel" class="auth-secondary-panel hidden" aria-label="Create franchise Owner account">
         <button type="button" class="auth-back auth-back-top dm-auth-back" data-auth-back data-dm-icon="chevronRight" aria-label="Back to Sign In"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 5-7 7 7 7M6 12h14"/></svg><span>Back to Sign In</span></button>
         <img src="/assets/login-coffee-beans-all-white-strokes-v1587.svg" class="auth-beans-icon" alt="" width="56" height="56">
-        <h2>Request franchise account</h2><p class="auth-secondary-intro">Submit details for Admin Control review. This does not create a POS login yet.</p>
+        <h2>Create Account</h2>
         <form id="authRegisterForm" class="auth-secondary-form">
           <label>Username<input id="regUsername" required minlength="3" maxlength="80" pattern="[A-Za-z0-9._-]{3,80}" autocomplete="username" placeholder="Choose a unique username"></label>
           <p class="auth-field-status" id="regUsernameStatus" role="status">Username must be unique across all franchisees.</p>
@@ -139,9 +147,9 @@
             <div class="auth-plan-select-wrap">
               <span class="auth-plan-select-icon dm-plan-animated-mark" data-dm-icon="plusCircle" aria-hidden="true"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg></span>
               <select id="regRequestedPlan" class="auth-plan-select" required aria-describedby="regPlanDescription">
-                <option value="" selected disabled>Select Pro or Business</option>
-                <option value="PRO">Pro Plan · Growing business</option>
-                <option value="BUSINESS">Business Plan · Multi-branch management</option>
+                <option value="" selected disabled>Select a plan</option>
+                <option value="FREE">Free Plan</option><option value="PRO">Pro Plan · Growing business</option>
+                <option value="BUSINESS">Business Plan · Multi-branch management</option><option value="ENTERPRISE">Enterprise Plan</option>
               </select>
               <span class="auth-plan-chevron dm-plan-animated-chevron" data-dm-icon="chevronDown" aria-hidden="true"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
             </div>
@@ -154,16 +162,17 @@
           </div>
           <p class="auth-field-status">This is a plan request, not an automatic charge or activation. Admin Control will confirm your plan, subscription amount and payment status.</p>
           <p class="auth-field-status">After email OTP verification, your chosen password creates your own franchise account and zero-stock starter inventory. Once Admin Control assigns a Paid subscription, the live POS is available.</p>
-          <button id="regSubmit" type="submit" class="primary auth-submit dm-auth-action" data-dm-icon="checkCircle"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5 5.5-6"/></svg><span>Submit Request</span></button>
+          <label>Create Password<span class="auth-field-input"><input id="regVerifyPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="At least 10 characters, including a letter and number"><button type="button" class="auth-eye" data-toggle-password="regVerifyPassword">Show</button></span></label>
+          <label>Confirm Password<span class="auth-field-input"><input id="regVerifyConfirmPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Re-enter your password"><button type="button" class="auth-eye" data-toggle-password="regVerifyConfirmPassword">Show</button></span></label>
+          <button id="regSubmit" type="submit" class="primary auth-submit dm-auth-action" data-dm-icon="checkCircle"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5 5.5-6"/></svg><span>Create Account</span></button>
         </form>
         <p id="regMessage" class="auth-secondary-message" role="status"></p>
         <form id="authRegisterVerifyForm" class="auth-secondary-form hidden" aria-label="Verify franchise request email">
-          <p class="auth-secondary-intro">Verify your email and choose your password to create your isolated starter account. Unverified OTPs cannot activate login.</p>
-          <label>6-digit email code<input id="regVerifyCode" inputmode="numeric" autocomplete="one-time-code" required minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="000000" /></label>
-          <label>Create Password<span class="auth-field-input"><input id="regVerifyPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="At least 10 characters, including a letter and number"><button type="button" class="auth-eye" data-toggle-password="regVerifyPassword">Show</button></span></label>
-          <label>Confirm Password<span class="auth-field-input"><input id="regVerifyConfirmPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Re-enter your password"><button type="button" class="auth-eye" data-toggle-password="regVerifyConfirmPassword">Show</button></span></label>
-          <p class="auth-field-status">Your password is saved securely only when the OTP is correct. You can then sign in to your separate, zero-stock onboarding workspace.</p>
-          <button id="regVerifySubmit" type="submit" class="primary auth-submit">Verify OTP &amp; Create Account</button>
+          <h3 class="signup-otp-heading">Verify your email</h3><p class="auth-secondary-intro">Enter the six-digit code sent to your email.</p>
+          <input id="regVerifyCode" type="hidden" /><div class="signup-otp-digits" role="group" aria-label="Six-digit verification code"><input data-signup-digit="0" type="text" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1" maxlength="6" /><input data-signup-digit="1" type="text" inputmode="numeric" autocomplete="off" aria-label="Digit 2" maxlength="1" /><input data-signup-digit="2" type="text" inputmode="numeric" autocomplete="off" aria-label="Digit 3" maxlength="1" /><input data-signup-digit="3" type="text" inputmode="numeric" autocomplete="off" aria-label="Digit 4" maxlength="1" /><input data-signup-digit="4" type="text" inputmode="numeric" autocomplete="off" aria-label="Digit 5" maxlength="1" /><input data-signup-digit="5" type="text" inputmode="numeric" autocomplete="off" aria-label="Digit 6" maxlength="1" /></div>
+          
+          
+          <button id="regVerifySubmit" type="submit" class="primary auth-submit">Verify Code</button>
           <button id="regVerifyResend" type="button" class="auth-text-action">Resend verification code</button>
           <p id="regVerifyMessage" class="auth-secondary-message" role="status"></p>
         </form>
@@ -290,7 +299,7 @@
             <div class="dashboard-chart-filters">
               <div class="sales-range-controls">
                 <label class="dashboard-chart-mode-label">View<select id="dashboardChartMode" aria-label="Sales statistic chart type"><option value="lines">Lines</option><option value="tiles">Tiles</option><option value="pie">Pie</option></select></label>
-                <label>Timeline<select id="trendView"><option value="hourly">Today · Hourly</option><option value="10days">Last 10 days · Daily</option><option value="custom">Custom range</option></select></label>
+                <label>Timeline<select id="trendView"><option value="hourly">Today</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="custom">Custom Range</option></select></label>
                 <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
                 <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
                 <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">All</option></select></span>
@@ -1305,10 +1314,10 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="dm-checkout-head"><span class="dm-checkout-icon" aria-hidden="true">▤</span><div class="dm-checkout-copy"><span class="dm-checkout-eyebrow">TRANSACTION AUDIT</span><h2>Transaction Details</h2></div></div><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=1.6.10"></script>
+  <script src="/auth-login-v1574.js?v=20261126-create-account"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=9"></script>
-  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261126-inline-preview"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=20261126-global-timeline"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
+  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261126-inline-preview"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=20261126-receipt-period"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
   <script src="/vendor/lottie-svg.min.js" defer></script>
   <script src="/donmac-icon-controls-v20261121.js?v=3" defer></script>
   <script src="/donmac-useanimations-v20261120.js?v=14" defer></script>
