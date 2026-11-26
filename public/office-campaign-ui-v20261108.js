@@ -13,6 +13,7 @@ async function api(path,options={}){
  return data;
 }
 let campaigns=[],supplies=[],loading=false,selectedIngredients=[];
+let displayedParticipantCampaignId=null,participantRequestVersion=0;
 function phTime(value){
  if(!value||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value))throw Error('Choose valid Philippine local start and end times.');
  const parsed=new Date(value+':00+08:00');
@@ -188,7 +189,8 @@ function renderCampaigns(){
     esc(statusLabel[status]||status)+'</span>'+
    '<small data-campaign-countdown="'+id+'">'+(status==='UPCOMING'?'Scheduled':timeRemaining(c.endsAt))+'</small></td>'+
    '<td class="office-promo-period">'+esc(period)+'</td><td>'+
-    '<button class="btn solid office-promo-participants" type="button" data-campaign-participants="'+id+'">View franchisees</button></td>'+
+    '<button class="btn solid office-promo-participants" type="button" data-campaign-participants="'+id+'" aria-expanded="'+(displayedParticipantCampaignId===c.id)+'">'+
+    (displayedParticipantCampaignId===c.id?'Hide franchisees':'View franchisees')+'</button></td>'+
    '<td class="office-promo-actions-cell">'+actions+'</td></tr>';
  }).join('')||'<tr><td colspan="6">No Main Office promotions yet.</td></tr>';
 }
@@ -385,16 +387,40 @@ $('officeCampaignRows').addEventListener('click',async e=>{
   return;
  }
  if(attr.campaignParticipants){
-  const box=$('officeCampaignParticipants');box.classList.remove('hidden');
+  const box=$('officeCampaignParticipants');
+  if(displayedParticipantCampaignId===id&&!box.classList.contains('hidden')){
+   ++participantRequestVersion;
+   displayedParticipantCampaignId=null;
+   box.classList.add('hidden');
+   box.replaceChildren();
+   btn.setAttribute('aria-expanded','false');
+   btn.textContent='View franchisees';
+   return;
+  }
+  displayedParticipantCampaignId=id;
+  const currentRequest=++participantRequestVersion;
+  $('officeCampaignRows').querySelectorAll('[data-campaign-participants]').forEach(button=>{
+   const active=button.dataset.campaignParticipants===id;
+   button.setAttribute('aria-expanded',String(active));
+   button.textContent=active?'Hide franchisees':'View franchisees';
+  });
+  box.classList.remove('hidden');
   box.textContent='Checking branch ingredient stock and promotional sales…';
   try{
    const data=await api('promotions/'+id+'/participants');
-   box.innerHTML='<h3>Franchise promotional participation</h3><p>Branches can sell immediately when their ingredients are sufficient—no supply purchase required.</p><div class="table-scroll"><table><thead><tr><th>Franchise / Branch</th><th>Available ingredients</th><th>Promotional sales</th></tr></thead><tbody>'+
+   if(currentRequest!==participantRequestVersion||displayedParticipantCampaignId!==id)return;
+   box.innerHTML='<div class="office-promo-participants-head"><h3>Franchise promotional participation</h3>'+
+    '<span>Branches can sell when sufficient ingredients are available; no extra supply purchase is required.</span></div>'+
+    '<div class="table-scroll"><table><thead><tr><th>Franchise / Branch</th><th>Available ingredients</th><th>Promotional sales</th></tr></thead><tbody>'+
     (data.participants||[]).map(row=>'<tr><td><strong>'+esc(row.owner)+'</strong><small>'+esc(row.branch||'Branch')+' · Workspace #'+row.workspaceId+'</small></td>'+
       '<td>'+(row.eligible?'Ready to sell':'Not enough branch stock')+'<small>'+row.supplies.map(x=>esc(x.name)+': '+Number(x.available||0)+' '+esc(x.uom||'')+' on hand, '+Number(x.requiredPerSale||0)+' needed'+(x.matched?'':' · item/unit not matched')).join(' · ')+'</small></td>'+
       '<td>'+Number(row.sold||0)+' units · '+Number(row.orders||0)+' transactions</td></tr>').join('')+
     '</tbody></table></div>';
-  }catch(err){box.textContent=err.message}
+  }catch(err){
+   if(currentRequest!==participantRequestVersion||displayedParticipantCampaignId!==id)return;
+   box.textContent=err.message;
+  }
+
  }
 });
 setInterval(()=>{if(document.querySelector('#page-promotions:not(.hidden)'))renderTimers()},1000);
