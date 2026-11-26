@@ -89,13 +89,36 @@ function summary(){
   ['Expiring batches',num(expiring),'next 30 days, receipt records only']
  ].map(x=>'<div class="wh-metric"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join('')+'</div>';
 }
-function overview(){
- const columns='<tr><th>Ingredient / Supply</th><th>Available</th><th>Reserved</th><th>In transit</th><th>Incoming PO</th><th>Reorder point</th><th>Suggested PO</th><th></th></tr>';
- const rows=data.inventory.map(p=>
+let stockQuery='',stockFilter='all',stockPage=1;
+function stockTable(){
+ const query=stockQuery.trim().toLowerCase();
+ const matched=data.inventory.filter(p=>{
+  if(query&&!String(p.name+' '+p.uom).toLowerCase().includes(query))return false;
+  return stockFilter==='all'||(stockFilter==='out'&&Number(p.available)<=0)||
+   (stockFilter==='available'&&Number(p.available)>0)||
+   (stockFilter==='reorder'&&p.configured&&Number(p.suggestedPurchase)>0)||
+   (stockFilter==='unconfigured'&&!p.configured);
+ });
+ const pages=Math.max(1,Math.ceil(matched.length/5));
+ stockPage=Math.max(1,Math.min(stockPage,pages));
+ const rows=matched.slice((stockPage-1)*5,stockPage*5).map(p=>
   '<tr><th scope="row">'+esc(p.name)+'<small>'+esc(p.uom)+'</small></th><td>'+num(p.available)+'</td><td>'+num(p.reserved)+'</td><td>'+num(p.inTransit)+
   '</td><td>'+num(p.purchaseIncoming)+'</td><td>'+(p.configured?num(p.reorderPoint):'<span class="wh-pill neutral">Not configured</span>')+
   '</td><td><span class="wh-pill '+(p.suggestedPurchase>0?'warning':'ok')+'">'+num(p.suggestedPurchase)+'</span></td>'+
-  '<td>'+(allowedTabs().includes('movements')?'<button type="button" class="btn outline wh-tiny" data-act="reorder" data-id="'+p.id+'">Set levels</button>':'—')+'</td></tr>').join('');
+  '<td>'+(allowedTabs().includes('movements')?'<button type="button" class="btn solid wh-tiny" data-act="reorder" data-id="'+p.id+'">Set levels</button>':'—')+'</td></tr>').join('');
+
+ return {rows:rows||empty('No matching supplies.',8),nav:'<span>Page '+stockPage+' of '+pages+' · '+matched.length+' supplies</span>'+
+ '<button type="button" data-act="stock-page" data-step="-1" '+(stockPage===1?'disabled':'')+'>Previous</button>'+
+ '<button type="button" data-act="stock-page" data-step="1" '+(stockPage===pages?'disabled':'')+'>Next</button>'};
+}
+function updateStockTable(){
+ const result=stockTable();
+ if($('whStockRows'))$('whStockRows').innerHTML=result.rows;
+ if($('whStockPages'))$('whStockPages').innerHTML=result.nav;
+}
+function overview(){
+ const columns='<tr><th>Ingredient / Supply</th><th>Available</th><th>Reserved</th><th>In transit</th><th>Incoming PO</th><th>Reorder point</th><th>Suggested PO</th><th></th></tr>';
+ const stock=stockTable();
  const selected=data.inventory.find(p=>p.id===editingReorder);
  const form=selected?'<form class="wh-form wh-subform" id="whReorderForm"><h4>Reorder planning · '+esc(selected.name)+'</h4>'+
   '<input type="hidden" name="productId" value="'+selected.id+'"/>'+
@@ -106,7 +129,9 @@ function overview(){
   '<button class="btn outline" data-act="cancel-reorder" type="button">Cancel</button></form>':'';
  return summary()+
   '<section class="wh-section"><div class="wh-head"><div><h3>Available, Reserved & In-Transit</h3><p>Approval deducts available inventory only once. Reserved and in-transit quantities are calculated from existing franchise orders; they are not deducted again.</p></div></div>'+
-  '<div class="wh-table-wrap"><table><thead>'+columns+'</thead><tbody>'+ (rows||empty('No supplies configured.',8))+'</tbody></table></div>'+form+
+  '<div class="wh-stock-tools"><input id="whStockSearch" type="search" aria-label="Search supplies" placeholder="Search supplies…" value="'+esc(stockQuery)+'"/>'+
+ '<select id="whStockFilter" aria-label="Filter stock">'+[['all','All supplies'],['available','In stock'],['out','Out of stock'],['reorder','Reorder needed'],['unconfigured','Not configured']].map(([value,label])=>option(value,label,stockFilter===value)).join('')+'</select></div>'+
+ '<div class="wh-table-wrap"><table><thead>'+columns+'</thead><tbody id="whStockRows">'+stock.rows+'</tbody></table></div><nav class="pagination" id="whStockPages" aria-label="Stock pages">'+stock.nav+'</nav>'+form+
   '<p class="wh-footnote">Suggested PO quantities use the last 30 days of completed supply distributions and configured lead days / safety stock. Stock quantities use each product\'s own unit; do not add unlike units for valuation.</p></section>';
 }
 function poLine(index){
@@ -346,6 +371,7 @@ $('warehouseOperationsTabs')?.addEventListener('click',event=>{
 $('warehouseOperationsBody')?.addEventListener('click',event=>{
  const node=event.target.closest('[data-act]');if(!node)return;
  const act=node.dataset.act;
+ if(act==='stock-page'){stockPage+=Number(node.dataset.step);updateStockTable();return;}
  if(act==='save-staff-role'){
   const role=$('warehouseOperationsBody').querySelector('[data-staff-id="'+node.dataset.id+'"]')?.value;
   if(!role)return;
@@ -390,6 +416,12 @@ $('warehouseOperationsBody')?.addEventListener('click',event=>{
   return;
  }else return;
  render();
+});
+$('warehouseOperationsBody')?.addEventListener('input',event=>{
+ if(event.target.id==='whStockSearch'){stockQuery=event.target.value;stockPage=1;updateStockTable();}
+});
+$('warehouseOperationsBody')?.addEventListener('change',event=>{
+ if(event.target.id==='whStockFilter'){stockFilter=event.target.value;stockPage=1;updateStockTable();}
 });
 $('warehouseOperationsBody')?.addEventListener('submit',async event=>{
  const form=event.target;if(!form.id?.startsWith('wh'))return;
