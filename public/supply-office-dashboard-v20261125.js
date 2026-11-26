@@ -17,28 +17,67 @@ const shift=(date,n)=>{const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTC
 const keys={revenue:'Supply Revenue',orders:'Delivered Orders',units:'Units Distributed',
  urgentOrders:'Urgent Distributions',grossProfit:'Gross Profit'};
 const fmt=(metric,x)=>['revenue','grossProfit'].includes(metric)?peso(x):num(x);
-let result=null,metric='revenue',controller=null,seq=0,periodBranch='all';
+let result=null,metric='revenue',controller=null,seq=0,periodBranch='all',franchiseeId='all',franchisees=[],registeredBranches=[];
 const visible=()=>!$('officeApp')?.classList.contains('hidden')&&!$('page-dashboard')?.classList.contains('hidden');
 const status=(message,isError=false)=>{const el=$('warehouseStatus');el.textContent=message;el.classList.toggle('is-error',isError)};
 function controlParams(){
- const p=new URLSearchParams({period:$('warehousePeriod').value,branchId:$('warehouseBranch').value||'all'});
+ const p=new URLSearchParams({period:$('warehousePeriod').value,franchiseeId,branchId:franchiseeId==='all'?'all':($('warehouseBranch').value||'all')});
  if(p.get('period')==='custom'){p.set('from',$('warehouseFrom').value);p.set('to',$('warehouseTo').value)}
  return p;
 }
-function syncBranches(branches){
- const select=$('warehouseBranch');
- const saved=select.value||periodBranch||'all';
- const sorted=(branches||[]).slice().sort((a,b)=>
-  (a.franchise+' '+a.name).localeCompare(b.franchise+' '+b.name));
- const signature=sorted.map(x=>x.id+'|'+x.name+'|'+x.franchise).join(';');
- if(select.dataset.signature!==signature){
-  select.replaceChildren(new Option('All franchise branches','all'),
-   ...sorted.map(x=>new Option(x.franchise+' · '+x.name,String(x.id))));
-  select.dataset.signature=signature;
+const toggle=$('warehouseFranchiseToggle'),menu=$('warehouseFranchiseMenu'),search=$('warehouseFranchiseSearch'),options=$('warehouseFranchiseOptions');
+const pickName=id=>franchisees.find(x=>String(x.id)===String(id))?.name||'All franchisees';
+function closePicker(){menu.hidden=true;toggle.setAttribute('aria-expanded','false');}
+function updateBranches(){
+ const own=franchiseeId==='all'?[]:registeredBranches.filter(x=>String(x.workspaceId)===franchiseeId).sort((a,b)=>a.name.localeCompare(b.name));
+ const sel=$('warehouseBranch');$('warehouseBranchField').hidden=own.length<=1;sel.disabled=own.length<=1;
+ const sig=own.map(x=>x.id+':'+x.name).join('|');
+ if(sel.dataset.signature!==sig){
+  sel.replaceChildren(new Option('All franchisee branches','all'),...own.map(x=>new Option(x.name,String(x.id))));
+  sel.dataset.signature=sig;
  }
- select.value=sorted.some(x=>String(x.id)===saved)?saved:'all';
- periodBranch=select.value;
+ if(own.length<=1)periodBranch='all';
+ sel.value=own.some(x=>String(x.id)===periodBranch)?periodBranch:'all';periodBranch=sel.value;
 }
+function drawOptions(){
+ const term=search.value.trim().toLocaleLowerCase();
+ const list=[{id:'all',name:'All franchisees',email:'Combined operational totals'},...franchisees]
+  .filter(x=>(x.name+' '+(x.email||'')+' '+(x.username||'')).toLocaleLowerCase().includes(term));
+ options.innerHTML=list.map(x=>'<button type="button" role="option" aria-selected="'+(String(x.id)===franchiseeId)+
+  '" data-franchisee-id="'+esc(x.id)+'"><strong>'+esc(x.name)+'</strong><small>'+esc(x.email||'No email on file')+'</small></button>').join('')
+  ||'<p class="warehouse-empty">No matching franchisee.</p>';
+}
+function selectFranchisee(id){
+ if(id!=='all'&&!franchisees.some(x=>String(x.id)===id))return;
+ if(id!==franchiseeId){franchiseeId=id;periodBranch='all';}
+ $('warehouseFranchiseSelected').textContent=pickName(id);closePicker();updateBranches();
+ if(visible())void load();
+}
+function syncFranchisees(data){
+ franchisees=data.franchisees||[];registeredBranches=data.branches||[];
+ if(franchiseeId!=='all'&&!franchisees.some(x=>String(x.id)===franchiseeId)){franchiseeId='all';periodBranch='all';}
+ $('warehouseFranchiseSelected').textContent=pickName(franchiseeId);updateBranches();drawOptions();
+}
+toggle.addEventListener('click',()=>{
+ const open=menu.hidden;menu.hidden=!open;toggle.setAttribute('aria-expanded',String(open));
+ if(open){search.value='';drawOptions();search.focus();}
+});
+search.addEventListener('input',drawOptions);
+options.addEventListener('click',event=>{
+ const opt=event.target.closest('[data-franchisee-id]');if(opt)selectFranchisee(opt.dataset.franchiseeId);
+});
+search.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){closePicker();toggle.focus();}
+ if(event.key==='ArrowDown'){event.preventDefault();options.querySelector('button')?.focus();}
+ if(event.key==='Enter'&&options.querySelectorAll('button').length===1){event.preventDefault();options.querySelector('button').click();}
+});
+options.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){closePicker();toggle.focus();return;}
+ const btn=event.target.closest('button'),all=[...options.querySelectorAll('button')],i=all.indexOf(btn);
+ if(event.key==='ArrowDown'){event.preventDefault();all[Math.min(i+1,all.length-1)]?.focus();}
+ if(event.key==='ArrowUp'){event.preventDefault();(i>0?all[i-1]:search)?.focus();}
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.warehouse-franchise-picker'))closePicker();});
 function cards(d){
  const t=d.totals;
  const definitions=[
@@ -77,12 +116,12 @@ function backlog(d){
   '<p class="warehouse-empty">No open supply requests.</p>';
 }
 function rows(d){
- $('warehouseBranchRows').innerHTML=d.byBranch.map(x=>
-  '<tr><th scope="row">'+esc(x.franchise)+'<small>'+esc(x.name)+'</small></th>'+
+ $('warehouseBranchRows').innerHTML=franchiseeId==='all'?
+  '<tr><td colspan="5">Select a franchisee above to view distributions by its branches.</td></tr>':
+  d.byBranch.map(x=>'<tr><th scope="row">'+esc(x.franchise)+'<small>'+esc(x.name)+'</small></th>'+
   '<td>'+num(x.orders)+'</td><td>'+num(x.units)+'</td><td>'+peso(x.revenue)+'</td>'+
-  '<td>'+(x.grossProfit==null?'<span title="Delivered items missing purchase costs">Cost incomplete</span>':
-   peso(x.grossProfit))+'</td></tr>').join('')||
-   '<tr><td colspan="5">No completed deliveries in this period.</td></tr>';
+  '<td>'+(x.grossProfit==null?'Cost incomplete':peso(x.grossProfit))+'</td></tr>').join('')||
+  '<tr><td colspan="5">No matching franchise deliveries in this period.</td></tr>';
  $('warehouseProductRows').innerHTML=d.topProducts.map(x=>
   '<tr><th scope="row">'+esc(x.name)+'<small>'+esc(x.uom)+'</small></th>'+
   '<td>'+num(x.quantity)+'</td><td>'+num(x.orders)+'</td><td>'+peso(x.revenue)+'</td></tr>').join('')||
@@ -108,6 +147,7 @@ function branchGroups(d){
  return {major:new Set(sorted.slice(0,6).map(x=>x.id)),top:sorted.slice(0,6),rest:sorted.slice(6)};
 }
 function pie(d){
+ if(franchiseeId==='all')return '<p class="warehouse-empty">Select a franchisee to compare its branches.</p>';
  const {top,rest}=branchGroups(d);
  let values=top.map(x=>({name:x.franchise+' · '+x.name,amount:x[metric],id:x.id}));
  if(rest.length)values.push({name:'Other branches ('+rest.length+')',
@@ -142,12 +182,13 @@ function timeline(d,type,interval){
  if(metric==='grossProfit'&&d.totals.unknownCostLines>0)
   return'<p class="warehouse-empty">Gross profit activity requires a recorded unit cost on every delivered line. Other metrics remain available.</p>';
  const {major,top,rest}=branchGroups(d);
- const groups=top.map(x=>({key:String(x.id),label:x.franchise+' · '+x.name}));
- if(rest.length)groups.push({key:'other',label:'Other branches ('+rest.length+')'});
+ const allFranchisees=franchiseeId==='all';
+ const groups=allFranchisees?[{key:'all',label:'All live franchisees'}]:top.map(x=>({key:String(x.id),label:x.name}));
+ if(!allFranchisees&&rest.length)groups.push({key:'other',label:'Other branches ('+rest.length+')'});
  if(!groups.length)return'<p class="warehouse-empty">No delivered supply orders in the selected period.</p>';
  const raw=(d.trend||[]),map=new Map(),dateSet=new Set();
  for(const item of raw){
-  const group=major.has(item.branchId)?String(item.branchId):'other',date=bucket(item.day,interval);
+  const group=allFranchisees?'all':major.has(item.branchId)?String(item.branchId):'other',date=bucket(item.day,interval);
   dateSet.add(date);
   const key=group+'|'+date;
   map.set(key,(map.get(key)||0)+sum(metric,item));
@@ -215,10 +256,10 @@ async function load(){
   if(run!==seq||!visible())return;
   if(!Array.isArray(data.trend)||!Array.isArray(data.byBranch)||!data.totals)
    throw Error('Unexpected warehouse analytics response.');
-  result=data;syncBranches(data.branches);
+  result=data;syncFranchisees(data);
   status('Warehouse distribution period: '+data.period.from+' to '+data.period.to+
-   ' · '+(data.period.branchId==='all'?'All franchise branches':
-   $('warehouseBranch').selectedOptions[0]?.textContent));
+   ' · '+(franchiseeId==='all'?'All live franchisees':pickName(franchiseeId))+
+   (data.period.branchId==='all'?'':' · '+$('warehouseBranch').selectedOptions[0]?.textContent));
   render();
  }catch(err){
   if(run!==seq||err.name==='AbortError')return;
