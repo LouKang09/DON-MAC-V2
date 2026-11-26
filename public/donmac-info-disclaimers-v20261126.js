@@ -88,6 +88,7 @@
   const sources=icon._dmInfoSources||[];
   const message=sources.map(noteText).filter(Boolean).join('\n\n');
   if(!message){hide();return}
+  if(active&&active!==icon)active.classList.remove('is-active');
   active=icon;
   icon.setAttribute('aria-label','Information: '+message);
   tooltip.textContent=message;tooltip.hidden=false;
