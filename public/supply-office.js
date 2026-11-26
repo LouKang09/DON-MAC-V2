@@ -59,6 +59,8 @@ async function api(path,options={}){
 let officeRole='main-office';
 function loggedIn(ok,requiresPasswordChange=false,role=officeRole){
  officeRole=ok&&role==='warehouse-staff'?'warehouse-staff':'main-office';
+ const alerts=document.querySelector('.office-alert-wrap');
+ if(alerts)alerts.classList.toggle('hidden',officeRole==='warehouse-staff');
  for(const item of document.querySelectorAll('[data-office-page]')){
   const allowed=officeRole!=='warehouse-staff'||item.dataset.officePage==='warehouse';
   item.classList.toggle('hidden',!allowed);
