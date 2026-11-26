@@ -230,3 +230,12 @@
 @media(prefers-reduced-motion:reduce){
  #officeApp #page-promotions .office-promo-menu-trigger>svg{transition:none}
 }
+
+#officeApp #page-promotions .office-campaign-timezone-note{
+ margin:0 0 2px!important;font-size:10.5px!important;color:#5b7864!important;
+ line-height:1.4!important;display:inline-flex;align-items:center;gap:6px;
+}
+#officeApp #page-promotions .office-promo-menu-action{
+ font-size:11px!important;font-weight:760!important;
+ font-family:inherit!important;line-height:1.3!important;
+}
