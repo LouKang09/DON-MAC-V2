@@ -33,6 +33,9 @@
   form.classList.toggle('hidden',page!=='login');
   // Avoid hiding a stale password or code on return to sign in.
   if(page==='login'){
+   $('regVerifyPassword').value='';$('regVerifyConfirmPassword').value='';
+   $('authRegisterVerifyForm').classList.add('hidden');$('authRegisterForm').classList.remove('hidden');
+   pendingApplicationId=null;
    password.type='password';
    toggle.setAttribute('aria-pressed','false');
    toggle.setAttribute('aria-label','Show password');
@@ -108,6 +111,8 @@
  regUsername.addEventListener('blur',usernameAvailable);
  regUsername.addEventListener('input',()=>{++checkSeq;available=false;message('regUsernameStatus','Check username availability before submitting.');});
  const signupPlanDetails={
+  FREE:{title:'Free Plan',badge:'PLAN REQUEST',summary:'Entry-level plan. Availability and included features will be confirmed by Admin Control.',features:[]},
+  ENTERPRISE:{title:'Enterprise Plan',badge:'CUSTOM PLAN',summary:'Tailored business plan. Pricing and capabilities will be confirmed by Admin Control.',features:[]},
   PRO:{title:'Pro Plan',badge:'UP TO 3 BRANCHES',
    summary:'Ideal for smaller businesses starting with one branch and growing to three.',
    features:['1 included branch','Up to 2 additional branches','₱799 per extra branch at renewal','Replenishment and POS reporting']},
@@ -131,12 +136,31 @@
  }
  requestedPlan.addEventListener('change',updateSignupPlanPreview);
  updateSignupPlanPreview();
+ const signupDigits=[...document.querySelectorAll('[data-signup-digit]')];
+ function collectSignupCode(){
+   $('regVerifyCode').value=signupDigits.map(input=>input.value).join('');
+   if(signupDigits.every(input=>/^\d$/.test(input.value)))$('authRegisterVerifyForm').requestSubmit();
+ }
+ function fillSignupCode(value,start=0){
+   const digits=String(value).replace(/\D/g,'').slice(0,6);
+   if(digits.length===6)start=0;
+   for(let i=0;i<digits.length&&start+i<6;i++)signupDigits[start+i].value=digits[i];
+   if(digits.length)signupDigits[Math.min(5,start+digits.length)]?.focus();collectSignupCode();
+ }
+ signupDigits.forEach((input,i)=>{
+   input.addEventListener('input',()=>{const value=input.value;input.value='';fillSignupCode(value,i);});
+   input.addEventListener('paste',event=>{event.preventDefault();fillSignupCode(event.clipboardData.getData('text'),i);});
+   input.addEventListener('keydown',event=>{if(event.key==='Backspace'&&!input.value&&i>0)signupDigits[i-1].focus();});
+ });
  $('authRegisterForm').addEventListener('submit',async event=>{
   event.preventDefault();
   const btn=$('regSubmit');if(btn.disabled)return;
   btn.disabled=true;
   try{
    if(!available&&!(await usernameAvailable()))throw new Error('Choose an available username.');
+   const pw=$('regVerifyPassword').value;
+   if(pw.length<10||pw.length>128||!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw))throw new Error('Use 10–128 characters with at least one letter and one number.');
+   if(pw!==$('regVerifyConfirmPassword').value)throw new Error('Passwords do not match.');
    message('regMessage','Submitting your franchise request…');
    const result=await post('/api/auth/register',{
     username:regUsername.value.trim(),fullName:$('regFullName').value.trim(),
@@ -146,9 +170,10 @@
    pendingApplicationId=result.applicationId||null;
    message('regMessage',result.message||'Account request received.');
    if(result.verificationRequired){
+     $('authRegisterForm').classList.add('hidden');$('regMessage').classList.add('hidden');
      $('authRegisterVerifyForm').classList.remove('hidden');
      $('regVerifyCode').value='';
-     $('regVerifyCode').focus();
+     signupDigits.forEach(input=>input.value='');signupDigits[0]?.focus();
    }
   }catch(e){message('regMessage',e.message,true);}
   finally{btn.disabled=false;}
@@ -165,14 +190,16 @@
   }
   btn.disabled=true;
   try{
-   const result=await post('/api/auth/register/verify',{
+   const verifiedUsername=regUsername.value.trim();
+    const result=await post('/api/auth/register/verify',{
      email:$('regEmail').value.trim(),code:$('regVerifyCode').value.trim(),
      applicationId:pendingApplicationId,password,confirmPassword
    });
    $('regVerifyCode').value='';$('regVerifyPassword').value='';$('regVerifyConfirmPassword').value='';
    $('authRegisterVerifyForm').classList.add('hidden');
-   show('login');
-   $('authUsername').value=result.username||regUsername.value.trim();
+   $('authRegisterForm').classList.remove('hidden');$('authRegisterForm').reset();available=false;pendingApplicationId=null;signupDigits.forEach(input=>input.value='');updateSignupPlanPreview();
+    show('login');
+   $('authUsername').value=result.username||verifiedUsername;
    $('authPassword').value='';
    message('authHelpMessage',result.message||'Account created. Sign in using your chosen password.');
   }catch(err){message('regVerifyMessage',err.message,true);}
