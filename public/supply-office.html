@@ -177,14 +177,15 @@
  <div class="panel"><div class="panel-head"><div><p class="eyebrow">MAIN OFFICE CAMPAIGNS</p><h2>Scheduled Promotions</h2>
  <p class="muted">Create POS promotional buttons for active franchisees. The POS unlocks selling only after its required supplies are delivered.</p></div></div>
  <form id="officeCampaignForm" class="office-campaign-form">
+  <p class="office-campaign-timezone-note" title="All schedule dates and times follow Philippine Standard Time, UTC+8.">All schedules use Philippine time (PHT · UTC+8).</p>
   <div class="office-campaign-fields">
    <label>Campaign title<input id="officeCampaignTitle" maxlength="120" required placeholder="e.g. Holiday Coffee Bundle"></label>
    <label>POS button label<input id="officeCampaignButton" maxlength="80" required placeholder="e.g. Holiday Special"></label>
    <label>POS selling price (₱)<input id="officeCampaignPrice" type="number" min="0.01" step="0.01" required></label>
-   <label>Start date (Philippine time)<input id="officeCampaignStartDate" type="date" required></label>
-   <label>Start time (Philippine time)<input id="officeCampaignStartTime" type="time" step="60" value="09:00" required></label>
-   <label>End date (Philippine time)<input id="officeCampaignEndDate" type="date" required></label>
-   <label>End time (Philippine time)<input id="officeCampaignEndTime" type="time" step="60" value="18:00" required></label>
+   <label>Start date<input id="officeCampaignStartDate" title="Philippine time (UTC+8)" type="date" required></label>
+   <label>Start time<input id="officeCampaignStartTime" title="Philippine time (UTC+8)" type="time" step="60" value="09:00" required></label>
+   <label>End date<input id="officeCampaignEndDate" title="Philippine time (UTC+8)" type="date" required></label>
+   <label>End time<input id="officeCampaignEndTime" title="Philippine time (UTC+8)" type="time" step="60" value="18:00" required></label>
   </div>
   <label class="office-campaign-icon-field">Promotion icon (optional)<input id="officeCampaignIcon" type="file" accept="image/png,image/jpeg,image/webp"><small>PNG, JPEG or WebP · up to 2 MB. Automatically resized for franchise POS buttons.</small></label>
   <div id="officeCampaignIconPreview" class="office-campaign-icon-preview hidden"><img id="officeCampaignIconImage" alt="Selected promotion icon preview" width="72" height="72"><button type="button" class="btn outline" id="officeCampaignClearIcon">Remove icon</button></div>
