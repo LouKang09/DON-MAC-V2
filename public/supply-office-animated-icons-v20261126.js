@@ -10,7 +10,7 @@
  if(!root)return;
  const icons={
   dashboard:'grid',requests:'clipboard',distribution:'clock',franchisees:'users',
-  promotions:'notification',warehouse:'package',catalog:'clipboard',
+  promotions:'notification',warehouse:'package',catalog:'clipboard',logs:'fileText',
   billing:'dollarSign',settings:'settings',security:'lock'
  };
  // These paths exist only as safe native fallback until Lottie mounts.
