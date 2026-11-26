@@ -167,6 +167,13 @@ async function refresh(){
   // Keep the in-progress selection and reason intact while the list auto-refreshes.
  }catch(err){notice(err.message,true);}
 }
+const officeActionChevron='<svg class="dm-ua-native" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
+const officeAction=(label,attrs='',expanded=null)=>{
+ const state=expanded===null?'':(' aria-expanded="'+Boolean(expanded)+'"');
+ return '<button type="button" class="office-uniform-action'+(expanded===true?' is-expanded':'')+
+  '" data-dm-icon="chevronRight"'+state+(attrs?' '+attrs:'')+'><span class="office-action-label">'+label+
+  '</span>'+officeActionChevron+'</button>';
+};
 const expandedOwnerGroups=new Set();
 const expandChevron="<svg class=\"expand-chevron\" viewBox=\"0 0 24 24\" width=\"19\" height=\"19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>";
 function render(){
@@ -193,16 +200,16 @@ function render(){
   const open=expandedOwnerGroups.has(g.id);
   const pending=g.orders.filter(o=>['PENDING_REVIEW','APPEAL_REVIEW'].includes(o.status)).length;
   const branches=[...g.branches];
-  lines.push('<tr class="office-account-summary"><td>'+
-   '<button class="office-account-expand" type="button" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+
-   '" aria-label="'+(open?'Collapse':'Expand')+' purchase orders for '+esc(g.owner)+'">'+
-   '<span class="office-account-chevron" aria-hidden="true">'+expandChevron+'</span>'+
-   '<strong>'+g.orders.length+' order'+(g.orders.length===1?'':'s')+'</strong></button></td>'+
+  lines.push('<tr class="office-account-summary"><td><strong class="office-order-count">'+g.orders.length+
+   ' order'+(g.orders.length===1?'':'s')+'</strong></td>'+
    '<td><strong>'+esc(g.owner)+'</strong><div class="muted">Owner account · '+branches.length+' branch'+(branches.length===1?'':'es')+
    '</div><small>'+esc(branches.slice(0,3).join(', '))+(branches.length>3?'…':'')+'</small></td>'+
    '<td>Franchise account</td><td><b>'+peso(g.total)+'</b></td>'+
    '<td><span class="office-account-status">'+pending+' awaiting review</span></td>'+
-   '<td>'+stamp(g.orders[0]?.created_at)+'</td><td><button type="button" class="office-account-expand office-account-expand-tail" data-office-owner="'+esc(g.id)+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' purchase orders for '+esc(g.owner)+'"><span class="office-tail-label">'+(open?'Collapse':'Expand')+'</span>'+expandChevron+'</button></td></tr>');
+   '<td>'+stamp(g.orders[0]?.created_at)+'</td><td>'+
+   officeAction(open?'Collapse':'Expand','data-office-owner="'+esc(g.id)+'" aria-label="'+
+    (open?'Collapse':'Expand')+' purchase orders for '+esc(g.owner)+'"',open)+
+   '</td></tr>');
   if(open){
    for(const o of g.orders){
     lines.push('<tr class="office-account-order"><td><b>'+esc(o.id.slice(0,8).toUpperCase())+'</b></td>'+
@@ -210,14 +217,14 @@ function render(){
      '<td>'+(o.priority==='URGENT'?'⚡ Urgent':'Standard')+'</td><td><b>'+peso(o.total)+'</b></td>'+
      '<td><span class="badge '+esc(o.status.toLowerCase())+'">'+esc(title(o.status))+'</span></td>'+
      '<td>'+stamp(o.created_at)+'</td>'+
-     '<td><button class="table-action" data-office-open="'+esc(o.id)+'">Review</button></td></tr>');
+     '<td>'+officeAction('View','data-office-open="'+esc(o.id)+'" aria-label="View purchase order '+esc(o.id.slice(0,8))+'"')+'</td></tr>');
    }
   }
  }
  $('officeOrdersBody').innerHTML=lines.join('')||'<tr><td colspan="7">No matching franchise accounts.</td></tr>';
  $('officeOrderPages').innerHTML='<span>Page '+page+' of '+pages+' · '+groups.length+' franchise owners · '+matched.length+' orders</span>'+
-  '<button type="button" data-office-page-nav="-1" '+(page===1?'disabled':'')+'>Previous</button>'+
-  '<button type="button" data-office-page-nav="1" '+(page===pages?'disabled':'')+'>Next</button>';
+  '<button type="button" class="office-pagination-button" data-office-page-nav="-1" '+(page===1?'disabled':'')+'>Previous</button>'+
+  '<button type="button" class="office-pagination-button" data-office-page-nav="1" '+(page===pages?'disabled':'')+'>Next</button>';
  $('officeOrdersBody').querySelectorAll('[data-office-open]').forEach(button=>
   button.onclick=()=>openOrder(button.dataset.officeOpen));
  $('officeOrdersBody').querySelectorAll('[data-office-owner]').forEach(button=>button.onclick=()=>{
@@ -243,8 +250,8 @@ const royaltyBadge=(status)=>status==='PAID'?'<span class="royalty-badge paid">P
 function pages(container,total,limit,current,action){
  const pageCount=Math.max(1,Math.ceil(total/limit));
  $(container).innerHTML='<span>Page '+current+' of '+pageCount+' · '+total+' records</span>'+
- '<button type="button" data-profile-page="-1" '+(current===1?'disabled':'')+'>Previous</button>'+
- '<button type="button" data-profile-page="1" '+(current===pageCount?'disabled':'')+'>Next</button>';
+ '<button type="button" class="office-pagination-button" data-profile-page="-1" '+(current===1?'disabled':'')+'>Previous</button>'+
+ '<button type="button" class="office-pagination-button" data-profile-page="1" '+(current===pageCount?'disabled':'')+'>Next</button>';
  $(container).querySelectorAll('button').forEach(button=>button.onclick=()=>action(Number(button.dataset.profilePage)));
 }
 function renderFranchisees(){
@@ -255,7 +262,7 @@ function renderFranchisees(){
  '<tr><td><strong>'+esc(x.ownerName)+'</strong><small class="franchise-subline">Owner · Account '+x.workspaceId+'</small></td>'+
  '<td>'+x.branchCount+'</td><td><strong>'+peso(x.monthlyFee)+'</strong></td>'+
  '<td>'+royaltyBadge(x.royaltyStatus)+'</td><td><strong>'+peso(x.pendingTotal)+'</strong><small class="franchise-subline">'+x.pendingMonths+' pending month(s)</small></td>'+
- '<td>'+stamp(x.joinedAt)+'</td><td><button class="table-action" type="button" data-franchise-owner="'+x.workspaceId+'">View</button></td></tr>'
+ '<td>'+stamp(x.joinedAt)+'</td><td>'+officeAction('View','data-franchise-owner="'+x.workspaceId+'" aria-label="View franchise profile for '+esc(x.ownerName)+'"')+'</td></tr>'
  ).join('')||'<tr><td colspan="7">No franchise owners found.</td></tr>';
  $('franchiseProfilesBody').querySelectorAll('[data-franchise-owner]').forEach(b=>b.onclick=()=>openFranchise(Number(b.dataset.franchiseOwner)));
  pages('franchiseProfilesPages',data.length,10,franchisePage,by=>{franchisePage+=by;renderFranchisees();});
@@ -406,11 +413,13 @@ async function loadDistributionHistory(){
     ).join('')+'</tbody></table></div></td></tr>';
    return '<tr><td>'+stamp(o.completedAt)+'</td><td><strong>'+esc(o.id.slice(0,8).toUpperCase())+'</strong></td>'+
     '<td>'+esc(o.franchise)+'<small>'+esc(o.branch)+'</small></td><td>'+Number(o.units)+'</td>'+
-    '<td>'+peso(o.saleAmount)+'</td><td>'+peso(o.royalties)+'</td><td><button type="button" class="btn outline" data-distribution="'+esc(o.id)+'" aria-expanded="'+expanded+'">'+(expanded?'Hide':'View')+'</button></td></tr>'+(expanded?detail:'');
+    '<td>'+peso(o.saleAmount)+'</td><td>'+peso(o.royalties)+'</td><td>'+officeAction(expanded?'Hide':'View',
+     'data-distribution="'+esc(o.id)+'" aria-label="'+(expanded?'Hide':'View')+' distribution '+esc(o.id.slice(0,8))+'"',expanded)+
+     '</td></tr>'+(expanded?detail:'');
   }).join('')||'<tr><td colspan="7">No completed distribution transactions yet.</td></tr>';
   $('distributionPages').innerHTML='<span>Page '+distributionPage+' of '+pages+' · '+Number(d.total||0)+' transactions</span>'+
-   '<button type="button" data-dist-change="-1" '+(distributionPage===1?'disabled':'')+'>Previous</button>'+
-   '<button type="button" data-dist-change="1" '+(distributionPage===pages?'disabled':'')+'>Next</button>';
+   '<button type="button" class="office-pagination-button" data-dist-change="-1" '+(distributionPage===1?'disabled':'')+'>Previous</button>'+
+   '<button type="button" class="office-pagination-button" data-dist-change="1" '+(distributionPage===pages?'disabled':'')+'>Next</button>';
   $('distributionPages').querySelectorAll('[data-dist-change]').forEach(b=>b.onclick=()=>{distributionPage+=Number(b.dataset.distChange);loadDistributionHistory();});
   $('distributionRows').querySelectorAll('[data-distribution]').forEach(b=>b.onclick=()=>{openDistributions.has(b.dataset.distribution)?openDistributions.delete(b.dataset.distribution):openDistributions.add(b.dataset.distribution);loadDistributionHistory();});
  }catch(err){notice(err.message,true);}
