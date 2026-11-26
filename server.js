@@ -2234,13 +2234,24 @@ async function handleOfficeApi(req,res,p,method){
     await auditOffice('PROMO_CREATED','PROMOTION',created.id||'',{title:body.title||body.name||'New promotion'});
     return json(res,201,created,safeHeaders());
   }
-  const promotion=p.match(/^\/api\/supply\/office\/promotions\/([0-9a-f-]{36})(?:\/(participants|deactivate))?$/i);
+  const promotion=p.match(/^\/api\/supply\/office\/promotions\/([0-9a-f-]{36})(?:\/(participants|history|deactivate|hold|reactivate))?$/i);
   if(promotion){
-    if(method==='GET'&&promotion[2]==='participants')
-      return json(res,200,{participants:await officePromotions.participants(db,promotion[1])},safeHeaders());
-    if(method==='POST'&&promotion[2]==='deactivate'){
-      const result=await officePromotions.deactivate(db,promotion[1]);
-      await auditOffice('PROMO_DEACTIVATED','PROMOTION',promotion[1],{});
+    const [,id,action]=promotion;
+    if(method==='GET'&&action==='participants')
+      return json(res,200,{participants:await officePromotions.participants(db,id)},safeHeaders());
+    if(method==='GET'&&action==='history')
+      return json(res,200,await officePromotions.history(db,id),safeHeaders({'Cache-Control':'no-store'}));
+    if(method==='POST'&&['deactivate','hold','reactivate'].includes(action)){
+      const result=action==='deactivate'?await officePromotions.deactivate(db,id,officeActor):
+       action==='hold'?await officePromotions.hold(db,id,officeActor):
+       await officePromotions.reactivate(db,id,await readJson(req),officeActor);
+      await auditOffice('PROMO_'+result.action,'PROMOTION',id,
+       {reactivationScheduled:action==='reactivate'});
+      return json(res,200,result,safeHeaders());
+    }
+    if(method==='DELETE'&&!action){
+      const result=await officePromotions.archive(db,id,officeActor);
+      await auditOffice('PROMO_DELETED','PROMOTION',id,{archived:true,historyPreserved:true});
       return json(res,200,result,safeHeaders());
     }
   }
