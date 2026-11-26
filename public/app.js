@@ -101,7 +101,7 @@
 
   // Start independent network downloads together, but execute scripts in their proven dependency order.
   function preloadEnhancementScripts(){
-    for(const src of ["/supply-franchise.js?v=1.5.79","/tenant-billing-ui.js?v=1","/pos-finance.js?v=20261107c","/pos-quickpay-v1556.js","/mobile-nav-v1529.js","/live-refresh.js","/v15-safe.js","/v153-features.js","/v154-tuning.js","/v155-features.js","/v156-features.js","/pos-refresh.js","/dashboard-v1512.js","/dashboard-compact-v1571.js","/dashboard-experience-v1573.js?v=20261107c","/sales-csv-import-v1572.js","/premium-dashboard-feature-gallery-v1533.js","/reference-dashboard-preview-v1535.js","/plan-dashboard-v1570.js","/pos-categories-admin.js","/catalog-batch-v1544.js","/internal-chat.js","/refresh-controls-v20261107.js"]){
+    for(const src of ["/supply-franchise.js?v=1.5.79","/tenant-billing-ui.js?v=1","/pos-finance.js?v=20261107c","/pos-quickpay-v1556.js","/mobile-nav-v1529.js","/live-refresh.js","/v15-safe.js","/v153-features.js","/v154-tuning.js","/v155-features.js","/v156-features.js","/pos-refresh.js","/dashboard-v1512.js","/dashboard-compact-v1571.js","/dashboard-experience-v1573.js?v=20261126-global-timeline","/sales-csv-import-v1572.js","/premium-dashboard-feature-gallery-v1533.js","/reference-dashboard-preview-v1535.js","/plan-dashboard-v1570.js","/pos-categories-admin.js","/catalog-batch-v1544.js","/internal-chat.js","/refresh-controls-v20261107.js"]){
       const link=document.createElement('link');
       link.rel='preload';link.as='script';
       link.href=src+(src.includes('?')?'&':'?')+'v='+encodeURIComponent(VERSION);
@@ -145,7 +145,7 @@
       await loadScript('/dashboard-v1512.js');
       loadCss('planDashboardV1570Css','/plan-dashboard-v1570.css');
       await loadScript('/plan-dashboard-v1570.js?v=20261117-live-plan');
-      await loadScript('/dashboard-experience-v1573.js?v=20261107c');
+      await loadScript('/dashboard-experience-v1573.js?v=20261126-global-timeline');
       await loadScript('/pos-finance.js?v=20261125-category-pie');
       await loadScript('/refresh-controls-v20261107.js');
       await loadScript('/notifications-campaigns-v20261108.js?v=20261117-live-bell');
@@ -182,7 +182,7 @@
       await loadScript('/pos-refresh.js');
       await loadScript('/dashboard-v1512.js');
       await loadScript('/dashboard-compact-v1571.js');
-      await loadScript('/dashboard-experience-v1573.js?v=20261107c');
+      await loadScript('/dashboard-experience-v1573.js?v=20261126-global-timeline');
       await loadScript('/sales-csv-import-v1572.js');
       // Admin-only read-only preview; keep all current dashboard renderers unchanged.
       await loadScript('/premium-dashboard-feature-gallery-v1533.js');
