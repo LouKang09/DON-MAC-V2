@@ -2363,6 +2363,11 @@ async function handleApi(req,res,url){
       [value])).rows.length>0;
     return json(res,200,{available:!used},safeHeaders({'Cache-Control':'no-store'}));
   }
+  if(method==='POST'&&p==='/api/auth/email-available'){
+    checkLoginRate(req,'signup-email-availability');
+    const body=await readJson(req,1024);
+    return json(res,200,await franchiseRequests.emailAvailable(db,body.email),safeHeaders({'Cache-Control':'no-store'}));
+  }
   if(method==='POST'&&p==='/api/auth/forgot/request'){
     const body=await readJson(req,4096);
     const ip=String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'').split(',')[0].trim();
