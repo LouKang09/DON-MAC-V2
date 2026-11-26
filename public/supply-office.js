@@ -274,12 +274,15 @@ async function openFranchise(workspaceId,quiet=false){
   $('franchiseDetailName').textContent=d.owner.ownerName;
   $('franchiseDetailMeta').textContent='Original account owner · Joined '+stamp(d.owner.joinedAt);
   $('franchiseMonthlyFee').value=Number(d.owner.monthlyFee).toFixed(2);
-  $('franchiseDetailSummary').innerHTML=[
-   ['Branches',d.owner.branchCount+' · '+(d.branches.map(x=>x.name).join(', ')||'No branches')],
+  const branchNames=d.branches.map(x=>x.name);
+  const branchContent=branchNames.length>2?
+   '<strong>'+esc(d.owner.branchCount)+' branches</strong><ul class="franchise-branch-list">'+branchNames.map(name=>'<li>'+esc(name)+'</li>').join('')+'</ul>':
+   '<strong>'+esc(d.owner.branchCount+' · '+(branchNames.join(', ')||'No branches'))+'</strong>';
+  $('franchiseDetailSummary').innerHTML='<div class="franchise-summary-card franchise-branch-card"><small>Branches</small>'+branchContent+'</div><div class="franchise-royalty-summary">'+[
    ['Royalty status',d.owner.royaltyStatus==='NOT_SET'?'Not configured':title(d.owner.royaltyStatus)],
    ['Monthly fee',peso(d.owner.monthlyFee)],
    ['Unpaid royalties',peso(d.owner.pendingTotal)]
-  ].map(([k,v])=>'<div class="franchise-summary-card"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('');
+  ].map(([k,v])=>'<div class="franchise-summary-card"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>';
   renderFranchiseDetail();
   if(!quiet)$('franchiseDetailPanel').scrollIntoView({behavior:'smooth',block:'start'});
  }catch(e){notice(e.message,true);}
