@@ -280,7 +280,7 @@
    window.donmacAdvancedAnalytics?.setSubscription(subscription);
  }
  async function fetchAnalytics(){
-   if(!subscription||!roleAllowed||!prefsLoaded)return;
+   if(!subscription||subscription.plan==='FREE'||!roleAllowed||!prefsLoaded)return;
    const token=++seq;
    loading=true;
    root.hidden=false;
@@ -327,6 +327,7 @@
    if(!next)return;
    const changed=!subscription||subscription.plan!==next.plan;
    subscription=next;
+   if(next.plan==='FREE'){++seq;analytics=null;loading=false;hideRestrictedWidgets();return;}
    updateReference();
    if(!roleAllowed){hideRestrictedWidgets();return;}
    if(changed){
