@@ -53,6 +53,29 @@
   <link rel="stylesheet" href="/donmac-fluid-controls-v20261126.css?v=20261126-fluid-2" />
   <link rel="stylesheet" href="/donmac-info-disclaimers-v20261126.css?v=20261126-hover-headings-v3" />
   <script src="/donmac-unified-prompts-v20261120.js?v=2"></script>
+<style id="dm-main-pos-control-polish-20261126">
+/* Match the main POS pill controls in every dashboard KPI drill-down. */
+#app #dmKpiDetail .dm-activity-controls{gap:.75rem!important;align-items:flex-end!important}
+#app #dmKpiDetail .dm-activity-controls > label{display:flex!important;flex-direction:column!important;gap:.35rem!important;width:9rem!important;min-width:0!important;max-width:100%!important;margin:0!important;font-size:.75rem!important;line-height:1.25!important}
+#app #dmKpiDetail .dm-activity-controls :is(#dmActivityType,#dmActivityInterval){
+ box-sizing:border-box!important;display:block!important;appearance:none!important;-webkit-appearance:none!important;
+ width:100%!important;min-width:0!important;max-width:100%!important;height:2.5rem!important;min-height:2.5rem!important;
+ border:1px solid #bad5c5!important;border-radius:999px!important;
+ background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='%23075d38' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .65rem center!important;
+ padding:.45rem 2rem .45rem .8rem!important;color:#18452f!important;font-size:.85rem!important;font-weight:650!important;line-height:1.25!important;box-shadow:none!important
+}
+#app #dmKpiDetail .dm-activity-controls :is(#dmActivityType,#dmActivityInterval):hover{border:1px solid #168456!important;background-color:#f1f8f3!important}
+#app #dmKpiDetail .dm-activity-controls :is(#dmActivityType,#dmActivityInterval):focus-visible{outline:2px solid #168456!important;outline-offset:2px!important;border-color:#086b42!important}
+/* Ledger navigation shares the supply catalog's green buttons. */
+#app :is(#view-transactions,#view-expenses) :is(#financeTransactionPages,#financeExpensePages) button{
+ box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ min-width:5rem!important;min-height:2.25rem!important;padding:.4rem .75rem!important;border:1px solid #086b42!important;border-radius:.55rem!important;
+ background:#086b42!important;color:#fff!important;font-size:.75rem!important;font-weight:750!important;box-shadow:none!important
+}
+#app :is(#view-transactions,#view-expenses) :is(#financeTransactionPages,#financeExpensePages) button:not(:disabled):hover{background:#075532!important;border-color:#075532!important}
+#app :is(#view-transactions,#view-expenses) :is(#financeTransactionPages,#financeExpensePages) button:disabled{opacity:.5!important;cursor:not-allowed!important}
+@media(max-width:690px){#app #dmKpiDetail .dm-activity-controls{justify-content:flex-start!important}#app #dmKpiDetail .dm-activity-controls > label{flex:0 1 9rem!important}}
+</style>
 </head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
@@ -1271,7 +1294,7 @@
   <script src="/auth-login-v1574.js?v=1.6.10"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=9"></script>
-  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=10"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=1.6.58-chart-choice"></script><script src="/inventory-usage-summary-v20261120.js?v=20261125-visible-labels-branch-fix" defer></script>
+  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261126-inline-preview"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=1.6.58-chart-choice"></script><script src="/inventory-usage-summary-v20261120.js?v=20261125-visible-labels-branch-fix" defer></script>
   <script src="/vendor/lottie-svg.min.js" defer></script>
   <script src="/donmac-icon-controls-v20261121.js?v=3" defer></script>
   <script src="/donmac-useanimations-v20261120.js?v=14" defer></script>
