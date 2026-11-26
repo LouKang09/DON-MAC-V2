@@ -82,7 +82,7 @@ $('officeLoginForm').addEventListener('submit',async e=>{
  e.preventDefault();$('officeLoginError').textContent='';
  try{
   const data=await api('/api/supply/office/login',{method:'POST',body:JSON.stringify({username:$('officeUsername').value,password:$('officePassword').value})});
-  $('officeSignedInAs').textContent=$('officeUsername').value;$('officePassword').value='';
+  $('officeWelcome').textContent='Welcome Back, '+(data.role==='warehouse-staff'?$('officeUsername').value:'Admin')+'.';$('officePassword').value='';
   loggedIn(!!data.ok,!!data.mustChangePassword,data.role);
   if(data.mustChangePassword){selectPage('security');notice('Change the temporary password before managing supply requests.');}
  }catch(err){$('officeLoginError').textContent=err.message;}
@@ -336,6 +336,46 @@ $('franchiseFeeForm').onsubmit=async event=>{
 
 let distributionPage=1;
 const openDistributions=new Set();
+async function loadHistoricalMissingCosts(){
+ const body=$('warehouseCostRows');body.innerHTML='<tr><td colspan="6">Loading missing historical purchase costs…</td></tr>';
+ try{
+  const data=await api('/api/supply/office/missing-costs');
+  $('warehouseCostCount').textContent=data.total?data.total+' missing delivered line(s)':'No missing costs';
+  body.innerHTML=(data.rows||[]).map(x=>{
+   const current=x.currentCatalogCost==null?'Not recorded':'₱'+Number(x.currentCatalogCost).toFixed(2);
+   const completed=x.completedAt?new Date(x.completedAt).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium'}):'';
+   return'<tr data-cost-line="'+esc(x.lineId)+'">'+
+    '<td><strong>'+esc(x.franchise)+'</strong><small>'+esc(x.branch)+' · '+esc(completed)+'</small></td>'+
+    '<td><strong>'+esc(x.productName)+'</strong><small>Order '+esc(x.orderId.slice(0,8))+'</small></td>'+
+    '<td>'+Number(x.quantity)+'</td><td>'+esc(current)+'</td>'+
+    '<td><input type="number" min="0" max="1000000" step="0.01" placeholder="Verified cost" class="warehouse-cost-entry" aria-label="Verified historical unit cost for '+esc(x.productName)+'"/></td>'+
+    '<td><button type="button" class="btn solid" data-cost-save="'+esc(x.lineId)+'">Save verified cost</button></td></tr>';
+  }).join('')||'<tr><td colspan="6">All delivered order lines have verified purchase costs.</td></tr>';
+  if(data.total>data.rows.length)body.insertAdjacentHTML('beforeend','<tr><td colspan="6">'+(data.total-data.rows.length)+' additional missing lines. Reconcile displayed lines, then refresh for the remainder.</td></tr>');
+ }catch(err){body.innerHTML='<tr><td colspan="6">'+esc(err.message)+'</td></tr>'}
+}
+$('warehouseCostReview').addEventListener('toggle',()=>{if($('warehouseCostReview').open)void loadHistoricalMissingCosts()});
+$('warehouseCostRefresh').addEventListener('click',()=>void loadHistoricalMissingCosts());
+$('warehouseCostRows').addEventListener('click',async event=>{
+ const btn=event.target.closest('[data-cost-save]');if(!btn)return;
+ const row=btn.closest('tr'),input=row.querySelector('.warehouse-cost-entry');
+ const value=input?.value?.trim();
+ if(value===''||!Number.isFinite(Number(value))||Number(value)<0||Number(value)>1000000){
+  notice('Enter the verified original unit purchase cost for this delivered order.',true);return;
+ }
+ const confirmText='Confirm ₱'+Number(value).toFixed(2)+' as the historical purchase cost per unit? This action is audited and cannot be overwritten from this screen.';
+ const confirmed=window.donmacPrompt?.confirm?await window.donmacPrompt.confirm(confirmText,{
+  title:'Verify historical cost',confirmText:'Save verified cost',cancelText:'Cancel'
+ }):window.confirm(confirmText);
+ if(!confirmed)return;
+ btn.disabled=true;
+ try{
+  await api('/api/supply/office/missing-costs/'+btn.dataset.costSave,{method:'POST',body:JSON.stringify({unitCost:value})});
+  notice('Historical purchase cost reconciled and added to System Logs.');
+  await Promise.all([loadHistoricalMissingCosts(),loadDistributionDashboard()]);
+  window.donmacWarehouseAnalytics?.refresh?.();
+ }catch(err){notice(err.message,true);btn.disabled=false}
+});
 async function loadDistributionDashboard(){
  try{
   const d=await api('/api/supply/office/dashboard');
@@ -346,7 +386,7 @@ async function loadDistributionDashboard(){
   $('distNet').textContent=d.netRevenue===null?'Cost incomplete':peso(d.netRevenue);
   $('distTopName').textContent=d.topProducts?.[0]?.name||'No requests yet';
   $('distCostNote').textContent=d.netRevenue===null?
-   'Net revenue cannot be calculated: '+Number(d.unknownCostLines||0)+' delivered line(s) have no recorded purchase cost. Record unit costs for future orders.':
+   'Gross profit is incomplete because '+Number(d.unknownCostLines||0)+' historical delivered order line(s) have no verified purchase cost. Open Review Missing Historical Purchase Costs below to reconcile those records.':
    'Gross profit equals fulfilled supply sales plus urgent fees minus recorded item purchase costs, before warehouse overhead. Franchise royalties are excluded.';
   const products=d.topProducts||[],max=Math.max(1,...products.map(p=>Number(p.quantity)||0));
   $('distTopProducts').innerHTML=products.map(p=>
@@ -672,5 +712,5 @@ $('officeMessageForm').onsubmit=async e=>{
   $('officeChatPreview').classList.add('hidden');await openOrder(current.id,true);
  }catch(err){notice(err.message,true);}
 };
-api('/api/supply/office/me').then(u=>{$('officeSignedInAs').textContent=u.username||'Main Office';loggedIn(true,!!u.mustChangePassword,u.role);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
+api('/api/supply/office/me').then(u=>{$('officeWelcome').textContent='Welcome Back, '+(u.role==='warehouse-staff'?(u.username||'Staff'):'Admin')+'.';loggedIn(true,!!u.mustChangePassword,u.role);if(u.mustChangePassword){selectPage('security');notice('Change the temporary password to continue.');}}).catch(()=>loggedIn(false));
 })();
