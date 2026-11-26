@@ -48,7 +48,7 @@
  color:#174b31!important;
  box-shadow:0 14px 38px rgba(5,49,27,.21)!important;
  font:500 12px/1.55 Inter,"Segoe UI",system-ui,sans-serif!important;
- white-space:normal!important;overflow-wrap:anywhere!important;
+ white-space:pre-line!important;overflow-wrap:anywhere!important;
  pointer-events:none!important;
 }
 .dm-info-hover-tooltip[hidden]{display:none!important}
