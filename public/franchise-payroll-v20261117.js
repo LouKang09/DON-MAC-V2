@@ -53,7 +53,7 @@
   if(!res.ok)throw Object.assign(new Error(json.error||'Request failed ('+res.status+').'),{status:res.status});
   return json;
  }
- function message(text){if($('dmPayrollMessage'))$('dmPayrollMessage').textContent=text||'';if(text&&window.donmacPrompt&&!/^(loading|checking|refreshing|connecting)\b/i.test(text))void window.donmacPrompt.notify(text);}
+ function message(text,{silent=false}={}){if($('dmPayrollMessage'))$('dmPayrollMessage').textContent=text||'';if(!silent&&text&&window.donmacPrompt&&!/^(loading|checking|refreshing|connecting)\b/i.test(text))void window.donmacPrompt.notify(text);}
  function reset(){
   shift=null;entitlement=null;employees=[];branches=[];previewData=null;savedSlip=null;expenseTab='ledger';loadInProgress=false;
   if($('dmPayrollBranchFilter'))$('dmPayrollBranchFilter').value='all';
@@ -316,7 +316,7 @@
    total();
    message(result.openDays?'Warning: '+result.openDays+' incomplete shift(s) excluded.':
     result.saved?'Saved payslip loaded. Saved figures are retained until you choose Recalculate from DTR.':
-    'Payroll preview ready. Verify amounts before saving.');
+    'Payroll preview ready. Verify amounts before saving.',{silent:!result.openDays});
   }catch(error){message(error.message);}
  }
  function addRow(holder,row={}){
