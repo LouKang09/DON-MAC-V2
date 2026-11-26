@@ -18,7 +18,7 @@
     state.catalog=null;state.inventory=[];state.report=null;state.costing=null;state.dashboard=null;
     state.adminProducts=[];state.adminIngredients=[];state.adminPromos=[];state.adminPackages=[];state.promoBranchId=null;
     state.recipeRows=[];state.compositionRows=[];state.branches=[];state.userList=[];
-    state.posBranchId=null;state.subscription=null;
+    state.posBranchId=null;state.subscription=null;$('view-dashboard')?.classList.remove('dm-free-dashboard');
     window.__donmacDashboardData=null;
     window.donmacDashboardDrilldown?.clear?.();
     window.donmacBusinessStore?.clear?.();
@@ -360,7 +360,9 @@
   function renderDevSubscription(){
     const sub=state.subscription;if(!sub)return;
     const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
-    const planLabel=(business?'Business':'Pro')+' Plan User';
+    const free=sub.plan==='FREE';
+    $('view-dashboard').classList.toggle('dm-free-dashboard',free);
+    const planLabel=(free?'Free':business?'Business':'Pro')+' Plan User';
     $('accountPlanPill').textContent=planLabel;
     $('accountPlanPill').closest('.account-plan-top-control')?.setAttribute('aria-label','Account Type: '+planLabel);
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
@@ -369,11 +371,11 @@
     // alone decides whether to approve it. Live mode is not a reason to lock this form.
     $('accountPlanSelect').disabled=!admin;
     $('saveAccountPlan').disabled=!admin;
-    $('accountPlanName').textContent=business?'Business':'Pro';
+    $('accountPlanName').textContent=free?'Free':business?'Business':'Pro';
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
     $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
     $('accountRemaining').textContent=sub.daysRemaining==null?'—':String(sub.daysRemaining);
-    const label=({PAID:'Paid',ON_HOLD:'On Hold',UNPAID:'Unpaid',NOT_CONFIGURED:'Not configured'})[sub.status]||'Not configured';
+    const label=({FREE:'No payment required',PAID:'Paid',ON_HOLD:'On Hold',UNPAID:'Unpaid',NOT_CONFIGURED:'Not configured'})[sub.status]||'Not configured';
     $('accountPaymentStatus').textContent='Payment status: '+label;
     $('accountPaymentStatus').dataset.status=sub.status;
     $('accountPlanMessage').textContent=sub.pendingPlan?
@@ -1973,6 +1975,7 @@
   let dashboardRequestId=0;
   async function loadDashboard(){
    const requestId=++dashboardRequestId;
+   if(state.subscription?.plan==='FREE'){state.dashboard=null;return;}
    try{
      const q=new URLSearchParams({view:$('trendView').value});
      if($('trendView').value==='custom'){q.set('from',$('trendFrom').value);q.set('to',$('trendTo').value);}
