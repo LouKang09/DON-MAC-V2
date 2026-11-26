@@ -2035,7 +2035,7 @@ async function handleOfficeApi(req,res,p,method){
   }
   if(method==='GET'&&p==='/api/supply/office/system-logs'){
     const q=new URL(req.url,'http://localhost').searchParams;
-    return json(res,200,await supplyOfficeOps.logs(db,q.get('limit'),q.get('offset')),safeHeaders({'Cache-Control':'no-store'}));
+    return json(res,200,await supplyOfficeOps.logs(db,q.get('limit'),q.get('offset'),q.get('term'),q.get('category')),safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/supply/office/products/bulk'){
     const body=await readJson(req,300000);
