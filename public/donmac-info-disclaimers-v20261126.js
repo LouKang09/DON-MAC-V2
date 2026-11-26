@@ -17,6 +17,8 @@
   '#app main.main .view p.muted',
   '#app main.main .view p.inv-direct-stock-tip',
   '#app main.main .view p.advanced-data-notice',
+  '#app main.main .view p.supply-notification-hint',
+  '#app main.main .view p.dm-transaction-count-note',
   '#officeApp .office-page p.muted',
   '#officeApp .office-page p.distribution-note'
  ].join(',');
@@ -43,7 +45,8 @@
   if(el.id&&/notice|status|warning|feedback|error/i.test(el.id))return false;
   if(el.querySelector('a,button,input,select,textarea,strong[role="alert"]'))return false;
   const message=(el.textContent||'').replace(/\s+/g,' ').trim();
-  if(message.length<74||!noteTerms.test(message))return false;
+  const explicitlyExplanatory=el.matches('.office-campaign-inventory-note,.inv-direct-stock-tip,.advanced-data-notice,.supply-notification-hint,.dm-transaction-count-note');
+  if((message.length<74||!noteTerms.test(message))&&!explicitlyExplanatory)return false;
   // Keep required legal disclosures and user confirmations visible.
   if(el.closest('.auth-page,.auth-panel,.auth-screen,[data-terms],[data-policy]'))return false;
   if(el.closest('label,summary'))return false;
