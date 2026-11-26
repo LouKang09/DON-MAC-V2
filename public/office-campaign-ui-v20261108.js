@@ -335,10 +335,22 @@ document.querySelectorAll('[data-office-promo-close]').forEach(btn=>btn.addEvent
 for(const dlg of [reactivateDialog,historyDialog])dlg.addEventListener('click',e=>{
  if(e.target===dlg)closeDialog(dlg);
 });
+function placePromoMenu(details){
+ const trigger=details.querySelector('summary'),menu=details.querySelector('.office-promo-menu-list');
+ if(!trigger||!menu)return;
+ const box=trigger.getBoundingClientRect(),width=206,height=215;
+ const top=box.bottom+height+6<=window.innerHeight?
+  box.bottom+6:Math.max(8,box.top-height-6);
+ const left=Math.max(8,Math.min(window.innerWidth-width-8,box.right-width));
+ menu.style.top=Math.round(top)+'px';menu.style.left=Math.round(left)+'px';
+}
 $('officeCampaignRows').addEventListener('toggle',e=>{
  const menu=e.target.closest('details.office-promo-actions');if(!menu?.open)return;
  $('officeCampaignRows').querySelectorAll('details.office-promo-actions[open]').forEach(x=>{if(x!==menu)x.open=false});
+ requestAnimationFrame(()=>{if(menu.open)placePromoMenu(menu)});
 },true);
+window.addEventListener('resize',dismissPromoMenu);
+$('officeCampaignRows').closest('.table-scroll')?.addEventListener('scroll',dismissPromoMenu,{passive:true});
 document.addEventListener('click',e=>{
  if(!e.target.closest('.office-promo-actions'))dismissPromoMenu();
 });
