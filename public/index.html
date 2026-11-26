@@ -97,7 +97,11 @@
 #authRegisterVerifyForm .signup-otp-digits{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:clamp(.25rem,1.1vw,.6rem);width:min(100%,21rem);margin:.8rem auto}
 #authRegisterVerifyForm .signup-otp-digits input{box-sizing:border-box!important;min-width:0!important;width:100%!important;aspect-ratio:1;height:auto!important;min-height:0!important;padding:0!important;text-align:center;font-size:1.35rem!important;border:1px solid #bad5c5!important;border-radius:.45rem!important}
 #authRegisterVerifyForm #regVerifySubmit{width:min(100%,12rem)!important;justify-self:center!important;margin-inline:auto!important}
-</style><style>#authRegisterPanel #regEmailStatus{margin:0;font-size:.75rem;color:#086b42}#authRegisterPanel #regEmailStatus.error{color:#b83239}#authRegisterPanel #regEmailStatus:empty{display:none}</style></head>
+</style><style>#authRegisterPanel #regEmailStatus{margin:0;font-size:.75rem;color:#086b42}#authRegisterPanel #regEmailStatus.error{color:#b83239}#authRegisterPanel #regEmailStatus:empty{display:none}</style><style>
+#authRegisterPanel :is(#regEmailStatus,#regPhoneStatus,#regUsernameStatus){box-sizing:border-box!important;margin:.2rem 0 .35rem!important;padding:.4rem .65rem!important;border-radius:.4rem!important;font-weight:650!important;font-size:.78rem!important;line-height:1.4!important;color:#d6f8df!important;background:#164d38!important}
+#authRegisterPanel :is(#regEmailStatus,#regPhoneStatus,#regUsernameStatus).error{color:#842029!important;background:#fff0f0!important;border:1px solid #f4b7bb!important}
+#authRegisterPanel :is(#regEmailStatus,#regPhoneStatus,#regUsernameStatus):empty{display:none!important}
+</style></head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
 
@@ -141,7 +145,7 @@
           <p class="auth-field-status" id="regUsernameStatus" role="status">Username must be unique across all franchisees.</p>
           <label>Full name<input id="regFullName" required maxlength="120" autocomplete="name" placeholder="Full name"></label>
           <label>Email<input id="regEmail" required type="email" maxlength="180" autocomplete="email" placeholder="Email address" aria-describedby="regEmailStatus"></label><p class="auth-field-status" id="regEmailStatus" role="status" aria-live="polite"></p>
-          <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX"></label>
+          <label>Phone<input id="regPhone" required type="tel" maxlength="32" autocomplete="tel" placeholder="09XXXXXXXXX" aria-describedby="regPhoneStatus"></label><p class="auth-field-status" id="regPhoneStatus" role="status" aria-live="polite"></p>
           <div class="auth-signup-plan">
             <label for="regRequestedPlan" class="auth-plan-label">Choose your preferred subscription plan</label>
             <div class="auth-plan-select-wrap">
@@ -1314,7 +1318,7 @@
   <dialog id="transactionDialog"><div class="modal-card transaction-detail-card"><button type="button" class="modal-close" id="transactionClose">×</button><div class="dm-checkout-head"><span class="dm-checkout-icon" aria-hidden="true">▤</span><div class="dm-checkout-copy"><span class="dm-checkout-eyebrow">TRANSACTION AUDIT</span><h2>Transaction Details</h2></div></div><div class="transaction-title"><div><p class="eyebrow">TRANSACTION AUDIT</p><h2 id="transactionReference">Transaction Details</h2></div><span id="transactionStatus" class="transaction-status"></span></div><div id="transactionDetailBody"><div class="empty-state">Loading transaction…</div></div></div></dialog>
 
   <script src="/report-pagination-v1541.js?v=1.5.41"></script>
-  <script src="/auth-login-v1574.js?v=20261126-global-email"></script>
+  <script src="/auth-login-v1574.js?v=20261126-phone-demo-check"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=9"></script>
   <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261126-inline-preview"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=20261126-receipt-period"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
