@@ -1,0 +1,156 @@
+/* Central Warehouse notifications, product expiry and audit UX. */
+#officeApp .office-top{overflow:visible}
+#officeApp .top-controls{display:flex;align-items:center;gap:9px}
+#officeApp .office-alert-wrap{position:relative;display:flex;align-items:center}
+#officeApp .office-alert-bell{
+ position:relative;display:inline-grid;place-items:center;width:42px;height:42px;
+ min-width:42px;border:1px solid #7bb99a;background:rgba(255,255,255,.10);
+ color:#fff;border-radius:12px;cursor:pointer;
+}
+#officeApp .office-alert-bell:hover,#officeApp .office-alert-bell:focus-visible{
+ background:rgba(255,255,255,.18);outline:none;box-shadow:0 0 0 3px rgba(195,236,207,.17);
+}
+#officeApp .office-alert-bell>.dm-ua-icon{width:22px!important;height:22px!important;filter:invert(1);display:inline-grid!important}
+#officeApp .office-alert-bell>svg.dm-ua-native{height:22px!important;width:22px!important}
+#officeApp .office-alert-count{
+ position:absolute;top:-7px;right:-8px;min-width:18px;height:18px;padding:2px 5px;
+ border-radius:999px;background:#dc5550;color:#fff;font:800 10px/14px Inter,Arial,sans-serif;
+ border:2px solid #075d38;display:grid;place-items:center;
+}
+@keyframes dm-office-bell-wiggle{
+ 0%,100%{transform:rotate(0)}15%,45%{transform:rotate(15deg)}
+ 30%,60%{transform:rotate(-13deg)}75%{transform:rotate(5deg)}
+}
+#officeApp .office-alert-bell.has-unread:hover>.dm-ua-native,
+#officeApp .office-alert-bell.has-unread:focus-visible>.dm-ua-native{
+ animation:dm-office-bell-wiggle .82s ease-in-out 1;transform-origin:50% 12%;
+}
+#officeApp .office-alert-panel{
+ position:absolute;z-index:80;right:0;top:calc(100% + 12px);width:min(395px,calc(100vw - 26px));
+ max-height:min(550px,75dvh);display:flex;flex-direction:column;overflow:hidden;
+ background:#fff;border:1px solid #d1e5d7;border-radius:16px;
+ box-shadow:0 20px 48px rgba(9,40,20,.22);color:#1b4d34;
+}
+#officeApp .office-alert-panel.hidden{display:none!important}
+#officeApp .office-alert-head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px 5px;gap:12px}
+#officeApp .office-alert-head strong{font-size:14px}
+#officeApp .office-alert-head button{border:0;background:transparent;font-size:24px;cursor:pointer;color:#526e58}
+#officeApp .office-alert-caption{padding:0 17px;margin:4px 0 12px;font-size:11px;color:#658170;line-height:1.4}
+#officeApp .office-alert-tools{display:flex;align-items:center;gap:8px;padding:0 17px 12px}
+#officeApp .office-alert-tools button{border:1px solid #d4e6d9;border-radius:9px;background:#f5faf6;color:#135e3b;padding:8px 10px;font-size:11px;font-weight:750}
+#officeApp .office-alert-tools button:disabled{opacity:.45}
+#officeApp .office-alert-items{min-height:65px;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid #ebf0eb}
+#officeApp .office-alert-row{
+ width:100%;min-width:0;display:flex;align-items:flex-start;gap:10px;text-align:left;
+ padding:13px 15px;border:0;border-bottom:1px solid #e7eee8;background:#fff;color:#184b34;cursor:pointer;
+}
+#officeApp .office-alert-row:hover,#officeApp .office-alert-row:focus-visible{background:#eef8f1;outline:none}
+#officeApp .office-alert-row.is-unread{background:#f2faf5}
+#officeApp .office-alert-dot{flex:0 0 9px;height:9px;border-radius:50%;margin-top:5px;background:#378f62}
+#officeApp .office-alert-dot.urgent,#officeApp .office-alert-dot.expired{background:#d55d46}
+#officeApp .office-alert-dot.soon{background:#e5a631}
+#officeApp .office-alert-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+#officeApp .office-alert-copy strong{font-size:12px;line-height:1.35}
+#officeApp .office-alert-copy small{font-size:11px;line-height:1.45;color:#577a63;overflow-wrap:anywhere}
+#officeApp .office-alert-copy em{font-size:10px;color:#82978b;font-style:normal}
+#officeApp .office-alert-new{border-radius:20px;font-size:9px;font-weight:850;background:#d7f1e0;color:#087444;padding:4px 7px}
+#officeApp .office-alert-empty{padding:25px 15px;text-align:center}
+#officeApp #officeNotice{
+ transition:opacity .18s ease;max-width:100%;border-radius:12px;
+}
+/* Catalog bulk save and individual item archive/restore. */
+#officeApp #page-catalog .office-catalog-tools{
+ display:flex;align-items:center;justify-content:flex-start;gap:14px;
+ flex-wrap:wrap;margin:15px 0 12px;padding:10px 12px;
+ background:#f5faf6;border:1px solid #dbe9df;border-radius:12px;
+}
+#officeApp #page-catalog .office-catalog-tools > .btn{width:auto;max-width:230px}
+#officeApp #page-catalog #officeCatalogSaveAll:disabled{opacity:.6}
+#officeApp #page-catalog .office-catalog-show{
+ display:flex;flex-direction:row;align-items:center;gap:8px;
+ white-space:nowrap;font-size:12px;min-width:0;
+}
+#officeApp #page-catalog #officeCatalogShowArchived{
+ width:17px;height:17px;min-height:17px;max-width:17px;accent-color:#075d38;
+}
+#officeApp #page-catalog #officeCatalogSaveStatus{font-size:11px}
+#officeApp #page-catalog table{min-width:1360px;table-layout:fixed}
+#officeApp #page-catalog table th:first-child{width:205px}
+#officeApp #page-catalog table th:nth-child(2){width:116px}
+#officeApp #page-catalog table th:nth-child(3){width:128px}
+#officeApp #page-catalog table th:nth-child(4){width:125px}
+#officeApp #page-catalog table th:nth-child(5){width:105px}
+#officeApp #page-catalog table th:nth-child(6){width:120px}
+#officeApp #page-catalog table th:nth-child(7){width:80px}
+#officeApp #page-catalog table th:nth-child(8){width:148px}
+#officeApp #page-catalog table th:nth-child(9){width:118px}
+#officeApp #page-catalog table th:nth-child(10){width:165px}
+#officeApp #page-catalog td:nth-child(8) input{min-width:125px}
+#officeApp #page-catalog td:nth-child(9) select{min-width:100px}
+#officeApp #page-catalog .office-catalog-row-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#officeApp #page-catalog .office-catalog-row-actions button{padding:7px 9px;min-height:35px;font-size:11px}
+#officeApp #page-catalog tr.office-product-dirty{background:#eff9f2}
+#officeApp #page-catalog tr.office-product-archived{background:#f8f8f7;opacity:.7}
+#officeApp #page-catalog tr.office-product-archived td:first-child small{display:block;font-size:10px;margin-top:4px}
+#officeApp #page-catalog .office-product-delete{color:#a84242;border-color:#ebc3c3}
+#officeApp #page-catalog .office-product-delete:hover{background:#fff2f0}
+/* System Logs records remain readable without stretching the page. */
+#officeApp #page-logs .office-log-tools{
+ display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:12px;
+ background:#f4faf5;border:1px solid #e0ebe2;border-radius:12px;margin:14px 0;
+}
+#officeApp #page-logs .office-log-tools label{flex:0 1 250px;min-width:150px;max-width:270px}
+#officeApp #page-logs #officeLogType{max-width:180px}
+#officeApp #page-logs .office-log-table{min-width:850px}
+#officeApp #page-logs .office-log-table th{font-size:11px;white-space:nowrap}
+#officeApp #page-logs .office-log-table td{vertical-align:top;font-size:12px;line-height:1.5}
+#officeApp #page-logs .office-log-table td small{display:block;color:#799283;max-width:180px;overflow-wrap:anywhere}
+#officeApp #page-logs .office-log-detail{max-width:460px;min-width:230px;overflow-wrap:anywhere}
+#officeApp #page-logs .pagination{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#officeApp #page-logs .office-log-panel{min-width:0}
+#officeApp #page-logs .office-log-tools :is(input,select){width:100%;max-width:270px}
+#officeApp #page-dashboard .warehouse-kpis{
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;
+}
+#officeApp #page-dashboard .warehouse-kpi{
+ min-height:95px!important;padding:12px 13px!important;
+ gap:4px!important;border-radius:12px!important;display:flex!important;
+}
+#officeApp #page-dashboard .warehouse-kpi strong{
+ font-size:clamp(1.05rem,1.45vw,1.35rem)!important;
+ line-height:1.15!important;
+}
+#officeApp #page-dashboard .warehouse-kpi small{
+ font-size:.64rem!important;line-height:1.3!important;
+}
+#officeApp #page-dashboard .warehouse-kpi > span:first-child{font-size:.69rem!important}
+#officeApp #page-dashboard .warehouse-kpi[aria-pressed]{
+ cursor:pointer;
+}
+#officeApp #page-dashboard .warehouse-kpi:not([aria-pressed]){
+ cursor:default;
+}
+#officeApp #page-dashboard .warehouse-breakdowns{
+ grid-template-columns:minmax(0,1fr)!important;
+}
+#officeApp #page-dashboard .warehouse-detail-card:last-child{grid-column:auto!important}
+#officeApp #page-dashboard .warehouse-table-scroll table{width:100%;min-width:530px!important}
+@media (max-width:1400px){
+ #officeApp #page-dashboard .warehouse-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media (max-width:900px){
+ #officeApp #page-dashboard .warehouse-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media (max-width:720px){
+ #officeApp .office-alert-panel{right:-56px;width:min(395px,calc(100vw - 20px))}
+ #officeApp #page-catalog .office-catalog-tools{padding:11px}
+ #officeApp #page-logs .office-log-tools label{flex:1 1 160px}
+}
+@media (max-width:430px){
+ #officeApp #page-dashboard .warehouse-kpis{grid-template-columns:minmax(0,1fr)!important}
+ #officeApp .office-alert-panel{right:-62px}
+}
+@media(prefers-reduced-motion:reduce){
+ #officeApp .office-alert-bell.has-unread:hover>.dm-ua-native,
+ #officeApp .office-alert-bell.has-unread:focus-visible>.dm-ua-native{animation:none}
+}
