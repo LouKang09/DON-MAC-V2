@@ -7,10 +7,16 @@
  if(!board||!select||window.donmacDashboardExperience)return;
  const summary=$('dashboardSummary');
  const scope=document.createElement('div');
- scope.id='dashboardScope';scope.className='dashboard-account-filter hidden admin-only';
+ scope.id='dashboardScope';scope.className='dashboard-account-filter hidden';
+ const timeline=document.createElement('div');timeline.className='dm-dashboard-timeline';
+ const timelineLabel=$('trendView')?.closest('label');
+ if(timelineLabel)timeline.appendChild(timelineLabel);
+ for(const id of ['trendFromWrap','trendToWrap']){const field=$(id);if(field)timeline.appendChild(field);}
+ scope.appendChild(timeline);
+ const branchGroup=document.createElement('div');branchGroup.className='dm-dashboard-branch-group';
  const label=document.createElement('label');label.htmlFor='dashboardBranch';label.textContent='Select Branch';
- scope.appendChild(label);
- const wrap=$('dashboardBranchWrap');scope.appendChild(wrap);
+ branchGroup.appendChild(label);
+ const wrap=$('dashboardBranchWrap');branchGroup.appendChild(wrap);scope.appendChild(branchGroup);
  board.insertBefore(scope,summary);
  const heading=$('planWidgetHeading')?.closest('.plan-widget-heading');
  if(heading)heading.classList.add('pending-account-analytics');
@@ -42,7 +48,8 @@
    const available=[...select.options].some(o=>o.value===select.value);
    if(!available)select.value='all';
    const admin=!wrap.classList.contains('hidden');
-   scope.classList.toggle('hidden',!admin||!choices.length);
+   branchGroup.hidden=!admin||!choices.length;
+   scope.classList.remove('hidden');
    if(choices.length&&lastBranch!==select.value){
      lastBranch=select.value;
      if(board.classList.contains('active'))$('applyTrend')?.click();
@@ -54,6 +61,14 @@
  observer.observe(wrap,{attributes:true,attributeFilter:['class']});
  // Branch switch controls the dashboard, not the active POS checkout branch.
  select.onchange=()=>{$('applyTrend')?.click();};
+ let dateTimer;
+ for(const id of ['trendFrom','trendTo'])$(id)?.addEventListener('change',()=>{
+   clearTimeout(dateTimer);
+   dateTimer=setTimeout(()=>{
+     const from=$('trendFrom'),to=$('trendTo');
+     if($('trendView').value==='custom'&&from.value&&to.value&&from.value<=to.value&&from.checkValidity()&&to.checkValidity())$('applyTrend')?.click();
+   },150);
+ });
  scheduleReconcile();
  // The performance chart was explicitly removed. Retain its saved product
  // quantities and the existing legend beneath the heading.
