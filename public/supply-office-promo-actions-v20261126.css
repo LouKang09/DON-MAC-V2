@@ -295,3 +295,6 @@
  #officeApp #page-promotions > .panel{padding:15px!important}
  #officeApp #page-promotions .office-campaign-participants{padding:12px!important}
 }
+
+/* Respect navigation hiding when Promotions is not the active office page. */
+#officeApp #page-promotions.hidden{display:none!important}
