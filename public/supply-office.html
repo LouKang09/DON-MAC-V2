@@ -194,19 +194,15 @@
    <p class="muted">Pick ingredients from Main Office supplies, or type an ingredient that is not listed. Your selections automatically create the promotion description.</p>
    <div class="office-campaign-pickers">
     <div class="office-campaign-picker">
-     <label for="officeCampaignSupplySelect">Select from Supply Catalog</label>
-     <div class="office-campaign-picker-controls">
-      <select id="officeCampaignSupplySelect" aria-label="Choose an available Main Office supply"><option value="">Loading supplies…</option></select>
+     <div class="office-campaign-picker-controls"><label class="office-ingredient-primary" for="officeCampaignSupplySelect">Select from Supply Catalog<select id="officeCampaignSupplySelect" aria-label="Choose an available Main Office supply"><option value="">Loading supplies…</option></select></label>
       <label class="office-campaign-quantity-label">Qty per sale<input id="officeCampaignSupplyQty" type="number" min="1" max="10000" step="1" value="1"></label>
       <button id="officeCampaignAddSupply" type="button" class="btn solid">Add supply</button>
      </div>
     </div>
     <div class="office-campaign-picker">
-     <label for="officeCampaignCustomName">Ingredient not in catalog</label>
-     <div class="office-campaign-picker-controls">
-      <input id="officeCampaignCustomName" type="text" maxlength="80" placeholder="Type ingredient name">
+     <div class="office-campaign-picker-controls"><label class="office-ingredient-primary" for="officeCampaignCustomName">Ingredient not in catalog<input id="officeCampaignCustomName" type="text" maxlength="80" placeholder="Type ingredient name"></label>
       <label class="office-campaign-quantity-label">Qty per sale<input id="officeCampaignCustomQty" type="number" min="1" max="10000" step="1" value="1"></label>
-      <input id="officeCampaignCustomUnit" class="office-campaign-custom-unit" type="text" maxlength="24" placeholder="Unit (e.g. pcs)" aria-label="Custom ingredient unit">
+      <label class="office-ingredient-unit" for="officeCampaignCustomUnit">Unit<input id="officeCampaignCustomUnit" class="office-campaign-custom-unit" type="text" maxlength="24" placeholder="Unit (e.g. pcs)" aria-label="Custom ingredient unit"></label>
       <button id="officeCampaignAddCustom" type="button" class="btn solid">Add typed ingredient</button>
      </div>
     </div>
@@ -292,7 +288,7 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=20261126-dashboard-note-guard" defer></script><script src="/supply-warehouse-v20261125.js?v=20261126-stock-pagination" defer></script><script src="/supply-office-dashboard-v20261125.js?v=20261126-auto-filters" defer></script><script src="/office-campaign-ui-v20261108.js?v=20261126-participation-toggle-v3" defer></script><script src="/donmac-info-disclaimers-v20261126.js?v=20261126-hover-headings-v3" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><link rel="stylesheet" href="/supply-office-promo-actions-v20261126.css?v=20261126-promo-spacing-v3"/><link rel="stylesheet" href="/donmac-info-disclaimers-v20261126.css?v=20261126-hover-headings-v3"/><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=20261126-request-search-refresh" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/supply-office-animated-icons-v20261126.js?v=20261126-close-control" defer></script><script src="/supply-office-alerts-v20261126.js?v=20261126-systemlogs" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script>
+<script src="/supply-office.js?v=20261126-compact-profile" defer></script><script src="/supply-warehouse-v20261125.js?v=20261126-stock-pagination" defer></script><script src="/supply-office-dashboard-v20261125.js?v=20261126-auto-filters" defer></script><script src="/office-campaign-ui-v20261108.js?v=20261126-participation-toggle-v3" defer></script><script src="/donmac-info-disclaimers-v20261126.js?v=20261126-hover-headings-v3" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><link rel="stylesheet" href="/supply-office-promo-actions-v20261126.css?v=20261126-promo-spacing-v3"/><link rel="stylesheet" href="/donmac-info-disclaimers-v20261126.css?v=20261126-hover-headings-v3"/><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=20261126-request-search-refresh" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/supply-office-animated-icons-v20261126.js?v=20261126-close-control" defer></script><script src="/supply-office-alerts-v20261126.js?v=20261126-systemlogs" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script>
 <style id="office-control-polish-20261126">
 /* Final scoped overrides for office controls only. */
 #officeApp #officeAlertPanel .office-alert-tools{align-items:center;gap:.6rem}
@@ -368,4 +364,39 @@
 #officeApp #page-warehouse #whStockPages{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
 @media(max-width:800px){#officeApp #page-promotions .office-campaign-fields{grid-template-columns:repeat(auto-fit,minmax(7.5rem,8rem))!important}}
 @media(max-width:430px){#officeApp #page-promotions .office-campaign-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+</style><style id="office-compact-profile-promotion">
+#officeApp #page-franchisees #franchiseDetailSummary{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;justify-content:flex-start!important;gap:.75rem!important;margin-block:.6rem!important}
+#officeApp #page-franchisees #franchiseDetailSummary .franchise-summary-card{box-sizing:border-box!important;min-height:0!important;height:auto!important;padding:.65rem .85rem!important;min-width:0!important;max-width:100%!important;align-self:start!important}
+#officeApp #page-franchisees #franchiseDetailSummary .franchise-branch-card{flex:0 1 17rem!important;width:17rem!important}
+#officeApp #page-franchisees #franchiseDetailSummary .franchise-royalty-summary{display:flex!important;align-items:flex-start!important;gap:.75rem!important;flex-wrap:wrap!important;flex:0 1 auto!important;min-width:0!important}
+#officeApp #page-franchisees #franchiseDetailSummary .franchise-royalty-summary .franchise-summary-card{width:9.5rem!important;flex:0 1 9.5rem!important}
+#officeApp #page-franchisees #franchiseDetailSummary .franchise-summary-card small{display:block;font-size:.7rem!important;line-height:1.25!important;margin:0 0 .3rem!important}
+#officeApp #page-franchisees #franchiseDetailSummary .franchise-summary-card strong{display:block;font-size:.9rem!important;line-height:1.3!important;margin:0!important}
+#officeApp #page-franchisees .franchise-branch-list{margin:.35rem 0 0!important;padding-left:1rem!important;font-size:.8rem!important;line-height:1.4!important}
+#officeApp #page-franchisees #franchiseFeeForm{display:flex!important;align-items:flex-end!important;justify-content:flex-start!important;flex-wrap:wrap!important;gap:.65rem!important;padding:.65rem .85rem!important;width:fit-content!important;max-width:100%!important;min-height:0!important;margin:.7rem 0 1rem!important}
+#officeApp #page-franchisees #franchiseFeeForm > div:first-child{flex:0 1 auto!important;min-width:0!important;align-self:center!important;margin:0!important}
+#officeApp #page-franchisees #franchiseFeeForm > label{display:flex!important;flex-direction:column!important;gap:.25rem!important;flex:0 1 10rem!important;width:10rem!important;min-width:0!important;margin:0!important;font-size:.75rem!important}
+#officeApp #page-franchisees #franchiseFeeForm #franchiseMonthlyFee{height:2.25rem!important;min-height:2.25rem!important;padding:.35rem .65rem!important;font-size:.85rem!important}
+#officeApp #page-franchisees #franchiseFeeForm > button{height:2.25rem!important;min-height:2.25rem!important;width:auto!important;padding:.35rem .7rem!important;align-self:flex-end!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-fields{display:flex!important;flex-wrap:wrap!important;align-items:flex-end!important;justify-content:flex-start!important;gap:.65rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-fields > label{display:flex!important;flex-direction:column!important;gap:.3rem!important;margin:0!important;flex:0 1 9rem!important;width:9rem!important;max-width:100%!important;min-width:0!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-fields > label:has(:is(#officeCampaignTitle,#officeCampaignButton)){flex:0 1 13rem!important;width:13rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-fields > label:has(:is(#officeCampaignPrice,#officeCampaignStartDate,#officeCampaignEndDate,#officeCampaignStartTime,#officeCampaignEndTime)){flex:0 1 9rem!important;width:9rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-fields > label > input{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:2.25rem!important;min-height:2.25rem!important;padding:.35rem .55rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker{padding:.7rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls{display:flex!important;flex-wrap:wrap!important;align-items:flex-end!important;justify-content:flex-start!important;gap:.65rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > label{display:flex!important;flex-direction:column!important;gap:.3rem!important;margin:0!important;font-size:.75rem!important;line-height:1.3!important;min-width:0!important;max-width:100%!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > .office-ingredient-primary{flex:0 1 15rem!important;width:15rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > .office-campaign-quantity-label{flex:0 1 5.5rem!important;width:5.5rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > .office-ingredient-unit{flex:0 1 7rem!important;width:7rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > label > :is(input,select){box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:2.25rem!important;min-height:2.25rem!important;max-height:2.25rem!important;padding:.35rem .65rem!important;font-size:.8rem!important;border-radius:999px!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > button{flex:0 0 auto!important;width:auto!important;height:2.25rem!important;min-height:2.25rem!important;padding:.35rem .7rem!important;margin:0!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-ingredient{display:grid!important;grid-template-columns:minmax(0,1fr) 5.5rem 6rem!important;align-items:end!important;gap:.65rem!important;padding:.55rem .7rem!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-ingredient-name{align-self:center!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-line-quantity{margin:0!important;display:flex!important;flex-direction:column!important;gap:.25rem!important;line-height:1.2!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-line-quantity input{box-sizing:border-box!important;height:2rem!important;min-height:2rem!important;max-height:2rem!important;width:100%!important;max-width:100%!important;padding:.25rem .55rem!important;font-size:.75rem!important;border-radius:999px!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-remove{background:#c83e42!important;border:1px solid #c83e42!important;color:#fff!important;height:2rem!important;min-height:2rem!important;padding:.25rem .55rem!important;width:100%!important;white-space:nowrap!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-remove:hover{background:#a92a30!important}
+#officeApp #page-promotions #officeCampaignForm .office-campaign-remove .dm-ua-icon{filter:brightness(0) invert(1)!important}
+@media(max-width:480px){#officeApp #page-promotions #officeCampaignForm .office-campaign-picker-controls > .office-ingredient-primary{flex-basis:100%!important;width:100%!important}#officeApp #page-promotions #officeCampaignForm .office-campaign-ingredient{grid-template-columns:5.5rem 6rem!important;justify-content:start!important}#officeApp #page-promotions #officeCampaignForm .office-campaign-ingredient-name{grid-column:1/-1}}
 </style></body></html>
