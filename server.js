@@ -2047,6 +2047,12 @@ async function handleOfficeApi(req,res,p,method){
 
   // Protected central-warehouse endpoints. This block is after supplyOfficeAuth
   // and the mandatory first-login password change gate.
+  const officeActor=officePrincipal.role==='warehouse-staff'?officePrincipal.username:
+    (process.env.SUPPLY_OFFICE_USERNAME||'Main Office');
+  const auditOffice=async(action,entity,entityId,details)=>{
+    try{await supplyOfficeOps.audit(db,officeActor,action,entity,entityId,details);}
+    catch(error){console.error('[Supply Office audit write]',error.message);}
+  };
   const whBase='/api/supply/office/warehouse';
   const whActor=process.env.SUPPLY_OFFICE_USERNAME||'Main Office';
   // Warehouse roles are enforced on the server. UI hiding is not authorization.
@@ -2081,24 +2087,29 @@ async function handleOfficeApi(req,res,p,method){
   }
   if(method==='POST'&&p===whBase+'/staff'){
     requireWarehouseAction('staff');
-    return json(res,201,await supplyWarehouse.createStaff(db,await readJson(req),
-      process.env.SUPPLY_OFFICE_USERNAME||''),safeHeaders());
+    const created=await supplyWarehouse.createStaff(db,await readJson(req),process.env.SUPPLY_OFFICE_USERNAME||'');
+    await auditOffice('WAREHOUSE_STAFF_CREATED','STAFF',created.id,{note:'New restricted warehouse account'});
+    return json(res,201,created,safeHeaders());
   }
   const staffAccount=p.match(/^\/api\/supply\/office\/warehouse\/staff\/([a-f0-9-]{36})(?:\/(reset-password))?$/i);
   if(staffAccount&&method==='PUT'&&!staffAccount[2]){
     requireWarehouseAction('staff');
-    return json(res,200,await supplyWarehouse.updateStaff(db,staffAccount[1],await readJson(req)),safeHeaders());
+    const body=await readJson(req),updated=await supplyWarehouse.updateStaff(db,staffAccount[1],body);
+    await auditOffice('WAREHOUSE_STAFF_UPDATED','STAFF',staffAccount[1],{role:body.role,active:body.active});
+    return json(res,200,updated,safeHeaders());
   }
   if(staffAccount&&method==='POST'&&staffAccount[2]==='reset-password'){
     requireWarehouseAction('staff');
-    return json(res,200,await supplyWarehouse.resetStaffPassword(db,staffAccount[1],
-      String((await readJson(req)).password||'')),safeHeaders());
+    const updated=await supplyWarehouse.resetStaffPassword(db,staffAccount[1],String((await readJson(req)).password||''));
+    await auditOffice('WAREHOUSE_STAFF_PASSWORD_RESET','STAFF',staffAccount[1],{note:'Password reset; value never logged'});
+    return json(res,200,updated,safeHeaders());
   }
   if(method==='POST'&&p===whBase+'/change-password'){
     if(officeOwner)throw Object.assign(new Error('Main Office password must be changed in Security settings.'),{status:400});
     const body=await readJson(req);
     const result=await supplyWarehouse.changeStaffPassword(db,officePrincipal.id,
       String(body.currentPassword||''),String(body.newPassword||''));
+    await auditOffice('WAREHOUSE_PASSWORD_CHANGED','STAFF',officePrincipal.id,{note:'Self-service rotation'});
     return json(res,200,{...result,signInAgain:true},
       safeHeaders({'Set-Cookie':'supply_office_session=; Max-Age=0; Path=/api/supply/office; HttpOnly; SameSite=Lax'}));
   }
@@ -2117,33 +2128,47 @@ async function handleOfficeApi(req,res,p,method){
   }
   if(method==='POST'&&p===whBase+'/suppliers'){
     requireWarehouseAction('purchase');
-    return json(res,201,await supplyWarehouse.createSupplier(db,await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),created=await supplyWarehouse.createSupplier(db,body,warehouseActor);
+    await auditOffice('SUPPLIER_CREATED','WAREHOUSE_SUPPLIER',created.id,{name:body.name});
+    return json(res,201,created,safeHeaders());
   }
   if(method==='POST'&&p===whBase+'/purchases'){
     requireWarehouseAction('purchase');
-    return json(res,201,await supplyWarehouse.createPurchase(db,await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),created=await supplyWarehouse.createPurchase(db,body,warehouseActor);
+    await auditOffice('WAREHOUSE_PURCHASE_CREATED','PURCHASE_ORDER',created.id,{reference:created.reference,lines:body.lines?.length});
+    return json(res,201,created,safeHeaders());
   }
   const whReceive=p.match(/^\/api\/supply\/office\/warehouse\/purchases\/([a-f0-9-]{36})\/receive$/i);
   if(method==='POST'&&whReceive){
     requireWarehouseAction('receive');
-    return json(res,200,await supplyWarehouse.receive(db,whReceive[1],await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),received=await supplyWarehouse.receive(db,whReceive[1],body,warehouseActor);
+    await auditOffice('WAREHOUSE_STOCK_RECEIVED','PURCHASE_ORDER',whReceive[1],{lines:body.lines?.length});
+    return json(res,200,received,safeHeaders());
   }
   if(method==='POST'&&p===whBase+'/adjust'){
     requireWarehouseAction('inventory');
-    return json(res,200,await supplyWarehouse.adjust(db,await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),updated=await supplyWarehouse.adjust(db,body,warehouseActor);
+    await auditOffice('WAREHOUSE_STOCK_ADJUSTED','SUPPLY_PRODUCT',body.productId,{quantity:body.quantity,reason:body.reason});
+    return json(res,200,updated,safeHeaders());
   }
   const whReorder=p.match(/^\/api\/supply\/office\/warehouse\/reorder\/(\d+)$/);
   if(method==='PUT'&&whReorder){
     requireWarehouseAction('inventory');
-    return json(res,200,await supplyWarehouse.setReorder(db,whReorder[1],await readJson(req)),safeHeaders());
+    const body=await readJson(req),updated=await supplyWarehouse.setReorder(db,whReorder[1],body);
+    await auditOffice('WAREHOUSE_REORDER_LEVEL_UPDATED','SUPPLY_PRODUCT',whReorder[1],body);
+    return json(res,200,updated,safeHeaders());
   }
   if(method==='POST'&&p===whBase+'/expenses'){
     requireWarehouseAction('finance');
-    return json(res,201,await supplyWarehouse.addExpense(db,await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),updated=await supplyWarehouse.addExpense(db,body,warehouseActor);
+    await auditOffice('WAREHOUSE_EXPENSE_RECORDED','WAREHOUSE_EXPENSE',updated.id,{category:body.category,amount:body.amount});
+    return json(res,201,updated,safeHeaders());
   }
   if(method==='POST'&&p===whBase+'/returns'){
     requireWarehouseAction('claims');
-    return json(res,201,await supplyWarehouse.createReturn(db,await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),created=await supplyWarehouse.createReturn(db,body,warehouseActor);
+    await auditOffice('WAREHOUSE_RETURN_RECORDED','SUPPLY_ORDER',body.orderId,{productId:body.productId,quantity:body.quantity,disposition:body.disposition});
+    return json(res,201,created,safeHeaders());
   }
   if(method==='GET'&&p===whBase+'/finance'){
     requireWarehouseAction('finance');
@@ -2158,7 +2183,9 @@ async function handleOfficeApi(req,res,p,method){
   }
   if(method==='POST'&&p===whBase+'/fulfillment'){
     requireWarehouseAction('fulfillment');
-    return json(res,201,await supplyWarehouse.addFulfillment(db,await readJson(req),warehouseActor),safeHeaders());
+    const body=await readJson(req),created=await supplyWarehouse.addFulfillment(db,body,warehouseActor);
+    await auditOffice('WAREHOUSE_FULFILLMENT_UPDATED','SUPPLY_ORDER',body.orderId,{step:body.step});
+    return json(res,201,created,safeHeaders());
   }
   if(method==='GET'&&p==='/api/supply/office/catalog')return json(res,200,await supplyChain.catalog(db,true),safeHeaders());
   const productMatch=p.match(/^\/api\/supply\/office\/products\/(\d+)$/);
@@ -2180,27 +2207,41 @@ async function handleOfficeApi(req,res,p,method){
   const franchiseFee=p.match(/^\/api\/supply\/office\/franchisees\/(\d+)\/royalty-fee$/);
   if(method==='PUT'&&franchiseFee){
     const body=await readJson(req);
-    return json(res,200,await supplyRoyalties.setFee(db,Number(franchiseFee[1]),body.monthlyFee,process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+    const result=await supplyRoyalties.setFee(db,Number(franchiseFee[1]),body.monthlyFee,officeActor);
+    await auditOffice('SETTINGS_FRANCHISE_ROYALTY_UPDATED','FRANCHISE',franchiseFee[1],{monthlyFee:body.monthlyFee});
+    return json(res,200,result,safeHeaders());
   }
   const royaltyStatus=p.match(/^\/api\/supply\/office\/franchisees\/(\d+)\/royalties\/([0-9a-f-]{36})\/status$/i);
   if(method==='POST'&&royaltyStatus){
     const body=await readJson(req);
-    return json(res,200,await supplyRoyalties.setMonthStatus(db,Number(royaltyStatus[1]),royaltyStatus[2],String(body.status||''),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+    const result=await supplyRoyalties.setMonthStatus(db,Number(royaltyStatus[1]),royaltyStatus[2],String(body.status||''),officeActor);
+    await auditOffice('SETTINGS_ROYALTY_STATUS_UPDATED','FRANCHISE',royaltyStatus[1],{monthId:royaltyStatus[2],status:body.status});
+    return json(res,200,result,safeHeaders());
   }
   if(method==='GET'&&p==='/api/supply/office/promotions')
     return json(res,200,{campaigns:await officePromotions.all(db)},safeHeaders({'Cache-Control':'no-store'}));
-  if(method==='POST'&&p==='/api/supply/office/promotions')
-    return json(res,201,await officePromotions.create(db,await readJson(req,120000),process.env.SUPPLY_OFFICE_USERNAME||'Main Office'),safeHeaders());
+  if(method==='POST'&&p==='/api/supply/office/promotions'){
+    const body=await readJson(req,120000),created=await officePromotions.create(db,body,officeActor);
+    await auditOffice('PROMO_CREATED','PROMOTION',created.id||'',{title:body.title||body.name||'New promotion'});
+    return json(res,201,created,safeHeaders());
+  }
   const promotion=p.match(/^\/api\/supply\/office\/promotions\/([0-9a-f-]{36})(?:\/(participants|deactivate))?$/i);
   if(promotion){
     if(method==='GET'&&promotion[2]==='participants')
       return json(res,200,{participants:await officePromotions.participants(db,promotion[1])},safeHeaders());
-    if(method==='POST'&&promotion[2]==='deactivate')
-      return json(res,200,await officePromotions.deactivate(db,promotion[1]),safeHeaders());
+    if(method==='POST'&&promotion[2]==='deactivate'){
+      const result=await officePromotions.deactivate(db,promotion[1]);
+      await auditOffice('PROMO_DEACTIVATED','PROMOTION',promotion[1],{});
+      return json(res,200,result,safeHeaders());
+    }
   }
   if(method==='GET'&&p==='/api/supply/office/orders')return json(res,200,{orders:await supplyChain.list(db)},safeHeaders());
   if(method==='GET'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.priceSettings(db),safeHeaders());
-  if(method==='PUT'&&p==='/api/supply/office/settings')return json(res,200,await supplyChain.setUrgentFee(db,(await readJson(req)).urgentFee),safeHeaders());
+  if(method==='PUT'&&p==='/api/supply/office/settings'){
+    const body=await readJson(req),result=await supplyChain.setUrgentFee(db,body.urgentFee);
+    await auditOffice('SETTINGS_URGENT_FEE_UPDATED','SUPPLY_SETTING','urgent_fee',{urgentFee:result.urgentFee});
+    return json(res,200,result,safeHeaders());
+  }
   const match=p.match(/^\/api\/supply\/office\/orders\/([0-9a-f-]{36})(?:\/(status|messages))?$/i);
   if(match){
     const [,id,action]=match;
