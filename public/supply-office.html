@@ -87,7 +87,7 @@
     </section>
     <section class="warehouse-chart-panel" aria-labelledby="warehouseBacklogHeading">
       <div class="warehouse-chart-header"><div><h3 id="warehouseBacklogHeading">Fulfillment Queue</h3><p class="muted">Open requests right now, independent of report dates.</p></div></div>
-      <div class="warehouse-backlog" id="warehouseBacklog"></div><button type="button" class="btn outline warehouse-shortcut" data-warehouse-nav="requests">Open Purchase Requests</button>
+      <div class="warehouse-backlog" id="warehouseBacklog"></div><button type="button" class="btn solid warehouse-shortcut" data-warehouse-nav="requests">Open Purchase Requests</button>
     </section>
   </div>
   <div class="warehouse-breakdowns">
@@ -292,7 +292,7 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=20261126-dashboard-note-guard" defer></script><script src="/supply-warehouse-v20261125.js?v=20261125-staff-scope" defer></script><script src="/supply-office-dashboard-v20261125.js?v=20261126-auto-filters" defer></script><script src="/office-campaign-ui-v20261108.js?v=20261126-participation-toggle-v3" defer></script><script src="/donmac-info-disclaimers-v20261126.js?v=20261126-hover-headings-v3" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><link rel="stylesheet" href="/supply-office-promo-actions-v20261126.css?v=20261126-promo-spacing-v3"/><link rel="stylesheet" href="/donmac-info-disclaimers-v20261126.css?v=20261126-hover-headings-v3"/><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=20261126-request-search-refresh" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/supply-office-animated-icons-v20261126.js?v=20261126-close-control" defer></script><script src="/supply-office-alerts-v20261126.js?v=20261126-systemlogs" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script>
+<script src="/supply-office.js?v=20261126-dashboard-note-guard" defer></script><script src="/supply-warehouse-v20261125.js?v=20261126-stock-pagination" defer></script><script src="/supply-office-dashboard-v20261125.js?v=20261126-auto-filters" defer></script><script src="/office-campaign-ui-v20261108.js?v=20261126-participation-toggle-v3" defer></script><script src="/donmac-info-disclaimers-v20261126.js?v=20261126-hover-headings-v3" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><link rel="stylesheet" href="/supply-office-promo-actions-v20261126.css?v=20261126-promo-spacing-v3"/><link rel="stylesheet" href="/donmac-info-disclaimers-v20261126.css?v=20261126-hover-headings-v3"/><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=20261126-request-search-refresh" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/supply-office-animated-icons-v20261126.js?v=20261126-close-control" defer></script><script src="/supply-office-alerts-v20261126.js?v=20261126-systemlogs" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script>
 <style id="office-control-polish-20261126">
 /* Final scoped overrides for office controls only. */
 #officeApp #officeAlertPanel .office-alert-tools{align-items:center;gap:.6rem}
@@ -341,4 +341,31 @@
  #officeApp #page-promotions .office-campaign-fields > label{flex-shrink:1!important;max-width:100%!important}
  #officeApp #officeAlertPanel .office-alert-tools > :is(#officeAlertMarkAll,#officeAlertReload){width:6.5rem!important;min-width:0!important;max-width:6.5rem!important;flex:0 1 6.5rem!important}
 }
+</style>
+<style id="office-layout-refinement-20261126">
+#officeApp #page-dashboard [data-warehouse-nav="requests"],
+#officeApp #page-warehouse [data-act="reorder"]{background:#086b42!important;border-color:#086b42!important;color:white!important}
+#officeApp #page-warehouse [data-act="reorder"] > .dm-ua-icon{filter:brightness(0) invert(1)!important}
+#officeApp #warehouseCostReview{position:relative!important}
+#officeApp #warehouseCostReview > summary{padding-right:3.5rem!important;min-height:2.5rem}
+#officeApp #warehouseCostReview #warehouseCostRefresh{position:absolute!important;top:.5rem!important;right:.5rem!important;left:auto!important;margin:0!important}
+#officeApp #page-catalog .office-catalog-row-actions{flex-flow:row nowrap!important;min-width:12.45rem!important;width:max-content!important}
+#officeApp #page-catalog tr:has(.office-catalog-row-actions) > td:last-child{min-width:13rem!important;white-space:nowrap!important}
+#officeApp #page-promotions .office-campaign-fields{display:grid!important;grid-template-columns:repeat(5,minmax(0,8rem))!important;gap:.8rem!important;justify-content:start!important;align-items:end!important}
+#officeApp #page-promotions .office-campaign-fields > label{width:100%!important;max-width:100%!important;min-width:0!important}
+#officeApp #page-promotions .office-campaign-fields > label:has(:is(#officeCampaignTitle,#officeCampaignButton)){grid-column:span 2!important}
+#officeApp #page-promotions .office-campaign-fields > label > input{width:100%!important;max-width:100%!important;min-width:0!important}
+#officeApp #page-promotions .office-campaign-fields > label:has(:is(#officeCampaignPrice,#officeCampaignStartDate,#officeCampaignEndDate,#officeCampaignStartTime,#officeCampaignEndTime)){width:100%!important;max-width:100%!important;flex-basis:auto!important}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .pagination .office-pagination-button,
+#officeApp #page-catalog #officeCatalogPages button,
+#officeApp #page-warehouse #whStockPages button{box-sizing:border-box!important;appearance:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:5rem!important;max-width:none!important;height:2.25rem!important;min-height:2.25rem!important;padding:.4rem .75rem!important;background:#086b42!important;border:1px solid #086b42!important;color:#fff!important;border-radius:.55rem!important;box-shadow:none!important;font:inherit!important;font-size:.75rem!important;font-weight:750!important}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .pagination .office-pagination-button:disabled,
+#officeApp #page-catalog #officeCatalogPages button:disabled,
+#officeApp #page-warehouse #whStockPages button:disabled{background:#086b42!important;color:white!important;border-color:#086b42!important;opacity:.5!important;cursor:not-allowed!important}
+#officeApp #page-warehouse .wh-stock-tools{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.65rem;margin:.75rem 0}
+#officeApp #page-warehouse #whStockSearch{width:min(100%,15rem)!important;border-radius:999px!important;padding:.55rem .9rem!important;min-height:2.5rem!important}
+#officeApp #page-warehouse #whStockFilter{width:min(100%,10rem)!important;border-radius:999px!important;min-height:2.5rem!important;padding:.45rem .7rem!important}
+#officeApp #page-warehouse #whStockPages{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+@media(max-width:800px){#officeApp #page-promotions .office-campaign-fields{grid-template-columns:repeat(auto-fit,minmax(7.5rem,8rem))!important}}
+@media(max-width:430px){#officeApp #page-promotions .office-campaign-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 </style></body></html>
