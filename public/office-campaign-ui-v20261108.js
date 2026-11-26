@@ -73,6 +73,8 @@ function timeRemaining(end){
  return (d?d+'d ':'')+[h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
 }
 function currentStatus(c){
+ if(c.deleted)return'DELETED';
+ if(c.held)return'ON_HOLD';
  if(!c.active)return'INACTIVE';
  if(Date.now()<Date.parse(c.startsAt))return'UPCOMING';
  if(Date.now()>=Date.parse(c.endsAt))return'ENDED';
@@ -151,25 +153,55 @@ $('officeCampaignSupplies').addEventListener('change',event=>{
  try{selectedIngredients[index].qty=quantity(field.value);ingredientFeedback('');renderSupplies();}
  catch(err){ingredientFeedback(err.message);field.value=selectedIngredients[index].qty;}
 });
+const promoGlyph={
+ arrow:'<svg class="dm-ua-native" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>',
+ trash:'<svg class="dm-ua-native" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg>'
+};
+const statusLabel={LIVE:'Live',UPCOMING:'Scheduled',ON_HOLD:'On hold',INACTIVE:'Deactivated',ENDED:'Ended',DELETED:'Deleted'};
+function actionEntry(label,attribute,enabled=true,danger=false){
+ return '<button type="button" role="menuitem" class="office-promo-menu-action'+(danger?' office-promo-danger':'')+
+  '" '+attribute+(enabled?'':' disabled')+'>'+
+  (danger?'<span data-dm-icon="trash2" class="office-promo-delete-icon">'+promoGlyph.trash+'</span>':'')+
+  '<span>'+label+'</span></button>';
+}
 function renderCampaigns(){
  $('officeCampaignRows').innerHTML=campaigns.map(c=>{
   const status=currentStatus(c),period=fmt(c.startsAt)+' → '+fmt(c.endsAt);
-  const supply=(c.requirements||[]).map(x=>esc(x.name)+' × '+x.unitsPerSale).join(' · ');
-  return '<tr><td>'+(c.iconData?'<img class="office-campaign-row-icon" src="'+esc(c.iconData)+'" alt="" loading="lazy">':'')+'<strong>'+esc(c.title)+'</strong><small>'+esc(c.description)+'</small></td>'+
+  const supply=(c.requirements||[]).map(x=>esc(x.name)+' × '+Number(x.unitsPerSale)).join(' · ');
+  const hold=Boolean(c.active)&&!c.held&&(status==='LIVE'||status==='UPCOMING');
+  const reactivate=status==='INACTIVE'||status==='ON_HOLD'||status==='ENDED';
+  const id=esc(c.id);
+  const actions='<details class="office-promo-actions" data-promo-menu="'+id+'">'+
+   '<summary class="office-promo-menu-trigger" aria-label="Actions for '+esc(c.title)+'">Actions '+promoGlyph.arrow+'</summary>'+
+   '<div class="office-promo-menu-list" role="menu" aria-label="Manage '+esc(c.title)+'">'+
+    actionEntry('Deactivate','data-campaign-deactivate="'+id+'"',c.active)+
+    actionEntry('Hold Promotion','data-campaign-hold="'+id+'"',hold)+
+    actionEntry('Reactivate','data-campaign-reactivate="'+id+'"',reactivate)+
+    actionEntry('View History','data-campaign-history="'+id+'"')+
+    '<div class="office-promo-menu-divider" role="separator"></div>'+
+    actionEntry('Delete','data-campaign-delete="'+id+'"',true,true)+
+   '</div></details>';
+  return '<tr><td>'+(c.iconData?'<img class="office-campaign-row-icon" src="'+esc(c.iconData)+'" alt="" loading="lazy">':'')+
+    '<strong>'+esc(c.title)+'</strong><small>'+esc(c.description)+'</small></td>'+
    '<td><strong>'+esc(c.buttonName)+'</strong><small>'+money(c.price)+' · '+supply+'</small></td>'+
-   '<td><span class="office-campaign-status" data-campaign-status="'+c.id+'">'+status+'</span>'+
-   '<small data-campaign-countdown="'+esc(c.endsAt)+'">'+(status==='UPCOMING'?'Scheduled':timeRemaining(c.endsAt))+'</small></td>'+
-   '<td>'+esc(period)+'</td><td><button class="btn outline" data-campaign-participants="'+c.id+'">View franchisees</button></td>'+
-   '<td>'+(c.active?'<button class="btn outline" data-campaign-deactivate="'+c.id+'">Deactivate</button>':'Deactivated')+'</td></tr>';
+   '<td><span class="office-campaign-status" data-status="'+esc(status)+'" data-campaign-status="'+id+'">'+
+    esc(statusLabel[status]||status)+'</span>'+
+   '<small data-campaign-countdown="'+id+'">'+(status==='UPCOMING'?'Scheduled':timeRemaining(c.endsAt))+'</small></td>'+
+   '<td class="office-promo-period">'+esc(period)+'</td><td>'+
+    '<button class="btn solid office-promo-participants" type="button" data-campaign-participants="'+id+'">View franchisees</button></td>'+
+   '<td class="office-promo-actions-cell">'+actions+'</td></tr>';
  }).join('')||'<tr><td colspan="6">No Main Office promotions yet.</td></tr>';
 }
 function renderTimers(){
  for(const c of campaigns){
   const status=$('officeCampaignRows').querySelector('[data-campaign-status="'+c.id+'"]');
-  const count=$('officeCampaignRows').querySelector('[data-campaign-countdown="'+c.endsAt+'"]');
-  if(status)status.textContent=currentStatus(c);
-  if(count)count.textContent=currentStatus(c)==='UPCOMING'?'Starts in '+timeRemaining(c.startsAt):
-   currentStatus(c)==='LIVE'?'Ends in '+timeRemaining(c.endsAt):currentStatus(c)==='ENDED'?'Ended':'Deactivated';
+  const count=$('officeCampaignRows').querySelector('[data-campaign-countdown="'+c.id+'"]');
+  const current=currentStatus(c);
+  if(status){status.textContent=statusLabel[current]||current;status.dataset.status=current;}
+  if(count)count.textContent=current==='UPCOMING'?'Starts in '+timeRemaining(c.startsAt):
+   current==='LIVE'?'Ends in '+timeRemaining(c.endsAt):
+   current==='ON_HOLD'?'Temporarily paused':
+   current==='ENDED'?'Ended':current==='INACTIVE'?'Deactivated':'Deleted';
  }
 }
 async function load(){
@@ -207,22 +239,144 @@ $('officeCampaignForm').addEventListener('submit',async e=>{
  finally{btn.disabled=false}
 });
 $('officeCampaignRefresh').onclick=load;
+const reactivateDialog=$('officeCampaignReactivateDialog');
+const historyDialog=$('officeCampaignHistoryDialog');
+let reactivatingId=null;
+const actionFeedback=message=>{$('officeCampaignFeedback').textContent=message;};
+const confirmAction=async(message,title,button)=>{
+ if(window.donmacPrompt?.confirm)return !!(await window.donmacPrompt.confirm(message,{
+  title,confirmText:button,cancelText:'Cancel'
+ }));
+ return window.confirm(message);
+};
+function dismissPromoMenu(){
+ $('officeCampaignRows').querySelectorAll('.office-promo-actions[open]').forEach(el=>{el.open=false});
+}
+function openDialog(dialog){
+ if(typeof dialog.showModal==='function')dialog.showModal();
+ else{dialog.setAttribute('open','');dialog.classList.add('office-promo-dialog-fallback');}
+}
+function closeDialog(dialog){
+ if(typeof dialog.close==='function')dialog.close();
+ else{dialog.removeAttribute('open');dialog.classList.remove('office-promo-dialog-fallback');}
+}
+function nextPhilippineTime(){
+ // Asia/Manila is UTC+08 with no daylight-saving time.
+ const local=new Date(Date.now()+8*3600000+86400000).toISOString().slice(0,10);
+ return local+'T09:00';
+}
+function fillPhilippineDateTime(prefix,start){
+ $(prefix+'Date').value=start.slice(0,10);
+ $(prefix+'Time').value=start.slice(11,16);
+}
+function editReactivation(id){
+ const item=campaigns.find(x=>x.id===id);if(!item)return;
+ reactivatingId=id;
+ $('officeCampaignReactivateName').textContent=item.title;
+ $('officeReactivationError').textContent='';
+ const next=nextPhilippineTime();
+ const rawDuration=Date.parse(item.endsAt)-Date.parse(item.startsAt);
+ const duration=Math.min(366*86400000,Math.max(60000,Number.isFinite(rawDuration)?rawDuration:3600000));
+ const end=new Date(Date.parse(phTime(next))+duration+8*3600000).toISOString().slice(0,16);
+ fillPhilippineDateTime('officeReactivation',next);
+ $('officeReactivationEndDate').value=end.slice(0,10);
+ $('officeReactivationEndTime').value=end.slice(11,16);
+ openDialog(reactivateDialog);
+}
+$('officeCampaignReactivateForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!reactivatingId)return;
+ const btn=$('officeReactivationSave'),error=$('officeReactivationError');
+ try{
+  const body={
+   startsAt:phTime($('officeReactivationDate').value+'T'+$('officeReactivationTime').value),
+   endsAt:phTime($('officeReactivationEndDate').value+'T'+$('officeReactivationEndTime').value)
+  };
+  if(Date.parse(body.startsAt)<Date.now()-60000)throw Error('Reactivation must start in the future.');
+  if(Date.parse(body.endsAt)<=Date.parse(body.startsAt))throw Error('End date must be after the new start.');
+  btn.disabled=true;error.textContent='';
+  await api('promotions/'+reactivatingId+'/reactivate',{method:'POST',body:JSON.stringify(body)});
+  closeDialog(reactivateDialog);reactivatingId=null;
+  actionFeedback('Promotion reactivation scheduled. It will start automatically at the selected Philippine date and time.');
+  await load();
+ }catch(err){error.textContent=err.message}
+ finally{btn.disabled=false;}
+});
+async function showHistory(id){
+ const item=campaigns.find(x=>x.id===id);if(!item)return;
+ $('officeCampaignHistoryName').textContent=item.title;
+ $('officeCampaignHistorySummary').textContent='Loading promotion history…';
+ $('officeCampaignHistoryRows').textContent='';
+ openDialog(historyDialog);
+ try{
+  const data=await api('promotions/'+id+'/history'),events=data.events||[];
+  const completed=events.filter(e=>e.action==='REACTIVATED'&&Date.parse(e.startsAt)<=Date.now()).length;
+  const queued=events.filter(e=>e.action==='REACTIVATED'&&Date.parse(e.startsAt)>Date.now()).length;
+  $('officeCampaignHistorySummary').innerHTML=
+   '<div><small>Reactivations started</small><strong>'+completed+'</strong></div>'+
+   '<div><small>Scheduled reactivations</small><strong>'+queued+'</strong></div>'+
+   '<div><small>Recorded changes</small><strong>'+events.length+'</strong></div>';
+  const labels={CREATED:'Promotion created',HELD:'Promotion placed on hold',
+   DEACTIVATED:'Promotion deactivated',REACTIVATED:'Promotion reactivation scheduled',
+   DELETED:'Promotion deleted'};
+  $('officeCampaignHistoryRows').innerHTML=events.slice().reverse().map(event=>
+   '<article class="office-promo-history-event"><div><strong>'+
+    esc(labels[event.action]||event.action)+'</strong>'+
+    '<time>'+esc(fmt(event.occurredAt))+'</time></div>'+
+    '<p>By '+esc(event.actor||'Main Office')+'</p>'+
+    (event.startsAt?'<small>Promotion window: '+esc(fmt(event.startsAt))+' — '+esc(fmt(event.endsAt))+'</small>':'')+
+    (event.note?'<small>'+esc(event.note)+'</small>':'')+'</article>'
+  ).join('')||'<p>No prior activity is recorded for this promotion.</p>';
+ }catch(err){$('officeCampaignHistorySummary').textContent=err.message;}
+}
+document.querySelectorAll('[data-office-promo-close]').forEach(btn=>btn.addEventListener('click',()=>{
+ closeDialog(btn.dataset.officePromoClose==='history'?historyDialog:reactivateDialog);
+}));
+for(const dlg of [reactivateDialog,historyDialog])dlg.addEventListener('click',e=>{
+ if(e.target===dlg)closeDialog(dlg);
+});
+$('officeCampaignRows').addEventListener('toggle',e=>{
+ const menu=e.target.closest('details.office-promo-actions');if(!menu?.open)return;
+ $('officeCampaignRows').querySelectorAll('details.office-promo-actions[open]').forEach(x=>{if(x!==menu)x.open=false});
+},true);
+document.addEventListener('click',e=>{
+ if(!e.target.closest('.office-promo-actions'))dismissPromoMenu();
+});
 $('officeCampaignRows').addEventListener('click',async e=>{
- const deactivate=e.target.closest('[data-campaign-deactivate]'),participants=e.target.closest('[data-campaign-participants]');
- if(deactivate){
-  if(!await window.donmacPrompt.confirm('Deactivate the Main Office promo button for all franchises? Selling will stop immediately.'))return;
-  deactivate.disabled=true;
-  try{await api('promotions/'+deactivate.dataset.campaignDeactivate+'/deactivate',{method:'POST'});
-   $('officeCampaignFeedback').textContent='Campaign deactivated. Franchise buttons will disappear when refreshed.';
+ const btn=e.target.closest('[data-campaign-deactivate],[data-campaign-hold],[data-campaign-reactivate],'+
+  '[data-campaign-history],[data-campaign-delete],[data-campaign-participants]');
+ if(!btn)return;
+ const attr=btn.dataset,id=attr.campaignDeactivate||attr.campaignHold||attr.campaignReactivate||
+  attr.campaignHistory||attr.campaignDelete||attr.campaignParticipants;
+ const campaign=campaigns.find(x=>x.id===id);if(!campaign)return;
+ dismissPromoMenu();
+ if(attr.campaignReactivate){editReactivation(id);return;}
+ if(attr.campaignHistory){await showHistory(id);return;}
+ if(attr.campaignDeactivate||attr.campaignHold||attr.campaignDelete){
+  const action=attr.campaignDelete?'delete':attr.campaignHold?'hold':'deactivate';
+  const warning=action==='delete'?
+   'Delete "'+campaign.title+'" from active promotions? This will prevent selling and hide it from the promotional catalog. Past POS transactions and audit history remain preserved.':
+   action==='hold'?
+   'Put "'+campaign.title+'" on hold? Selling stops immediately. You may schedule a new reactivation later.':
+   'Deactivate "'+campaign.title+'"? Selling stops immediately across participating franchisees.';
+  const confirmed=await confirmAction(warning,action==='delete'?'Delete Promotion':
+   action==='hold'?'Hold Promotion':'Deactivate Promotion',action==='delete'?'Delete':action==='hold'?'Hold':'Deactivate');
+  if(!confirmed)return;
+  btn.disabled=true;
+  try{
+   await api('promotions/'+id+(action==='delete'?'':'/'+action),{method:action==='delete'?'DELETE':'POST'});
+   actionFeedback(action==='delete'?'Promotion deleted from active lists. Sales and history retained.':
+    action==='hold'?'Promotion placed on hold.':'Promotion deactivated.');
    await load();
-  }catch(err){$('officeCampaignFeedback').textContent=err.message}
-  finally{deactivate.disabled=false}
+  }catch(err){actionFeedback(err.message)}
+  finally{if(btn.isConnected)btn.disabled=false}
+  return;
  }
- if(participants){
+ if(attr.campaignParticipants){
   const box=$('officeCampaignParticipants');box.classList.remove('hidden');
   box.textContent='Checking branch ingredient stock and promotional sales…';
   try{
-   const data=await api('promotions/'+participants.dataset.campaignParticipants+'/participants');
+   const data=await api('promotions/'+id+'/participants');
    box.innerHTML='<h3>Franchise promotional participation</h3><p>Branches can sell immediately when their ingredients are sufficient—no supply purchase required.</p><div class="table-scroll"><table><thead><tr><th>Franchise / Branch</th><th>Available ingredients</th><th>Promotional sales</th></tr></thead><tbody>'+
     (data.participants||[]).map(row=>'<tr><td><strong>'+esc(row.owner)+'</strong><small>'+esc(row.branch||'Branch')+' · Workspace #'+row.workspaceId+'</small></td>'+
       '<td>'+(row.eligible?'Ready to sell':'Not enough branch stock')+'<small>'+row.supplies.map(x=>esc(x.name)+': '+Number(x.available||0)+' '+esc(x.uom||'')+' on hand, '+Number(x.requiredPerSale||0)+' needed'+(x.matched?'':' · item/unit not matched')).join(' · ')+'</small></td>'+
