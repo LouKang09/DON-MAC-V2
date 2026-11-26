@@ -163,3 +163,18 @@
  border-color:#d4e6d9!important;
 }
 #officeApp #page-dashboard .warehouse-kpi-static .warehouse-kpi-arrow{display:none!important}
+
+/* Subtle ringing while fresh warehouse alerts exist; fully stops when read. */
+@keyframes dm-office-bell-notify{
+ 0%,17%,100%{transform:rotate(0)}
+ 3%,9%{transform:rotate(13deg)}
+ 6%,12%{transform:rotate(-13deg)}
+ 15%{transform:rotate(5deg)}
+}
+#officeApp .office-alert-bell.has-unread > :is(.dm-ua-native,.dm-ua-icon){
+ animation:dm-office-bell-notify 3.8s ease-in-out infinite;
+ transform-origin:50% 12%;
+}
+@media(prefers-reduced-motion:reduce){
+ #officeApp .office-alert-bell.has-unread > :is(.dm-ua-native,.dm-ua-icon){animation:none}
+}
