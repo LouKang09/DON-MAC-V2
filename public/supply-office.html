@@ -214,15 +214,37 @@
    <div class="office-campaign-generated-description"><strong>Promotion description (automatic)</strong><p id="officeCampaignIngredientsSummary">Select or type the ingredients above.</p></div>
    <p class="office-campaign-inventory-note">Catalog supplies are checked against delivery records before a franchise can sell this promotion. Typed ingredients appear in the description only and do not count toward stock eligibility. Select at least one catalog supply.</p>
   </section>
-  <button id="officeCampaignCreate" type="submit" class="btn solid">Create &amp; Schedule Promotion</button>
+  <button id="officeCampaignCreate" type="submit" class="btn solid" title="Create and schedule a new promotion">Schedule Promotion</button>
   <p id="officeCampaignFeedback" role="status"></p>
  </form></div>
  <div class="panel"><div class="panel-head"><h2>Scheduled / Live Promotions</h2>
-  <button id="officeCampaignRefresh" class="btn outline" type="button">Refresh</button></div>
+  <button id="officeCampaignRefresh" class="btn solid" type="button">Refresh</button></div>
   <div class="table-scroll"><table class="office-campaign-table"><thead><tr><th>Campaign</th><th>POS button</th><th>Status</th><th>Period</th><th>Participants</th><th>Actions</th></tr></thead>
   <tbody id="officeCampaignRows"><tr><td colspan="6">No promotions loaded.</td></tr></tbody></table></div>
   <div id="officeCampaignParticipants" class="office-campaign-participants hidden"></div>
  </div>
+ <dialog id="officeCampaignReactivateDialog" class="office-promo-dialog" aria-labelledby="officePromoReactivateTitle">
+  <form id="officeCampaignReactivateForm">
+   <div class="office-promo-dialog-head"><div><p class="eyebrow">PROMOTION LIFECYCLE</p><h3 id="officePromoReactivateTitle">Schedule Reactivation</h3><p id="officeCampaignReactivateName" class="muted"></p></div>
+    <button type="button" class="office-promo-x" data-office-promo-close="reactivate" aria-label="Close">×</button></div>
+   <p class="office-promo-dialog-hint">The promotion stays unavailable until its scheduled start. Choose when it starts again and when it ends (Philippine time).</p>
+   <div class="office-promo-reactivate-grid">
+    <label>Next start date<input id="officeReactivationDate" type="date" required/></label>
+    <label>Start time<input id="officeReactivationTime" type="time" step="60" required/></label>
+    <label>Next end date<input id="officeReactivationEndDate" type="date" required/></label>
+    <label>End time<input id="officeReactivationEndTime" type="time" step="60" required/></label>
+   </div>
+   <p id="officeReactivationError" class="office-promo-error" role="alert"></p>
+   <div class="office-promo-dialog-actions"><button type="button" class="btn outline" data-office-promo-close="reactivate">Cancel</button><button type="submit" class="btn solid" id="officeReactivationSave">Schedule Reactivation</button></div>
+  </form>
+ </dialog>
+ <dialog id="officeCampaignHistoryDialog" class="office-promo-dialog office-promo-history-dialog" aria-labelledby="officePromoHistoryTitle">
+  <div class="office-promo-dialog-head"><div><p class="eyebrow">CAMPAIGN ACTIVITY</p><h3 id="officePromoHistoryTitle">Promotion History</h3><p id="officeCampaignHistoryName" class="muted"></p></div>
+   <button type="button" class="office-promo-x" data-office-promo-close="history" aria-label="Close">×</button></div>
+  <div id="officeCampaignHistorySummary" class="office-promo-history-summary"></div>
+  <div id="officeCampaignHistoryRows" class="office-promo-history-rows" aria-live="polite"></div>
+  <div class="office-promo-dialog-actions"><button class="btn solid" type="button" data-office-promo-close="history">Close</button></div>
+ </dialog>
 </section>
 <section class="office-page hidden" id="page-warehouse">
   <div class="panel warehouse-management">
@@ -269,4 +291,4 @@
   <h3>Status timeline</h3><div id="officeTimeline" class="timeline"></div>
   <h3>Chat with franchise owner</h3><div id="officeMessages" class="chat-history"></div><form id="officeMessageForm" class="chat-send"><input id="officeMessageText" maxlength="1500" placeholder="Type a message…" aria-label="Message franchise owner"/><label class="office-chat-file" title="Attach photo">📷<input type="file" id="officeChatPhoto" accept="image/jpeg,image/png,image/webp" aria-label="Attach photo"/></label><button class="btn solid">Send</button></form><div id="officeChatPreview" class="chat-photo-preview hidden"></div>
  </div></div></div>
-<script src="/supply-office.js?v=20261126-unified-actions" defer></script><script src="/supply-warehouse-v20261125.js?v=20261125-staff-scope" defer></script><script src="/supply-office-dashboard-v20261125.js?v=20261126-auto-filters" defer></script><script src="/office-campaign-ui-v20261108.js?v=6" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=20261126-request-search-refresh" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/supply-office-animated-icons-v20261126.js?v=20261126-close-control" defer></script><script src="/supply-office-alerts-v20261126.js?v=20261126-systemlogs" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script></body></html>
+<script src="/supply-office.js?v=20261126-unified-actions" defer></script><script src="/supply-warehouse-v20261125.js?v=20261125-staff-scope" defer></script><script src="/supply-office-dashboard-v20261125.js?v=20261126-auto-filters" defer></script><script src="/office-campaign-ui-v20261108.js?v=6" defer></script><link rel="stylesheet" href="/office-campaign-v20261108.css?v=3"><link rel="stylesheet" href="/supply-office-promo-actions-v20261126.css?v=1"/><script src="/tenant-billing-ui.js?v=1" defer></script><script src="/refresh-controls-v20261107.js?v=20261126-request-search-refresh" defer></script><script src="/vendor/lottie-svg.min.js" defer></script><script src="/supply-office-animated-icons-v20261126.js?v=20261126-close-control" defer></script><script src="/supply-office-alerts-v20261126.js?v=20261126-systemlogs" defer></script><script src="/donmac-icon-controls-v20261121.js?v=3" defer></script><script src="/donmac-useanimations-v20261120.js?v=14" defer></script><script defer src="/donmac-logo-pour-v20261121.js?v=5-seamless"></script></body></html>
