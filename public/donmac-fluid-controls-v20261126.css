@@ -1,0 +1,309 @@
+/*
+ * Don Mac fluid controls · 2026-11-26
+ * Solves narrow content areas with a sidebar present, not just viewport width.
+ * Loaded LAST on main POS and Supply Office so older fixed widths do not win.
+ * Scope: toolbar/search/refresh/header presentation only. No permission or POS
+ * checkout logic is changed.
+ */
+:root { --dm-fluid-gap:clamp(.5rem, 1.25vw, 1rem); --dm-refresh-size:2.5625rem; }
+#officeApp, #officeApp .office-main, #officeApp .office-page,
+#officeApp :is(.panel,.panel-head,.warehouse-controls,.franchise-detail,.table-scroll),
+#app, #app > main.main, #app > main.main > .view {
+ min-width:0;max-width:100%;box-sizing:border-box;
+}
+#officeApp :is(.office-page,.panel) :is(input,select,textarea),
+#app main.main .view :is(input,select,textarea) {
+ box-sizing:border-box;min-width:0;max-width:100%;
+}
+#officeApp :is(.table-scroll,.warehouse-table-scroll,.wh-table-wrap),
+#app main.main .view :is(.table-scroll,.table-wrap,.inv-table-scroll,.inv-audit-scroll) {
+ max-width:100%;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;
+ overscroll-behavior-x:contain;
+}
+/* SUPPLY CHAIN — filters auto-apply without a button. Native selects and the
+ * searchable franchisee trigger have one consistent 16px downward chevron. */
+#officeApp #page-dashboard .warehouse-controls {
+ display:flex!important;align-items:flex-end!important;
+ justify-content:flex-start!important;
+ flex-wrap:wrap!important;gap:var(--dm-fluid-gap)!important;
+ max-width:100%;min-width:0;
+}
+#officeApp #page-dashboard .warehouse-controls > label:first-child {
+ flex:0 1 165px!important;width:165px!important;max-width:185px!important;
+ min-width:125px!important;
+}
+#officeApp #page-dashboard .warehouse-controls :is(#warehousePeriod,#warehouseBranch),
+#officeApp #page-dashboard .warehouse-chart-controls select {
+ -webkit-appearance:none!important;appearance:none!important;
+ background-color:#fff!important;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231b603e' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;
+ background-repeat:no-repeat!important;
+ background-size:16px 16px!important;
+ background-position:right 11px center!important;
+ padding-right:35px!important;
+ border:1px solid #c5ddcc!important;
+ border-radius:9px!important;
+ min-height:42px!important;line-height:1.3!important;
+ font-size:clamp(.75rem, .7rem + .1vw, .875rem)!important;
+}
+#officeApp #page-dashboard #warehouseFranchiseToggle {
+ min-height:42px!important;border:1px solid #c5ddcc!important;
+ border-radius:9px!important;padding:8px 11px!important;
+ font-size:clamp(.75rem, .7rem + .1vw, .875rem)!important;
+}
+#officeApp #page-dashboard .warehouse-selector-chevron {
+ flex:0 0 16px!important;width:16px!important;height:16px!important;
+ stroke-width:2.3!important;transition:transform .18s ease;
+}
+#officeApp #page-dashboard #warehouseFranchiseToggle[aria-expanded="true"] .warehouse-selector-chevron {transform:rotate(180deg);}
+#officeApp #page-dashboard .warehouse-custom-dates:not([hidden]){
+ flex-wrap:wrap!important;align-items:flex-end!important;
+ gap:10px!important;max-width:100%!important;
+}
+#officeApp #page-dashboard .warehouse-custom-dates > label {
+ min-width:0!important;flex:0 1 150px!important;
+ width:150px!important;max-width:160px!important;
+}
+#officeApp #page-dashboard .warehouse-custom-dates :is(input,select){
+ min-height:42px!important;width:100%!important;
+}
+#officeApp #page-dashboard .warehouse-controls #warehouseApply{display:none!important;}
+/* SUPPLY CHAIN — stable directory header. Group the search pill and Refresh
+ * into the same flex item so they NEVER wrap into separate misplaced lines. */
+#officeApp #page-franchisees > .panel {
+ container:dm-franchise-directory / inline-size;
+}
+#officeApp #page-franchisees > .panel > .panel-head {
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+ align-items:start!important;justify-content:stretch!important;
+ gap:clamp(10px, 1.4vw, 20px)!important;
+ min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-franchisees > .panel > .panel-head > :first-child {
+ min-width:0!important;max-width:100%!important;
+ overflow-wrap:anywhere;
+}
+#officeApp #page-franchisees .franchise-directory-actions {
+ display:flex!important;flex-flow:row nowrap!important;
+ justify-content:flex-end!important;align-items:center!important;
+ justify-self:end!important;align-self:start!important;
+ gap:10px!important;min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-franchisees #franchiseSearch {
+ flex:0 1 240px!important;
+ box-sizing:border-box!important;
+ width:240px!important;max-width:240px!important;min-width:0!important;
+ height:42px!important;min-height:42px!important;
+ padding:9px 15px!important;
+ border:1px solid #cfdfd3!important;
+ border-radius:999px!important;
+ font-size:clamp(.75rem, .71rem + .1vw, .875rem)!important;
+ text-overflow:ellipsis;
+}
+#officeApp #page-franchisees .franchise-directory-actions > .dm-refresh {
+ display:inline-flex!important;
+ width:var(--dm-refresh-size)!important;
+ height:var(--dm-refresh-size)!important;
+ min-width:var(--dm-refresh-size)!important;
+ max-width:var(--dm-refresh-size)!important;
+ flex:0 0 var(--dm-refresh-size)!important;
+ margin:0!important;
+ border-radius:11px!important;
+}
+/* Preserve list header at small container sizes, but keep both controls
+ * aligned at the end of their shared row. */
+@container dm-franchise-directory (max-width:650px) {
+ #officeApp #page-franchisees > .panel > .panel-head {
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #officeApp #page-franchisees .franchise-directory-actions {
+  width:100%!important;justify-self:stretch!important;
+  justify-content:flex-end!important;
+ }
+ #officeApp #page-franchisees #franchiseSearch {
+  flex:1 1 auto!important;width:auto!important;max-width:250px!important;
+ }
+}
+@container dm-franchise-directory (max-width:350px) {
+ #officeApp #page-franchisees #franchiseSearch {max-width:none!important;}
+}
+/* SUPPLY CHAIN — the account profile's Close button must occupy the final
+ * header cell, not drift into the middle when the cards become narrow. */
+#officeApp #page-franchisees #franchiseDetailPanel {
+ container:dm-franchise-detail / inline-size;
+}
+#officeApp #page-franchisees #franchiseDetailPanel > .panel-head {
+ display:grid!important;grid-template-columns:minmax(0,1fr) max-content!important;
+ align-items:start!important;justify-content:stretch!important;
+ gap:clamp(9px,1.5vw,18px)!important;width:100%!important;min-width:0!important;
+}
+#officeApp #page-franchisees #franchiseDetailPanel > .panel-head > :first-child {
+ min-width:0!important;max-width:100%!important;overflow-wrap:anywhere;
+}
+#officeApp #franchiseDetailClose {
+ display:inline-flex!important;justify-content:center!important;align-items:center!important;
+ flex:0 0 auto!important;justify-self:end!important;align-self:start!important;
+ width:auto!important;min-width:91px!important;max-width:150px!important;
+ min-height:42px!important;height:42px!important;
+ padding:9px 14px!important;margin:0!important;
+ border:1px solid #075d38!important;border-radius:10px!important;
+ background:#075d38!important;color:#fff!important;
+ white-space:nowrap!important;gap:7px!important;
+ font-weight:800!important;font-size:.79rem!important;
+}
+#officeApp #franchiseDetailClose .franchise-close-x {
+ display:inline-grid!important;place-items:center!important;
+ font-size:19px!important;line-height:1!important;
+ width:16px!important;height:16px!important;flex:0 0 16px!important;
+}
+#officeApp #franchiseDetailClose .franchise-close-text {
+ font-size:inherit!important;line-height:1.15!important;
+}
+/* Fluid cards adapt to real available width, not a rigid 900px viewport
+ * breakpoint that ignores the left sidebar. */
+#officeApp #page-franchisees .franchise-summary {
+ display:grid!important;
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,195px),1fr))!important;
+ gap:clamp(9px,1.3vw,14px)!important;
+ min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-franchisees .franchise-summary-card {
+ min-width:0!important;max-width:100%!important;
+ overflow-wrap:anywhere!important;padding:clamp(11px,1.4vw,15px)!important;
+}
+#officeApp #page-franchisees .franchise-summary-card strong {
+ font-size:clamp(.77rem,.71rem + .22vw,.95rem)!important;
+ line-height:1.4!important;overflow-wrap:anywhere!important;
+}
+#officeApp #page-franchisees .franchise-fee-form {
+ box-sizing:border-box!important;
+ display:flex!important;flex-wrap:wrap!important;
+ align-items:flex-end!important;gap:clamp(10px,1.35vw,16px)!important;
+ min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-franchisees .franchise-fee-form > div:first-child {
+ flex:1 1 230px!important;min-width:0!important;max-width:100%!important;
+}
+#officeApp #page-franchisees .franchise-fee-form > label {
+ flex:0 1 205px!important;min-width:145px!important;max-width:205px!important;
+}
+#officeApp #page-franchisees .franchise-fee-form > label > input {
+ width:100%!important;min-width:0!important;max-width:100%!important;
+ min-height:42px!important;
+}
+#officeApp #page-franchisees .franchise-fee-form > button {
+ flex:0 0 auto!important;min-width:0!important;min-height:42px!important;
+ width:auto!important;max-width:100%!important;white-space:normal!important;
+}
+#officeApp #page-franchisees .franchise-view-tabs {
+ max-width:100%;min-width:0;overflow-x:auto;
+ -webkit-overflow-scrolling:touch;white-space:nowrap;
+}
+#officeApp #page-franchisees :is(.table-scroll,#franchiseOrdersPanel,#franchiseRoyaltiesPanel){
+ min-width:0;max-width:100%;
+}
+@container dm-franchise-detail (max-width:570px) {
+ #officeApp #page-franchisees .franchise-fee-form > div:first-child {
+  flex-basis:100%!important;
+ }
+ #officeApp #page-franchisees .franchise-fee-form > label {
+  flex:1 1 160px!important;
+ }
+}
+@container dm-franchise-detail (max-width:390px) {
+ #officeApp #page-franchisees #franchiseDetailPanel > .panel-head {
+  grid-template-columns:minmax(0,1fr) auto!important;
+ }
+ #officeApp #franchiseDetailClose {min-width:42px!important;width:42px!important;padding:9px!important;}
+ #officeApp #franchiseDetailClose .franchise-close-text {display:none!important;}
+ #officeApp #page-franchisees .franchise-fee-form > label {
+  flex:1 1 100%!important;max-width:100%!important;
+ }
+ #officeApp #page-franchisees .franchise-fee-form > button {width:100%!important;}
+}
+/* ALL APPS — shared table-generated refresh placement and realistic sizes.
+ * Avoid a lone refresh floating at the left after a wrapped title. */
+:is(#app,#officeApp,#platformApp) .dm-refresh-heading {
+ min-width:0!important;max-width:100%!important;
+ gap:var(--dm-fluid-gap)!important;
+ align-items:center!important;
+}
+:is(#app,#officeApp,#platformApp) .dm-refresh-heading > .dm-refresh {
+ flex:0 0 var(--dm-refresh-size)!important;
+ margin-left:auto!important;align-self:center!important;
+}
+#app main.main .view .dm-refresh-toolbar,
+#officeApp .office-page .dm-refresh-toolbar {
+ display:flex!important;justify-content:flex-end!important;
+ flex-wrap:nowrap!important;gap:9px!important;
+}
+#app main.main .view :is(.card-head,.section-header,.panel-head).dm-refresh-heading {
+ display:flex!important;flex-wrap:wrap!important;
+ justify-content:space-between!important;align-items:center!important;
+}
+#app main.main .view :is(.card-head,.section-header,.panel-head).dm-refresh-heading > :first-child {
+ min-width:0;max-width:100%;overflow-wrap:anywhere;
+}
+/* Main POS — compact search pills and controls inside wide operational
+ * screens and fluid dashboard card headings at narrow browser widths. */
+#app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+ :is(.card-head,.section-header,.dm-refresh-heading) input[type="search"] {
+ flex:0 1 250px!important;
+ width:clamp(135px,20vw,250px)!important;
+ max-width:100%!important;min-width:0!important;
+}
+#app main.main :is(#view-inventory,#view-transactions,#view-expenses,#view-payroll,#view-reports)
+ :is(.card-head,.section-header,.dm-refresh-heading) :is(button.dm-refresh,button[data-dm-icon="refresh"]) {
+ align-self:center!important;flex-shrink:0!important;
+}
+#app main.main .view :is(.card-head,.section-header) > :is(h2,h3,.card-title,.section-heading) {
+ min-width:0;max-width:100%;overflow-wrap:anywhere;
+}
+@media screen and (min-width:700px) and (max-width:1150px){
+ html body #app .topbar {
+  box-sizing:border-box!important;
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  column-gap:clamp(5px,.8vw,10px)!important;
+  max-width:100%!important;min-width:0!important;
+ }
+ html body #app .topbar .topbar-right {
+  min-width:0!important;width:auto!important;max-width:100%!important;
+  gap:clamp(4px,.55vw,8px)!important;
+ }
+ html body #app .topbar .topbar-right .account-plan-top-control,
+ html body #app .topbar .topbar-right #topbarProfileButton {
+  box-sizing:border-box!important;width:clamp(108px,11.5vw,150px)!important;
+  max-width:clamp(108px,11.5vw,150px)!important;
+  min-width:0!important;flex:0 0 auto!important;
+ }
+ html body #app .topbar .topbar-right #topbarProfileButton .topbar-profile-text {
+  min-width:0!important;max-width:calc(100% - 49px)!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+ }
+}
+@media screen and (min-width:700px) and (max-width:860px){
+ html body #app .topbar .topbar-right .account-plan-top-control,
+ html body #app .topbar .topbar-right #topbarProfileButton {
+  width:105px!important;max-width:105px!important;
+ }
+ html body #app .topbar .topbar-heading #viewTitle {
+  font-size:clamp(.78rem,1.2vw,.94rem)!important;
+ }
+}
+@media screen and (max-width:699px){
+ #app main.main .view .dm-refresh-heading{flex-wrap:wrap!important;gap:8px!important;}
+ #app main.main .view .dm-refresh-heading > .dm-refresh{
+  width:2.375rem!important;height:2.375rem!important;
+  flex:0 0 2.375rem!important;margin-left:auto!important;
+ }
+ #app main.main .view :is(.card-head,.section-header) > :is(h2,h3) {
+  min-width:0;overflow-wrap:anywhere;
+ }
+}
+@media(max-width:720px){
+ #officeApp #page-franchisees #franchiseSearch {font-size:1rem!important;}
+ #officeApp .office-main .office-page .panel-head{min-width:0;max-width:100%;}
+}
+@media(prefers-reduced-motion:reduce){
+ #officeApp #page-dashboard .warehouse-selector-chevron{transition:none!important;}
+}
