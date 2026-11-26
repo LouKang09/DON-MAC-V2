@@ -76,7 +76,20 @@
 #app :is(#view-transactions,#view-expenses) :is(#financeTransactionPages,#financeExpensePages) button:disabled{opacity:.5!important;cursor:not-allowed!important}
 @media(max-width:690px){#app #dmKpiDetail .dm-activity-controls{justify-content:flex-start!important}#app #dmKpiDetail .dm-activity-controls > label{flex:0 1 9rem!important}}
 </style>
-</head>
+<style id="dm-global-timeline-usage-pages">
+#app #view-dashboard #dashboardScope.dashboard-account-filter{justify-content:space-between!important;align-items:center!important;gap:.65rem!important}
+#app #view-dashboard #dashboardScope .dm-dashboard-timeline,#app #view-dashboard #dashboardScope .dm-dashboard-branch-group{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:.65rem!important;min-width:0!important}
+#app #view-dashboard #dashboardScope .dm-dashboard-branch-group{margin-left:auto!important}
+#app #view-dashboard #dashboardScope .dm-dashboard-branch-group[hidden],#app #view-dashboard #dashboardScope .dm-dashboard-timeline .hidden,#app #view-dashboard #applyTrend{display:none!important}
+#app #view-dashboard #dashboardScope .dm-dashboard-timeline label,#app #view-dashboard #dashboardScope .dm-dashboard-branch-group label{display:flex!important;align-items:center!important;gap:.55rem!important;margin:0!important;color:#fff!important;font-size:.75rem!important;font-weight:750!important;flex-wrap:wrap}
+#app #view-dashboard #dashboardScope .dm-dashboard-timeline :is(select,input){box-sizing:border-box!important;width:auto!important;min-width:0!important;max-width:100%!important;height:2.5rem!important;min-height:2.5rem!important;border:1px solid #b2dcc3!important;border-radius:11px!important;background-color:white!important;color:#075d38!important;padding:.4rem .65rem!important;font-size:.75rem!important}
+#app #view-dashboard #dashboardScope #trendView{width:12rem!important}
+#app #view-dashboard #dashboardScope :is(#trendFrom,#trendTo){width:9rem!important}
+#app #view-inventory #inventoryUsagePages{display:flex;justify-content:flex-end;align-items:center;gap:.55rem;flex-wrap:wrap;margin:.75rem 0;font-size:.75rem}
+#app #view-inventory #inventoryUsagePages button{background:#086b42!important;color:#fff!important;border:1px solid #086b42!important;border-radius:.55rem!important;min-width:5rem!important;min-height:2.25rem!important;padding:.4rem .75rem!important;font-size:.75rem!important;font-weight:750!important}
+#app #view-inventory #inventoryUsagePages button:disabled{opacity:.5!important;cursor:not-allowed!important}
+@media(max-width:660px){#app #view-dashboard #dashboardScope .dm-dashboard-branch-group{margin-left:0!important}#app #view-dashboard #dashboardScope.dashboard-account-filter{justify-content:flex-start!important}}
+</style></head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
 
@@ -281,7 +294,7 @@
                 <label id="trendFromWrap" class="hidden">From<input id="trendFrom" type="date" /></label>
                 <label id="trendToWrap" class="hidden">To<input id="trendTo" type="date" /></label>
                 <span class="admin-only" id="dashboardBranchWrap"><select id="dashboardBranch" aria-label="Select Branch"><option value="all">All</option></select></span>
-                <button id="applyTrend" class="primary" type="button">Apply</button>
+                <button id="applyTrend" class="primary" type="button" hidden aria-hidden="true" tabindex="-1">Apply</button>
               </div>
             </div>
             <div class="trend-plot dashboard-multiline-plot">
@@ -601,6 +614,7 @@
             <div class="inv-usage-chart-container"><div class="inv-usage-chart-title"><strong>Overall Ingredient Cost</strong><span id="inventoryUsageChartScope"></span></div><div id="inventoryUsageChart" class="inv-usage-chart" aria-live="polite"></div></div>
             <div class="inv-usage-table-head"><div><h4>Ingredients Consumed in Sales</h4><p id="inventoryUsageTableCaption" class="muted"></p></div><label class="inv-usage-search">Search<input id="inventoryUsageSearch" type="search" placeholder="Find ingredient…" autocomplete="off" /></label></div>
             <div class="inv-usage-table-scroll"><table class="inv-usage-table" aria-label="Ingredients used in sold transactions"><thead><tr><th>Ingredient</th><th>Products Sold</th><th class="num">Used Quantity</th><th class="num">Gross Cost</th><th class="num">Net Cost</th><th>Details</th></tr></thead><tbody id="inventoryUsageBody"></tbody></table></div>
+            <nav id="inventoryUsagePages" aria-label="Ingredient usage pages"></nav>
             <p id="inventoryUsageNotes" class="inv-usage-notes"></p>
           </div>
         </section>
@@ -1294,7 +1308,7 @@
   <script src="/auth-login-v1574.js?v=1.6.10"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=9"></script>
-  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261126-inline-preview"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=1.6.58-chart-choice"></script><script src="/inventory-usage-summary-v20261120.js?v=20261125-visible-labels-branch-fix" defer></script>
+  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261126-inline-preview"></script><script src="/nav-hierarchy-v20261117.js?v=5"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=5"></script><script src="/app.js?v=20261126-global-timeline"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
   <script src="/vendor/lottie-svg.min.js" defer></script>
   <script src="/donmac-icon-controls-v20261121.js?v=3" defer></script>
   <script src="/donmac-useanimations-v20261120.js?v=14" defer></script>
