@@ -36,9 +36,20 @@ function photoHtml(data){
 }
 
 const PAGE_SIZE=10;
-let all=[],current=null,page=1,activePage='requests',timer=null,catalogPage=1,catalogProducts=[],chatPhoto=null,franchiseOwners=[],franchiseProfile=null,franchisePage=1,franchiseOrderPage=1,franchiseRoyaltyPage=1,franchiseTab='orders';
+let all=[],current=null,page=1,activePage='requests',timer=null,catalogPage=1,catalogProducts=[],catalogDrafts=new Map(),chatPhoto=null,franchiseOwners=[],franchiseProfile=null,franchisePage=1,franchiseOrderPage=1,franchiseRoyaltyPage=1,franchiseTab='orders';
+let officeNoticeTimer=null;
 function notice(msg,error=false){
- if(msg&&window.donmacPrompt&&!/^(loading|checking|refreshing|connecting)\b/i.test(msg))void window.donmacPrompt.notify(msg,{variant:error?'error':undefined});const n=$('officeNotice');n.classList.remove('hidden');n.textContent=msg;n.style.background=error?'#ffebec':'#e7f4e9';n.style.color=error?'#a3262b':'#145537';}
+ const n=$('officeNotice');
+ if(officeNoticeTimer)clearTimeout(officeNoticeTimer);
+ if(!msg){n.classList.add('hidden');n.textContent='';return;}
+ // Keep an unobtrusive status banner rather than duplicate modal prompts.
+ n.classList.remove('hidden');n.textContent=msg;
+ n.style.background=error?'#ffebec':'#e7f4e9';
+ n.style.color=error?'#a3262b':'#145537';
+ officeNoticeTimer=setTimeout(()=>{
+  if(n.textContent===msg){n.classList.add('hidden');n.textContent='';}
+ },error?7000:3800);
+}
 async function api(path,options={}){
  const result=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await result.json().catch(()=>({}));
@@ -114,8 +125,8 @@ function selectPage(name){
  if(officeRole==='warehouse-staff'&&name!=='warehouse')return;
  activePage=name;
  document.querySelectorAll('[data-office-page]').forEach(b=>b.classList.toggle('active',b.dataset.officePage===name));
- for(const section of ['dashboard','requests','distribution','franchisees','warehouse','catalog','promotions','billing','settings','security'])$('page-'+section).classList.toggle('hidden',section!==name);
- $('officePageHeading').textContent=({dashboard:'Central Warehouse Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',warehouse:'Central Warehouse',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password'})[name];
+ for(const section of ['dashboard','requests','distribution','franchisees','warehouse','catalog','promotions','billing','settings','security','logs'])$('page-'+section).classList.toggle('hidden',section!==name);
+ $('officePageHeading').textContent=({dashboard:'Central Warehouse Dashboard',requests:'Purchase requests',distribution:'Distribution History',franchisees:'Franchisee Profile',warehouse:'Central Warehouse',catalog:'Supply catalog',promotions:'Promotions',settings:'Office settings',billing:'Subscription Billing',security:'Change password',logs:'System Logs'})[name];
  $('officeApp').classList.remove('mobile-nav-open');syncOfficeNavigation();
  if(name==='franchisees')loadFranchisees();
  if(name==='dashboard'){
@@ -128,9 +139,10 @@ function selectPage(name){
  if(name==='catalog')loadCatalog();
  if(name==='promotions')window.officeCampaignUI?.load();
  if(name==='settings')loadSettings();
+ if(name==='logs')window.donmacOfficeActivity?.load?.();
 }
 document.querySelectorAll('[data-office-page]').forEach(b=>b.onclick=()=>selectPage(b.dataset.officePage));
-$('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else if(activePage==='dashboard')loadDistributionDashboard();else if(activePage==='distribution')loadDistributionHistory();else if(activePage==='catalog')loadCatalog();else if(activePage==='warehouse')window.donmacWarehouse?.load();else refresh();};
+$('officeRefresh').onclick=()=>{if(activePage==='franchisees')loadFranchisees();else if(activePage==='dashboard')loadDistributionDashboard();else if(activePage==='distribution')loadDistributionHistory();else if(activePage==='catalog')loadCatalog();else if(activePage==='warehouse')window.donmacWarehouse?.load();else if(activePage==='logs')window.donmacOfficeActivity?.load?.();else refresh();};
 const refreshIcon="<svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 11a9 9 0 1 1-2.51-6.33\"/><path d=\"M21 3v6h-6\"/></svg>";
 $('officeRefresh').innerHTML=refreshIcon;
 $('officeRefresh').classList.add('office-round-refresh');
@@ -362,49 +374,150 @@ async function loadDistributionHistory(){
  }catch(err){notice(err.message,true);}
 }
 async function loadCatalog(){
- try{const d=await api('/api/supply/office/catalog');catalogProducts=d.products||[];renderCatalog();}catch(err){notice(err.message,true);}
+ try{
+  const data=await api('/api/supply/office/catalog');
+  catalogProducts=data.products||[];
+  renderCatalog();
+ }catch(err){notice(err.message,true);}
+}
+const inputValue=(id,value)=>value==null?'':String(value);
+const moneyInput=value=>value==null?'':Number(value).toFixed(2);
+const escapeValue=value=>esc(inputValue('',value));
+function catalogRows(){
+ return catalogProducts.filter(p=>p.active||$('officeCatalogShowArchived').checked);
+}
+function draftDetails(row){
+ return {
+  uom:row.querySelector('.office-uom').value.trim(),
+  price:row.querySelector('.office-price').value,
+  costPrice:row.querySelector('.office-cost').value,
+  stockQty:row.querySelector('.office-stock').value,
+  originalStockQty:row.querySelector('.office-stock').dataset.originalQty,
+  promoPrice:row.querySelector('.office-promo-price').value,
+  promoActive:row.querySelector('.office-promo-enabled').checked,
+  expiryDate:row.querySelector('.office-expiry-date').value,
+  expiryAlertDays:Number(row.querySelector('.office-expiry-alert').value)
+ };
+}
+function updateDraftCounter(){
+ const count=catalogDrafts.size,button=$('officeCatalogSaveAll');
+ button.disabled=count===0;
+ $('officeCatalogDraftCount').textContent='('+count+')';
+ $('officeCatalogSaveStatus').textContent=count?count+' unsaved supply '+(count===1?'item':'items'):'All visible changes saved';
 }
 function renderCatalog(){
- const pages=Math.max(1,Math.ceil(catalogProducts.length/10));
+ const rows=catalogRows(),pages=Math.max(1,Math.ceil(rows.length/10));
  catalogPage=Math.min(pages,Math.max(1,catalogPage));
- $('officeCatalogBody').innerHTML=catalogProducts.slice((catalogPage-1)*10,catalogPage*10).map(p=>
- '<tr data-catalog-product="'+p.id+'"><td><b>'+esc(p.name)+'</b></td>'+
- '<td><input aria-label="Unit of measure for '+esc(p.name)+'" class="office-uom" maxlength="80" value="'+esc(p.uom)+'"></td>'+
- '<td><input class="office-price" aria-label="Franchise price for '+esc(p.name)+'" type="number" min="0.01" max="1000000" step="0.01" value="'+Number(p.price).toFixed(2)+'"></td>'+
- '<td><input class="office-cost" aria-label="Unit cost for '+esc(p.name)+'" type="number" min="0" step="0.01" placeholder="Unknown" value="'+(p.costPrice==null?'':Number(p.costPrice).toFixed(2))+'"></td>'+
- '<td><input class="office-stock" aria-label="Available stock for '+esc(p.name)+'" type="number" min="0" max="10000000" step="1" data-original-qty="'+p.stockQty+'" value="'+p.stockQty+'"></td>'+
- '<td><input class="office-promo-price" aria-label="Promo price for '+esc(p.name)+'" type="number" min="0.01" step="0.01" placeholder="No promo" value="'+(p.promoPrice==null?'':Number(p.promoPrice).toFixed(2))+'"></td>'+
- '<td><input class="office-promo-enabled" type="checkbox" aria-label="Enable promo for '+esc(p.name)+'" '+(p.promoActive?'checked':'')+'></td>'+
- '<td><button type="button" class="btn solid office-product-save" data-office-save="'+p.id+'">Save</button></td></tr>'
- ).join('');
- $('officeCatalogPages').innerHTML='<span>Page '+catalogPage+' of '+pages+' · '+catalogProducts.length+' supplies</span>'+
+ const shown=rows.slice((catalogPage-1)*10,catalogPage*10);
+ $('officeCatalogBody').innerHTML=shown.map(p=>{
+  const d=catalogDrafts.get(p.id)||p;
+  const marked=catalogDrafts.has(p.id);
+  return '<tr data-catalog-product="'+p.id+'" class="'+(!p.active?'office-product-archived ':'')+(marked?'office-product-dirty':'')+'">'+
+   '<td><b>'+esc(p.name)+'</b>'+(p.active?'':'<small>Archived</small>')+'</td>'+
+   '<td><input class="office-uom" aria-label="Unit for '+esc(p.name)+'" maxlength="80" value="'+escapeValue(d.uom)+'" '+(!p.active?'disabled':'')+'></td>'+
+   '<td><input class="office-price" aria-label="Franchise price for '+esc(p.name)+'" type="number" min="0.01" max="1000000" step="0.01" value="'+escapeValue(d.price)+'" '+(!p.active?'disabled':'')+'></td>'+
+   '<td><input class="office-cost" aria-label="Purchase cost for '+esc(p.name)+'" type="number" min="0" step="0.01" placeholder="Unknown" value="'+escapeValue(d.costPrice==null?'':d.costPrice)+'" '+(!p.active?'disabled':'')+'></td>'+
+   '<td><input class="office-stock" aria-label="Stock for '+esc(p.name)+'" type="number" min="0" max="10000000" step="1" data-original-qty="'+p.stockQty+'" value="'+escapeValue(d.stockQty)+'" '+(!p.active?'disabled':'')+'></td>'+
+   '<td><input class="office-promo-price" aria-label="Promo price for '+esc(p.name)+'" type="number" min="0.01" step="0.01" placeholder="No promo" value="'+escapeValue(d.promoPrice==null?'':d.promoPrice)+'" '+(!p.active?'disabled':'')+'></td>'+
+   '<td><input class="office-promo-enabled" type="checkbox" aria-label="Enable promo for '+esc(p.name)+'" '+(d.promoActive?'checked':'')+' '+(!p.active?'disabled':'')+'></td>'+
+   '<td><input class="office-expiry-date" type="date" aria-label="Expiry date for '+esc(p.name)+'" value="'+escapeValue(d.expiryDate||'')+'" '+(!p.active?'disabled':'')+'></td>'+
+   '<td><select class="office-expiry-alert" aria-label="Expiry alert for '+esc(p.name)+'" '+(!p.active?'disabled':'')+'>'+
+    '<option value="30" '+(Number(d.expiryAlertDays||30)===30?'selected':'')+'>30 days</option>'+
+    '<option value="7" '+(Number(d.expiryAlertDays||30)===7?'selected':'')+'>7 days</option></select></td>'+
+   '<td><div class="office-catalog-row-actions">'+
+    (p.active?'<button type="button" class="btn solid office-product-save" data-office-save="'+p.id+'" '+(!marked?'disabled':'')+'>Save</button>'+
+    '<button type="button" class="btn outline office-product-delete" data-office-archive="'+p.id+'">Delete</button>':
+    '<button type="button" class="btn outline" data-office-restore="'+p.id+'">Restore</button>')+
+   '</div></td></tr>';
+ }).join('');
+ $('officeCatalogPages').innerHTML='<span>Page '+catalogPage+' of '+pages+' · '+rows.length+' supplies</span>'+
  '<button type="button" data-catalog-offset="-1" '+(catalogPage===1?'disabled':'')+'>Previous</button>'+
  '<button type="button" data-catalog-offset="1" '+(catalogPage===pages?'disabled':'')+'>Next</button>';
- $('officeCatalogPages').querySelectorAll('button').forEach(b=>b.onclick=()=>{catalogPage+=Number(b.dataset.catalogOffset);renderCatalog();});
- $('officeCatalogBody').querySelectorAll('[data-office-save]').forEach(button=>button.onclick=async()=>{
-  const row=button.closest('tr');const id=Number(button.dataset.officeSave);
-  const details={uom:row.querySelector('.office-uom').value,price:row.querySelector('.office-price').value,costPrice:row.querySelector('.office-cost').value,
-   stockQty:row.querySelector('.office-stock').value,originalStockQty:row.querySelector('.office-stock').dataset.originalQty,promoPrice:row.querySelector('.office-promo-price').value,
-   promoActive:row.querySelector('.office-promo-enabled').checked};
-  button.disabled=true;
-  try{
-   await api('/api/supply/office/products/'+id,{method:'PUT',body:JSON.stringify(details)});
-   notice('Supply pricing, promo and Main Office inventory saved.');await loadCatalog();
-  }catch(err){notice(err.message,true);}finally{button.disabled=false;}
+ $('officeCatalogPages').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  catalogPage+=Number(b.dataset.catalogOffset);renderCatalog();
  });
+ updateDraftCounter();
 }
-
-
+$('officeCatalogBody').addEventListener('input',e=>{
+ const target=e.target;
+ if(!target.matches('input,select'))return;
+ const row=target.closest('[data-catalog-product]');if(!row)return;
+ const id=Number(row.dataset.catalogProduct);
+ catalogDrafts.set(id,draftDetails(row));
+ row.classList.add('office-product-dirty');
+ const save=row.querySelector('[data-office-save]');if(save)save.disabled=false;
+ updateDraftCounter();
+});
+$('officeCatalogBody').addEventListener('change',e=>{
+ if(e.target.matches('.office-promo-enabled,.office-expiry-alert'))e.target.dispatchEvent(new Event('input',{bubbles:true}));
+});
+async function saveCatalog(items,label){
+ if(!items.length)return;
+ try{
+  if(items.length===1){
+   const item=items[0];
+   await api('/api/supply/office/products/'+item.id,{method:'PUT',body:JSON.stringify(item)});
+  }else{
+   await api('/api/supply/office/products/bulk',{method:'POST',body:JSON.stringify({products:items})});
+  }
+  for(const item of items)catalogDrafts.delete(item.id);
+  notice(label||items.length+' supplies saved.');
+  await loadCatalog();
+  window.donmacOfficeActivity?.refreshAlerts?.();
+ }catch(err){notice('Save failed. Your changes are retained: '+err.message,true);}
+}
+$('officeCatalogBody').addEventListener('click',async e=>{
+ const save=e.target.closest('[data-office-save]');
+ if(save){
+  const id=Number(save.dataset.officeSave),item=catalogDrafts.get(id);
+  if(!item)return;
+  save.disabled=true;
+  await saveCatalog([{id,...item}],'Supply item saved.');
+  if(save.isConnected)save.disabled=false;
+  return;
+ }
+ const archive=e.target.closest('[data-office-archive],[data-office-restore]');
+ if(!archive)return;
+ const id=Number(archive.dataset.officeArchive||archive.dataset.officeRestore);
+ const restoring=archive.hasAttribute('data-office-restore');
+ const product=catalogProducts.find(p=>p.id===id);if(!product)return;
+ const question=restoring?'Restore '+product.name+' for franchise orders?':
+  'Delete '+product.name+' from the active catalog? Historical orders and stock movements will be retained.';
+ const confirmed=window.donmacPrompt?.confirm?
+  await window.donmacPrompt.confirm(question,{title:restoring?'Restore supply':'Delete supply',confirmText:restoring?'Restore':'Delete',cancelText:'Cancel'}):
+  window.confirm(question);
+ if(!confirmed)return;
+ archive.disabled=true;
+ try{
+  await api('/api/supply/office/products/'+id+(restoring?'/restore':''),{
+   method:restoring?'POST':'DELETE'
+  });
+  catalogDrafts.delete(id);
+  notice(restoring?'Supply restored.':'Supply deleted from the active catalog. History preserved.');
+  await loadCatalog();
+  window.donmacOfficeActivity?.refreshAlerts?.();
+ }catch(err){notice(err.message,true);archive.disabled=false;}
+});
+$('officeCatalogSaveAll').addEventListener('click',async()=>{
+ const items=[...catalogDrafts].map(([id,d])=>({id,...d}));if(!items.length)return;
+ const button=$('officeCatalogSaveAll');button.disabled=true;
+ try{await saveCatalog(items,items.length+' supply '+(items.length===1?'item':'items')+' saved.');}
+ finally{updateDraftCounter();}
+});
+$('officeCatalogShowArchived').addEventListener('change',()=>{catalogPage=1;renderCatalog();});
 $('officeNewProductForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const button=$('officeNewProductSave');button.disabled=true;
  try{
   const data={name:$('officeNewProductName').value.trim(),uom:$('officeNewProductUom').value.trim(),
-   price:$('officeNewProductPrice').value,costPrice:$('officeNewProductCost').value,stockQty:$('officeNewProductStock').value};
+   price:$('officeNewProductPrice').value,costPrice:$('officeNewProductCost').value,
+   stockQty:$('officeNewProductStock').value,
+   expiryDate:$('officeNewProductExpiry').value,expiryAlertDays:Number($('officeNewProductExpiryAlert').value)};
   await api('/api/supply/office/products',{method:'POST',body:JSON.stringify(data)});
   $('officeNewProductForm').reset();$('officeNewProductStock').value='0';
   $('officeNewProductForm').closest('details').open=false;
-  notice('New supply product added. Franchisees can now request it.');catalogPage=1;await loadCatalog();
+  notice('New supply product added.');catalogPage=1;await loadCatalog();
+  window.donmacOfficeActivity?.refreshAlerts?.();
  }catch(err){notice(err.message,true);}
  finally{button.disabled=false;}
 });
