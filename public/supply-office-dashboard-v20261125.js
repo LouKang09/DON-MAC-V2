@@ -259,7 +259,7 @@ async function load(){
  controller?.abort();controller=new AbortController();
  const params=controlParams();
  status('Loading warehouse distributions and inventory…');
- $('warehouseApply').disabled=true;
+
  try{
   const response=await fetch('/api/supply/office/analytics?'+params,{credentials:'same-origin',
    cache:'no-store',signal:controller.signal});
@@ -277,18 +277,31 @@ async function load(){
   if(run!==seq||err.name==='AbortError')return;
   result=null;status(err.message||'Could not load warehouse insights.',true);
   $('warehousePlot').innerHTML='<p class="warehouse-empty">Unable to load warehouse report. Check the filters and retry.</p>';
- }finally{if(run===seq)$('warehouseApply').disabled=false}
+ }finally{ /* The filters apply automatically; no separate Apply action. */ }
 }
 const from=$('warehouseFrom'),to=$('warehouseTo'),today=dayPH();
 from.max=today;to.max=today;from.value=shift(today,-29);to.value=today;
-$('warehousePeriod').addEventListener('change',()=>{
+const updatePeriod=()=>{
  const custom=$('warehousePeriod').value==='custom';
  $('warehouseCustomDates').hidden=!custom;
- if(!custom)void load();
- else status('Choose the custom From and To dates, then Apply.');
-});
+ // The date inputs are initialized to a valid recent range. Custom ranges
+ // refresh automatically whenever either date changes.
+ if(custom&&(!from.value||!to.value||from.value>to.value)){
+  status('Select a valid From and To date.',true);return;
+ }
+ void load();
+};
+$('warehousePeriod').addEventListener('change',updatePeriod);
+const updateCustomRange=()=>{
+ if($('warehousePeriod').value!=='custom')return;
+ if(!from.value||!to.value||from.value>to.value){
+  status('Choose a valid From and To date.',true);return;
+ }
+ void load();
+};
+from.addEventListener('change',updateCustomRange);
+to.addEventListener('change',updateCustomRange);
 $('warehouseBranch').addEventListener('change',()=>{periodBranch=$('warehouseBranch').value;void load()});
-$('warehouseApply').addEventListener('click',()=>void load());
 $('warehouseRefresh').addEventListener('click',()=>void load());
 $('warehouseChartType').addEventListener('change',chart);
 $('warehouseInterval').addEventListener('change',chart);
