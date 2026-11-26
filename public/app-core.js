@@ -239,7 +239,7 @@
       if($('reportDate')){$('reportDate').value=manilaToday();$('reportDate').disabled=true;}
       if($('trendView')){
         for(const option of $('trendView').options)
-          option.disabled=option.value==='10days'&&maxDays<10||option.value==='custom'&&maxDays===1;
+          option.disabled=option.value==='10days'&&maxDays<10||option.value==='weekly'&&maxDays<7||option.value==='monthly'&&maxDays<30||option.value==='custom'&&maxDays===1;
         if($('trendView').selectedOptions[0]?.disabled)$('trendView').value='hourly';
         const today=manilaToday();
         const oldest=new Date(Date.parse(today+'T00:00:00Z')-(maxDays-1)*86400000).toISOString().slice(0,10);
@@ -2832,7 +2832,7 @@
    });
    const today=manilaToday();$('trendTo').value=today;$('trendFrom').value=new Date(Date.parse(today+'T00:00:00Z')-9*86400000).toISOString().slice(0,10);
    const toggleRange=()=>{const custom=$('trendView').value==='custom';$('trendFromWrap').classList.toggle('hidden',!custom);$('trendToWrap').classList.toggle('hidden',!custom);};
-   $('trendView').onchange=()=>{toggleRange();if($('trendView').value!=='custom')loadDashboard();};
+   $('trendView').onchange=()=>{toggleRange();if($('trendView').value!=='custom'||($('trendFrom').value&&$('trendTo').value&&$('trendFrom').value<=$('trendTo').value&&$('trendFrom').checkValidity()&&$('trendTo').checkValidity()))loadDashboard();};
    $('applyTrend').onclick=loadDashboard;$('dashboardBranch').onchange=()=>{
       const selected=Number($('dashboardBranch').value||0);
       if(state.user?.role==='Admin'&&state.branches.some(x=>x.id===selected&&x.active)){
