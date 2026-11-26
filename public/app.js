@@ -144,7 +144,7 @@
       // Never invoke the legacy global sales and product tables for a franchise.
       await loadScript('/dashboard-v1512.js');
       loadCss('planDashboardV1570Css','/plan-dashboard-v1570.css');
-      await loadScript('/plan-dashboard-v1570.js?v=20261117-live-plan');
+      await loadScript('/plan-dashboard-v1570.js?v=20261126-free-overview');
       await loadScript('/dashboard-experience-v1573.js?v=20261126-global-timeline');
       await loadScript('/pos-finance.js?v=20261125-category-pie');
       await loadScript('/refresh-controls-v20261107.js');
@@ -222,7 +222,7 @@
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
     .then(() => loadScript('/franchise-unified-adapter.js?v=20261126-owner-receipt'))
-    .then(() => loadScript('/app-core.js?v=20261126-period-controls'))
+    .then(() => loadScript('/app-core.js?v=20261126-free-overview'))
     .then(() => {
       watchForAuthenticatedApp();
       setTimeout(() => {
