@@ -267,3 +267,21 @@ html.dm-icon-motion-off #officeApp .dm-ua-native{display:inline-grid!important}
 @media(prefers-reduced-motion:reduce){
  #officeApp .side-link,#officeApp .btn,#officeApp .dm-ua-icon{transition:none}
 }
+
+/* Installed Lottie icons have dark strokes: tint them on dark navigation and
+ * green buttons. Static SVG fallbacks already use currentColor. */
+#officeApp #officeNav .side-link .side-icon > .dm-ua-icon{
+ filter:invert(96%) sepia(8%) saturate(300%) hue-rotate(72deg);
+}
+#officeApp #officeNav .side-link.active .side-icon > .dm-ua-icon,
+#officeApp #officeNav .side-link:hover .side-icon > .dm-ua-icon{
+ filter:invert(100%);
+}
+#officeApp :is(#officeSidebarToggle,#officeMobileToggle,#officeLogout,
+ #officeRefresh,#warehouseRefresh,#warehouseOperationsRefresh) > .dm-ua-icon,
+#officeApp .btn.solid > .dm-ua-icon{
+ filter:invert(100%);
+}
+#officeApp .btn.outline > .dm-ua-icon{
+ filter:invert(29%) sepia(35%) saturate(720%) hue-rotate(94deg);
+}
