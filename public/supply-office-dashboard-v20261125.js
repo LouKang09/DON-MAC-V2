@@ -42,26 +42,29 @@ function syncBranches(branches){
 function cards(d){
  const t=d.totals;
  const definitions=[
-  {label:'Supply Revenue',value:peso(t.revenue),detail:'Delivered supplies + urgent fees, excluding royalties',m:'revenue'},
+  {label:'Supply Revenue',value:peso(t.revenue),detail:'Delivered supplies, excluding royalties',m:'revenue'},
   {label:'Gross Profit',value:t.grossProfit==null?'Cost incomplete':peso(t.grossProfit),
-   detail:t.grossProfit==null?num(t.unknownCostLines)+' delivered line(s) missing cost':
-    'Gross margin '+(t.marginPercent==null?'—':t.marginPercent.toFixed(1)+'%'),m:'grossProfit'},
-  {label:'Delivered Orders',value:num(t.deliveredOrders),detail:'Completed warehouse distributions',m:'orders'},
-  {label:'Requests Received',value:num(t.ordersRequested),detail:'New franchise requests in selected date range',to:'warehouseBacklogHeading'},
-  {label:'Units Distributed',value:num(t.units),detail:'Total fulfilled supply packs / units',m:'units'},
-  {label:'Requesting Franchisees',value:num(t.requestingFranchisees),detail:'Unique owners supplied in period',to:'warehouseBranchSection'},
-  {label:'Peak Distribution Day',value:t.peakDistributionDay||'No deliveries',detail:num(t.peakDistributionOrders)+' delivered orders on busiest day',m:'orders'},
-  {label:'Urgent Orders',value:num(t.urgentOrders),detail:'Delivered urgent requests',m:'urgentOrders'},
-  {label:'Open Requests',value:num(t.openRequests),detail:'Current approval + fulfillment backlog',to:'warehouseBacklogHeading'},
-  {label:'Out-of-stock SKUs',value:num(t.outOfStockSkus),detail:'Current active warehouse catalog stockouts',to:'warehouseStockSection'},
-  {label:'Uncosted SKUs',value:num(t.missingUnitCostSkus),detail:'Current catalog items with unknown purchase cost',to:'warehouseStockSection'}
+   detail:t.grossProfit==null?num(t.unknownCostLines)+' delivered lines missing cost':'Gross margin '+(t.marginPercent==null?'—':t.marginPercent.toFixed(1)+'%'),
+   ...(t.grossProfit==null?{to:'warehouseStockSection'}:{m:'grossProfit'})},
+  {label:'Delivered Orders',value:num(t.deliveredOrders),detail:'Completed warehouse distributions'},
+  {label:'Requests Received',value:num(t.ordersRequested),detail:'Requests from live franchisees',nav:'requests'},
+  {label:'Units Distributed',value:num(t.units),detail:'Fulfilled supply packs / units',m:'units'},
+  {label:'Requesting Franchisees',value:num(t.requestingFranchisees),detail:'Owners with delivered orders'},
+  {label:'Peak Distribution Day',value:t.peakDistributionDay||'No deliveries',detail:num(t.peakDistributionOrders)+' completed orders on busiest day'},
+  {label:'Urgent Orders',value:num(t.urgentOrders),detail:'Completed urgent distributions',m:'urgentOrders'},
+  {label:'Open Requests',value:num(t.openRequests),detail:'Current approval and fulfillment backlog',to:'warehouseBacklogHeading'},
+  {label:'Out-of-stock SKUs',value:num(t.outOfStockSkus),detail:'Active warehouse catalog stockouts',to:'warehouseStockSection'},
+  {label:'Uncosted SKUs',value:num(t.missingUnitCostSkus),detail:'Supplies missing purchase costs',to:'warehouseStockSection'}
  ];
- $('warehouseKpis').innerHTML=definitions.map(x=>
-  '<button class="warehouse-kpi'+(x.m===metric?' is-active':'')+
-  '" type="button" '+(x.m?'data-warehouse-metric="'+x.m+'" aria-pressed="'+(metric===x.m)+'"':
-   'data-warehouse-target="'+x.to+'"')+'>'+
-  '<span>'+esc(x.label)+'</span><strong>'+esc(x.value)+'</strong><small>'+esc(x.detail)+'</small>'+
-  '<span class="warehouse-kpi-arrow" aria-hidden="true">›</span></button>').join('');
+ $('warehouseKpis').innerHTML=definitions.map(x=>{
+  const active=!!x.m&&metric===x.m,clickable=!!(x.m||x.to||x.nav);
+  const attr=x.m?'data-warehouse-metric="'+x.m+'" aria-pressed="'+active+'"':
+   x.to?'data-warehouse-target="'+x.to+'"':x.nav?'data-warehouse-navigation="'+x.nav+'"':'';
+  const inner='<span>'+esc(x.label)+'</span><strong>'+esc(x.value)+'</strong>'+
+   '<small>'+esc(x.detail)+'</small>'+(clickable?'<span class="warehouse-kpi-arrow" aria-hidden="true">›</span>':'');
+  return clickable?'<button class="warehouse-kpi'+(active?' is-active':'')+'" type="button" '+attr+'>'+inner+'</button>':
+   '<div class="warehouse-kpi warehouse-kpi-static">'+inner+'</div>';
+ }).join('');
 }
 function backlog(d){
  const names={PENDING_REVIEW:'Awaiting review',APPEAL_REVIEW:'Appeal review',ON_HOLD:'On hold',
@@ -101,7 +104,7 @@ const bucket=(d,mode)=>{
 };
 const sum=(metric,r)=>Number(r[metric]||0);
 function branchGroups(d){
- const sorted=(d.byBranch||[]).slice().sort((a,b)=>b.revenue-a.revenue);
+ const sorted=(d.byBranch||[]).filter(x=>x.orders>0).slice().sort((a,b)=>b.revenue-a.revenue);
  return {major:new Set(sorted.slice(0,6).map(x=>x.id)),top:sorted.slice(0,6),rest:sorted.slice(6)};
 }
 function pie(d){
@@ -250,6 +253,8 @@ $('warehouseKpis').addEventListener('click',event=>{
   $('warehouseChartHeading').scrollIntoView({block:'nearest',behavior:'smooth'});
  }else if(button.dataset.warehouseTarget){
   $(button.dataset.warehouseTarget)?.scrollIntoView({block:'start',behavior:'smooth'});
+ }else if(button.dataset.warehouseNavigation){
+  document.querySelector('[data-office-page="'+button.dataset.warehouseNavigation+'"]')?.click();
  }
 });
 // Dashboard navigation calls refresh after the view is visible (supply-office.js).
