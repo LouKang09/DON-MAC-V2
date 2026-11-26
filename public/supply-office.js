@@ -391,7 +391,8 @@ async function loadDistributionDashboard(){
   $('distRevenue').textContent=peso(d.revenue);
   $('distNet').textContent=d.netRevenue===null?'Cost incomplete':peso(d.netRevenue);
   $('distTopName').textContent=d.topProducts?.[0]?.name||'No requests yet';
-  $('distCostNote').textContent=d.netRevenue===null?
+  // Keep the dashboard functional if an older cached information-widget script removed this node.
+  if($('distCostNote'))$('distCostNote').textContent=d.netRevenue===null?
    'Gross profit is incomplete because '+Number(d.unknownCostLines||0)+' historical delivered order line(s) have no verified purchase cost. Open Review Missing Historical Purchase Costs below to reconcile those records.':
    'Gross profit equals fulfilled supply sales plus urgent fees minus recorded item purchase costs, before warehouse overhead. Franchise royalties are excluded.';
   const products=d.topProducts||[],max=Math.max(1,...products.map(p=>Number(p.quantity)||0));
