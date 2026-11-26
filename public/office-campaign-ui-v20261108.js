@@ -213,7 +213,7 @@ async function load(){
    const fresh=item.kind==='catalog'?supplies.find(p=>Number(p.id)===Number(item.id)&&p.active):null;
    return fresh?{...item,name:String(fresh.name),uom:String(fresh.uom||'')}:item;
   });
-  renderCampaigns();renderSupplies();
+  renderCampaigns();renderTimers();renderSupplies();
  }catch(e){$('officeCampaignFeedback').textContent=e.message;}
  finally{loading=false;}
 }
