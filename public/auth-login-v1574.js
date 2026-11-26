@@ -126,6 +126,22 @@
  }
  regEmail.addEventListener('input',()=>{++emailSeq;clearTimeout(emailTimer);message('regEmailStatus','');if(regEmail.value&&regEmail.checkValidity())emailTimer=setTimeout(checkSignupEmail,650);});
  regEmail.addEventListener('blur',()=>{if(regEmail.value)void checkSignupEmail();});
+ const regPhone=$('regPhone');
+ let phoneSeq=0,phoneTimer;
+ async function checkSignupPhone(){
+  clearTimeout(phoneTimer);
+  const value=regPhone.value.trim(),seq=++phoneSeq;
+  if(!/^[+\d\s().-]{7,32}$/.test(value)){message('regPhoneStatus','Enter a valid phone number.',true);return false;}
+  message('regPhoneStatus','Checking phone number…');
+  try{
+   const result=await post('/api/auth/phone-available',{phone:value});
+   if(seq!==phoneSeq||regPhone.value.trim()!==value)return false;
+   message('regPhoneStatus',result.available?'Phone number is available.':result.reason||'This phone number is already registered.',!result.available);
+   return result.available===true;
+  }catch(err){if(seq===phoneSeq)message('regPhoneStatus',err.message||'Unable to check phone number. Try again.',true);return false;}
+ }
+ regPhone.addEventListener('input',()=>{++phoneSeq;clearTimeout(phoneTimer);message('regPhoneStatus','');if(/^[+\d\s().-]{7,32}$/.test(regPhone.value.trim()))phoneTimer=setTimeout(checkSignupPhone,700);});
+ regPhone.addEventListener('blur',()=>{if(regPhone.value)void checkSignupPhone();});
  const signupPlanDetails={
   FREE:{title:'Free Plan',badge:'PLAN REQUEST',summary:'Entry-level plan. Availability and included features will be confirmed by Admin Control.',features:[]},
   ENTERPRISE:{title:'Enterprise Plan',badge:'CUSTOM PLAN',summary:'Tailored business plan. Pricing and capabilities will be confirmed by Admin Control.',features:[]},
@@ -175,6 +191,7 @@
   try{
    if(!available&&!(await usernameAvailable()))throw new Error('Choose an available username.');
    if(!(await checkSignupEmail()))throw new Error('Use an available email address or try again.');
+   if(!(await checkSignupPhone()))throw new Error('Use an available phone number or try again.');
    const pw=$('regVerifyPassword').value;
    if(pw.length<10||pw.length>128||!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw))throw new Error('Use 10–128 characters with at least one letter and one number.');
    if(pw!==$('regVerifyConfirmPassword').value)throw new Error('Passwords do not match.');
