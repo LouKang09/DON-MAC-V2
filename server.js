@@ -2355,13 +2355,13 @@ async function handleApi(req,res,url){
       safeHeaders({'Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='GET'&&p==='/api/auth/username-available'){
-    const value=String(url.searchParams.get('username')||'').trim();
-    if(!/^[a-zA-Z0-9._-]{3,80}$/.test(value))
-      return json(res,200,{available:false,reason:'3–80 letters, numbers, dots, dashes or underscores.'},safeHeaders({'Cache-Control':'no-store'}));
-    const used=(await db.query(
-      'SELECT 1 FROM users WHERE LOWER(COALESCE(login_username,username))=LOWER($1) OR LOWER(username)=LOWER($1) LIMIT 1',
-      [value])).rows.length>0;
-    return json(res,200,{available:!used},safeHeaders({'Cache-Control':'no-store'}));
+    checkLoginRate(req,'signup-username-availability');
+    return json(res,200,await franchiseRequests.usernameAvailable(db,url.searchParams.get('username')),safeHeaders({'Cache-Control':'no-store'}));
+  }
+  if(method==='POST'&&p==='/api/auth/phone-available'){
+    checkLoginRate(req,'signup-phone-availability');
+    const body=await readJson(req,1024);
+    return json(res,200,await franchiseRequests.phoneAvailable(db,body.phone),safeHeaders({'Cache-Control':'no-store'}));
   }
   if(method==='POST'&&p==='/api/auth/email-available'){
     checkLoginRate(req,'signup-email-availability');
