@@ -327,3 +327,193 @@
 @media(prefers-reduced-motion:reduce){
  #officeApp .office-alert-bell.has-unread .office-bell-motion{animation:none}
 }
+
+/* Supply Chain · shared action hierarchy and franchise picker refinement.
+ * Appended after legacy page rules to keep one consistent look on all devices.
+ */
+#officeApp #page-dashboard .warehouse-franchise-menu {
+ width:min(375px,calc(100vw - 38px))!important;
+ max-width:375px!important;
+ padding:11px!important;
+ border:1px solid #cde3d4!important;
+ border-radius:15px!important;
+ background:#fff!important;
+ box-shadow:0 18px 44px rgba(9,50,28,.2)!important;
+ gap:10px!important;
+}
+#officeApp #page-dashboard #warehouseFranchiseOptions{
+ display:flex!important;flex-direction:column!important;
+ max-height:305px!important;overflow-y:auto!important;
+ gap:3px!important;padding:2px!important;
+}
+#officeApp #page-dashboard .warehouse-franchise-option {
+ appearance:none!important;-webkit-appearance:none!important;
+ display:grid!important;grid-template-columns:35px minmax(0,1fr) auto!important;
+ align-items:center!important;justify-content:stretch!important;
+ gap:10px!important;width:100%!important;max-width:none!important;
+ min-width:0!important;min-height:66px!important;
+ padding:9px 10px!important;
+ border:1px solid transparent!important;border-radius:11px!important;
+ background:#fff!important;color:#164c32!important;
+ font-family:inherit!important;font-size:12px!important;
+ font-weight:400!important;line-height:1.3!important;
+ text-align:left!important;white-space:normal!important;box-shadow:none!important;
+ cursor:pointer!important;
+}
+#officeApp #page-dashboard .warehouse-franchise-option:is(:hover,:focus-visible){
+ border-color:#c5e2cf!important;background:#f0f9f3!important;
+ outline:none!important;
+}
+#officeApp #page-dashboard .warehouse-franchise-option.is-selected,
+#officeApp #page-dashboard .warehouse-franchise-option[aria-selected="true"]{
+ background:#eaf6ee!important;border-color:#a8d4ba!important;
+}
+#officeApp #page-dashboard .warehouse-franchise-avatar{
+ width:35px;height:35px;min-width:35px;
+ display:grid;place-items:center;border-radius:10px;
+ background:#e2f1e8;color:#126b42;
+ font-size:11px;font-weight:850;letter-spacing:.03em;
+}
+#officeApp #page-dashboard .warehouse-franchise-option.is-selected .warehouse-franchise-avatar{
+ background:#0b6c44;color:#fff;
+}
+#officeApp #page-dashboard .warehouse-franchise-option-copy{
+ display:flex!important;flex-direction:column!important;
+ align-items:flex-start!important;justify-content:center!important;
+ width:100%;min-width:0;max-width:100%;gap:5px!important;overflow:hidden;
+}
+#officeApp #page-dashboard .warehouse-franchise-owner-name{
+ display:block!important;width:100%;min-width:0;max-width:100%;
+ font-size:12px!important;font-weight:850!important;line-height:1.3!important;
+ color:#164632!important;white-space:normal!important;
+ overflow-wrap:anywhere;text-align:left!important;
+}
+#officeApp #page-dashboard .warehouse-franchise-owner-email{
+ display:block!important;width:100%;max-width:100%;
+ font-size:10px!important;font-weight:500!important;line-height:1.45!important;
+ color:#5a806d!important;white-space:normal!important;
+ overflow-wrap:anywhere;text-align:left!important;
+}
+#officeApp #page-dashboard .warehouse-franchise-option-meta{
+ align-self:center;justify-self:end;
+ display:flex;align-items:center;justify-content:flex-end;
+ color:#698777;white-space:nowrap;font-size:10px;
+ max-width:80px;line-height:1.25;
+}
+#officeApp #page-dashboard .warehouse-franchise-option-meta small{
+ color:#6c8574;font-size:10px;font-weight:600;
+}
+#officeApp #page-dashboard .warehouse-franchise-selected-mark{
+ display:grid;place-items:center;width:21px;height:21px;
+ background:#13754c;color:#fff;border-radius:50%;
+ font-size:12px;font-weight:800;
+}
+#officeApp #page-dashboard .warehouse-franchise-empty{
+ margin:0;padding:14px 10px;font-size:11px;line-height:1.4;
+}
+#officeApp #page-dashboard .warehouse-franchise-search-label{
+ color:#476c57!important;font-size:10px!important;font-weight:800!important;
+}
+#officeApp #page-dashboard #warehouseFranchiseSearch{
+ appearance:none!important;background:#f8fbf9!important;
+ color:#16452f!important;border:1px solid #cce1d3!important;
+ border-radius:10px!important;box-shadow:none!important;
+ min-height:42px!important;padding:10px 11px!important;
+ font-size:12px!important;
+}
+#officeApp #page-dashboard #warehouseFranchiseSearch:focus{
+ outline:2px solid #0e8754!important;outline-offset:1px!important;
+}
+/* Explicit green primary action used by all View / Expand / Collapse / Hide
+ * controls across purchase requests, delivery history and franchise profiles.
+ * Real chevronRight Lottie is attached via data-dm-icon; SVG is the fallback. */
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action{
+ appearance:none;-webkit-appearance:none;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ flex-direction:row!important;gap:8px!important;position:relative;
+ min-width:91px!important;min-height:39px!important;max-width:160px!important;
+ padding:9px 12px!important;border:1px solid #0a7046!important;
+ border-radius:10px!important;
+ background:#086b42!important;color:#fff!important;
+ font-family:inherit!important;font-size:11px!important;font-weight:850!important;
+ line-height:1.25!important;white-space:nowrap!important;
+ cursor:pointer;transition:background .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action:is(:hover,:focus-visible){
+ background:#098653!important;border-color:#098653!important;
+ box-shadow:0 3px 9px rgba(8,94,58,.18)!important;outline:none!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action:active{
+ transform:translateY(1px)!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action > .office-action-label{
+ display:inline-block!important;min-width:0!important;flex:0 0 auto!important;
+ font-size:inherit!important;color:inherit!important;line-height:1.2!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action > :is(.dm-ua-icon,.dm-ua-native){
+ position:relative;display:inline-grid!important;place-items:center;
+ width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;
+ max-width:18px!important;max-height:18px!important;flex:0 0 18px!important;
+ pointer-events:none!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action > .dm-ua-icon{
+ filter:invert(100%)!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action > :is(.dm-ua-icon,.dm-ua-native) svg{
+ width:18px!important;height:18px!important;display:block!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action.is-expanded > :is(.dm-ua-icon,.dm-ua-native){
+ transform:rotate(90deg);
+}
+/* Count is non-interactive; one Expand control exists in final column. */
+#officeApp #officeOrdersBody .office-order-count{
+ display:inline-block;color:#165e3b;font-size:12px;font-weight:850;
+ white-space:nowrap;
+}
+/* Unified pagination with a green fill even when enabled but not hovered. */
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .pagination .office-pagination-button{
+ appearance:none;-webkit-appearance:none;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ width:auto!important;min-width:76px!important;max-width:115px!important;
+ min-height:36px!important;padding:8px 13px!important;
+ background:#096b44!important;color:#fff!important;
+ border:1px solid #096b44!important;border-radius:9px!important;
+ font-family:inherit!important;font-size:11px!important;font-weight:800!important;
+ line-height:1.2!important;white-space:nowrap!important;
+ cursor:pointer;box-shadow:none!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .pagination .office-pagination-button:not(:disabled):is(:hover,:focus-visible){
+ background:#078b56!important;border-color:#078b56!important;
+ outline:2px solid #b2dcc1!important;outline-offset:1px!important;
+}
+#officeApp :is(#page-requests,#page-distribution,#page-franchisees) .pagination .office-pagination-button:disabled{
+ opacity:1!important;color:#749582!important;
+ background:#e6f1e9!important;border-color:#ceded3!important;
+ cursor:not-allowed!important;
+}
+/* Supply Catalog entry from warehouse exceptions. */
+#officeApp #page-dashboard #warehouseStockSection [data-warehouse-nav="catalog"]{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ background:#086b42!important;color:#fff!important;border:1px solid #086b42!important;
+ border-radius:10px!important;min-height:41px!important;min-width:165px!important;
+ padding:10px 16px!important;font-size:11px!important;font-weight:850!important;
+}
+#officeApp #page-dashboard #warehouseStockSection [data-warehouse-nav="catalog"]:is(:hover,:focus-visible){
+ background:#098653!important;color:#fff!important;outline:2px solid #c5e8d1!important;
+}
+@media(max-width:720px){
+ #officeApp #page-dashboard .warehouse-franchise-menu{max-width:min(360px,calc(100vw - 32px))!important}
+ #officeApp #page-dashboard .warehouse-franchise-option{
+  grid-template-columns:32px minmax(0,1fr) auto!important;
+  gap:8px!important;padding:8px!important;
+ }
+ #officeApp #page-dashboard .warehouse-franchise-avatar{width:32px;height:32px;min-width:32px}
+ #officeApp :is(#page-requests,#page-distribution,#page-franchisees) .pagination{
+  gap:7px!important;justify-content:flex-end!important;flex-wrap:wrap!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #officeApp :is(#page-requests,#page-distribution,#page-franchisees) .office-uniform-action{
+  transition:none!important;
+ }
+}
