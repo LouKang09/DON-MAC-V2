@@ -252,7 +252,7 @@ $('warehouseKpis').addEventListener('click',event=>{
   $(button.dataset.warehouseTarget)?.scrollIntoView({block:'start',behavior:'smooth'});
  }
 });
-document.querySelector('[data-office-page="dashboard"]')?.addEventListener('click',()=>{void load()});
+// Dashboard navigation calls refresh after the view is visible (supply-office.js).
 $('officeRefresh')?.addEventListener('click',()=>{if(visible())void load()});
 window.donmacWarehouseAnalytics={refresh:load};
 })();
