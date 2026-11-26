@@ -43,9 +43,21 @@ function drawOptions(){
  const term=search.value.trim().toLocaleLowerCase();
  const list=[{id:'all',name:'All franchisees',email:'Combined operational totals'},...franchisees]
   .filter(x=>(x.name+' '+(x.email||'')+' '+(x.username||'')).toLocaleLowerCase().includes(term));
- options.innerHTML=list.map(x=>'<button type="button" role="option" aria-selected="'+(String(x.id)===franchiseeId)+
-  '" data-franchisee-id="'+esc(x.id)+'"><strong>'+esc(x.name)+'</strong><small>'+esc(x.email||'No email on file')+'</small></button>').join('')
-  ||'<p class="warehouse-empty">No matching franchisee.</p>';
+ options.innerHTML=list.map(x=>{
+  const selected=String(x.id)===franchiseeId,all=x.id==='all';
+  const initials=all?'◎':String(x.name||x.username||'F').trim().split(/\s+/).slice(0,2).map(part=>part.slice(0,1).toUpperCase()).join('');
+  const detail=all?'Combined supply chain totals':(x.email||'No email on file');
+  const count=!all&&Number.isFinite(Number(x.branchCount))?
+   Number(x.branchCount)+' '+(Number(x.branchCount)===1?'branch':'branches'):'';
+  return '<button type="button" class="warehouse-franchise-option'+(selected?' is-selected':'')+
+   '" role="option" aria-selected="'+selected+'" data-franchisee-id="'+esc(x.id)+'">'+
+   '<span class="warehouse-franchise-avatar" aria-hidden="true">'+esc(initials)+'</span>'+
+   '<span class="warehouse-franchise-option-copy"><strong class="warehouse-franchise-owner-name">'+esc(x.name)+'</strong>'+
+   '<small class="warehouse-franchise-owner-email">'+esc(detail)+'</small></span>'+
+   '<span class="warehouse-franchise-option-meta">'+
+   (selected?'<span class="warehouse-franchise-selected-mark" aria-label="Selected">✓</span>':
+     (count?'<small>'+esc(count)+'</small>':''))+'</span></button>';
+ }).join('')||'<p class="warehouse-empty">No matching franchisee. Try a different name or email.</p>';
 }
 function selectFranchisee(id){
  if(id!=='all'&&!franchisees.some(x=>String(x.id)===id))return;
