@@ -787,7 +787,9 @@
       Promos:(state.catalog?.promos?.length||0)+(state.catalog?.officePromos||[]).filter(p=>p.active&&p.status!=='ENDED'&&Date.parse(p.endsAt)>Date.now()).length,Packages:state.catalog?.packages?.length||0};
     for(const p of state.catalog?.products||[])if(Object.hasOwn(counts,p.category))counts[p.category]++;
     for(const c of all)if(!c.builtin)counts[c.name]=(state.catalog?.products||[]).filter(p=>(c.productIds||[]).includes(p.id)).length;
-    $('categoryTabs').innerHTML=all.map(c=>{
+    const categoryRoot=$('categoryTabs');
+    const categoryScroll=categoryRoot.scrollLeft;
+    categoryRoot.innerHTML=all.map(c=>{
       const slug=categorySlugs[c.name]||'custom';
       return '<button type="button" class="tab category-tile category-'+slug+(state.category===c.name?' active':'')+'"'+
         ' data-cat="'+esc(c.name)+'" aria-pressed="'+String(state.category===c.name)+'" title="Browse '+esc(c.name)+'">'+
@@ -795,7 +797,8 @@
         '<span class="category-symbol" aria-hidden="true">'+categoryArt(c)+'</span>'+
         '<strong>'+esc(c.name)+'</strong><small>'+Number(counts[c.name]||0)+' items</small></button>';
     }).join('');
-    $('categoryTabs').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderTabs();renderCatalog();});
+    categoryRoot.scrollLeft=categoryScroll;
+    categoryRoot.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderTabs();renderCatalog();});
     syncCategoryRowNeighbors();
     if(!categoryRowResizeBound){
       categoryRowResizeBound=true;
