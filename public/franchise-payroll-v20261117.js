@@ -153,6 +153,7 @@
     $('dmPayrollLocked').hidden=info.enabled;
     $('dmPayrollPurchase').hidden=!info.canPurchase;
     $('dmPayrollApkPanel').hidden=!(info.enabled||info.addon?.fee>0);
+    if(!$('dmPayrollApkPanel').hidden)void checkAttendanceApk();
     $('dmPayrollReady').hidden=!info.enabled;
     $('dmPayrollLockTitle').textContent=info.canPurchase?'Unlock Payroll & Attendance':'Payroll unavailable';
     $('dmPayrollLockText').textContent=info.message;
@@ -465,6 +466,17 @@
   const detail=header.parentElement;
   if(!detail.open)setTimeout(()=>{if(detail.open)loadEmployeeHistory(Number(detail.dataset.employee));},0);
  });
+ const attendanceApk='/downloads/donmac-attendance-test.apk';
+ async function checkAttendanceApk(){
+  const btn=$('dmPayrollApk'),note=$('dmPayrollApkPanel').querySelector('.muted');
+  btn.disabled=true;
+  try{
+   const response=await fetch(attendanceApk,{method:'HEAD',cache:'no-store'});
+   if(!response.ok||!response.headers.get('content-type')?.includes('application/vnd.android.package-archive'))throw Error('not ready');
+   btn.disabled=false;note.textContent='Android test build · install only on authorized test devices.';
+  }catch(_){note.textContent='Android APK is not published yet.';}
+ }
+ $('dmPayrollApk').onclick=()=>{if($('dmPayrollApk').disabled)return;const link=document.createElement('a');link.href=attendanceApk;link.download='donmac-attendance-test.apk';link.click();};
  $('dmPayrollPurchase').onclick=async()=>{
   const button=$('dmPayrollPurchase');if(button.disabled||!entitlement?.canPurchase)return;
   button.disabled=true;
