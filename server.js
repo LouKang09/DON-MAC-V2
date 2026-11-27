@@ -168,6 +168,7 @@ function cookieHeader(token, maxAgeSeconds) {
   return `pos_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAgeSeconds}${secure}`;
 }
 
+function cashierApp(req){return /(?:^|\s)DonMacCashierApp\/1(?:\s|$)/.test(String(req.headers['user-agent']||''));}
 async function getUser(req, conn = db) {
   const token = parseCookies(req).pos_session;
   if (!token) return null;
@@ -187,6 +188,7 @@ async function getUser(req, conn = db) {
     await conn.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     return null;
   }
+  if(cashierApp(req)&&row.role!=='User')return null;
   return { id: Number(row.id), username: row.login_name||row.username, photoData:row.profile_photo||null, role: row.role,
     branchId: row.branch_id==null?null:Number(row.branch_id),
     branchActive:row.role==='Admin'||bool(row.assigned_branch_active),
@@ -2306,6 +2308,7 @@ async function handleApi(req,res,url){
   if(maintenanceMode)return json(res,503,{error:'Database maintenance is in progress. Please retry in a moment.'},safeHeaders({'Retry-After':'2'}));
   if(method==='GET'&&p==='/api/status')return json(res,200,{...(await appStatus()),version:APP_VERSION,authFeatures:{emailOtpAvailable:accountRecovery.isConfigured(),publicOwnerSignupAvailable:false,publicFranchiseRequestAvailable:true,franchiseEmailOtpAvailable:franchiseEmailVerification.configured()}},safeHeaders());
   if(method==='GET'&&p==='/api/health'){const probe=await db.query('SELECT 1 AS ok');return json(res,200,{ok:Number(probe.rows[0]?.ok||0)===1,app:'coffee-pos-web',version:APP_VERSION,engine:db.engine,time:nowIso(),uptimeSeconds:Math.round(process.uptime())},safeHeaders({'Cache-Control':'no-store'}));}
+  if(cashierApp(req)&&p==='/api/setup')return json(res,403,{error:'Account setup is available only on the DonMac website.'},safeHeaders());
   if(method==='POST'&&p==='/api/setup'){const status=await appStatus();if(!status.setupRequired)return json(res,409,{error:'Initial setup has already been completed.'},safeHeaders());const body=await readJson(req),username=String(body.username||'').trim(),password=String(body.password||'');if(username.length<2||password.length<8)return json(res,400,{error:'Use a username of at least 2 characters and a password of at least 8 characters.'},safeHeaders());const user=await createOrActivateUser({username,password,role:'Admin',active:true},null);await db.query('UPDATE chat_workspaces SET owner_user_id=$1 WHERE id IN (SELECT workspace_id FROM chat_memberships WHERE user_id=$1)',[user.id]);await logAction(user,'Web POS initial admin activated','Setup',null);return json(res,201,{ok:true,user},safeHeaders());}
   if(method==='POST'&&p==='/api/auth/login'){
     const body=await readJson(req),username=String(body.username||'').trim();
@@ -2322,6 +2325,7 @@ async function handleApi(req,res,url){
     if(matches.length!==1)
       return json(res,401,{error:'Invalid username or password. If more than one account uses these credentials, contact your franchise Owner to assign a unique username.'},safeHeaders());
     const u=matches[0];
+    if(cashierApp(req)&&u.role!=='User')return json(res,403,{error:'This Android app is for cashier accounts only. Owners and administrators must use the website.'},safeHeaders());
     if(u.role==='User'&&!bool(u.branch_active))
       return json(res,403,{error:'Your assigned branch is inactive. Please contact your Owner or Co-Owner to move your account to an active branch.',
         code:'BRANCH_INACTIVE'},safeHeaders({'Cache-Control':'no-store'}));
@@ -2382,6 +2386,7 @@ async function handleApi(req,res,url){
     return json(res,200,{ok:true,message:'Password updated. Sign in with your new password.'},
       safeHeaders({'Cache-Control':'no-store'}));
   }
+  if(cashierApp(req)&&['/api/auth/register','/api/auth/register/verify','/api/setup'].includes(p))return json(res,403,{error:'Account creation is available only on the DonMac website.'},safeHeaders());
   if(method==='POST'&&p==='/api/auth/register'){
     // Only an application is created. No user, password or shared stock is activated.
     checkLoginRate(req,'public-franchise-request');
