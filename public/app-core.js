@@ -322,6 +322,7 @@
     window.donmacPayroll?.onLogin?.(state.user);
     window.donmacGuides?.onLogin?.({
       id:state.user.id, username:state.user.username, role:state.user.role,
+      deferWelcome:!!state.subscription?.trialSelectionRequired||readActivationTour(),
       workspaceId:state.user.workplaceId||state.user.workplace_id||state.user.tenantId||state.user.ownerId||'legacy'
     });
   }
@@ -481,9 +482,12 @@
   });
   trialDialog?.addEventListener('mouseleave',clearTrialHover);
   trialDialog?.addEventListener('close',clearTrialHover);
-  function deferTrial(){if(trialBusy)return;trialDeferred=true;trialDialog.close();}
+  function deferTrial(){if(trialBusy)return;trialDeferred=true;trialDialog.close();switchView('dashboard');window.donmacGuides?.onboarding?.({required:true});}
   $('dmTrialLater')?.addEventListener('click',deferTrial);
   trialDialog?.addEventListener('cancel',e=>{e.preventDefault();deferTrial();});
+  function activationTourKey(){return 'donmac-activation-tour:'+String(state.user?.id||'');}
+  function readActivationTour(){try{return sessionStorage.getItem(activationTourKey())==='1';}catch(_){return false;}}
+  function queueActivationTour(){try{sessionStorage.setItem(activationTourKey(),'1');}catch(_){}}
   async function startSelectedTrial(plan){
     if(trialBusy)return;
     if(!['PRO','BUSINESS'].includes(plan)){toast('Choose Pro or Business first.');return;}
@@ -493,7 +497,7 @@
     try{
       const response=await fetch('/api/live/account/start-trial',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})});
       const data=await response.json();if(!response.ok)throw Error(data.error||'Unable to start trial.');
-      location.replace('/');
+      queueActivationTour();location.replace('/');
     }catch(err){if(trialDialog.open)$('dmTrialError').textContent=err.message;else toast(err.message);}
     finally{trialBusy=false;controls.forEach(b=>b.disabled=false);}
   }
@@ -566,6 +570,10 @@
     if(!state.user)return;
     showApp();
     switchView(state.user.role==='User'?'pos':'dashboard');
+    if(state.user.role==='Admin'&&readActivationTour()&&!state.subscription?.trialSelectionRequired){
+      try{sessionStorage.removeItem(activationTourKey());}catch(_){}
+      window.donmacGuides?.onboarding?.({activated:true});
+    }
   }
   $('authForm').addEventListener('submit',async e=>{
     e.preventDefault();const form=e.currentTarget;
