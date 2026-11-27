@@ -435,13 +435,19 @@
   let trialDeferred=false,trialBusy=false;
   let hoverTimer=0,hoverCandidate=null,hoverActive=null,lastMouse=null;
   const hoverClasses=['dm-trial-blank-hover','dm-trial-row-hover','dm-trial-button-hover'];
-  function clearTrialHover(){
-    clearTimeout(hoverTimer);hoverCandidate=null;hoverActive=null;lastMouse=null;
+  const sameHover=(a,b)=>(a?.el||null)===(b?.el||null)&&(a?.cls||null)===(b?.cls||null);
+  function applyTrialHover(next){
     trialDialog.querySelectorAll(hoverClasses.map(c=>'.'+c).join(',')).forEach(el=>el.classList.remove(...hoverClasses));
+    hoverActive=next;
+    if(next)next.el.classList.add(next.cls);
+  }
+  function clearTrialHover(){
+    clearTimeout(hoverTimer);hoverTimer=0;hoverCandidate=null;lastMouse=null;applyTrialHover(null);
   }
   function classifyTrialHover(e){
-    const target=e.target,card=target.closest('.dm-trial-card');
-    const row=target.closest('.dm-trial-card li'),button=target.closest('[data-trial-plan]');
+    const target=document.elementFromPoint(e.clientX,e.clientY);
+    if(!target||!trialDialog.contains(target))return null;
+    const card=target.closest('.dm-trial-card'),row=target.closest('.dm-trial-card li'),button=target.closest('[data-trial-plan]');
     if(button&&!button.disabled)return {el:button,cls:hoverClasses[2]};
     if(row)return {el:row,cls:hoverClasses[1]};
     if(!card||target.closest('.dm-trial-tag'))return null;
@@ -453,20 +459,25 @@
     }
     return {el:card,cls:hoverClasses[0]};
   }
-  const sameHover=(a,b)=>a?.el===b?.el&&a?.cls===b?.cls;
   trialDialog?.addEventListener('mousemove',e=>{
-    // Ignore synthetic mouse boundary changes from transforms and tiny cursor jitter.
-    if(lastMouse&&Math.hypot(e.clientX-lastMouse.x,e.clientY-lastMouse.y)<6)return;
-    lastMouse={x:e.clientX,y:e.clientY};
+    // Ignore geometry-driven boundary events at the same stationary pointer,
+    // but never discard a genuine transition between card and button.
     const next=classifyTrialHover(e);
-    if(sameHover(next,hoverCandidate))return;
-    hoverCandidate=next;clearTimeout(hoverTimer);
+    const movement=lastMouse?Math.hypot(e.clientX-lastMouse.x,e.clientY-lastMouse.y):Infinity;
+    if(movement<1)return;
+    if(movement<6&&sameHover(next,hoverCandidate))return;
+    lastMouse={x:e.clientX,y:e.clientY};
+    if(sameHover(next,hoverCandidate)&&sameHover(next,hoverActive))return;
+    if(sameHover(next,hoverCandidate)&&hoverTimer)return;
+    hoverCandidate=next;clearTimeout(hoverTimer);hoverTimer=0;
     if(sameHover(next,hoverActive))return;
+    // Release the previous mode immediately; then wait for a stable target.
+    applyTrialHover(null);
+    if(!next)return;
     hoverTimer=setTimeout(()=>{
-      if(hoverActive)hoverActive.el.classList.remove(hoverActive.cls);
-      hoverActive=hoverCandidate;
-      if(hoverActive)hoverActive.el.classList.add(hoverActive.cls);
-    },220);
+      hoverTimer=0;
+      if(hoverCandidate===next)applyTrialHover(next);
+    },160);
   });
   trialDialog?.addEventListener('mouseleave',clearTrialHover);
   trialDialog?.addEventListener('close',clearTrialHover);
