@@ -7,6 +7,8 @@
  if(!form||!password||!username)return;
  const remember=$('authRememberUsername'),toggle=$('authPasswordToggle');
  const KEY='donmac_login_remembered_username';
+ const cashierApp=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
+ if(cashierApp)$('authSignupPrompt')?.classList.add('hidden');
  const pageIds={login:null,register:'authRegisterPanel',reset:'authResetPanel'};
  let page='login',checkSeq=0,available=false;
  let pendingApplicationId=null;
@@ -25,7 +27,7 @@
   }catch(_){remember.checked=false;}
  }
  function show(next){
-  if(!Object.hasOwn(pageIds,next))next='login';
+  if(!Object.hasOwn(pageIds,next)||(cashierApp&&next==='register'))next='login';
   page=next;
   Object.entries(pageIds).forEach(([type,id])=>{
    if(id)$(id).classList.toggle('hidden',type!==page);
