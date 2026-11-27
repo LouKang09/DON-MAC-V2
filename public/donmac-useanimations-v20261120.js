@@ -175,7 +175,7 @@
   const targets=e=>{
     const target=e.target;
     if(!(target instanceof Element))return [];
-    const control=target.closest('button,[role="button"],[tabindex]');
+    const control=target.closest('button,a[href],summary,[role="button"],[tabindex]');
     if(!control)return [];
     // Include direct button glyphs and nested KPI/nav glyphs exactly once.
     const found=new Set();
@@ -187,7 +187,7 @@
     // Do not retrigger when moving between the SVG, label and button.
     // Browser pointerover is emitted for child elements as well as buttons.
     for(const el of targets(e)){
-      const control=el.closest('button,[role="button"]')||el;
+      const control=el.closest('button,a[href],summary,[role="button"]')||el;
       if(e.relatedTarget instanceof Node && control.contains(e.relatedTarget))continue;
       play(el);
     }
