@@ -29,7 +29,7 @@
  detail.setAttribute('aria-label','Business Store Performance breakdown');
  summary.after(detail);
  function eligible(){
-  return admin&&plan?.plan==='BUSINESS'&&plan?.status==='PAID'&&
+  return admin&&plan?.plan==='BUSINESS'&&['PAID','TRIAL'].includes(plan?.status)&&
    sessionKey===session()&&!app.classList.contains('hidden')&&!app.inert&&
    window.donmacAuthenticatedRole==='Admin';
  }
@@ -87,7 +87,7 @@
   }
   // Live franchise data can ONLY be read via authenticated workspace-scoped routes.
   const status=await fetchJson('/api/live/status');
-  if(status.role!=='Admin'||status.plan!=='BUSINESS'||status.subscriptionStatus!=='PAID')
+  if(status.role!=='Admin'||status.plan!=='BUSINESS'||!['PAID','TRIAL'].includes(status.subscriptionStatus))
    throw Error('An active Business subscription is required for Store Performance.');
   const branches=(status.branches||[]).filter(x=>x.active!==false);
   const selected=selectedBranch==='all'?null:branches.find(x=>String(x.id)===selectedBranch);
