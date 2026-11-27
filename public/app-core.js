@@ -360,9 +360,11 @@
   function renderDevSubscription(){
     const sub=state.subscription;if(!sub)return;
     const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
-    const free=sub.plan==='FREE';
+    const free=sub.plan==='FREE'||sub.trialSelectionRequired;
+    const trial=sub.status==='TRIAL';
+    if(sub.trialSelectionRequired&&admin){const modal=$('dmTrialDialog');if(modal&&!modal.open)modal.showModal();}
     $('view-dashboard').classList.toggle('dm-free-dashboard',free);
-    const planLabel=(free?'Free':business?'Business':'Pro')+' Plan User';
+    const planLabel=sub.trialSelectionRequired?'Choose Trial Plan':(free?'Free':business?'Business':'Pro')+(trial?' · Trial':' Plan User');
     $('accountPlanPill').textContent=planLabel;
     $('accountPlanPill').closest('.account-plan-top-control')?.setAttribute('aria-label','Account Type: '+planLabel);
     $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
@@ -375,7 +377,7 @@
     $('accountStartedAt').textContent=planDisplayDate(sub.startedAt);
     $('accountRenewAt').textContent=planDisplayDate(sub.renewAt);
     $('accountRemaining').textContent=sub.daysRemaining==null?'—':String(sub.daysRemaining);
-    const label=({FREE:'No payment required',PAID:'Paid',ON_HOLD:'On Hold',UNPAID:'Unpaid',NOT_CONFIGURED:'Not configured'})[sub.status]||'Not configured';
+    const label=({TRIAL:'30-day trial',FREE:'No payment required',PAID:'Paid',ON_HOLD:'On Hold',UNPAID:'Unpaid',NOT_CONFIGURED:'Not configured'})[sub.status]||'Not configured';
     $('accountPaymentStatus').textContent='Payment status: '+label;
     $('accountPaymentStatus').dataset.status=sub.status;
     $('accountPlanMessage').textContent=sub.pendingPlan?
@@ -425,6 +427,17 @@
       '<button type="button" data-plan-page="previous" '+(subscriptionHistoryPage===1?'disabled':'')+'>Previous</button>'+
       '<button type="button" data-plan-page="next" '+(subscriptionHistoryPage===totalPages?'disabled':'')+'>Next</button>';
   }
+  $('dmTrialDialog')?.addEventListener('cancel',e=>e.preventDefault());
+  $('dmTrialDialog')?.addEventListener('click',async e=>{
+    const button=e.target.closest('[data-trial-plan]');if(!button||button.disabled)return;
+    const modal=$('dmTrialDialog'),buttons=[...modal.querySelectorAll('[data-trial-plan]')];
+    buttons.forEach(b=>b.disabled=true);$('dmTrialError').textContent='';
+    try{
+      const response=await fetch('/api/live/account/start-trial',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:button.dataset.trialPlan})});
+      const data=await response.json();if(!response.ok)throw Error(data.error||'Unable to start trial.');
+      location.replace('/');
+    }catch(err){$('dmTrialError').textContent=err.message;buttons.forEach(b=>b.disabled=false);}
+  });
   async function loadDevSubscription(){
     if(!state.user)return;
     try{state.subscription=await api('/api/account/subscription');renderDevSubscription();}
