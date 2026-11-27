@@ -222,7 +222,7 @@
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
     .then(() => loadScript('/franchise-unified-adapter.js?v=20261126-owner-receipt'))
-    .then(() => loadScript('/app-core.js?v=20261127-plan-offers'))
+    .then(() => loadScript('/app-core.js?v=20261127-compact-phone-pos'))
     .then(() => {
       watchForAuthenticatedApp();
       setTimeout(() => {
