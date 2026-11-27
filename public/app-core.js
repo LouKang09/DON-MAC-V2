@@ -362,12 +362,16 @@
     const business=sub.plan==='BUSINESS',admin=state.user?.role==='Admin';
     const free=sub.plan==='FREE'||sub.trialSelectionRequired;
     const trial=sub.status==='TRIAL';
-    if(sub.trialSelectionRequired&&admin){const modal=$('dmTrialDialog');if(modal&&!modal.open)modal.showModal();}
+    if(sub.trialSelectionRequired&&admin&&!trialDeferred){const modal=$('dmTrialDialog');if(modal&&!modal.open)modal.showModal();}
     $('view-dashboard').classList.toggle('dm-free-dashboard',free);
     const planLabel=sub.trialSelectionRequired?'Choose Trial Plan':(free?'Free':business?'Business':'Pro')+(trial?' · Trial':' Plan User');
     $('accountPlanPill').textContent=planLabel;
     $('accountPlanPill').closest('.account-plan-top-control')?.setAttribute('aria-label','Account Type: '+planLabel);
-    $('accountPlanSelect').value=sub.pendingPlan?.plan||sub.plan;
+    const awaiting=!!sub.trialSelectionRequired;
+    const previousChoice=$('accountPlanSelect').value;
+    $('accountPlanSelect').value=awaiting?(sub.pendingPlan?.plan||(['PRO','BUSINESS'].includes(previousChoice)?previousChoice:'PRO')):(sub.pendingPlan?.plan||sub.plan);
+    $('saveAccountPlan').textContent=awaiting?'Start Trial':'Update Plan';
+    $('dmDirectPay').classList.toggle('hidden',!awaiting||!admin);
     renderAccountBranchPricing(sub);
     // Owners can REQUEST a plan change on isolated accounts too; Admin Control
     // alone decides whether to approve it. Live mode is not a reason to lock this form.
@@ -428,31 +432,33 @@
       '<button type="button" data-plan-page="next" '+(subscriptionHistoryPage===totalPages?'disabled':'')+'>Next</button>';
   }
   const trialDialog=$('dmTrialDialog');
+  let trialDeferred=false,trialBusy=false;
   trialDialog?.addEventListener('pointermove',e=>{
     const card=e.target.closest('.dm-trial-card');
-    const blank=e.pointerType==='mouse'&&card&&e.target===card;
+    const blank=e.pointerType==='mouse'&&card&&(e.target===card||e.target.tagName==='UL');
     trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.toggle('dm-trial-blank-hover',!!blank&&el===card));
   });
   trialDialog?.addEventListener('pointerleave',()=>trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.remove('dm-trial-blank-hover')));
-  $('dmTrialBackLogin')?.addEventListener('click',async()=>{
-    const controls=[...trialDialog.querySelectorAll('button')];if(controls.some(b=>b.disabled))return;
-    controls.forEach(b=>b.disabled=true);
+  function deferTrial(){if(trialBusy)return;trialDeferred=true;trialDialog.close();}
+  $('dmTrialLater')?.addEventListener('click',deferTrial);
+  trialDialog?.addEventListener('cancel',e=>{e.preventDefault();deferTrial();});
+  async function startSelectedTrial(plan){
+    if(trialBusy)return;
+    if(!['PRO','BUSINESS'].includes(plan)){toast('Choose Pro or Business first.');return;}
+    trialBusy=true;
+    const controls=[...trialDialog.querySelectorAll('button'),$('saveAccountPlan'),$('dmDirectPay')].filter(Boolean);
+    controls.forEach(b=>b.disabled=true);$('dmTrialError').textContent='';
     try{
-      await api('/api/auth/logout',{method:'POST'});
-      state.user=null;discardPreviousAccount();resetOrderState({render:false});signalAccountChange();location.replace('/');
-    }catch(err){$('dmTrialError').textContent=err.message;controls.forEach(b=>b.disabled=false);}
-  });
-  $('dmTrialDialog')?.addEventListener('cancel',e=>e.preventDefault());
-  $('dmTrialDialog')?.addEventListener('click',async e=>{
-    const button=e.target.closest('[data-trial-plan]');if(!button||button.disabled)return;
-    const modal=$('dmTrialDialog'),buttons=[...modal.querySelectorAll('button')];
-    buttons.forEach(b=>b.disabled=true);$('dmTrialError').textContent='';
-    try{
-      const response=await fetch('/api/live/account/start-trial',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:button.dataset.trialPlan})});
+      const response=await fetch('/api/live/account/start-trial',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})});
       const data=await response.json();if(!response.ok)throw Error(data.error||'Unable to start trial.');
       location.replace('/');
-    }catch(err){$('dmTrialError').textContent=err.message;buttons.forEach(b=>b.disabled=false);}
+    }catch(err){if(trialDialog.open)$('dmTrialError').textContent=err.message;else toast(err.message);}
+    finally{trialBusy=false;controls.forEach(b=>b.disabled=false);}
+  }
+  trialDialog?.addEventListener('click',e=>{
+    const button=e.target.closest('[data-trial-plan]');if(button&&!button.disabled)startSelectedTrial(button.dataset.trialPlan);
   });
+  $('dmDirectPay')?.addEventListener('click',()=>state.subscription?.trialSelectionRequired?startSelectedTrial($('accountPlanSelect').value):requestPlanUpdate($('accountPlanSelect').value));
   async function loadDevSubscription(){
     if(!state.user)return;
     try{state.subscription=await api('/api/account/subscription');renderDevSubscription();}
