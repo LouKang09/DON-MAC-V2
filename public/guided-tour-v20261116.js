@@ -263,8 +263,9 @@
     header.appendChild(copy);
     const close=make('button','dm-guide-close','×');
     close.type='button';close.setAttribute('aria-label','Close POS guide');
-    close.addEventListener('click',()=>{markSeen();finish(false);});
-    if(!mandatory)header.appendChild(close);
+    close.addEventListener('click',()=>{if(mandatory)return;markSeen();finish(false);});
+    close.disabled=mandatory;
+    header.appendChild(close);
     panel.appendChild(header);
     if(lead)panel.appendChild(make('p','dm-guide-lead',lead));
     return header;
@@ -308,7 +309,7 @@
     ['Short overview of every permitted sidebar section','Detailed step-by-step tours for each section and subcategory','Safe, read-only guidance with background clicks and scrolling disabled','Reopen any guide later using Guide Center'].forEach(t=>list.appendChild(make('p','', '✓  '+t)));
     panel.appendChild(list);
     const actions=make('div','dm-guide-actions');
-    addButton(actions,'Start system tour',()=>start('overview'),'primary');
+    addButton(actions,'Start system tour',()=>{mandatory=true;start('overview');},'primary');
     addButton(actions,'Choose a category',showBrowser,'');
     addButton(actions,'Maybe later',()=>{markSeen();finish(false);},'muted');
     addFooter();panel.appendChild(actions);panel.focus();
@@ -372,7 +373,7 @@
     const actions=make('div','dm-guide-actions');
     addButton(actions,'Back',()=>move(-1),'muted').disabled=index===0;
     addButton(actions,index===steps.length-1?'Finish tour':'Next',()=>move(1),'primary');
-    if(!mandatory)addButton(actions,'Exit tour',()=>{markSeen();finish(false);},'exit');
+    addButton(actions,'Exit tour',()=>{if(mandatory)return;markSeen();finish(false);},'exit').disabled=mandatory;
     addFooter();panel.appendChild(actions);
     findStepTarget(step);
     watchTarget();
@@ -398,7 +399,7 @@
       steps=LIB[topic].steps.filter(Boolean);
     }else steps=overviewSteps();
     if(!steps.length){showBrowser();return;}
-    mode='tour';overlay.classList.add('dm-guide-mode-tour');index=0;markSeen();renderStep();
+    mode='tour';overlay.classList.add('dm-guide-mode-tour');index=0;if(!mandatory)markSeen();renderStep();
   };
   const refreshNavButtons = () => {
     $('#mainNav')?.querySelectorAll('button.nav[data-view]').forEach(nav=>{
@@ -492,7 +493,7 @@
     clearTimeout(welcomeDelay);
     if(!identity||!topicsAvailable().length)return;
     if(overlay)finish(false);
-    mandatory=required;
+    mandatory=required||activated;
     if(required){start('overview');return;}
     createOverlay();clearPanel();mode='welcome';ring.hidden=true;
     addHeader('ACCOUNT ACTIVATED','Congratulations! Your account is activated.',
