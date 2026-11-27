@@ -466,7 +466,7 @@
   const detail=header.parentElement;
   if(!detail.open)setTimeout(()=>{if(detail.open)loadEmployeeHistory(Number(detail.dataset.employee));},0);
  });
- const attendanceApk='/downloads/donmac-attendance-test.apk';
+ const attendanceApk='https://donmac-apk-builder-production.up.railway.app/donmac-attendance-test.apk';
  async function checkAttendanceApk(){
   const btn=$('dmPayrollApk'),note=$('dmPayrollApkPanel').querySelector('.muted');
   btn.disabled=true;
