@@ -142,32 +142,6 @@
  }
  regPhone.addEventListener('input',()=>{++phoneSeq;clearTimeout(phoneTimer);message('regPhoneStatus','');if(/^[+\d\s().-]{7,32}$/.test(regPhone.value.trim()))phoneTimer=setTimeout(checkSignupPhone,700);});
  regPhone.addEventListener('blur',()=>{if(regPhone.value)void checkSignupPhone();});
- const signupPlanDetails={
-  FREE:{title:'Free Plan',badge:'PLAN REQUEST',summary:'Entry-level plan. Availability and included features will be confirmed by Admin Control.',features:[]},
-  ENTERPRISE:{title:'Enterprise Plan',badge:'CUSTOM PLAN',summary:'Tailored business plan. Pricing and capabilities will be confirmed by Admin Control.',features:[]},
-  PRO:{title:'Pro Plan',badge:'UP TO 3 BRANCHES',
-   summary:'Ideal for smaller businesses starting with one branch and growing to three.',
-   features:['1 included branch','Up to 2 additional branches','₱799 per extra branch at renewal','Replenishment and POS reporting']},
-  BUSINESS:{title:'Business Plan',badge:'MULTI-BRANCH',
-   summary:'For businesses managing multiple branches, with replenishment and branch-to-branch transfers.',
-   features:['1 included branch','No Pro three-branch limit','₱899 per extra branch at renewal','Branch transfer management']}
- };
- const requestedPlan=$('regRequestedPlan');
- function updateSignupPlanPreview(){
-  const config=signupPlanDetails[requestedPlan.value];
-  $('regPlanTitle').textContent=config?.title||'Select a plan to compare benefits';
-  $('regPlanTag').textContent=config?.badge||'PLAN OPTIONS';
-  $('regPlanSummary').textContent=config?.summary||
-    'Choose a subscription above to view the included branches, additional branch fees, and management features.';
-  $('regPlanFeatures').replaceChildren();
-  if(config)for(const label of config.features){
-   const item=document.createElement('span');item.className='auth-plan-feature';item.textContent=label;
-   $('regPlanFeatures').appendChild(item);
-  }
-  $('regPlanDescription').classList.toggle('selected',!!config);
- }
- requestedPlan.addEventListener('change',updateSignupPlanPreview);
- updateSignupPlanPreview();
  const signupDigits=[...document.querySelectorAll('[data-signup-digit]')];
  function collectSignupCode(){
    $('regVerifyCode').value=signupDigits.map(input=>input.value).join('');
@@ -198,8 +172,7 @@
    message('regMessage','Submitting your franchise request…');
    const result=await post('/api/auth/register',{
     username:regUsername.value.trim(),fullName:$('regFullName').value.trim(),
-    email:$('regEmail').value.trim(),phone:$('regPhone').value.trim(),
-    requestedPlan:$('regRequestedPlan').value
+    email:$('regEmail').value.trim(),phone:$('regPhone').value.trim()
    });
    pendingApplicationId=result.applicationId||null;
    message('regMessage',result.message||'Account request received.');
@@ -231,7 +204,8 @@
    });
    $('regVerifyCode').value='';$('regVerifyPassword').value='';$('regVerifyConfirmPassword').value='';
    $('authRegisterVerifyForm').classList.add('hidden');
-   $('authRegisterForm').classList.remove('hidden');$('authRegisterForm').reset();available=false;pendingApplicationId=null;signupDigits.forEach(input=>input.value='');updateSignupPlanPreview();
+   $('authRegisterForm').classList.remove('hidden');$('authRegisterForm').reset();available=false;pendingApplicationId=null;signupDigits.forEach(input=>input.value='');
+    if(result.signedIn){location.replace('/');return;}
     show('login');
    $('authUsername').value=result.username||verifiedUsername;
    $('authPassword').value='';
