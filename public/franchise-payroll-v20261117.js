@@ -71,6 +71,7 @@
   $('dmPayrollManager')?.setAttribute('hidden','');
   $('dmPayrollReady')?.setAttribute('hidden','');
   $('dmPayrollLocked')?.setAttribute('hidden','');
+  $('dmPayrollPurchase')?.setAttribute('hidden','');$('dmPayrollApkPanel')?.setAttribute('hidden','');
   if($('dmPayrollRoster'))$('dmPayrollRoster').replaceChildren();
   if($('dmPayrollDtr'))$('dmPayrollDtr').innerHTML='<tr><td colspan="8">Choose a cashier and preview.</td></tr>';
   // Tenant switch: remove all financial data from previous user's DOM and JS state.
@@ -150,6 +151,8 @@
    if(user.role==='Admin'){
     $('dmPayrollManager').hidden=expenseTab!=='payroll';
     $('dmPayrollLocked').hidden=info.enabled;
+    $('dmPayrollPurchase').hidden=!info.canPurchase;
+    $('dmPayrollApkPanel').hidden=!(info.enabled||info.addon?.fee>0);
     $('dmPayrollReady').hidden=!info.enabled;
     $('dmPayrollLockTitle').textContent=info.plan==='PRO'?'Pro payroll add-on required':'Payroll unavailable';
     $('dmPayrollLockText').textContent=info.message+' Current add-on fee: '+money(info.addon?.fee||0)+
@@ -463,6 +466,17 @@
   const detail=header.parentElement;
   if(!detail.open)setTimeout(()=>{if(detail.open)loadEmployeeHistory(Number(detail.dataset.employee));},0);
  });
+ $('dmPayrollPurchase').onclick=async()=>{
+  const button=$('dmPayrollPurchase');if(button.disabled||!entitlement?.canPurchase)return;
+  button.disabled=true;
+  try{
+   const yes=await window.donmacPrompt.confirm('Add Payroll & Attendance for ₱1,000 to your next subscription payment? Once confirmed, the outstanding add-on fee remains payable even if you later decide not to use the feature. Payroll and attendance will remain locked until Admin Control confirms payment. Do you want to proceed?');
+   if(!yes)return;
+   await api('/api/payroll/addon/purchase','POST',{});
+   await refreshStatus();
+   message('Payroll add-on added to your next payment. Access unlocks after payment approval.');
+  }catch(error){message(error.message);}finally{button.disabled=false;}
+ };
  $('dmPayrollRefresh').onclick=()=>{refreshStatus();if(entitlement?.enabled)loadTeam();};
  $('dmPayrollPreview').onclick=previewPayroll;
  for(const id of ['dmPayrollEmployee','dmPayrollYear','dmPayrollMonth','dmPayrollHalf'])
