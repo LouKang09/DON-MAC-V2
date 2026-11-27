@@ -427,10 +427,25 @@
       '<button type="button" data-plan-page="previous" '+(subscriptionHistoryPage===1?'disabled':'')+'>Previous</button>'+
       '<button type="button" data-plan-page="next" '+(subscriptionHistoryPage===totalPages?'disabled':'')+'>Next</button>';
   }
+  const trialDialog=$('dmTrialDialog');
+  trialDialog?.addEventListener('pointermove',e=>{
+    const card=e.target.closest('.dm-trial-card');
+    const blank=e.pointerType==='mouse'&&card&&e.target===card;
+    trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.toggle('dm-trial-blank-hover',!!blank&&el===card));
+  });
+  trialDialog?.addEventListener('pointerleave',()=>trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.remove('dm-trial-blank-hover')));
+  $('dmTrialBackLogin')?.addEventListener('click',async()=>{
+    const controls=[...trialDialog.querySelectorAll('button')];if(controls.some(b=>b.disabled))return;
+    controls.forEach(b=>b.disabled=true);
+    try{
+      await api('/api/auth/logout',{method:'POST'});
+      state.user=null;discardPreviousAccount();resetOrderState({render:false});signalAccountChange();location.replace('/');
+    }catch(err){$('dmTrialError').textContent=err.message;controls.forEach(b=>b.disabled=false);}
+  });
   $('dmTrialDialog')?.addEventListener('cancel',e=>e.preventDefault());
   $('dmTrialDialog')?.addEventListener('click',async e=>{
     const button=e.target.closest('[data-trial-plan]');if(!button||button.disabled)return;
-    const modal=$('dmTrialDialog'),buttons=[...modal.querySelectorAll('[data-trial-plan]')];
+    const modal=$('dmTrialDialog'),buttons=[...modal.querySelectorAll('button')];
     buttons.forEach(b=>b.disabled=true);$('dmTrialError').textContent='';
     try{
       const response=await fetch('/api/live/account/start-trial',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:button.dataset.trialPlan})});
