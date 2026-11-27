@@ -433,12 +433,29 @@
   }
   const trialDialog=$('dmTrialDialog');
   let trialDeferred=false,trialBusy=false;
-  trialDialog?.addEventListener('pointermove',e=>{
-    const card=e.target.closest('.dm-trial-card');
-    const blank=e.pointerType==='mouse'&&card&&(e.target===card||e.target.tagName==='UL');
-    trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.toggle('dm-trial-blank-hover',!!blank&&el===card));
+  function clearTrialHover(){
+    trialDialog.querySelectorAll('.dm-trial-blank-hover,.dm-trial-row-hover,.dm-trial-button-hover').forEach(el=>el.classList.remove('dm-trial-blank-hover','dm-trial-row-hover','dm-trial-button-hover'));
+  }
+  // Mouse events also work on hybrid desktops where the primary pointer is touch.
+  trialDialog?.addEventListener('mousemove',e=>{
+    const target=e.target,card=target.closest('.dm-trial-card');
+    const row=target.closest('.dm-trial-card li'),button=target.closest('[data-trial-plan]');
+    let blank=!!card&&!row&&!button&&!target.closest('.dm-trial-tag');
+    if(blank){
+      // Check actual text bounds rather than the full width of block elements.
+      const walker=document.createTreeWalker(target,NodeFilter.SHOW_TEXT);
+      let node;while((node=walker.nextNode())){
+        if(!node.textContent.trim())continue;
+        const range=document.createRange();range.selectNodeContents(node);
+        if([...range.getClientRects()].some(r=>e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)){blank=false;break;}
+      }
+    }
+    trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.toggle('dm-trial-blank-hover',blank&&el===card));
+    trialDialog.querySelectorAll('.dm-trial-card li').forEach(el=>el.classList.toggle('dm-trial-row-hover',el===row));
+    trialDialog.querySelectorAll('[data-trial-plan]').forEach(el=>el.classList.toggle('dm-trial-button-hover',el===button));
   });
-  trialDialog?.addEventListener('pointerleave',()=>trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.remove('dm-trial-blank-hover')));
+  trialDialog?.addEventListener('mouseleave',clearTrialHover);
+  trialDialog?.addEventListener('close',clearTrialHover);
   function deferTrial(){if(trialBusy)return;trialDeferred=true;trialDialog.close();}
   $('dmTrialLater')?.addEventListener('click',deferTrial);
   trialDialog?.addEventListener('cancel',e=>{e.preventDefault();deferTrial();});
