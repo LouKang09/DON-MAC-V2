@@ -462,8 +462,8 @@
   const franchise=selected?.kind==='subscription';
   pane.hidden=!franchise;
   $('subPayrollAddonInfo').textContent=$('subPlan').value==='BUSINESS'
-    ?'Payroll is included with an active Business plan. Pro add-on settings are retained for future downgrades.'
-    :'Pro payroll requires a separately paid add-on verified by Admin Control.';
+    ?'For new Business trial accounts, payroll is an optional add-on. Existing paid Business entitlements are retained.'
+    :'Payroll unlocks during a trial after selection; renewal requires add-on payment.';
  }
  async function loadPayrollAddon(ws){
   $('subPayrollAddonFee').value='0';
@@ -472,7 +472,7 @@
   try{
    const result=await api('accounts/'+ws+'/payroll-addon');
    if(selected?.kind!=='subscription'||selected?.owner?.workspaceId!==ws)return;
-   selected.payrollDue=result.addon?.status==='UNPAID'?Number(result.addon?.fee||0):0;updateSubscriptionBranchQuote();
+   selected.payrollFee=Number(result.addon?.fee||0);selected.payrollDue=result.addon?.status==='UNPAID'?selected.payrollFee:0;updateSubscriptionBranchQuote();
    $('subPayrollAddonFee').value=result.addon?.fee||0;
    $('subPayrollAddonStatus').value=result.addon?.status||'UNPAID';
    $('subPayrollAddonMessage').textContent=result.message||'Ready to configure.';
@@ -511,7 +511,11 @@
    const needSelection=selected.kind==='subscription'&&!$('subDowngradeBranches').classList.contains('hidden');
    const keepBranchIds=needSelection?[...$('subKeepBranchChoices').querySelectorAll('input:checked')].map(x=>Number(x.value)):[];
    if(needSelection&&keepBranchIds.length!==3)throw new Error('Choose exactly 3 branches to remain accessible on Pro.');
-   await api(resource,{method:'PUT',body:JSON.stringify({plan:$('subPlan').value,status:$('subStatus').value,
+   let payrollPaymentIncluded;
+   if(selected.kind==='subscription'&&$('subStatus').value==='PAID'&&selected.payrollFee>0){
+    payrollPaymentIncluded=$('subPayrollAddonStatus').value==='PAID';
+   }
+   await api(resource,{method:'PUT',body:JSON.stringify({payrollPaymentIncluded,plan:$('subPlan').value,status:$('subStatus').value,
       amount:$('subAmount').value,nextPaymentDate:$('subNextPaymentDate').value,keepBranchIds})});
    $('subscriptionDialog').close();await reload();
   }catch(err){error('subscriptionError',err.message)}
