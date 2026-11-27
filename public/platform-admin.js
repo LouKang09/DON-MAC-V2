@@ -418,9 +418,11 @@
    const count=franchise?(needChoice?3:active):0,extras=Math.max(0,count-1);
    const rate=plan==='BUSINESS'?899:799;
    const base=Number($('subAmount').value)||0;
+   const payrollDue=franchise?Number(selected.payrollDue||0):0;
    $('subBranchQuote').textContent=franchise?
      'First branch included · '+extras+' extra active '+(extras===1?'branch':'branches')+
-     ' × ₱'+rate+' · Next renewal: ₱'+(base+extras*rate).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})+
+     ' × ₱'+rate+' · Next renewal: ₱'+(base+extras*rate+payrollDue).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})+
+     (payrollDue?' · Includes ₱'+payrollDue.toLocaleString('en-PH')+' outstanding payroll add-on':'')+
      (needChoice?' · Select 3 to retain; excess branches will be deactivated.':''):
      'Supply Office uses independent subscription pricing.';
  }
@@ -470,6 +472,7 @@
   try{
    const result=await api('accounts/'+ws+'/payroll-addon');
    if(selected?.kind!=='subscription'||selected?.owner?.workspaceId!==ws)return;
+   selected.payrollDue=result.addon?.status==='UNPAID'?Number(result.addon?.fee||0):0;updateSubscriptionBranchQuote();
    $('subPayrollAddonFee').value=result.addon?.fee||0;
    $('subPayrollAddonStatus').value=result.addon?.status||'UNPAID';
    $('subPayrollAddonMessage').textContent=result.message||'Ready to configure.';
@@ -481,6 +484,7 @@
   try{
    const result=await api('accounts/'+ws+'/payroll-addon',{method:'PUT',body:JSON.stringify({
     fee:$('subPayrollAddonFee').value,status:$('subPayrollAddonStatus').value})});
+   selected.payrollDue=result.entitlement?.addon?.status==='UNPAID'?Number(result.entitlement.addon.fee||0):0;updateSubscriptionBranchQuote();
    $('subPayrollAddonMessage').textContent=result.entitlement?.message||'Payroll add-on saved.';
   }catch(error){$('subPayrollAddonMessage').textContent=error.message;}
   finally{btn.disabled=false;}
