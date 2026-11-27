@@ -8,7 +8,7 @@
   const make = (tag, cls, text) => { const e = document.createElement(tag); if(cls)e.className=cls; if(text!==undefined)e.textContent=text; return e; };
   const navFor = key => $('#mainNav button.nav[data-view="' + key + '"]');
   const topicParent = key => LIB[key] && (LIB[key].parent || key);
-  let identity = '';
+  let identity = '', mandatory=false;
   let overlay = null, shade = [], ring = null, panel = null;
   let mode = '', currentTopic = '', steps = [], index = 0;
   let previouslyFocused = null, wasInert = false, savedBodyOverflow = '', savedHtmlOverflow = '';
@@ -195,7 +195,7 @@
     if(!overlay)return;
     const focusables=Array.from(panel.querySelectorAll('button:not([disabled]),select:not([disabled]),a[href],input:not([disabled])'))
       .filter(el=>!isHidden(el));
-    if(event.key==='Escape'){event.preventDefault();finish(false);return;}
+    if(event.key==='Escape'){event.preventDefault();if(!mandatory)finish(false);return;}
     if(event.key==='Tab'){
       if(!focusables.length){event.preventDefault();return;}
       const first=focusables[0],last=focusables[focusables.length-1];
@@ -264,7 +264,7 @@
     const close=make('button','dm-guide-close','×');
     close.type='button';close.setAttribute('aria-label','Close POS guide');
     close.addEventListener('click',()=>{markSeen();finish(false);});
-    header.appendChild(close);
+    if(!mandatory)header.appendChild(close);
     panel.appendChild(header);
     if(lead)panel.appendChild(make('p','dm-guide-lead',lead));
     return header;
@@ -280,6 +280,7 @@
   const finish=(completed)=>{
     if(!overlay)return;
     if(completed)markSeen();
+    mandatory=false;
     resizeWatcher?.disconnect();resizeWatcher=null;
     clearTimeout(settledDraw);settledDraw=0;
     if(redrawFrame)cancelAnimationFrame(redrawFrame);redrawFrame=0;
@@ -371,7 +372,7 @@
     const actions=make('div','dm-guide-actions');
     addButton(actions,'Back',()=>move(-1),'muted').disabled=index===0;
     addButton(actions,index===steps.length-1?'Finish tour':'Next',()=>move(1),'primary');
-    addButton(actions,'Exit tour',()=>{markSeen();finish(false);},'exit');
+    if(!mandatory)addButton(actions,'Exit tour',()=>{markSeen();finish(false);},'exit');
     addFooter();panel.appendChild(actions);
     findStepTarget(step);
     watchTarget();
@@ -468,7 +469,7 @@
     if(changed){
       let seen=false;
       try{seen=localStorage.getItem(BASE_KEY+':'+identity)==='1';}catch(_){}
-      if(!seen){
+      if(!seen&&!user.deferWelcome){
         const request=loginSequence;
         welcomeDelay=setTimeout(()=>{
           if(request===loginSequence && identity===key && !rootApp()?.classList.contains('hidden') && !overlay)showWelcome();
@@ -487,5 +488,18 @@
   new MutationObserver(()=>{
     if(rootApp()?.classList.contains('hidden') && overlay)onLogout();
   }).observe(rootApp()||document.documentElement,{attributes:true,attributeFilter:['class']});
-  window.donmacGuides={onLogin,onLogout,start,open:showBrowser,available:topicsAvailable};
+  function onboarding({activated=false,required=false}={}){
+    clearTimeout(welcomeDelay);
+    if(!identity||!topicsAvailable().length)return;
+    if(overlay)finish(false);
+    mandatory=required;
+    if(required){start('overview');return;}
+    createOverlay();clearPanel();mode='welcome';ring.hidden=true;
+    addHeader('ACCOUNT ACTIVATED','Congratulations! Your account is activated.',
+      'Welcome to DonMac POS! Let us give you a quick guided tour so you can get familiar with your new workspace.');
+    const actions=make('div','dm-guide-actions');
+    addButton(actions,'Okay, start tour',()=>start('overview'),'primary');
+    panel.appendChild(actions);panel.focus();
+  }
+  window.donmacGuides={onLogin,onLogout,start,onboarding,open:showBrowser,available:topicsAvailable};
 })();
