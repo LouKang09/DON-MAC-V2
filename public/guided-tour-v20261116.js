@@ -170,7 +170,28 @@
     if(redrawFrame)cancelAnimationFrame(redrawFrame);
     redrawFrame=requestAnimationFrame(()=>{redrawFrame=0;draw();});
   };
+  const revealStepTarget = step => {
+    const raw=step?.target?$(step.target):null;
+    if(!raw)return;
+    const nav=$('#mainNav');
+    if(nav?.contains(raw)){
+      const section=raw.closest('.nav-section');
+      if(section&&!section.classList.contains('hidden')){
+        const toggle=section.querySelector('.dm-nav-group-toggle');
+        if(toggle&&(section.classList.contains('dm-group-collapsed')||toggle.getAttribute('aria-expanded')==='false')){
+          withoutInteraction(()=>toggle.click());
+        }
+        const tree=section.querySelector('.dm-menu-group-items');
+        if(!section.classList.contains('dm-group-collapsed')){
+          toggle?.setAttribute('aria-expanded','true');
+          tree?.setAttribute('aria-hidden','false');
+        }
+        if(raw.closest('#dmExpenseTree'))withoutInteraction(()=>window.donmacExpenseMenu?.expand?.(true));
+      }
+    }
+  };
   const findStepTarget = step => {
+    revealStepTarget(step);
     const target=currentTarget(step);
     if(!target)return;
     try{
@@ -379,7 +400,7 @@
     watchTarget();
     queueDraw();
     clearTimeout(settledDraw);
-    settledDraw=setTimeout(()=>{findStepTarget(steps[index]);watchTarget();queueDraw();},170);
+    settledDraw=setTimeout(()=>{findStepTarget(steps[index]);watchTarget();queueDraw();},350);
     panel.focus();
   };
   const move=offset=>{
