@@ -20,7 +20,7 @@
  // Payment status and plan are authoritative. "configured" is an optional
  // setup/legacy UI flag and must not keep an already-paid Business owner locked.
  const business=()=>window.donmacAuthenticatedRole==='Admin'&&
-  subscription?.plan==='BUSINESS'&&subscription?.status==='PAID';
+  subscription?.plan==='BUSINESS'&&['PAID','TRIAL'].includes(subscription?.status);
  const subscriptionPath=()=>window.donmacFranchiseUnified===true?
   '/api/live/account/subscription':'/api/account/subscription';
  const empty=message=>'<div class="aa-empty">'+esc(message)+'</div>';
