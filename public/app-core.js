@@ -433,26 +433,40 @@
   }
   const trialDialog=$('dmTrialDialog');
   let trialDeferred=false,trialBusy=false;
+  let hoverTimer=0,hoverCandidate=null,hoverActive=null,lastMouse=null;
+  const hoverClasses=['dm-trial-blank-hover','dm-trial-row-hover','dm-trial-button-hover'];
   function clearTrialHover(){
-    trialDialog.querySelectorAll('.dm-trial-blank-hover,.dm-trial-row-hover,.dm-trial-button-hover').forEach(el=>el.classList.remove('dm-trial-blank-hover','dm-trial-row-hover','dm-trial-button-hover'));
+    clearTimeout(hoverTimer);hoverCandidate=null;hoverActive=null;lastMouse=null;
+    trialDialog.querySelectorAll(hoverClasses.map(c=>'.'+c).join(',')).forEach(el=>el.classList.remove(...hoverClasses));
   }
-  // Mouse events also work on hybrid desktops where the primary pointer is touch.
-  trialDialog?.addEventListener('mousemove',e=>{
+  function classifyTrialHover(e){
     const target=e.target,card=target.closest('.dm-trial-card');
     const row=target.closest('.dm-trial-card li'),button=target.closest('[data-trial-plan]');
-    let blank=!!card&&!row&&!button&&!target.closest('.dm-trial-tag');
-    if(blank){
-      // Check actual text bounds rather than the full width of block elements.
-      const walker=document.createTreeWalker(target,NodeFilter.SHOW_TEXT);
-      let node;while((node=walker.nextNode())){
-        if(!node.textContent.trim())continue;
-        const range=document.createRange();range.selectNodeContents(node);
-        if([...range.getClientRects()].some(r=>e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)){blank=false;break;}
-      }
+    if(button&&!button.disabled)return {el:button,cls:hoverClasses[2]};
+    if(row)return {el:row,cls:hoverClasses[1]};
+    if(!card||target.closest('.dm-trial-tag'))return null;
+    const walker=document.createTreeWalker(target,NodeFilter.SHOW_TEXT);
+    let node;while((node=walker.nextNode())){
+      if(!node.textContent.trim())continue;
+      const range=document.createRange();range.selectNodeContents(node);
+      if([...range.getClientRects()].some(r=>e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom))return null;
     }
-    trialDialog.querySelectorAll('.dm-trial-card').forEach(el=>el.classList.toggle('dm-trial-blank-hover',blank&&el===card));
-    trialDialog.querySelectorAll('.dm-trial-card li').forEach(el=>el.classList.toggle('dm-trial-row-hover',el===row));
-    trialDialog.querySelectorAll('[data-trial-plan]').forEach(el=>el.classList.toggle('dm-trial-button-hover',el===button));
+    return {el:card,cls:hoverClasses[0]};
+  }
+  const sameHover=(a,b)=>a?.el===b?.el&&a?.cls===b?.cls;
+  trialDialog?.addEventListener('mousemove',e=>{
+    // Ignore synthetic mouse boundary changes from transforms and tiny cursor jitter.
+    if(lastMouse&&Math.hypot(e.clientX-lastMouse.x,e.clientY-lastMouse.y)<6)return;
+    lastMouse={x:e.clientX,y:e.clientY};
+    const next=classifyTrialHover(e);
+    if(sameHover(next,hoverCandidate))return;
+    hoverCandidate=next;clearTimeout(hoverTimer);
+    if(sameHover(next,hoverActive))return;
+    hoverTimer=setTimeout(()=>{
+      if(hoverActive)hoverActive.el.classList.remove(hoverActive.cls);
+      hoverActive=hoverCandidate;
+      if(hoverActive)hoverActive.el.classList.add(hoverActive.cls);
+    },220);
   });
   trialDialog?.addEventListener('mouseleave',clearTrialHover);
   trialDialog?.addEventListener('close',clearTrialHover);
