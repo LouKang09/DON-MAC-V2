@@ -152,8 +152,7 @@
     $('dmPayrollManager').hidden=expenseTab!=='payroll';
     $('dmPayrollLocked').hidden=info.enabled;
     $('dmPayrollPurchase').hidden=!info.canPurchase;
-    $('dmPayrollApkPanel').hidden=!(info.enabled||info.addon?.fee>0);
-    if(!$('dmPayrollApkPanel').hidden)void checkAttendanceApk();
+    $('dmPayrollApkPanel').hidden=false;
     $('dmPayrollReady').hidden=!info.enabled;
     $('dmPayrollLockTitle').textContent=info.canPurchase?'Unlock Payroll & Attendance':'Payroll unavailable';
     $('dmPayrollLockText').textContent=info.message;
@@ -205,7 +204,7 @@
    const lunch=staff.filter(e=>e.status==='lunch').length;
    const expanded=openBranches.has(String(branch.id))||filter!=='all';
    return '<details class="dm-payroll-branch" data-branch="'+branch.id+'" '+(expanded?'open':'')+'>'+
-    '<summary><span class="dm-payroll-branch-icon" aria-hidden="true">▦</span><span><strong>'+esc(branch.name)+
+    '<summary><span class="dm-payroll-branch-icon" data-dm-icon="grid" aria-hidden="true"><svg class="dm-ua-native" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span><strong>'+esc(branch.name)+
     '</strong><small>'+(branch.active?'Active':'Inactive')+' branch · '+staff.length+' cashier(s)</small></span>'+
     '<span class="dm-payroll-branch-badges"><b>'+working+' working</b><b>'+lunch+' on lunch</b></span>'+
     '<span class="dm-payroll-branch-arrow" aria-hidden="true">⌄</span></summary>'+
@@ -222,6 +221,7 @@
       '</details>';
     }).join(''):'<p class="dm-payroll-empty">No cashiers assigned to this branch yet.</p>')+'</div></details>';
   }).join(''):'<p class="dm-payroll-empty">No franchise branches available for this view.</p>';
+  window.donmacAnimatedIcons?.refresh?.();
   for(const staffId of openStaff){
    const target=root.querySelector('details.dm-payroll-staff[data-employee="'+staffId+'"][open]');
    if(target)loadEmployeeHistory(Number(staffId));
@@ -466,17 +466,8 @@
   const detail=header.parentElement;
   if(!detail.open)setTimeout(()=>{if(detail.open)loadEmployeeHistory(Number(detail.dataset.employee));},0);
  });
- const attendanceApk='https://donmac-apk-builder-production.up.railway.app/donmac-attendance-test.apk';
- async function checkAttendanceApk(){
-  const btn=$('dmPayrollApk'),note=$('dmPayrollApkPanel').querySelector('.muted');
-  btn.disabled=true;
-  try{
-   const response=await fetch(attendanceApk,{method:'HEAD',cache:'no-store'});
-   if(!response.ok||!response.headers.get('content-type')?.includes('application/vnd.android.package-archive'))throw Error('not ready');
-   btn.disabled=false;note.textContent='Android test build · install only on authorized test devices.';
-  }catch(_){note.textContent='Android APK is not published yet.';}
- }
- $('dmPayrollApk').onclick=()=>{if($('dmPayrollApk').disabled)return;const link=document.createElement('a');link.href=attendanceApk;link.download='donmac-attendance-test.apk';link.click();};
+ // Native anchor navigation keeps downloads in the original user gesture,
+ // including mobile browsers that restrict scripted clicks and HEAD requests.
  $('dmPayrollPurchase').onclick=async()=>{
   const button=$('dmPayrollPurchase');if(button.disabled||!entitlement?.canPurchase)return;
   button.disabled=true;
