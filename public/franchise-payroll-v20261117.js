@@ -154,9 +154,8 @@
     $('dmPayrollPurchase').hidden=!info.canPurchase;
     $('dmPayrollApkPanel').hidden=!(info.enabled||info.addon?.fee>0);
     $('dmPayrollReady').hidden=!info.enabled;
-    $('dmPayrollLockTitle').textContent=info.plan==='PRO'?'Pro payroll add-on required':'Payroll unavailable';
-    $('dmPayrollLockText').textContent=info.message+' Current add-on fee: '+money(info.addon?.fee||0)+
-     ' · payment status: '+(info.addon?.status||'UNPAID')+'. Only Admin Control can approve the separate fee.';
+    $('dmPayrollLockTitle').textContent=info.canPurchase?'Unlock Payroll & Attendance':'Payroll unavailable';
+    $('dmPayrollLockText').textContent=info.message;
     if(info.enabled&&document.querySelector('#view-expenses.active'))loadTeam();
    }else markAttendance();
   }catch(error){
@@ -470,11 +469,11 @@
   const button=$('dmPayrollPurchase');if(button.disabled||!entitlement?.canPurchase)return;
   button.disabled=true;
   try{
-   const yes=await window.donmacPrompt.confirm('Add Payroll & Attendance for ₱1,000 to your next subscription payment? Once confirmed, the outstanding add-on fee remains payable even if you later decide not to use the feature. Payroll and attendance will remain locked until Admin Control confirms payment. Do you want to proceed?');
+   const yes=await window.donmacPrompt.confirm('Add Payroll & Attendance for ₱1,000 to your next subscription payment? If you are on an active trial, payroll and attendance unlock immediately. The ₱1,000 fee is included in your next subscription payment. If the add-on is not paid at renewal, payroll access will be locked. Do you want to proceed?');
    if(!yes)return;
    await api('/api/payroll/addon/purchase','POST',{});
    await refreshStatus();
-   message('Payroll add-on added to your next payment. Access unlocks after payment approval.');
+   message(entitlement?.enabled?'Payroll & Attendance is now active. The ₱1,000 add-on will be included in your next payment.':'Payroll add-on added to your next payment. Access unlocks after payment approval.');
   }catch(error){message(error.message);}finally{button.disabled=false;}
  };
  $('dmPayrollRefresh').onclick=()=>{refreshStatus();if(entitlement?.enabled)loadTeam();};
