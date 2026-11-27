@@ -278,7 +278,7 @@
    if(thisToken!==token)return;
    renderSaved(saved.slips||[]);
    const settings=await api('/api/payroll/settings');
-   if(thisToken===token)$('dmPayrollNextNumber').value=settings.nextPayslipNo||46;
+   if(thisToken===token)$('dmPayrollNextNumber').value=settings.nextPayslipNo||1;
   }catch(error){message(error.message);}
   finally{loadInProgress=false;}
  }
