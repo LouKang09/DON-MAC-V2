@@ -124,8 +124,9 @@
 @keyframes dmTrialCrownEight{0%,37.5%,100%{filter:drop-shadow(0 0 1px #ffbd20)}18.75%{filter:brightness(1.6) drop-shadow(0 0 6px #ffe170)}}
 #dmTrialDialog .dm-trial-later-wrap{text-align:center;position:relative;padding:.35rem 0}
 #dmTrialDialog #dmTrialLater{width:auto!important;display:inline-block!important;color:#075d38!important;background:transparent!important;border:none!important;text-decoration:underline;text-underline-offset:3px;padding:0!important;font-size:13px}
-#dmTrialDialog #dmTrialLaterHint{display:none;position:relative;max-width:34rem;margin:.35rem auto 0;padding:.65rem .8rem;border-radius:.6rem;background:#e5f0e9;color:#315b45;font-size:12px;line-height:1.45}
-#dmTrialDialog #dmTrialLater:hover + #dmTrialLaterHint,#dmTrialDialog #dmTrialLater:focus-visible + #dmTrialLaterHint{display:block}
+#dmTrialDialog #dmTrialLaterHint{display:block!important;position:absolute!important;bottom:calc(100% + .4rem);left:50%;transform:translateX(-50%);width:min(34rem,100%);box-sizing:border-box;margin:0;padding:.65rem .8rem;border-radius:.6rem;background:#e5f0e9;color:#315b45;font-size:12px;line-height:1.45;box-shadow:0 4px 16px #16352924;z-index:10;pointer-events:none!important;visibility:hidden;opacity:0;transition:opacity .16s ease,visibility .16s ease}
+#dmTrialDialog #dmTrialLater:hover + #dmTrialLaterHint,#dmTrialDialog #dmTrialLater:focus-visible + #dmTrialLaterHint{visibility:visible;opacity:1}
+@media(prefers-reduced-motion:reduce){#dmTrialDialog #dmTrialLaterHint{transition:none!important}}
 @media(max-width:700px){#dmTrialDialog .dm-trial-grid{padding:.5rem;gap:1rem}#dmTrialDialog .dm-trial-card.dm-trial-blank-hover{transform:scale(1.04)!important}}
 @media(max-width:520px){#dmTrialDialog .dm-trial-card ul{max-height:12rem}#dmTrialDialog .dm-trial-card.dm-trial-blank-hover{transform:none!important}}
 /* Preserve a static readable badge and controls for explicit reduced-motion preferences. */
