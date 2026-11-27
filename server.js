@@ -2406,9 +2406,12 @@ async function handleApi(req,res,url){
     checkLoginRate(req,'franchise-email-verification');
     const body=await readJson(req,2048);
     const password=franchiseTestAccess.validateSignupPassword(body.password,body.confirmPassword);
-    return json(res,201,await franchiseEmailVerification.verify(db,body.email,body.code,body.applicationId||null,{
+    const verified=await franchiseEmailVerification.verify(db,body.email,body.code,body.applicationId||null,{
       onVerified:(tx,requestId)=>franchiseTestAccess.activateVerifiedSignup(tx,requestId,password)
-    }),safeHeaders({'Cache-Control':'no-store'}));
+    });
+    const token=crypto.randomBytes(32).toString('hex'),expires=new Date(Date.now()+SESSION_HOURS*3600*1000).toISOString();
+    await db.query('INSERT INTO sessions (token_hash,user_id,expires_at,created_at) VALUES ($1,$2,$3,$4)',[hashToken(token),verified.userId,expires,nowIso()]);
+    return json(res,201,{...verified,signedIn:true},safeHeaders({'Cache-Control':'no-store','Set-Cookie':cookieHeader(token,SESSION_HOURS*3600)}));
   }
   if(method==='POST'&&p==='/api/auth/logout'){const token=parseCookies(req).pos_session;if(token)await db.query('DELETE FROM sessions WHERE token_hash=$1',[hashToken(token)]);return json(res,200,{ok:true},safeHeaders({'Set-Cookie':cookieHeader('',0)}));}
   if(method==='GET'&&p==='/api/auth/me'){
