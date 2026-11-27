@@ -1,7 +1,7 @@
 // Coffee POS v1.5.7 safe loader: core/login first, enhancements only after authentication.
 (() => {
   'use strict';
-  const VERSION = '1.6.49-auth-icons-report-theme-20261121';
+  const VERSION = '1.6.50-trial-onboarding-20261127';
   let enhancementsStarted = false;
 
   const loadScript = src => new Promise((resolve, reject) => {
@@ -222,7 +222,7 @@
   loadScript('/ui-utils.js')
     .then(() => loadScript('/pos-stock-limit-v20261114.js'))
     .then(() => loadScript('/franchise-unified-adapter.js?v=20261126-owner-receipt'))
-    .then(() => loadScript('/app-core.js?v=20261126-free-overview'))
+    .then(() => loadScript('/app-core.js?v=20261127-trial'))
     .then(() => {
       watchForAuthenticatedApp();
       setTimeout(() => {
