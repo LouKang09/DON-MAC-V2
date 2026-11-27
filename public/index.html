@@ -159,6 +159,30 @@
 #dmPayrollManager .dm-payroll-branch-icon{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 2.5rem;width:2.5rem;height:2.5rem;border-radius:.65rem;background:#e0efe5;color:#086b42}
 #dmPayrollManager .dm-payroll-branch-icon :is(svg,.dm-ua-icon){width:24px;height:24px;flex:none}
 @media(max-width:699px){#dmPayrollManager #dmPayrollApkPanel{grid-template-columns:1fr;max-width:100%}#dmPayrollManager #dmPayrollApk{grid-column:1;grid-row:auto;justify-self:start;max-width:100%;white-space:normal}}
+</style><style id="dm-compact-phone-pos">
+@media(max-width:699px){
+ #app #view-pos .pos-layout,#app #view-pos .catalog-panel{min-width:0!important;max-width:100%!important}
+ #app #view-pos #categoryTabs{display:flex!important;flex-flow:row nowrap!important;align-items:stretch!important;justify-content:flex-start!important;gap:.4rem!important;overflow-x:auto!important;overflow-y:hidden!important;max-width:100%!important;width:100%!important;min-width:0!important;padding:.2rem .1rem .45rem!important;scrollbar-width:thin;scroll-snap-type:x proximity;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
+ #app #view-pos #categoryTabs .category-tile{box-sizing:border-box!important;flex:0 0 clamp(4.35rem,21vw,5.5rem)!important;min-width:0!important;width:auto!important;max-width:none!important;height:4.2rem!important;min-height:0!important;padding:.25rem .2rem!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:.12rem!important;border-radius:.65rem!important;scroll-snap-align:start}
+ #app #view-pos #categoryTabs .category-status{display:none!important}
+ #app #view-pos #categoryTabs .category-symbol{width:1.65rem!important;height:1.65rem!important;min-height:0!important;flex:none!important;margin:0!important;display:grid!important;place-items:center!important}
+ #app #view-pos #categoryTabs .category-symbol :is(img,svg,span,.dm-ua-icon){width:1.65rem!important;height:1.65rem!important;max-width:100%!important;max-height:100%!important;background-size:contain!important;object-fit:contain!important}
+ #app #view-pos #categoryTabs .category-tile strong{font-size:.68rem!important;line-height:1.1!important;white-space:nowrap!important;max-width:100%!important;overflow:hidden;text-overflow:ellipsis}
+ #app #view-pos #categoryTabs .category-tile small{font-size:.58rem!important;line-height:1.1!important}
+ #app #view-pos #catalogGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.35rem!important;align-items:stretch!important;max-width:100%!important;min-width:0!important}
+ #app #view-pos #catalogGrid :is(.availability-hover,.product-card){box-sizing:border-box!important;min-width:0!important;max-width:100%!important;min-height:0!important;border-radius:.65rem!important}
+ #app #view-pos #catalogGrid .product-card{position:relative!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:.18rem!important;padding:.42rem!important;width:100%!important;height:100%!important;min-height:6.25rem!important;text-align:left!important;overflow:hidden!important}
+ #app #view-pos #catalogGrid .product-card .cat{font-size:.53rem!important;line-height:1.12!important;max-width:100%!important;overflow-wrap:anywhere}
+ #app #view-pos #catalogGrid .product-card .product-art{box-sizing:border-box!important;width:100%!important;height:2.4rem!important;min-height:0!important;max-height:2.4rem!important;aspect-ratio:auto!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:1.5rem!important;flex:none!important}
+ #app #view-pos #catalogGrid .product-art img{width:100%!important;height:100%!important;object-fit:contain!important}
+ #app #view-pos #catalogGrid .product-card h4{font-size:.7rem!important;line-height:1.16!important;letter-spacing:0!important;margin:0!important;overflow-wrap:anywhere!important;white-space:normal!important;min-height:0!important;display:block!important}
+ #app #view-pos #catalogGrid .product-card .price{font-size:.73rem!important;line-height:1.2!important;margin-top:auto!important;padding-right:.85rem!important;overflow-wrap:anywhere}
+ #app #view-pos #catalogGrid .product-add-circle{width:1rem!important;height:1rem!important;font-size:.78rem!important;right:.25rem!important;bottom:.25rem!important;display:grid!important;place-items:center!important}
+ #app #view-pos #catalogGrid .availability-hint{width:.95rem!important;height:.95rem!important;font-size:.65rem!important;right:.2rem!important;top:.2rem!important}
+ #app #view-pos #catalogGrid .unavailable,#app #view-pos #catalogGrid .product-card small{font-size:.57rem!important;line-height:1.15!important;overflow-wrap:anywhere!important;white-space:normal!important}
+ #app #view-pos #catalogGrid .office-promo-icon{max-width:100%!important;max-height:2.4rem!important;object-fit:contain!important}
+}
+@media(max-width:340px){#app #view-pos #catalogGrid{gap:.25rem!important}#app #view-pos #catalogGrid .product-card{padding:.3rem!important}#app #view-pos #catalogGrid .product-card h4{font-size:.65rem!important}}
 </style></head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
