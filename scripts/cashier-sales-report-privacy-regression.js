@@ -87,7 +87,10 @@ async function run(){
  assert.match(adapter,/const isStaff=state\.user\?\.role==='User'/);
  assert.match(exporter,/if\(type==='costing'&&!ctx\.admin\)/);
  assert.match(exporter,/includeCosting:ctx\.admin,includeTransactions:ctx\.admin/);
- assert.match(legacy,/includeCosting:franchiseLive\.admin/);
+ assert.match(legacy,/franchiseLiveExports\.pdfReport\(db,franchiseLive,user,query,'sales',\{dashboardPrint:true\}\)/);
+ assert.match(html,/id="reportCashierField" class="[^"]*\badmin-only hidden\b/);
+ assert.match(core,/\$\('reportCashierField'\)\.inert=!isAdmin/);
+ assert.match(core,/if\(state\.user\?\.role!=='Admin'\)return;\s*if\(reset\)reportCashierUI\.selected\.clear/);
 
  const start=core.indexOf('  function renderReport(){');
  const end=core.indexOf('  function renderCosting(){',start);
