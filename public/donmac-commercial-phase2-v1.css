@@ -73,3 +73,48 @@ html body #platformApp .content .toolbar{align-items:end}
  html body #app #view-pos .order-panel{box-shadow:none}
 }
 @media(prefers-reduced-motion:reduce){html body #app #view-pos #catalogGrid .product-card{transition:none!important}}
+
+/* Complete the screen-level polish without changing navigation or grants. */
+html body #app #view-reports .report-filter-fields>.report-field:not(.hidden){
+ min-width:0!important;max-width:100%!important;width:100%!important;
+}
+html body #app #view-reports .report-filter-fields :is(input,select,summary){box-sizing:border-box;max-width:100%;min-width:0}
+html body #app #view-reports .report-cashier-select{position:relative;min-width:0;max-width:100%}
+html body #app #view-reports .report-cashier-popover{max-width:calc(100vw - 2rem);max-height:min(55dvh,22rem);overflow-y:auto}
+html body #app #view-reports .report-results-card .table-wrap{max-width:100%;min-width:0;overflow-x:auto!important;touch-action:pan-x pan-y}
+html body #app #view-reports .report-results-card table th:first-child,
+html body #app #view-reports .report-results-card table td:first-child{white-space:normal;overflow-wrap:anywhere}
+html body #app #view-reports .report-results-card table .num{white-space:nowrap;font-variant-numeric:tabular-nums}
+html body #app #view-reports .report-pagination{flex-wrap:wrap;align-items:center;gap:.5rem}
+html body #app #view-reports .report-page-buttons{display:flex;flex-wrap:wrap;gap:.25rem}
+html body #app :is(#view-catalog,#view-transactions,#view-expenses,#view-payroll,#view-users,#view-advanced,#view-account,#view-logs) :is(.card,.summary-card,.form-card),
+html body #officeApp .office-main :is(.warehouse-chart-panel,.franchise-detail,.request-orders-panel),
+html body #platformApp .content :is(.main-card,.platform-billing){
+ min-width:0;max-width:100%;border-color:var(--dm-ds-border);border-radius:var(--dm-ds-card-radius);box-shadow:var(--dm-ds-shadow)
+}
+html body :is(#app,#officeApp,#platformApp) :is(.card-head,.panel-head,.section-header,.page-heading)>:first-child{min-width:0;overflow-wrap:anywhere}
+html body :is(#app,#officeApp,#platformApp) :is(.summary-card,.metric,.stat) strong{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+html body :is(#officeApp,#platformApp) :is(.panel-head,.section-header,.page-heading,.toolbar){flex-wrap:wrap}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.warehouse-table-scroll,.inv-table-scroll,.inv-incoming-table-wrap,.inv-usage-table-scroll,.inv-audit-scroll){max-width:100%;min-width:0;overflow-x:auto!important;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
+html body #app #view-attendance .dm-attendance-page-header{border-color:var(--dm-ds-border)}
+html.dm-native-exit-supported body #app #mobileBottomNav .dm-mobile-exit{flex:1 1 0!important;min-width:0!important}
+html.dm-cashier-role body #app #view-inventory .inv-operation-card.hidden{display:none!important}
+@media(max-width:699px){
+ html body #app #view-reports .report-filter-fields:not(.hidden){grid-template-columns:repeat(2,minmax(0,1fr));width:100%!important}
+ html.dm-cashier-role body #app #view-reports .report-filter-fields:not(.hidden){grid-template-columns:minmax(0,1fr)!important}
+ html body #app #view-reports .report-filter-fields .report-field-cashier{grid-column:1/-1}
+ html body #app #view-reports .report-cashier-popover{left:0;right:auto;width:min(18rem,calc(100vw - 2rem))}
+ html body #app #view-reports #dmProductSummaryCard table{width:max-content!important;min-width:100%!important;max-width:none!important;table-layout:auto!important}
+ html body #app #view-reports #dmProductSummaryCard table :is(th,td):first-child{width:8.5rem!important;min-width:7rem!important;max-width:8.5rem!important}
+ html body #app #view-reports #dmProductSummaryCard table :is(th,td):not(:first-child){width:auto!important;min-width:3.2rem!important;white-space:nowrap!important}
+ html body #app #view-pos #orderList .qty-control>button{min-height:1.75rem!important;height:1.75rem!important;min-width:1.75rem!important;width:1.75rem!important;flex-basis:1.75rem!important}
+ html body #app #view-pos #orderList .qty-control>.dm-cart-quantity{height:1.75rem!important;min-height:1.75rem!important}
+ html body #app #view-pos .order-panel{padding-bottom:1rem!important}
+ html body #app #mobileBottomNav .mobile-nav-item.hidden,
+ html body #app #mobileBottomNav .mobile-nav-item[aria-hidden="true"]{display:none!important}
+}
+@media(max-width:360px){
+ html body #app #view-reports .report-filter-fields:not(.hidden){grid-template-columns:minmax(0,1fr)!important}
+ html body #app #view-pos #orderList .order-row{grid-template-columns:minmax(0,1fr)!important}
+ html body #app #view-pos #orderList .qty-control{max-width:100%!important}
+}
