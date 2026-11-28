@@ -98,7 +98,7 @@ async function phase4Navigation(page){
   await page.evaluate(source=>{(0,eval)(source)},fs.readFileSync(require('node:path').join(root,path),'utf8'));
  }
  assert.equal(await page.$('#mobileMorePanel [data-mobile-chat-entry]'),null,'APK must not duplicate floating chat');
- const active=()=>page.$eval('#mobileBottomNav [aria-current="page"]',els=>els.map(x=>x.dataset.view));
+ const active=()=>page.evaluate(()=>[...document.querySelectorAll('#mobileBottomNav [aria-current="page"]')].map(x=>x.dataset.view));
  await page.click('#mobileBottomNav [data-view="attendance"]');
  await page.waitForFunction(()=>document.querySelector('#mobileBottomNav [data-view="attendance"][aria-current="page"]'));
  assert.deepEqual(await active(),['attendance'],'Attendance is the sole active primary tab');
