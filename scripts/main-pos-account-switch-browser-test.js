@@ -75,10 +75,12 @@ const server=http.createServer(async(req,res)=>{
   if(['/api/live/dashboard','/api/dashboard'].includes(pathname))
    return send(res,200,isNew?newData:oldData);
   if(pathname==='/api/branches')return send(res,200,{branches:[oldBranch],
-   branchPricing:{plan:'BUSINESS',extraBranches:0,nextRenewalAmount:2599,mayAdd:true,
+   branchPricing:{plan:'BUSINESS',extraBranches:0,extraBranchRate:899,nextRenewalAmount:2599,mayAdd:true,
    totalBranches:1,activeBranches:1,maxBranches:100}});
+  if(pathname==='/api/live/account/subscription')return send(res,200,{plan:'PRO',status:'PAID',branchPricing:{plan:'PRO',extraBranches:0,extraBranchRate:799,nextRenewalAmount:1499,totalBranches:1,activeBranches:1,mayAdd:true,maxBranches:3,branches:[branch]},history:[]});
+  if(pathname==='/api/inventory/transfer-branches')return send(res,200,{branches:[oldBranch],sources:[oldBranch],targets:[]});
   if(pathname==='/api/account/subscription')return send(res,200,{plan:'BUSINESS',status:'PAID',
-   branchPricing:{plan:'BUSINESS',extraBranches:0,nextRenewalAmount:2599,mayAdd:true,
+   branchPricing:{plan:'BUSINESS',extraBranches:0,extraBranchRate:899,nextRenewalAmount:2599,mayAdd:true,
     totalBranches:1,activeBranches:1,maxBranches:100,branches:[oldBranch]}});
   if(pathname==='/api/live/inventory')return send(res,200,{branchId:601,items:[]});
   if(pathname==='/api/live/cashiers')return send(res,200,{cashiers:[]});
