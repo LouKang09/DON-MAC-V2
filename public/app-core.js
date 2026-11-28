@@ -1900,6 +1900,7 @@
     return page.rows;
   }
   function resetReportPages(){for(const kind of Object.keys(reportUI.pages))reportUI.pages[kind]=1;}
+  phoneViewport.addEventListener?.('change',()=>{if(state.report){resetReportPages();renderReport();if(state.costing)renderCosting();}});
   function reportQuery(){
     const qs=new URLSearchParams({
       period:$('reportPeriod').value,
@@ -1907,6 +1908,7 @@
     });
     // JSON, rather than comma-separated names, preserves spaces and punctuation
     // and applies the same selection to the on-screen report and both PDFs.
+    if(state.user?.role!=='Admin')qs.set('date',manilaToday());
     if(state.user?.role==='Admin'&&reportCashierUI.selected.size)
       qs.set('cashiers',JSON.stringify([...reportCashierUI.selected]));
     if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')
@@ -1915,11 +1917,14 @@
   }
   $('reportDate').value=manilaToday();
   async function loadReport(){
-    if(!$('reportDate').value)$('reportDate').value=manilaToday();
+    if(state.user?.role!=='Admin'||!$('reportDate').value)$('reportDate').value=manilaToday();
     const request=++reportUI.request,qs=reportQuery();
     const owner=state.user?.role==='Admin';
     const session=window.donmacSessionGeneration?.();
     $('reportLoadingStatus').textContent='Loading Sales Report…';
+    state.report=null;state.costing=null;
+    for(const id of ['reportSummary','reportProducts','reportPromos','reportTransactions','costingList','reportProductsPagination','reportPromosPagination','reportTransactionsPagination','reportIngredientsPagination'])$(id)?.replaceChildren();
+    $('costingTotal').textContent='';
     try{
       // A cashier may read approved sales only. Never fetch recipe costing.
       const reportTask=api('/api/reports/sales?'+qs);
@@ -1939,7 +1944,7 @@
       $('reportLoadingStatus').textContent='Updated · '+$('reportPeriod').selectedOptions[0].text+
         ' · '+(report.rangeStart&&report.rangeEnd?report.rangeStart+' to '+report.rangeEnd:$('reportDate').value);
     }catch(err){
-      if(request!==reportUI.request)return;
+      if(request!==reportUI.request||session!==window.donmacSessionGeneration?.())return;
       $('reportLoadingStatus').textContent='Could not load reports: '+err.message;
       toast(err.message);
     }
@@ -1979,7 +1984,7 @@
         'Cost of ingredients/recipes consumed by sold products.'],
       ['Refund',peso(r.refund??0),'Value of voided sales; not confirmation that cash was repaid.'],
       ['Deposited Amount',r.depositedAmount==null?'Not recorded':peso(r.depositedAmount),
-        'Total cashier-entered end-of-shift sale deposits for this reporting period and branch.']
+        'Recorded end-of-shift deposits for the selected period and cashier scope.']
     ].map(([a,b,help])=>'<div class="summary-card" title="'+esc(help)+'"><span>'+esc(a)+
       '</span><strong>'+esc(String(b))+'</strong></div>').join('');
     const rows=reportPageSlice('products',Array.isArray(r.products)?r.products:[]);
@@ -2076,7 +2081,7 @@
   // fetch their own scoped binary endpoint; never open globally-shared PDFs.
   async function downloadReportPdf(kind){
     const button=$(kind==='sales'?'salesPdf':'costingPdf');
-    if(button.disabled)return;
+    if(button.disabled||!state.report||kind==='costing'&&(!state.costing||state.user?.role!=='Admin'))return;
     if(!state.user?.liveMode){
       window.open('/api/reports/'+kind+'.pdf?'+reportQuery(),'_blank','noopener');
       return;
@@ -2085,6 +2090,7 @@
     button.disabled=true;
     const date=$('reportDate').value||manilaToday();
     const period=$('reportPeriod').value;
+    const reportBranch=state.user?.role==='Admin'?$('reportBranch')?.value||'all':'all';
     try{
       const url='/api/live/reports/'+kind+'.pdf?'+reportQuery();
       const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
@@ -2098,7 +2104,7 @@
       const blob=await response.blob();
       if(state.user!==userAtStart)throw new Error('Your account changed. Open the report again.');
       const objectUrl=URL.createObjectURL(blob),link=document.createElement('a');
-      const branch=$('reportBranch')?.value||'all';
+      const branch=reportBranch;
       link.href=objectUrl;
       link.download='DonMac_'+(kind==='sales'?'Sales':'Costing')+'_'+
         period+'_'+date+(branch==='all'?'':'_Branch_'+branch)+'.pdf';
