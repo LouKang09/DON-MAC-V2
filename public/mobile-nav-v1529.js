@@ -8,23 +8,24 @@
   const more=$('mobileMoreButton'),closeButton=$('mobileMoreClose'),signout=$('mobileSignOutButton');
   if(!bar||!panel||!more||!closeButton||!signout)return;
 
-  const management=new Set(['reports','catalog','users','logs','supply','advanced','account']);
+  const management=new Set(['reports','catalog','users','logs','supply','advanced','account','transactions','expenses','payroll','chat']);
   const mobile=window.matchMedia('(max-width:699px)');
   let lastFocus=null;
 
   function activeView(){
-    return document.querySelector('#mainNav .nav.active')?.dataset.view || 'pos';
+    return document.querySelector('#app main.main > .view.active')?.id?.replace(/^view-/,'') ||
+      document.querySelector('#mainNav .nav.active:not(.hidden)')?.dataset.view || 'pos';
   }
   function sync(){
     const current=activeView();
     bar.querySelectorAll('[data-view]').forEach(button=>{
-      const currentTab=button.dataset.view===current;
+      const currentTab=button.dataset.view===current&&!button.classList.contains('hidden')&&button.getAttribute('aria-hidden')!=='true';
       button.classList.toggle('active',currentTab);
       if(currentTab)button.setAttribute('aria-current','page');
       else button.removeAttribute('aria-current');
     });
     panel.querySelectorAll('[data-view]').forEach(button=>{
-      const currentTab=button.dataset.view===current;
+      const currentTab=button.dataset.view===current&&!button.classList.contains('hidden')&&button.getAttribute('aria-hidden')!=='true';
       button.classList.toggle('active',currentTab);
       if(currentTab)button.setAttribute('aria-current','page');
       else button.removeAttribute('aria-current');
@@ -41,6 +42,8 @@
   }
   function openMenu(){
     if(!mobile.matches||more.classList.contains('hidden'))return;
+    const transactions=$('dmMobileTransactions');
+    if(transactions){transactions.hidden=true;transactions.parentElement?.querySelector('.dm-mobile-nav-group-toggle')?.setAttribute('aria-expanded','false');}
     panel.classList.remove('hidden');
     more.setAttribute('aria-expanded','true');
     more.setAttribute('aria-label','Close management menu');
@@ -92,6 +95,8 @@
   }
   const app=$('app');
   if(app){
+    const viewObserver=new MutationObserver(sync);
+    app.querySelectorAll('main.main > .view').forEach(view=>viewObserver.observe(view,{attributes:true,attributeFilter:['class']}));
     new MutationObserver(()=>{if(app.classList.contains('hidden'))closeMenu();})
       .observe(app,{attributes:true,attributeFilter:['class']});
   }
