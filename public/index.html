@@ -895,9 +895,9 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
           <div class="report-filter-layout">
             <div class="report-filter-fields">
               <label class="report-field report-field-period"><span>Period</span><select id="reportPeriod"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label>
-              <label class="report-field report-field-date"><span>Report date</span><input id="reportDate" type="date" /></label>
-              <label class="report-field report-field-branch admin-only"><span>Branch</span><select id="reportBranch" aria-label="Report branch"><option value="all">ALL</option></select></label>
-              <div class="report-field report-field-cashier">
+              <label id="reportDateField" class="report-field report-field-date"><span>Report date</span><input id="reportDate" type="date" /></label>
+              <label class="report-field report-field-branch admin-only hidden"><span>Branch</span><select id="reportBranch" aria-label="Report branch"><option value="all">ALL</option></select></label>
+              <div id="reportCashierField" class="report-field report-field-cashier admin-only hidden">
                 <span id="reportCashierLabel">Cashiers</span>
                 <details class="report-cashier-select" id="reportCashierSelect">
                   <summary id="reportCashierSummary" aria-labelledby="reportCashierLabel" aria-controls="reportCashierOptions">All cashiers</summary>
@@ -1533,7 +1533,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
   <script src="/auth-login-v1574.js?v=20261128-exit-csp-fix"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=20261127-sidebar-focus"></script>
-  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261127-staff-mobile"></script><script src="/nav-hierarchy-v20261117.js?v=20261128-collapsed"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=20261127-trial"></script><script src="/app.js?v=20261128-mobile-compact"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
+  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261127-staff-mobile"></script><script src="/nav-hierarchy-v20261117.js?v=20261128-collapsed"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=20261127-trial"></script><script src="/app.js?v=20261128-phase2-role-audit"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
   <script src="/vendor/lottie-svg.min.js" defer></script>
   <script src="/donmac-icon-controls-v20261121.js?v=3" defer></script>
   <script src="/donmac-useanimations-v20261120.js?v=15" defer></script>
