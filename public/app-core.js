@@ -37,7 +37,7 @@
     state.catalog=null;state.inventory=[];state.report=null;state.costing=null;state.dashboard=null;
     state.adminProducts=[];state.adminIngredients=[];state.adminPromos=[];state.adminPackages=[];state.promoBranchId=null;
     state.recipeRows=[];state.compositionRows=[];state.branches=[];state.userList=[];
-    state.posBranchId=null;state.subscription=null;$('view-dashboard')?.classList.remove('dm-free-dashboard');
+    state.posBranchId=null;state.subscription=null;state.transferAvailable=null;$('view-dashboard')?.classList.remove('dm-free-dashboard');
     window.__donmacDashboardData=null;
     window.donmacDashboardDrilldown?.clear?.();
     window.donmacBusinessStore?.clear?.();
@@ -422,11 +422,11 @@
     $('transferPlanGate').classList.toggle('hidden',business||!admin);
     $('transferUpgradeButton').classList.toggle('hidden',!admin);
     $('transferUpgradeInformation')?.classList.add('hidden');
-    $('inventoryTransferTab').disabled=!business;
+    $('inventoryTransferTab').disabled=!business||state.transferAvailable===false;
     $('inventoryTransferTab').title=business?'Transfer Inventory':'Request an approved Business plan in Account Settings.';
     const card=$('inventoryTransferTab').closest('.inv-operation-card');
     card?.classList.toggle('plan-locked',!business);
-    card?.classList.toggle('hidden',!admin&&!business);
+    card?.classList.toggle('hidden',!admin&&(!business||state.transferAvailable===false));
     if(!business){
       closeTransferEditorIfOpen();$('transferForm').classList.add('hidden');
       $('inventoryTransferTab').classList.remove('active');
@@ -538,7 +538,12 @@
   $('dmDirectPay')?.addEventListener('click',()=>state.subscription?.trialSelectionRequired?startSelectedTrial($('accountPlanSelect').value):requestPlanUpdate($('accountPlanSelect').value));
   async function loadDevSubscription(){
     if(!state.user)return;
-    try{state.subscription=await api('/api/account/subscription');renderDevSubscription();}
+    try{
+      state.subscription=await api('/api/account/subscription');renderDevSubscription();
+      if(state.subscription?.plan==='BUSINESS'&&(state.user?.role==='Admin'||state.user?.accessPermissions?.includes('inventory.view'))){
+        await loadTransferBranches().catch(()=>{});
+      }
+    }
     catch(error){$('inventoryTransferTab').disabled=true;const admin=state.user?.role==='Admin';$('transferPlanGate').classList.toggle('hidden',!admin);$('inventoryTransferTab').closest('.inv-operation-card')?.classList.toggle('hidden',!admin);if(admin)toast('Subscription: '+error.message);}
   }
   $('accountPlanSelect').addEventListener('change',()=>renderAccountBranchPricing(state.subscription));
@@ -2753,13 +2758,13 @@
   async function loadTransferBranches(chosenSource=null){
     const from=$('transferSourceBranch'),to=$('transferBranch'),hint=$('transferBranchHint');
     if(!from||!to||!state.user)return;
-    const request=++transferBranchRequest;
+    const request=++transferBranchRequest,session=sessionGeneration;
     const preferred=Number(chosenSource||$('inventoryBranch')?.value||state.posBranchId||state.user.branchId||0);
     blankTransferBranchSelect(to,'Choose another branch');
     if(hint)hint.textContent='Loading active branches in your franchise…';
     try{
       const data=await api('/api/inventory/transfer-branches'+(preferred?'?sourceBranchId='+encodeURIComponent(preferred):''));
-      if(request!==transferBranchRequest)return;
+      if(request!==transferBranchRequest||session!==sessionGeneration)return;
       const sources=Array.isArray(data.branches)?data.branches:[],targets=Array.isArray(data.destinations)?data.destinations:[];
       const selected=sources.find(b=>Number(b.id)===Number(data.sourceBranchId));
       from.innerHTML=selected?'<option value="'+Number(selected.id)+'">'+esc(selected.name)+'</option>':
@@ -2768,11 +2773,21 @@
       to.innerHTML='<option value="">Choose destination branch</option>'+
        targets.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+'</option>').join('');
       if(targets.length===1)to.value=String(targets[0].id);
+      state.transferAvailable=targets.length>0;
+      const transferButton=$('inventoryTransferTab');
+      transferButton.disabled=!state.transferAvailable;
+      transferButton.title=state.transferAvailable?'Transfer Inventory':'No other active branch is available.';
+      transferButton.closest('.inv-operation-card')?.classList.toggle('hidden',state.user.role==='User'&&!state.transferAvailable);
+      if(!state.transferAvailable)closeTransferEditorIfOpen();
       if(hint)hint.textContent=targets.length?
        'Outgoing branch is fixed. Destination must be another active branch owned by your franchise. Destination staff will Accept or Reject the request.':
        'No other active branch is available. Ask the owner to activate another branch.';
     }catch(err){
-      if(request!==transferBranchRequest)return;
+      if(request!==transferBranchRequest||session!==sessionGeneration)return;
+      state.transferAvailable=false;
+      $('inventoryTransferTab').disabled=true;
+      $('inventoryTransferTab').closest('.inv-operation-card')?.classList.toggle('hidden',state.user.role==='User');
+      closeTransferEditorIfOpen();
       blankTransferBranchSelect(from,'Branches unavailable');
       if(hint)hint.textContent='Could not load branches: '+err.message;
       throw err;
