@@ -36,7 +36,7 @@ async function phase3Phone(page,width,height){
    $('viewTitle').textContent='Welcome to Don Macchiatos POS';
    $('catalogGrid').innerHTML=Array.from({length:10},(_,i)=>'<button class="product-card"><h4>Product '+i+'</h4><strong>₱99.00</strong></button>').join('');
    const grid=$('catalogGrid'),cards=[...grid.children].map(rect),main=app.querySelector('main.main'),nav=$('mobileBottomNav');
-   const before=grid.scrollLeft;grid.scrollLeft=100;const after=grid.scrollLeft;grid.scrollLeft=0;
+   grid.scrollLeft=0;const before=grid.scrollLeft;grid.scrollLeft=grid.scrollWidth-grid.clientWidth;const after=grid.scrollLeft;grid.scrollLeft=0;
    main.scrollTop=main.scrollHeight;const pay=rect($('payButton')),navBox=rect(nav);main.scrollTop=0;
    const pos={main:rect(main),grid:rect(grid),cards,scrollWidth:grid.scrollWidth,clientWidth:grid.clientWidth,scrolled:after>before,pay,nav:navBox,title:rect($('viewTitle')),titleScroll:$('viewTitle').scrollHeight,titleClient:$('viewTitle').clientHeight};
    const dialog=$('transactionDialog');
