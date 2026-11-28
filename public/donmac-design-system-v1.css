@@ -1,0 +1,260 @@
+/* Don Mac POS commercial design system · Phase 1 · v1.0
+ * Shared by main POS (including Android WebView), Supply Office and Admin Control.
+ * Only visual primitives here. Feature layout, role visibility and business logic
+ * remain in their own modules. Do not add page-specific dimensions to this file.
+ */
+:root {
+  --dm-ds-primary:#095b3d;
+  --dm-ds-primary-hover:#064a32;
+  --dm-ds-accent:#168154;
+  --dm-ds-nav:#172820;
+  --dm-ds-nav-active:#24583d;
+  --dm-ds-canvas:#f5f7f5;
+  --dm-ds-surface:#ffffff;
+  --dm-ds-soft:#eaf5ee;
+  --dm-ds-text:#172c22;
+  --dm-ds-muted:#536b5e;
+  --dm-ds-border:#dce6df;
+  --dm-ds-control-border:#b9d1c3;
+  --dm-ds-danger:#b32e38;
+  --dm-ds-warning:#946216;
+  --dm-ds-focus:#168154;
+  --dm-ds-font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --dm-ds-text-xs:.6875rem;
+  --dm-ds-text-sm:.8125rem;
+  --dm-ds-text-base:.875rem;
+  --dm-ds-text-lg:1.125rem;
+  --dm-ds-text-xl:1.375rem;
+  --dm-ds-weight-medium:600;
+  --dm-ds-weight-bold:750;
+  --dm-ds-space-1:.25rem;
+  --dm-ds-space-2:.5rem;
+  --dm-ds-space-3:.75rem;
+  --dm-ds-space-4:1rem;
+  --dm-ds-space-5:1.25rem;
+  --dm-ds-space-6:1.5rem;
+  --dm-ds-card-padding:clamp(.875rem,1.5vw,1.25rem);
+  --dm-ds-card-radius:.875rem;
+  --dm-ds-control-radius:.625rem;
+  --dm-ds-pill:999px;
+  --dm-ds-control-height:2.5rem;
+  --dm-ds-icon:1.125rem;
+  --dm-ds-icon-control:2.5rem;
+  --dm-ds-shadow:0 2px 8px rgba(23,40,32,.055);
+  --dm-ds-shadow-raised:0 10px 28px rgba(23,40,32,.12);
+  --dm-ds-motion:160ms ease;
+}
+@media(max-width:699px){
+  :root{
+    --dm-ds-card-padding:.875rem;
+    --dm-ds-control-height:2.5rem;
+    --dm-ds-icon-control:2.25rem;
+  }
+}
+/* Map legacy semantic variables locally; no changes to auth, checkout logic,
+ * third-party charts, status colors or the native Android wrapper. */
+html body :is(#app,#officeApp,#platformApp){
+  --bg:var(--dm-ds-canvas);
+  --canvas:var(--dm-ds-canvas);
+  --panel:var(--dm-ds-surface);
+  --white:var(--dm-ds-surface);
+  --ink:var(--dm-ds-text);
+  --text:var(--dm-ds-text);
+  --muted:var(--dm-ds-muted);
+  --line:var(--dm-ds-border);
+  --accent:var(--dm-ds-primary);
+  --accent2:var(--dm-ds-primary-hover);
+  --green:var(--dm-ds-primary);
+  --green2:var(--dm-ds-accent);
+  --soft:var(--dm-ds-soft);
+  --shadow:var(--dm-ds-shadow);
+  font-family:var(--dm-ds-font);
+}
+/* The coffee illustration stays on sign-in only. These exact workspace
+ * selectors outrank the legacy dynamically loaded coffee backdrop. */
+html body #app > main.main,
+html body #officeApp > .office-main,
+html body #platformApp > .content{
+  background-color:var(--dm-ds-canvas)!important;
+  background-image:none!important;
+}
+html body #app > main.main > .view{
+  background-color:transparent!important;
+  background-image:none!important;
+}
+/* One navigation palette across desktop and mobile; preserve existing
+ * positioning, collapse, active states and permission-related display. */
+html body #app > .sidebar,
+html body #officeApp > .office-side,
+html body #platformApp > .sidebar,
+html body #app #mobileBottomNav{
+  background-color:var(--dm-ds-nav)!important;
+  background-image:none!important;
+}
+html body #app > .sidebar :is(.nav.active,.nav[aria-current="page"]),
+html body #officeApp .office-side .side-link.active,
+html body #platformApp .sidebar .side-link.active,
+html body #app #mobileBottomNav .mobile-nav-item.active{
+  background-color:var(--dm-ds-nav-active)!important;
+  color:#fff!important;
+}
+/* Shared type hierarchy. Scope to common heading patterns, leaving chart
+ * values, login titles, price figures and feature-specific sizing alone. */
+html body :is(#app,#officeApp,#platformApp) :is(.card-head,.panel-head,.section-header) :is(h2,h3){
+  font-family:var(--dm-ds-font);
+  font-weight:var(--dm-ds-weight-bold);
+  font-size:clamp(1rem, .94rem + .3vw, 1.2rem);
+  line-height:1.3;
+  letter-spacing:-.015em;
+}
+html body :is(#app,#officeApp,#platformApp) :is(.card-head,.panel-head,.section-header) .eyebrow{
+  font-size:var(--dm-ds-text-xs);
+  letter-spacing:.09em;
+  font-weight:var(--dm-ds-weight-bold);
+}
+html body :is(#app,#officeApp,#platformApp) :is(.card-head,.panel-head,.section-header) .muted{
+  color:var(--dm-ds-muted);
+  font-size:var(--dm-ds-text-sm);
+  line-height:1.5;
+}
+/* Common white surface containers. Do not set their layout, display,
+ * overflow, or explicit dimensions here; special states remain intact. */
+html body #app main.main :is(.card,.catalog-panel,.order-panel,.summary-card),
+html body #officeApp .office-main :is(.panel,.stat),
+html body #platformApp .content :is(.main-card,.metric){
+  border-radius:var(--dm-ds-card-radius);
+  border-color:var(--dm-ds-border);
+  box-shadow:var(--dm-ds-shadow);
+}
+html body :is(#app,#officeApp,#platformApp) :is(.card-head,.panel-head,.section-header){
+  column-gap:var(--dm-ds-space-3);
+}
+html body #app main.main :is(.card,.catalog-panel,.order-panel),
+html body #officeApp .office-main > .office-page > .panel{
+  padding:var(--dm-ds-card-padding);
+}
+/* Use semantic buttons rather than all buttons. Keep red/delete, status,
+ * category, icon-only, checkout quantity and navigation controls intact. */
+html body #app main.main button.primary:not(.dm-cart-delete):not([data-attendance-action]),
+html body #officeApp .office-main button.btn.solid,
+html body #platformApp .content button.btn-main{
+  font-family:var(--dm-ds-font);
+  font-size:var(--dm-ds-text-sm);
+  font-weight:var(--dm-ds-weight-bold);
+  border-radius:var(--dm-ds-pill);
+  background-color:var(--dm-ds-primary);
+  border-color:var(--dm-ds-primary);
+  color:#fff;
+  transition:background-color var(--dm-ds-motion),box-shadow var(--dm-ds-motion);
+}
+html body #app main.main button.primary:not(:disabled):hover,
+html body #officeApp .office-main button.btn.solid:not(:disabled):hover,
+html body #platformApp .content button.btn-main:not(:disabled):hover{
+  background-color:var(--dm-ds-primary-hover);
+}
+html body #app main.main button.ghost:not(.dm-refresh),
+html body #officeApp .office-main button.btn.outline:not(.dm-refresh),
+html body #platformApp .content button.btn-secondary:not(.dm-refresh){
+  font-family:var(--dm-ds-font);
+  font-size:var(--dm-ds-text-sm);
+  font-weight:var(--dm-ds-weight-medium);
+  border-radius:var(--dm-ds-pill);
+  border-color:var(--dm-ds-control-border);
+}
+/* Normalize single-line fields, not switches, checkboxes, radios, file
+ * pickers, quantity entry or custom segmented controls. Existing capped
+ * widths and mobile-specific height overrides remain authoritative. */
+html body :is(#app,#officeApp,#platformApp) :is(main,.office-main) :is(input:not([type]),input[type="text"],input[type="search"],input[type="email"],input[type="password"],input[type="tel"],input[type="date"],input[type="datetime-local"],input[type="time"],select):not(.dm-cart-quantity){
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+  min-height:var(--dm-ds-control-height);
+  border-radius:var(--dm-ds-pill);
+  border-color:var(--dm-ds-control-border);
+  font-family:var(--dm-ds-font);
+}
+html body :is(#app,#officeApp,#platformApp) :is(main,.office-main) textarea{
+  border-radius:var(--dm-ds-control-radius);
+  border-color:var(--dm-ds-control-border);
+  max-width:100%;
+}
+html body :is(#app,#officeApp,#platformApp) :is(button,a,input,select,textarea,[tabindex]):focus-visible,
+html body dialog.dm-system-dialog :is(button,textarea):focus-visible{
+  outline:2px solid var(--dm-ds-focus);
+  outline-offset:2px;
+}
+html body :is(#app,#officeApp,#platformApp) :is(input,textarea)::placeholder{
+  color:var(--dm-ds-muted);
+  opacity:1;
+}
+/* Table primitives: wrappers scroll, tables retain their own widths and
+ * semantics. No hidden columns are revealed by the design system. */
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.inv-table-scroll,.inv-audit-scroll,.inv-incoming-table-wrap,.warehouse-table-scroll,.wh-table-wrap){
+  min-width:0;
+  max-width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.inv-table-scroll,.inv-audit-scroll,.inv-incoming-table-wrap,.warehouse-table-scroll,.wh-table-wrap) table th{
+  font-family:var(--dm-ds-font);
+  font-size:var(--dm-ds-text-xs);
+  font-weight:var(--dm-ds-weight-bold);
+  letter-spacing:.045em;
+}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.inv-table-scroll,.inv-audit-scroll,.inv-incoming-table-wrap,.warehouse-table-scroll,.wh-table-wrap) table td{
+  font-family:var(--dm-ds-font);
+  font-size:var(--dm-ds-text-sm);
+  line-height:1.4;
+}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.inv-table-scroll,.inv-audit-scroll,.inv-incoming-table-wrap,.warehouse-table-scroll,.wh-table-wrap) table :is(th,td){
+  border-bottom-color:var(--dm-ds-border);
+}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.inv-table-scroll,.warehouse-table-scroll) .num{
+  font-variant-numeric:tabular-nums;
+}
+/* Keep shared refresh/icon behavior; set defaults only, with specific
+ * small mobile controls (e.g. Incoming Supply) retaining their overrides. */
+html body :is(#app,#officeApp,#platformApp) button.dm-refresh{
+  border-radius:var(--dm-ds-control-radius)!important;
+  background-color:var(--dm-ds-primary)!important;
+  border-color:var(--dm-ds-primary)!important;
+}
+html body :is(#app,#officeApp,#platformApp) .dm-info-hover-icon{
+  color:var(--dm-ds-accent)!important;
+}
+html body :is(#app,#officeApp,#platformApp) :is(.pagination,.report-pagination) button{
+  border-radius:var(--dm-ds-control-radius);
+  font-family:var(--dm-ds-font);
+  font-weight:var(--dm-ds-weight-medium);
+}
+html body dialog.dm-system-dialog .dm-system-card{
+  --dm-prompt-color:var(--dm-ds-primary);
+  border-radius:var(--dm-ds-card-radius);
+}
+html body dialog.dm-system-dialog .dm-system-card[data-prompt-variant="danger"],
+html body dialog.dm-system-dialog .dm-system-card[data-prompt-variant="error"]{
+  --dm-prompt-color:var(--dm-ds-danger);
+}
+html body dialog.dm-system-dialog .dm-system-card[data-prompt-variant="warning"]{
+  --dm-prompt-color:var(--dm-ds-warning);
+}
+html body dialog.dm-system-dialog .dm-system-btn{
+  border-radius:var(--dm-ds-pill);
+  font-family:var(--dm-ds-font);
+}
+@media(prefers-reduced-motion:reduce){
+  html body :is(#app,#officeApp,#platformApp) :is(button,a,input,select,textarea),
+  html body dialog.dm-system-dialog .dm-system-btn{
+    transition:none!important;
+    scroll-behavior:auto!important;
+  }
+}
+@media print{
+  html body #app > main.main,
+  html body #officeApp > .office-main,
+  html body #platformApp > .content{
+    background:#fff!important;
+    background-image:none!important;
+  }
+}
