@@ -52,10 +52,14 @@ const db={
    return{rows:applicant.id===p[0]?[{...applicant}]:[]};
   if(sql.startsWith('SELECT user_id FROM franchise_test_accounts WHERE request_id='))
    return{rows:testAccounts.filter(x=>x.request_id===p[0]).map(x=>({user_id:x.user_id}))};
+  if(sql==='SELECT pg_advisory_xact_lock(hashtext($1))')return{rows:[]};
+  if(sql.startsWith('SELECT 1 FROM users u')&&sql.includes('LOWER(u.username)=LOWER($1)'))return{rows:users.filter(u=>[u.username,u.login_username].some(v=>String(v).toLowerCase()===String(p[0]).toLowerCase()))};
+  if(sql.startsWith('SELECT 1 FROM users u')&&sql.includes('LOWER(TRIM(u.email))=$1'))return{rows:users.filter(u=>String(u.email).trim().toLowerCase()===p[0])};
+  if(sql.startsWith('SELECT u.phone FROM users u'))return{rows:users.filter(u=>u.phone).map(u=>({phone:u.phone}))};
   if(sql.startsWith('SELECT id FROM users WHERE LOWER(username)'))return{rows:users.filter(u=>u.username===p[0])};
   if(sql.startsWith('INSERT INTO users ')){
    const u={id:nextUser++,username:p[0],login_username:p[1],password_hash:p[2],
-    role:p[3],active:p[4],email:p[7]};
+    role:p[3],active:p[4],email:p[7],phone:p[8]};
    users.push(u);return{rows:[{id:u.id}]};
   }
   if(sql.startsWith('INSERT INTO chat_workspaces(')){const w={id:nextWorkspace++,owner_user_id:p[0]};workspaces.push(w);return{rows:[w]}};
@@ -103,6 +107,7 @@ const db={
  assert.equal(result.dataMode,'NEW');
  assert.equal(result.username,'verified-owner');
  assert.equal(users.length,1);
+ assert.equal(queries.filter(x=>x.sql==='SELECT pg_advisory_xact_lock(hashtext($1))').length,3,'Serialize each signup identifier');
  assert.equal(users[0].role,'Admin');
  assert.equal(users[0].active,true);
  assert(users[0].password_hash.startsWith('scrypt$'),'Only a salted hash is persisted');

@@ -3,7 +3,7 @@
   const cashierApk=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
   document.documentElement.classList.toggle('dm-cashier-apk',cashierApk);
   const phoneViewport=window.matchMedia('(max-width:699px)');
-  const mobileLayout=()=>cashierApk||phoneViewport.matches;
+  const mobileLayout=()=>phoneViewport.matches;
   function updateMobileLayout(){
     document.documentElement.classList.toggle('dm-phone-layout',mobileLayout());
     const cashier=state.user?.role==='User';
