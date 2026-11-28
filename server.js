@@ -2506,7 +2506,7 @@ async function handleApi(req,res,url){
 
       const pdf=makePdf(lines,{title:'Daily Branch Sales Report'});
       return binary(res,200,pdf,'application/pdf',
-        {'Content-Disposition':'inline; filename="'+filename+'"','Cache-Control':'no-store'});
+        {'Content-Disposition':(cashierApp(req)?'attachment':'inline')+'; filename="'+filename+'"','Cache-Control':'no-store'});
     }
     // Report file responses must be emitted as binary, never passed through
     // JSON or the globally-shared report handlers below.
@@ -2731,7 +2731,7 @@ async function handleApi(req,res,url){
     // Do not trust client-provided branch or date values for this shortcut.
     const ownBranch=await branchSupport.salesScope(db,user,null);
     const d=await salesPdf({period:'daily',branchId:ownBranch,user});
-    return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`inline; filename="${d.filename}"`});
+    return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`${cashierApp(req)?'attachment':'inline'}; filename="${d.filename}"`});
   }
   if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){
