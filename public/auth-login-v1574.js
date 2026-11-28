@@ -9,6 +9,8 @@
  const KEY='donmac_login_remembered_username';
  const cashierApp=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
  document.documentElement.classList.toggle('dm-cashier-apk',cashierApp);
+ // CSP allows this external script; inline scripts are blocked.
+ document.documentElement.classList.toggle('dm-native-exit-supported',cashierApp&&/\bDonMacNativeExit\/1\b/.test(navigator.userAgent));
  const phoneLayout=window.matchMedia('(max-width:699px)');
  const syncMobileLogin=()=>document.documentElement.classList.toggle('dm-phone-layout',cashierApp||phoneLayout.matches);
  syncMobileLogin();phoneLayout.addEventListener?.('change',syncMobileLogin);
