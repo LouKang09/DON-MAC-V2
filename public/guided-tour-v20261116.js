@@ -250,7 +250,7 @@
     panel.setAttribute('aria-label','Don Macchiatos guided help');
     panel.setAttribute('tabindex','-1');
     overlay.appendChild(panel);
-    overlay.addEventListener('click',e=>{if(!panel.contains(e.target)){e.preventDefault();e.stopPropagation();panel.focus();}});
+    overlay.addEventListener('click',e=>{if(panel&&!panel.contains(e.target)){e.preventDefault();e.stopPropagation();panel.focus();}});
     document.body.appendChild(overlay);
     if(app)app.inert=true;
     window.addEventListener('keydown',keyTrap,true);
