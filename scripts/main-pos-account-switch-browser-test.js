@@ -67,7 +67,7 @@ const server=http.createServer(async(req,res)=>{
    branches:[branch],cashiers:[],permissions:[],entitlements:{plan:'PRO',totalBranches:1,
     activeBranches:1,mayAdd:true,maxBranches:3,extraBranches:0,extraBranchRate:799,nextRenewalAmount:1499}});
   if(['/api/live/catalog','/api/catalog'].includes(pathname))return send(res,200,{
-   products:[],packages:[],addOns:[],promos:[],categories:[
+   branchId:b.id,products:[],packages:[],addOns:[],promos:[],categories:[
     {name:'Coffee',active:true,builtin:true,productIds:[]},
     {name:'Non Coffee',active:true,builtin:true,productIds:[]},
     {name:'Food',active:true,builtin:true,productIds:[]}]
@@ -170,7 +170,7 @@ async function signIn(page,name){
   args:['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage']});
  try{
   const page=await browser.newPage();
-  page.on('pageerror',err=>console.error('BROWSER ERROR:',err.message));
+  page.on('pageerror',err=>console.error('BROWSER ERROR:',err.stack||err.message));
   page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER CONSOLE:',msg.text().slice(0,500))});
   page.on('response',res=>{if(res.url().includes('/api/')&&res.status()>=400)console.error('API ERROR:',res.status(),new URL(res.url()).pathname)});
   await page.setViewport({width:1440,height:960,deviceScaleFactor:1});
