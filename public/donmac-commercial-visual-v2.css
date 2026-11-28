@@ -194,3 +194,39 @@ html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth
 html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-gross-net{grid-template-columns:minmax(0,1fr)!important}
 }
 @media (prefers-reduced-motion:reduce){html.dm-commercial-v2 body #app #catalogGrid .product-card{transition:none!important}}
+
+@media screen{
+/* Login button and autofill override deliberately match the semantic palette. */
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(#authSubmit,#platformLoginButton,#officeLoginButton){
+ background:var(--dm-v2-green)!important;border:2px solid var(--dm-v2-green)!important;
+ border-radius:999px!important;color:#fff!important;box-shadow:none!important
+}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(#authSubmit,#platformLoginButton,#officeLoginButton):hover:not(:disabled){background:#064a32!important;border-color:#064a32!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) .auth-input-box>input{-webkit-text-fill-color:var(--dm-v2-ink)!important;caret-color:var(--dm-v2-ink)!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) .auth-input-box>input:-webkit-autofill{box-shadow:0 0 0 60px #f5f8f5 inset!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(.auth-help-message,.auth-hint)[role="alert"]{color:#9c303a!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(button,a,input):focus-visible{outline:2px solid var(--dm-v2-green)!important;outline-offset:2px!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-analytics{
+ background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;gap:1rem!important
+}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-controls{background:#fff!important;border-color:var(--dm-v2-line)!important;padding:.8rem!important;border-radius:.8rem!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi{
+ border-color:var(--dm-v2-line)!important;background:#fff!important;border-radius:1rem!important;box-shadow:var(--dm-v2-shadow)!important;min-height:8.25rem!important;padding:1rem!important
+}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi>strong{font-size:clamp(1.35rem,1rem + .9vw,1.9rem)!important;letter-spacing:-.04em;color:var(--dm-v2-ink)!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi.is-active{border-color:var(--dm-v2-green)!important;box-shadow:inset 0 0 0 1px var(--dm-v2-green)!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi:first-child{background:var(--dm-v2-green)!important;border-color:var(--dm-v2-green)!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi:first-child :is(strong,span,small){color:#fff!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-detail-card{background:#fff!important;border-color:var(--dm-v2-line)!important;border-radius:1rem!important;box-shadow:var(--dm-v2-shadow)!important}
+html.dm-commercial-v2 body #officeApp #page-requests .request-orders-heading{padding-bottom:.85rem!important;border-bottom:1px solid var(--dm-v2-line)!important;margin-bottom:.9rem!important}
+html.dm-commercial-v2 body #officeApp #page-requests .stat{min-height:6rem}
+html.dm-commercial-v2 body #platformApp .content .page-heading h1{font-size:clamp(1.3rem,1.05rem + .9vw,1.85rem)!important;color:var(--dm-v2-ink)!important;letter-spacing:-.035em}
+html.dm-commercial-v2 body #platformApp .platform-dashboard{border-radius:1rem!important;padding:clamp(1rem,2vw,1.5rem)!important}
+html.dm-commercial-v2 body #platformApp .platform-dashboard-kpis>div>strong{font-size:clamp(1rem,.9rem + .5vw,1.6rem)!important;letter-spacing:-.035em;color:var(--dm-v2-ink)!important}
+}
+@media screen and (max-width:699px){
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.5rem!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi:first-child{grid-column:1/-1!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi{min-height:6.5rem!important;padding:.65rem!important}
+html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi>strong{font-size:1.25rem!important}
+}
