@@ -35,3 +35,31 @@ jobs:
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/commercial-layout-browser-test.js
+  postgres-report-scope:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: commercial_qa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d commercial_qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Run disposable database report tests
+        env:
+          COMMERCIAL_TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/commercial_qa
+        run: node scripts/commercial-report-postgres-test.js
