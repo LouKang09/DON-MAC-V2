@@ -2,6 +2,23 @@
   const $=id=>document.getElementById(id);
   const cashierApk=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
   document.documentElement.classList.toggle('dm-cashier-apk',cashierApk);
+  const phoneViewport=window.matchMedia('(max-width:699px)');
+  const mobileLayout=()=>cashierApk||phoneViewport.matches;
+  function updateMobileLayout(){
+    document.documentElement.classList.toggle('dm-phone-layout',mobileLayout());
+    const cashier=state.user?.role==='User';
+    const profile=$('topbarProfileButton');
+    if(profile){profile.title=cashier&&mobileLayout()?'My profile':'Open Account Settings';profile.setAttribute('aria-label',profile.title);}
+    updateReportShortcut(document.querySelector('.view.active')?.id?.replace('view-',''));
+  }
+  function updateReportShortcut(view){
+    const button=$('dashboardPrintReport');
+    if(!button)return;
+    const grants=state.user?.accessPermissions||[];
+    const allowed=state.user?.role==='User'&&(grants.includes('dashboard.view')||grants.includes('reports.view'));
+    button.classList.toggle('hidden',!allowed||(!mobileLayout()&&view!=='dashboard'));
+  }
+
   const peso=n=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(n||0));
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const normalize=s=>String(s||'').trim().replace(/\s+/g,' ').toUpperCase();
@@ -177,7 +194,7 @@
     safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');safeCloseDialog('dmCashierProfile');
     document.documentElement.classList.remove('dm-cashier-role');
     $('app').classList.add('hidden');$('authScreen').classList.remove('hidden');
-    $('authTitle').textContent=cashierApk?'Welcome back':setupRequired?'Create Owner Account':'Welcome Back, Please login to your account';
+    $('authTitle').textContent=setupRequired?'Create Owner Account':mobileLayout()?'Welcome back':'Welcome Back, Please login to your account';
     $('authHint').textContent=setupRequired?'Set up the first Owner account to access your POS.':'';
     const signInLabel=$('authSubmit').querySelector(':scope > span:not(.dm-ua-icon)');
     if(signInLabel)signInLabel.textContent=setupRequired?'Create Owner':'Sign In';
@@ -210,7 +227,7 @@
     const legacyApp=$('app');legacyApp.inert=false;legacyApp.removeAttribute('aria-hidden');
     window.donmacAuthenticatedRole=state.user.role;
     document.documentElement.classList.toggle('dm-cashier-role',state.user.role==='User');
-    if(cashierApk&&state.user.role==='User'){$('topbarProfileButton').title='My profile';$('topbarProfileButton').setAttribute('aria-label','My profile');}
+    updateMobileLayout();
     window.donmacPlanWidgets?.setRole?.(state.user.role);
     window.donmacChatUserId=state.user.id;
     window.donmacChat?.loggedIn(state.user.id);
@@ -555,7 +572,7 @@
     requestPlanUpdate($('accountPlanSelect').value));
   $('dmCashierProfileClose').addEventListener('click',()=>safeCloseDialog('dmCashierProfile'));
   $('topbarProfileButton').addEventListener('click',()=>{
-    if(cashierApk&&state.user?.role==='User'){
+    if(mobileLayout()&&state.user?.role==='User'){
       const u=state.user,plan=state.subscription?.plan||u.subscriptionPlan;
       $('dmCashierPlan').textContent=plan==='BUSINESS'?'Business Plan User':plan==='PRO'?'Pro Plan User':plan==='TRIAL'?'Trial account':'Plan not available';
       $('dmCashierName').textContent=u.fullName||u.username||'—';
@@ -682,7 +699,7 @@
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
     const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Analytics'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger'],attendance:['TIMEKEEPING','Time & Attendance'],payroll:['EMPLOYEE MANAGEMENT','Payroll & Attendance']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
-    $('dashboardPrintReport').classList.toggle('hidden',state.user?.role==='Admin'||(cashierApk?!((state.user?.accessPermissions||[]).some(p=>p==='dashboard.view'||p==='reports.view')):view!=='dashboard'));
+    updateReportShortcut(view);
     updatePosDateTime();
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
@@ -711,7 +728,10 @@
     switchView(view);
   };
   document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
+  phoneViewport.addEventListener?.('change',updateMobileLayout);
+  updateMobileLayout();
   $('dashboardPrintReport').addEventListener('click',()=>{
+    if(state.user?.role!=='User'||!(state.user.accessPermissions||[]).some(p=>p==='dashboard.view'||p==='reports.view'))return;
     // Newly registered franchises use a paid, scoped PDF endpoint; established
     // shared accounts retain their existing daily-report print shortcut.
     const path=state.user?.liveMode?'/api/live/report/print':
