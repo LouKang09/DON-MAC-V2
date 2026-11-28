@@ -1,5 +1,7 @@
 (() => {
   const $=id=>document.getElementById(id);
+  const cashierApk=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
+  document.documentElement.classList.toggle('dm-cashier-apk',cashierApk);
   const peso=n=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(Number(n||0));
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const normalize=s=>String(s||'').trim().replace(/\s+/g,' ').toUpperCase();
@@ -172,16 +174,17 @@
     const legacyApp=$('app');legacyApp.inert=true;legacyApp.setAttribute('aria-hidden','true');
     window.donmacAuthenticatedRole=null;window.donmacPlanWidgets?.setRole?.(null);
     window.donmacChatUserId=null;window.donmacChat?.loggedIn(null);
-    safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');
+    safeCloseDialog('paymentDialog');safeCloseDialog('receiptDialog');safeCloseDialog('transactionDialog');safeCloseDialog('dmCashierProfile');
+    document.documentElement.classList.remove('dm-cashier-role');
     $('app').classList.add('hidden');$('authScreen').classList.remove('hidden');
-    $('authTitle').textContent=setupRequired?'Create Owner Account':'Welcome Back, Please login to your account';
+    $('authTitle').textContent=cashierApk?'Welcome back':setupRequired?'Create Owner Account':'Welcome Back, Please login to your account';
     $('authHint').textContent=setupRequired?'Set up the first Owner account to access your POS.':'';
     const signInLabel=$('authSubmit').querySelector(':scope > span:not(.dm-ua-icon)');
     if(signInLabel)signInLabel.textContent=setupRequired?'Create Owner':'Sign In';
     else $('authSubmit').textContent=setupRequired?'Create Owner':'Sign In';
     $('authPassword').autocomplete=setupRequired?'new-password':'current-password';
     window.donmacLoginExperience?.show('login');
-    $('authSignupPrompt')?.classList.toggle('hidden',!!setupRequired);
+    $('authSignupPrompt')?.classList.toggle('hidden',cashierApk||!!setupRequired);
     $('authForgotPassword')?.classList.toggle('hidden',!!setupRequired);
     $('authHelpMessage')?.classList.add('hidden');
     window.donmacLoginExperience?.restore();
@@ -206,6 +209,8 @@
     window.donmacScopedApi=(url,options={})=>api(url,options);
     const legacyApp=$('app');legacyApp.inert=false;legacyApp.removeAttribute('aria-hidden');
     window.donmacAuthenticatedRole=state.user.role;
+    document.documentElement.classList.toggle('dm-cashier-role',state.user.role==='User');
+    if(cashierApk&&state.user.role==='User'){$('topbarProfileButton').title='My profile';$('topbarProfileButton').setAttribute('aria-label','My profile');}
     window.donmacPlanWidgets?.setRole?.(state.user.role);
     window.donmacChatUserId=state.user.id;
     window.donmacChat?.loggedIn(state.user.id);
@@ -364,7 +369,7 @@
     const free=sub.plan==='FREE'||sub.trialSelectionRequired;
     const trial=sub.status==='TRIAL';
     if(sub.trialSelectionRequired&&admin&&!trialDeferred){const modal=$('dmTrialDialog');if(modal&&!modal.open)modal.showModal();}
-    $('view-dashboard').classList.toggle('dm-free-dashboard',free);
+    $('view-dashboard').classList.toggle('dm-free-dashboard',free&&admin);
     const planLabel=sub.trialSelectionRequired?'Choose Trial Plan':(free?'Free':business?'Business':'Pro')+(trial?' · Trial':' Plan User');
     $('accountPlanPill').textContent=planLabel;
     $('accountPlanPill').closest('.account-plan-top-control')?.setAttribute('aria-label','Account Type: '+planLabel);
@@ -548,7 +553,17 @@
   });
   $('saveAccountPlan').addEventListener('click',()=>
     requestPlanUpdate($('accountPlanSelect').value));
+  $('dmCashierProfileClose').addEventListener('click',()=>safeCloseDialog('dmCashierProfile'));
   $('topbarProfileButton').addEventListener('click',()=>{
+    if(cashierApk&&state.user?.role==='User'){
+      const u=state.user,plan=state.subscription?.plan||u.subscriptionPlan;
+      $('dmCashierPlan').textContent=plan==='BUSINESS'?'Business Plan User':plan==='PRO'?'Pro Plan User':plan==='TRIAL'?'Trial account':'Plan not available';
+      $('dmCashierName').textContent=u.fullName||u.username||'—';
+      $('dmCashierUsername').textContent=u.username||'—';
+      $('dmCashierJoined').textContent=u.joinedAt?planDisplayDate(u.joinedAt):'—';
+      const avatar=$('dmCashierProfilePhoto');avatar.replaceChildren(...Array.from($('topbarAvatar').children).map(node=>node.cloneNode(true)));
+      if(!$('dmCashierProfile').open)$('dmCashierProfile').showModal();return;
+    }
     if(state.user?.role!=='Admin'){
       toast('Account Settings are available to the Owner and Co-Owners.');
       return;
@@ -667,7 +682,7 @@
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${view}`));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
     const titles={dashboard:['OPERATIONS','Dashboard'],pos:['','Welcome to Don Macchiatos POS'],inventory:['INVENTORY','Stock Management'],reports:['REPORTING','Sales Report'],catalog:['ADMINISTRATION','POS Catalog'],users:['ADMINISTRATION','Cashier Accounts'],supply:['FRANCHISE PROCUREMENT','Supply Chain'],advanced:['BUSINESS FEATURES','Advanced Analytics'],account:['SUBSCRIPTION','Account Settings'],logs:['AUDIT','System Logs'],chat:['TEAM','Messages'],transactions:['TRANSACTIONS','Transaction Ledger'],expenses:['TRANSACTIONS','Expenses Ledger'],attendance:['TIMEKEEPING','Time & Attendance'],payroll:['EMPLOYEE MANAGEMENT','Payroll & Attendance']};$('viewEyebrow').textContent=titles[view]?.[0]||'';$('viewTitle').textContent=titles[view]?.[1]||'';
     $('posDailyCount').classList.toggle('hidden',view!=='pos');
-    $('dashboardPrintReport').classList.toggle('hidden',view!=='dashboard'||state.user?.role==='Admin');
+    $('dashboardPrintReport').classList.toggle('hidden',state.user?.role==='Admin'||(cashierApk?!((state.user?.accessPermissions||[]).some(p=>p==='dashboard.view'||p==='reports.view')):view!=='dashboard'));
     updatePosDateTime();
     // Desktop: Messages is a normal sidebar view. Mobile keeps its independent floating chat.
     window.donmacChat?.onViewChange(view);
@@ -701,7 +716,7 @@
     // shared accounts retain their existing daily-report print shortcut.
     const path=state.user?.liveMode?'/api/live/report/print':
       '/api/reports/sales/print?period=daily';
-    window.open(path,'_blank','noopener,noreferrer');
+    if(cashierApk)location.href=path;else window.open(path,'_blank','noopener,noreferrer');
   });
 
   function reconcileCartWithCatalog(){
@@ -1985,20 +2000,21 @@
   }
   function transactionInfo(label,value,{money=false,wide=false}={}){const shown=value===null||value===undefined||value===''?'—':money?peso(value):esc(value);return`<div class="transaction-info ${wide?'wide':''}"><span>${esc(label)}</span><strong>${shown}</strong></div>`;}
   function renderTransactionDetail(d){
+    const showCost=state.user?.role==='Admin';
     $('transactionReference').textContent=d.reference||'Transaction Details';
     $('transactionStatus').textContent=d.status||'';$('transactionStatus').className=`transaction-status ${d.status==='Deleted'?'deleted':'sold'}`;
-    const itemRows=(d.items||[]).map(i=>{const components=i.components?.length?`<div class="component-list"><b>Package contents:</b>${i.components.map(c=>`<span>${num(c.qty,2)} × ${esc(c.name)}</span>`).join('')}</div>`:'';return`<tr><td><b>${esc(i.name)}</b><div class="tiny muted">${esc(i.type)}${i.excludeFromCosting?' · Excluded from costing':''}</div>${components}</td><td class="num">${num(i.qty,2)}</td><td class="num">${peso(i.unitPrice)}</td><td class="num">${peso(i.lineTotal)}</td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">No item lines were recorded.</td></tr>';
+    const itemRows=(d.items||[]).map(i=>{const components=i.components?.length?`<div class="component-list"><b>Package contents:</b>${i.components.map(c=>`<span>${num(c.qty,2)} × ${esc(c.name)}</span>`).join('')}</div>`:'';return`<tr><td><b>${esc(i.name)}</b><div class="tiny muted">${esc(i.type)}${showCost&&i.excludeFromCosting?' · Excluded from costing':''}</div>${components}</td><td class="num">${num(i.qty,2)}</td><td class="num">${peso(i.unitPrice)}</td><td class="num">${peso(i.lineTotal)}</td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">No item lines were recorded.</td></tr>';
     const movementRows=(d.inventoryMovements||[]).map(m=>
       '<tr><td>'+esc(formatDateTimeDetailed(m.createdAt))+'</td>'+
       '<td>'+esc(m.type)+'</td><td>'+esc(m.ingredient)+'</td>'+
       '<td class="num '+(m.quantityChange<0?'stock-low':'stock-ok')+'">'+
       (m.quantityChange>0?'+':'')+num(m.quantityChange)+'</td>'+
       '<td class="num">'+(m.quantityEstimated?'≈':'')+num(m.quantity??Math.abs(Number(m.quantityChange)))+'</td>'+
-      '<td class="num" title="'+esc(m.costEstimated?'Estimated from this branch’s sale cost and current recipes':'Checkout-time branch ingredient cost')+'">'+
-      (m.cost==null?'—':(m.costEstimated?'≈':'')+peso(m.cost))+'</td>'+
+      (showCost?'<td class="num" title="'+esc(m.costEstimated?'Estimated from this branch’s sale cost and current recipes':'Checkout-time branch ingredient cost')+'">'+
+      (m.cost==null?'—':(m.costEstimated?'≈':'')+peso(m.cost))+'</td>':'')+
       '<td class="num">'+(m.balanceAfter==null?'—':num(m.balanceAfter))+'</td>'+
       '<td>'+esc(m.createdBy||'')+'</td><td>'+esc(m.remarks||'')+'</td></tr>'
-    ).join('')||'<tr><td colspan="9" class="muted">No linked inventory movements were recorded for this receipt.</td></tr>';
+    ).join('')||'<tr><td colspan="'+(showCost?9:8)+'" class="muted">No linked inventory movements were recorded for this receipt.</td></tr>';
     const auditRows=(d.auditEvents||[]).map(e=>`<div class="audit-event"><div><b>${esc(e.status||'Event')}</b><span>${esc(formatDateTimeDetailed(e.createdAt))}</span></div><p>${esc(e.activity||'')}</p>${e.actor?`<small>Actor: ${esc(e.actor)}</small>`:''}${e.remark?`<small> · ${esc(e.remark)}</small>`:''}</div>`).join('')||'<div class="muted tiny">No matching system-log event was recorded.</div>';
     $('transactionDetailBody').innerHTML=`
       <div class="transaction-section"><h3>Transaction Information</h3><div class="transaction-info-grid">
@@ -2009,7 +2025,7 @@
       </div></div>
       <div class="transaction-section"><div class="transaction-section-head"><h3>Products Ordered</h3><span>${(d.items||[]).length} line(s)</span></div><div class="table-wrap"><table><thead><tr><th>Product / Item</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Line Total</th></tr></thead><tbody>${itemRows}</tbody></table></div></div>
       <div class="transaction-total-grid">${transactionInfo('Gross',d.gross,{money:true})}${transactionInfo('Adjustment',d.adjustment,{money:true})}${transactionInfo('Actual',d.actual,{money:true})}</div>
-      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th><th class="num">Cost</th><th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div>${(d.inventoryMovements||[]).some(m=>m.type==='LIVE_SALE'&&m.cost!=null)?
+      <details class="transaction-section transaction-details"><summary>Inventory Impact <span>${(d.inventoryMovements||[]).length} movement(s)</span></summary><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Type</th><th>Ingredient</th><th class="num">Change</th><th class="num">Quantity</th>${showCost?'<th class="num">Cost</th>':''}<th class="num">Balance After</th><th>Actor</th><th>Remarks</th></tr></thead><tbody>${movementRows}</tbody></table></div>${showCost&&(d.inventoryMovements||[]).some(m=>m.type==='LIVE_SALE'&&m.cost!=null)?
         '<div class="inv-audit-meta"><b>Total ingredient cost:</b> '+
         ((d.inventoryMovements||[]).some(m=>m.costEstimated)?'≈':'')+
         peso((d.inventoryMovements||[]).filter(m=>m.type==='LIVE_SALE').reduce((n,m)=>n+Number(m.cost||0),0))+
