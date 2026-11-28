@@ -18,6 +18,10 @@ const dashboard={today,grain:'hourly',from:today,to:today,rangeActual:0,rangeGro
 async function testRole(role){
  const dom=new JSDOM(original,{url:'https://donmacpos.com/',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window,doc=w.document;
+ // jsdom does not implement browser media queries; simulate a desktop viewport.
+ w.matchMedia=query=>({matches:false,media:query,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}});
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+ w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
  const errors=[],calls=[];
  const status={ok:true,liveMode:true,productionIsolated:true,workspaceId:500,branchId:600,
   branchName:'Franchise Test Branch',role,username:role==='Admin'?'owner':'cashier',
@@ -31,6 +35,7 @@ async function testRole(role){
    liveMode:true,branchId:role==='Admin'?null:600,accessPermissions:[],active:true,
    subscriptionStatus:'NOT_CONFIGURED',subscriptionActive:false}},
   '/api/live/status':status,
+  '/api/live/account/subscription':{plan:'PRO',status:'NOT_CONFIGURED',branchPricing:{...status.entitlements,branches:status.branches},history:[]},
   '/api/live/catalog':{branchId:600,workspaceId:500,products:[],packages:[],promos:[],addOns:[],
    categories:[{name:'Coffee',builtin:true,active:true,productIds:[]}]},
   '/api/live/manage':{products:[],ingredients:[],promos:[],packages:[],categories:[]},
