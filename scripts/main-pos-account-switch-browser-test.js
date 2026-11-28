@@ -112,8 +112,8 @@ async function display(page,mode){
   return app&&!app.classList.contains('hidden')&&
    document.getElementById('topbarUsername')?.textContent?.toLowerCase()===expected;
  },{timeout:25000},mode);}catch(err){console.error('AUTH STATE',await page.evaluate(()=>({app:document.getElementById('app')?.className,name:document.getElementById('topbarUsername')?.textContent,hint:document.getElementById('authHint')?.textContent})),requests.slice(-20));throw err;}
- await page.waitForFunction(()=>document.querySelectorAll('#dashboardSummary .summary-card').length===7,
-  {timeout:25000});
+ try{await page.waitForFunction(()=>document.querySelectorAll('#dashboardSummary .summary-card').length===8,
+  {timeout:25000});}catch(err){console.error('DASHBOARD STATE',await page.evaluate(()=>({count:document.querySelectorAll('#dashboardSummary .summary-card').length,keys:[...document.querySelectorAll('#dashboardSummary [data-dm-kpi]')].map(x=>x.dataset.dmKpi)})));throw err;}
 }
 async function snapshot(page){
  return page.evaluate(()=>{
