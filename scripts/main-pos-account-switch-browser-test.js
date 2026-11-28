@@ -107,11 +107,11 @@ const server=http.createServer(async(req,res)=>{
 const listen=()=>new Promise(resolve=>server.listen(0,'127.0.0.1',()=>resolve(server.address().port)));
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function display(page,mode){
- await page.waitForFunction((expected)=>{
+ try{await page.waitForFunction((expected)=>{
   const app=document.getElementById('app');
   return app&&!app.classList.contains('hidden')&&
    document.getElementById('topbarUsername')?.textContent?.toLowerCase()===expected;
- },{timeout:25000},mode);
+ },{timeout:25000},mode);}catch(err){console.error('AUTH STATE',await page.evaluate(()=>({app:document.getElementById('app')?.className,name:document.getElementById('topbarUsername')?.textContent,hint:document.getElementById('authHint')?.textContent})),requests.slice(-20));throw err;}
  await page.waitForFunction(()=>document.querySelectorAll('#dashboardSummary .summary-card').length===7,
   {timeout:25000});
 }
@@ -153,6 +153,9 @@ async function signIn(page,name){
   args:['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage']});
  try{
   const page=await browser.newPage();
+  page.on('pageerror',err=>console.error('BROWSER ERROR:',err.message));
+  page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER CONSOLE:',msg.text().slice(0,500))});
+  page.on('response',res=>{if(res.url().includes('/api/')&&res.status()>=400)console.error('API ERROR:',res.status(),new URL(res.url()).pathname)});
   await page.setViewport({width:1440,height:960,deviceScaleFactor:1});
   await page.setCookie({url,name:'demo_session',value:'marlou09'});
   await page.goto(url,{waitUntil:'domcontentloaded'});
