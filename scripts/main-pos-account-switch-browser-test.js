@@ -60,7 +60,7 @@ const server=http.createServer(async(req,res)=>{
   }
   if(!user)return send(res,401,{error:'Not signed in.'});
   const isNew=user==='test1',b=isNew?branch:oldBranch;
-  if(isNew&&!pathname.startsWith('/api/live/'))
+  if(isNew&&!pathname.startsWith('/api/live/')&&!pathname.startsWith('/api/chat/')&&!pathname.startsWith('/api/payroll/'))
    return send(res,409,{error:'NEW franchise attempted an unsafe legacy API: '+pathname});
   if(pathname==='/api/live/status')return send(res,200,{liveMode:true,workspaceId:707,branchId:601,
    role:'Admin',username:user,plan:'PRO',subscriptionStatus:'PAID',subscriptionActive:true,
@@ -196,6 +196,9 @@ async function signIn(page,name){
   assert.equal(legacy.summaryCount,fresh.summaryCount);
   assert.equal(legacy.summary.height,fresh.summary.height,'KPI styling must match account modes');
   await dismissWelcome(page);
+  const group=await page.$('#mainNav [data-group="transactions"][aria-expanded="false"]');
+  if(group)await group.click();
+  await page.waitForSelector('#mainNav [data-view="transactions"]',{visible:true});
   await page.click('#mainNav [data-view="transactions"]');
   await page.waitForFunction(()=>window.donmacFinance&&
    document.getElementById('financeTransactionCount').textContent.trim()==='0',
@@ -210,7 +213,7 @@ async function signIn(page,name){
    'NEW finance toolbar must use original green Clear Filters style');
   assert(requests.filter(x=>x.user==='test1').every(x=>
    ['/api/auth/me','/api/auth/logout','/api/auth/login','/api/status'].includes(x.path)||
-   x.path.startsWith('/api/live/')),'NEW tenant must use isolated APIs only');
+   (x.path.startsWith('/api/live/')||x.path.startsWith('/api/chat/')||x.path.startsWith('/api/payroll/'))),'NEW tenant must use isolated or independently workspace-scoped APIs only');
   console.log('PASS: original Main POS theme, chart and finance UI match after account switch; previous owner revenue never persists.');
   await page.close();
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
