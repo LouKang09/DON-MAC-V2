@@ -1868,7 +1868,8 @@
     $('reportCashierSelect').open=false;
   });
   function reportPageSlice(kind,items){
-    const page=window.DonMacReportPages.paginate(items,reportUI.pages[kind]);
+    const size=kind==='products'&&window.matchMedia('(max-width:699px)').matches?5:window.DonMacReportPages.PAGE_SIZE;
+    const page=window.DonMacReportPages.paginate(items,reportUI.pages[kind],size);
     reportUI.pages[kind]=page.page;
     const make=(number,label,disabled=false,active=false)=>
       '<button type="button" data-report-page="'+number+'" aria-label="'+esc(String(label))+'" '+
