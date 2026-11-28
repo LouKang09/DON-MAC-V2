@@ -63,3 +63,40 @@ jobs:
         env:
           COMMERCIAL_TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/commercial_qa
         run: node scripts/commercial-report-postgres-test.js
+  legacy-baseline-comparison:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Distinguish existing historical assertion failures from new regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/donmac-baseline 110f9ea7e1906ea424f2ab6bf234b41e246aaf7a
+          for test in report-ui-v1542-test.js report-ui-v1543-test.js report-ui-v1544-test.js report-ui-v1545-test.js report-ui-v1546-test.js scripts/office-canonical-routes-test.js; do
+            set +e
+            (cd /tmp/donmac-baseline && node "$test") > /tmp/base.log 2>&1
+            base=$?
+            node "$test" > /tmp/new.log 2>&1
+            candidate=$?
+            set -e
+            echo "$test baseline=$base candidate=$candidate"
+            if [[ "$candidate" != 0 ]]; then
+              base_error=$(grep -m1 -E 'AssertionError|Error:' /tmp/base.log || true)
+              new_error=$(grep -m1 -E 'AssertionError|Error:' /tmp/new.log || true)
+              printf 'BASE: %s\nCANDIDATE: %s\n' "$base_error" "$new_error"
+              if [[ "$base" == 0 || "$base_error" != "$new_error" || -z "$new_error" ]]; then
+                cat /tmp/new.log
+                exit 1
+              fi
+              echo "::warning::Existing historical test failure, unchanged by this release: $test"
+            fi
+          done
+      - name: Current isolated adapter contract
+        run: node scripts/franchise-unified-adapter-test.js
