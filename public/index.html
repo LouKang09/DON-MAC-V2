@@ -370,6 +370,8 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
 }
 </style>
   <link id="dmCommercialDesignSystem" rel="stylesheet" href="/donmac-design-system-v1.css?v=1.0.0" />
+
+  <link id="dmCommercialPhase2" rel="stylesheet" href="/donmac-commercial-phase2-v1.css?v=1" />
 </head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
@@ -1317,7 +1319,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="dashboard.view"/><span><b>Dashboard</b><small>View the assigned branch performance dashboard.</small></span></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="inventory.view"/><span><b>Inventory, Replenish &amp; Transfer</b><small>View assigned-branch stock, receive supplies and replenish stock. Business plan adds inter-branch transfer requests and Accept/Reject. Only Owner/Co-Owner can set initial stock.</small></span></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="messages.view"/><span><b>Messages</b><small>Access branch, all-branch and permitted direct chats.</small></span></label>
-                  <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="reports.view"/><span><b>Sales Report</b><small>Read sales reports for this cashier's assigned branch.</small></span></label>
+                  <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="reports.view"/><span><b>Sales Report</b><small>Read only this cashier's own sales, within the approved history limit.</small></span></label>
                   <label class="cashier-access-option">Report history limit <select id="cashierReportWindow" aria-label="Cashier report history"><option value="report.window.day">1 day</option><option value="report.window.week">1 week</option><option value="report.window.month">1 month</option></select></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="transactions.view"/><span><b>View Transactions</b><small>Read the transaction ledger for the assigned branch.</small></span></label>
                   <label class="cashier-access-option"><input type="checkbox" data-cashier-grant="expenses.view"/><span><b>View Expenses</b><small>Read branch expenses without changing records.</small></span></label>
