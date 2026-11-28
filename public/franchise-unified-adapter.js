@@ -14,7 +14,7 @@
   return options.body;
  };
  async function live(path,method='GET',body){
-  if(!/^\/api\/live\/[a-z0-9/?=&._%-]+$/i.test(path))throw fail('Invalid isolated POS request path.',400);
+  if(!/^\/api\/live\/[a-z0-9/._%-]+(?:\?[a-z0-9/?=&._%+\-]*)?$/i.test(path))throw fail('Invalid isolated POS request path.',400);
   const options={method,credentials:'same-origin',cache:'no-store',headers:{}};
   if(body!==undefined){options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
   let response;
@@ -235,6 +235,7 @@
    const parameters=id=>{
     const q=new URLSearchParams({range:period,branchId:String(id)});
     if(url.searchParams.get('date'))q.set('date',url.searchParams.get('date'));
+    if(state.user?.role==='Admin'&&url.searchParams.get('cashiers'))q.set('cashiers',url.searchParams.get('cashiers'));
     return q.toString();
    };
    if(p==='/api/reports/costing'){
@@ -283,7 +284,7 @@
    const ratio=totalProductGross>0?raw.actual/totalProductGross:0;
    const isStaff=state.user?.role==='User';
    const products=raw.products.map(x=>{
-    const adjusted=Number(x.gross||0)*(1-ratio);
+    const adjusted=Number(x.gross||0)*(ratio-1);
     const actual=Number(x.gross||0)*ratio;
     const base={name:x.name,qty:x.qty,gross:Number(x.gross||0),adjusted,actual};
     return isStaff?base:{...base,costing:Number(x.costing||0),net:actual-Number(x.costing||0)};
@@ -305,7 +306,8 @@
    // Staff cannot enumerate other branches or private employee accounts.
    if(state.user?.role==='User')return{cashiers:[state.user.username]};
    const r=await live('/api/live/cashiers');
-   return{cashiers:(r.cashiers||[]).map(x=>x.username)};
+   const branch=url.searchParams.get('branchId');
+   return{cashiers:(r.cashiers||[]).filter(x=>!branch||branch==='all'||Number(x.branchId)===Number(branch)).map(x=>x.username)};
   }
   if(p==='/api/system-logs'&&method==='GET'){
    const limit=Number(url.searchParams.get('limit')||200);

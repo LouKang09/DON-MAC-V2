@@ -60,14 +60,14 @@ const server=http.createServer(async(req,res)=>{
   }
   if(!user)return send(res,401,{error:'Not signed in.'});
   const isNew=user==='test1',b=isNew?branch:oldBranch;
-  if(isNew&&!pathname.startsWith('/api/live/'))
+  if(isNew&&!pathname.startsWith('/api/live/')&&!pathname.startsWith('/api/chat/')&&!pathname.startsWith('/api/payroll/'))
    return send(res,409,{error:'NEW franchise attempted an unsafe legacy API: '+pathname});
   if(pathname==='/api/live/status')return send(res,200,{liveMode:true,workspaceId:707,branchId:601,
    role:'Admin',username:user,plan:'PRO',subscriptionStatus:'PAID',subscriptionActive:true,
    branches:[branch],cashiers:[],permissions:[],entitlements:{plan:'PRO',totalBranches:1,
     activeBranches:1,mayAdd:true,maxBranches:3,extraBranches:0,extraBranchRate:799,nextRenewalAmount:1499}});
   if(['/api/live/catalog','/api/catalog'].includes(pathname))return send(res,200,{
-   products:[],packages:[],addOns:[],promos:[],categories:[
+   branchId:b.id,products:[],packages:[],addOns:[],promos:[],categories:[
     {name:'Coffee',active:true,builtin:true,productIds:[]},
     {name:'Non Coffee',active:true,builtin:true,productIds:[]},
     {name:'Food',active:true,builtin:true,productIds:[]}]
@@ -75,10 +75,12 @@ const server=http.createServer(async(req,res)=>{
   if(['/api/live/dashboard','/api/dashboard'].includes(pathname))
    return send(res,200,isNew?newData:oldData);
   if(pathname==='/api/branches')return send(res,200,{branches:[oldBranch],
-   branchPricing:{plan:'BUSINESS',extraBranches:0,nextRenewalAmount:2599,mayAdd:true,
+   branchPricing:{plan:'BUSINESS',extraBranches:0,extraBranchRate:899,nextRenewalAmount:2599,mayAdd:true,
    totalBranches:1,activeBranches:1,maxBranches:100}});
+  if(pathname==='/api/live/account/subscription')return send(res,200,{plan:'PRO',status:'PAID',branchPricing:{plan:'PRO',extraBranches:0,extraBranchRate:799,nextRenewalAmount:1499,totalBranches:1,activeBranches:1,mayAdd:true,maxBranches:3,branches:[branch]},history:[]});
+  if(pathname==='/api/inventory/transfer-branches')return send(res,200,{branches:[oldBranch],sources:[oldBranch],targets:[]});
   if(pathname==='/api/account/subscription')return send(res,200,{plan:'BUSINESS',status:'PAID',
-   branchPricing:{plan:'BUSINESS',extraBranches:0,nextRenewalAmount:2599,mayAdd:true,
+   branchPricing:{plan:'BUSINESS',extraBranches:0,extraBranchRate:899,nextRenewalAmount:2599,mayAdd:true,
     totalBranches:1,activeBranches:1,maxBranches:100,branches:[oldBranch]}});
   if(pathname==='/api/live/inventory')return send(res,200,{branchId:601,items:[]});
   if(pathname==='/api/live/cashiers')return send(res,200,{cashiers:[]});
@@ -107,13 +109,13 @@ const server=http.createServer(async(req,res)=>{
 const listen=()=>new Promise(resolve=>server.listen(0,'127.0.0.1',()=>resolve(server.address().port)));
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function display(page,mode){
- await page.waitForFunction((expected)=>{
+ try{await page.waitForFunction((expected)=>{
   const app=document.getElementById('app');
   return app&&!app.classList.contains('hidden')&&
    document.getElementById('topbarUsername')?.textContent?.toLowerCase()===expected;
- },{timeout:25000},mode);
- await page.waitForFunction(()=>document.querySelectorAll('#dashboardSummary .summary-card').length===7,
-  {timeout:25000});
+ },{timeout:25000},mode);}catch(err){console.error('AUTH STATE',await page.evaluate(()=>({app:document.getElementById('app')?.className,name:document.getElementById('topbarUsername')?.textContent,hint:document.getElementById('authHint')?.textContent})),requests.slice(-20));throw err;}
+ try{await page.waitForFunction(()=>document.querySelectorAll('#dashboardSummary .summary-card').length===8,
+  {timeout:25000});}catch(err){console.error('DASHBOARD STATE',await page.evaluate(()=>({count:document.querySelectorAll('#dashboardSummary .summary-card').length,keys:[...document.querySelectorAll('#dashboardSummary [data-dm-kpi]')].map(x=>x.dataset.dmKpi)})));throw err;}
 }
 async function snapshot(page){
  return page.evaluate(()=>{
@@ -131,9 +133,24 @@ async function snapshot(page){
    live:window.donmacFranchiseUnified};
  });
 }
+async function dismissWelcome(page){
+ // First visit intentionally displays the guide after 850 ms. Interact with
+ // its public close action and the real version notice, not DOM removal.
+ await wait(1300);
+ for(let i=0;i<8;i++){
+  const notice=await page.$('#dmUnifiedSystemPrompt[open]');
+  if(notice){assert.match(await notice.evaluate(el=>el.textContent),/What's New|What’s New/,'Unexpected modal must not be bypassed');await page.click('#dmPromptConfirm');await wait(150);continue;}
+  const guide=await page.$('.dm-guide-root .dm-guide-close:not(:disabled)');
+  if(guide){await guide.click();await wait(150);continue;}
+  break;
+ }
+ assert.equal(await page.$('.dm-guide-root'),null,'Guide remains blocking the workspace');
+ assert.equal(await page.$('#dmUnifiedSystemPrompt[open]'),null,'System prompt remains blocking the workspace');
+}
 async function signOut(page){
- await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
-  page.click('#logoutButton')]);
+ await dismissWelcome(page);
+ try{await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
+  page.click('#logoutButton')]);}catch(err){console.error('SIGNOUT STATE',await page.evaluate(()=>{const el=document.querySelector('#logoutButton'),r=el.getBoundingClientRect();return {disabled:el.disabled,hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,250),dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>({id:d.id,text:d.textContent.slice(0,250)})),auth:document.getElementById('authScreen')?.className};}),requests.slice(-15));throw err;}
  await page.waitForFunction(()=>!document.body.classList.contains('legacy-authenticated')&&
   document.getElementById('authScreen')?.classList.contains('hidden')===false,{timeout:25000});
  await page.waitForFunction(()=>!document.getElementById('dashboardSummary').textContent.includes('12,295'),
@@ -153,6 +170,9 @@ async function signIn(page,name){
   args:['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage']});
  try{
   const page=await browser.newPage();
+  page.on('pageerror',err=>console.error('BROWSER ERROR:',err.stack||err.message));
+  page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER CONSOLE:',msg.text().slice(0,500))});
+  page.on('response',res=>{if(res.url().includes('/api/')&&res.status()>=400)console.error('API ERROR:',res.status(),new URL(res.url()).pathname)});
   await page.setViewport({width:1440,height:960,deviceScaleFactor:1});
   await page.setCookie({url,name:'demo_session',value:'marlou09'});
   await page.goto(url,{waitUntil:'domcontentloaded'});
@@ -171,11 +191,14 @@ async function signIn(page,name){
   assert(fresh.scope,'NEW account must receive identical dashboard branch scope');
   assert(fresh.chart,'NEW account must receive identical Sales Statistic visual');
   assert(!fresh.amount.includes('12,295'),'Previous owner sales must never appear for test1');
-  assert(legacy.main.background.includes('login-coffee-pattern-approved-hd.png'));
-  assert(fresh.main.background.includes('login-coffee-pattern-approved-hd.png'),
-   'NEW and SHARED accounts must receive the same coffee background');
+  assert.equal(legacy.main.background,'none','Operational workspace uses neutral canvas');
+  assert.equal(fresh.main.background,'none','NEW and SHARED accounts must use the same neutral canvas');
   assert.equal(legacy.summaryCount,fresh.summaryCount);
   assert.equal(legacy.summary.height,fresh.summary.height,'KPI styling must match account modes');
+  await dismissWelcome(page);
+  const group=await page.$('#mainNav [data-group="transactions"][aria-expanded="false"]');
+  if(group)await group.click();
+  await page.waitForSelector('#mainNav [data-view="transactions"]',{visible:true});
   await page.click('#mainNav [data-view="transactions"]');
   await page.waitForFunction(()=>window.donmacFinance&&
    document.getElementById('financeTransactionCount').textContent.trim()==='0',
@@ -190,7 +213,7 @@ async function signIn(page,name){
    'NEW finance toolbar must use original green Clear Filters style');
   assert(requests.filter(x=>x.user==='test1').every(x=>
    ['/api/auth/me','/api/auth/logout','/api/auth/login','/api/status'].includes(x.path)||
-   x.path.startsWith('/api/live/')),'NEW tenant must use isolated APIs only');
+   (x.path.startsWith('/api/live/')||x.path.startsWith('/api/chat/')||x.path.startsWith('/api/payroll/'))),'NEW tenant must use isolated or independently workspace-scoped APIs only');
   console.log('PASS: original Main POS theme, chart and finance UI match after account switch; previous owner revenue never persists.');
   await page.close();
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

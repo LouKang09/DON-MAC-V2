@@ -25,7 +25,9 @@ const stubs={
  '/api/live/quote':{gross:100,actual:100,adjustment:0},
  '/api/live/checkout':{ok:true,reference:'BR-123456789012345678',actual:100},
  '/api/live/dashboard':{rangeTransactions:0,rangeActual:0,metrics:{}},
- '/api/live/cashiers':{cashiers:[]},
+ '/api/live/cashiers':{cashiers:[{username:'Ana, Jr.',branchId:901},{username:'Other Branch',branchId:905}]},
+ '/api/live/report':{transactionCount:1,allTransactionCount:1,gross:100,discounts:10,actual:90,inStoreExpenses:25,products:[{name:'Coffee',qty:1,gross:100,costing:25}],promos:[],transactions:[]},
+ '/api/live/report/costing':{totalCost:25,ingredients:[]},
  '/api/live/branches':{ok:true,id:905},
  '/api/live/inventory':{branchId:901,items:[]},
  '/api/live/finance/transactions':{rows:[],total:0},
@@ -74,6 +76,20 @@ assert(scoped&&typeof scoped.request==='function');
  assert.equal(calls.find(c=>c.path==='/api/live/checkout').body.branchId,901);
  const dashboardResult=await scoped.request('/api/dashboard?view=hourly&branchId=901',{},state);
  assert.equal(dashboardResult.rangeActual,0);
+ const names=JSON.stringify(['Ana, Jr.']);
+ const q=new URLSearchParams({period:'daily',branchId:'901',cashiers:names});
+ const report=await scoped.request('/api/reports/sales?'+q,{},state);
+ assert.equal(report.actual,90);assert.equal(report.products[0].actual,90);
+ assert(Math.abs(report.products[0].adjusted+10)<0.001);
+ await scoped.request('/api/reports/costing?'+q,{},state);
+ for(const path of ['/api/live/report','/api/live/report/costing']){
+  const req=calls.find(c=>c.path===path);assert.equal(new URLSearchParams(req.search).get('cashiers'),names);
+ }
+ assert.deepEqual([...(await scoped.request('/api/reports/cashiers?branchId=901',{},state)).cashiers],['Ana, Jr.']);
+ const cashier={user:{role:'User',username:'Ana, Jr.',branchId:901,liveMode:true},posBranchId:901};
+ await scoped.request('/api/reports/sales?'+q,{},cashier);
+ assert.equal(new URLSearchParams(calls.filter(c=>c.path==='/api/live/report').at(-1).search).get('cashiers'),null);
+
  await assert.rejects(scoped.request('/api/backups',{},state),/specific action is unavailable in the isolated POS/i);
  const finance=await scoped.request('/api/finance/transactions?branchId=901',{},state);
  assert.equal(finance.total,0);
@@ -86,7 +102,7 @@ assert(scoped&&typeof scoped.request==='function');
  assert(!calls.some(x=>x.path==='/api/catalog'||x.path==='/api/sales'||x.path==='/api/dashboard'));
  assert(!/location\.(?:assign|replace)\('\/franchise-live\.html'\)/.test(core));
  assert.match(core,/window\.donmacFranchiseCompat\.request/);
- assert.match(loader,/loadScript\('\/franchise-unified-adapter\.js'\)/);
+ assert.match(loader,/loadScript\('\/franchise-unified-adapter\.js(?:\?[^']*)?'\)/);
  assert.match(server,/LIVE_FRANCHISE_SCOPED_ONLY/);
  assert.match(router,/scope\.requireAdmin\(ctx\)/);
  assert.match(router,/unifiedDashboard\.dashboard\(db,ctx,query\)/);

@@ -51,7 +51,11 @@ async function setup(){
  await db.exec('CREATE TABLE chat_memberships(user_id BIGINT REFERENCES users(id),workspace_id BIGINT REFERENCES chat_workspaces(id),PRIMARY KEY(user_id,workspace_id))');
  await db.exec('CREATE TABLE chat_workspace_branches(workspace_id BIGINT REFERENCES chat_workspaces(id),branch_id BIGINT REFERENCES branches(id),PRIMARY KEY(workspace_id,branch_id))');
  await db.exec('CREATE TABLE franchise_test_accounts(request_id TEXT PRIMARY KEY,user_id BIGINT,workspace_id BIGINT,branch_id BIGINT,created_at TEXT,created_by TEXT)');
- await db.exec('CREATE TABLE platform_account_plans(workspace_id BIGINT PRIMARY KEY,status TEXT,plan TEXT,amount NUMERIC(12,2),base_amount NUMERIC(12,2),next_payment_date TEXT)');
+ await db.exec('CREATE TABLE platform_account_plans(workspace_id BIGINT PRIMARY KEY,status TEXT,plan TEXT,amount NUMERIC(12,2),base_amount NUMERIC(12,2),next_payment_date TEXT,updated_at TEXT,updated_by TEXT)');
+ await require('../lib/public-franchise-requests').migrate(db);
+ await require('../lib/platform-accounts').migrate(db);
+ await require('../lib/franchise-payroll-entitlement').migrate(db);
+ await require('../lib/franchise-shift-deposits').migrate(db);
  await db.exec('CREATE TABLE supply_products(id INTEGER PRIMARY KEY,name TEXT NOT NULL,uom TEXT NOT NULL,active BOOLEAN NOT NULL DEFAULT TRUE)');
  await db.exec('CREATE TABLE sales(id BIGSERIAL PRIMARY KEY,status TEXT NOT NULL DEFAULT \'Sold\')');
  await db.exec('CREATE TABLE branch_catalog_provisioning(workspace_id BIGINT NOT NULL,branch_id BIGINT NOT NULL,PRIMARY KEY(workspace_id,branch_id))');
@@ -67,6 +71,7 @@ async function setup(){
  await db.query('INSERT INTO chat_memberships VALUES(1,10),(2,20),(3,10),(4,20)');
  await db.query('INSERT INTO chat_workspace_branches VALUES(10,101),(20,201)');
  await db.query('INSERT INTO branch_catalog_provisioning VALUES(10,101),(20,201)');
+ await db.query("INSERT INTO public_franchise_requests(id,username,full_name,email,phone,status,created_at,updated_at,requested_plan) VALUES ('11111111-1111-4111-8111-111111111111','ownerA','Owner A','a@example.invalid','09111111111','ACTIVE',now()::text,now()::text,'PRO'),('22222222-2222-4222-8222-222222222222','ownerB','Owner B','b@example.invalid','09222222222','ACTIVE',now()::text,now()::text,'PRO')");
  await db.query("INSERT INTO franchise_test_accounts VALUES('11111111-1111-4111-8111-111111111111',1,10,101,now(),'OTP'),"+
   "('22222222-2222-4222-8222-222222222222',2,20,201,now(),'OTP')");
  await db.query("INSERT INTO platform_account_plans(workspace_id,status,plan,amount,base_amount) VALUES(10,'UNPAID','PRO',0,0),(20,'PAID','PRO',0,0)");
