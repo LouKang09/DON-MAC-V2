@@ -230,3 +230,10 @@ html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi:first-child
 html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi{min-height:6.5rem!important;padding:.65rem!important}
 html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi>strong{font-size:1.25rem!important}
 }
+
+/* Final screenshot review: reserve arrow space instead of covering KPI labels. */
+@media screen and (max-width:699px){
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label{padding-right:1.45rem!important;align-items:flex-start!important;min-width:0!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label>span:last-child{overflow-wrap:anywhere!important;white-space:normal!important;min-width:0!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-icon{flex:0 0 1.3rem!important;width:1.3rem!important;height:1.3rem!important}
+}
