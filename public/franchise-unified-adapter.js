@@ -14,7 +14,7 @@
   return options.body;
  };
  async function live(path,method='GET',body){
-  if(!/^\/api\/live\/[a-z0-9/?=&._%-]+$/i.test(path))throw fail('Invalid isolated POS request path.',400);
+  if(!/^\/api\/live\/[a-z0-9/._%-]+(?:\?[a-z0-9/?=&._%+\-]*)?$/i.test(path))throw fail('Invalid isolated POS request path.',400);
   const options={method,credentials:'same-origin',cache:'no-store',headers:{}};
   if(body!==undefined){options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
   let response;
