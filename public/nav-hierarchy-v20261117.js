@@ -111,7 +111,7 @@
    header.onclick=()=>{pane.hidden=!pane.hidden;header.setAttribute('aria-expanded',String(!pane.hidden));};
    wrap.append(header,pane);
    mobilePanel.appendChild(wrap);
-   if(def.name==='Team'){
+   if(def.name==='Team'&&!document.documentElement.classList.contains('dm-cashier-apk')){
     const messages=document.createElement('button');
     messages.type='button';messages.className='dm-mobile-expense-payroll';
     messages.dataset.mobileChatEntry='true';messages.textContent='Messages';
@@ -150,7 +150,7 @@
     const canMessage=window.donmacAuthenticatedRole==='Admin'||
       (window.donmacAuthenticatedRole==='User'&&
        (window.donmacCashierPermissions||[]).includes('messages.view'));
-    if(chat)chat.hidden=!canMessage;
+    if(chat)chat.hidden=!canMessage||document.documentElement.classList.contains('dm-cashier-apk');
     const hasVisible=[...group.querySelectorAll('.mobile-more-item')].some(x=>!x.classList.contains('hidden'))||
       !!(chat&&!chat.hidden);
     group.hidden=!hasVisible;

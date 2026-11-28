@@ -230,3 +230,97 @@ html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi:first-child
 html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi{min-height:6.5rem!important;padding:.65rem!important}
 html.dm-commercial-v2 body #officeApp #page-dashboard .warehouse-kpi>strong{font-size:1.25rem!important}
 }
+
+/* Final screenshot review: reserve arrow space instead of covering KPI labels. */
+@media screen and (max-width:699px){
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label{padding-right:1.45rem!important;align-items:flex-start!important;min-width:0!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label>span:last-child{overflow-wrap:anywhere!important;white-space:normal!important;min-width:0!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-icon{flex:0 0 1.3rem!important;width:1.3rem!important;height:1.3rem!important}
+}
+
+/* Approved visual direction: green brand surfaces, light workspaces. */
+@media screen{
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.topbar,.office-top){
+ background:#095b3d!important;color:#fff!important;border-bottom-color:#1e7855!important
+}
+html.dm-commercial-v2 body #app .topbar :is(.topbar-heading,.topbar-heading-copy,.topbar-right,#viewTitle,#viewEyebrow,#posDate,#clock,.pos-daily-count,.db-pill,#appVersion,.topbar-profile-text b,.topbar-profile-text small),
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.topbar,.office-top) :is(h1,.portal-eyebrow,.portal-date,.office-welcome){color:#fff!important}
+html.dm-commercial-v2 body #app .topbar :is(#topbarProfileButton,#whatsNewButton,#dashboardPrintReport,#accountSettingsTop),
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.office-mobile-toggle,.menu-toggle){
+ background:#ffffff14!important;border-color:#ffffff50!important;color:#fff!important
+}
+html.dm-commercial-v2 body #app .topbar :is(#topbarProfileButton,#whatsNewButton,#dashboardPrintReport,#accountSettingsTop) :is(svg,.dm-ua-icon,.dm-ua-context,span){color:#fff!important}
+html.dm-commercial-v2 body #app .topbar #topbarAvatar{background:#ffffff20!important;border-color:#ffffff50!important;color:#fff!important}
+html.dm-commercial-v2 body #app .topbar #accountSettingsTop .account-settings-gear-icon{filter:brightness(0) invert(1)!important}
+html.dm-commercial-v2 body #authScreen .auth-panel,
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden){background:#095b3d!important;color:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) :is(#authTitle,label,.auth-hint,.auth-remember,.auth-signup,.auth-text-action,.dm-v2-login-caption){color:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box{background:#ffffff12!important;border-color:#ffffff65!important;color:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) .auth-input-box>input{color:#fff!important;-webkit-text-fill-color:#fff!important;caret-color:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) .auth-input-box>input::placeholder{color:#c1ddd0!important;-webkit-text-fill-color:#c1ddd0!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) .auth-input-box>input:-webkit-autofill{box-shadow:0 0 0 60px #216d51 inset!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box :is(svg,.auth-password-toggle){color:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(#authSubmit,#platformLoginButton,#officeLoginButton){
+ background:#fff!important;color:#095b3d!important;border-color:#fff!important;border-radius:999px!important
+}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(#authSubmit,#platformLoginButton,#officeLoginButton):hover:not(:disabled){background:#e6f3eb!important;color:#095b3d!important;border-color:#e6f3eb!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(#authSubmit,#platformLoginButton,#officeLoginButton) :is(svg,span,.dm-ua-icon,.dm-ua-context){color:#095b3d!important}
+html.dm-commercial-v2.dm-native-exit-supported body #authScreen #authForm .dm-auth-exit{background:transparent!important;color:#fff!important;border:2px solid #ffffffa0!important;border-radius:999px!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(button,a,input):focus-visible{outline-color:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-card:not(.hidden) :is(.auth-help-message,.auth-hint)[role="alert"]{color:#ffe0de!important}
+/* Keep the product artwork and stock warnings; replace oversized category cards with a compact shelf. */
+html.dm-commercial-v2 body #app #view-pos .catalog-panel .catalog-tools{margin-bottom:.65rem!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs{gap:.45rem!important;margin-bottom:.75rem!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile{
+ background:#fff!important;border:1px solid #d9e5dd!important;border-radius:.8rem!important;box-shadow:none!important;
+ color:#214c39!important;min-width:0!important;padding:.6rem .4rem!important
+}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile.active{
+ background:#e1f0e6!important;border-color:#16734c!important;color:#095b3d!important;box-shadow:inset 0 -3px #16734c!important
+}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile :is(strong,small){color:inherit!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-status{display:none!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card:not(.promo):not(.package) .product-art{order:-1;display:grid!important;place-items:center;overflow:hidden}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .product-art img{width:100%!important;height:100%!important;object-fit:contain!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .price{display:flex!important;align-items:center;justify-content:space-between;gap:.15rem;width:100%;margin-top:auto!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product] .price{padding-right:1.4rem!important;box-sizing:border-box}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product]:not(:disabled) .product-add-circle{
+ display:grid!important;place-items:center;position:absolute!important;right:.42rem!important;bottom:.42rem!important;top:auto!important;left:auto!important;
+ border-radius:.45rem!important;background:#095b3d!important;color:#fff!important;width:1.25rem!important;height:1.25rem!important;font-size:1rem!important;font-weight:700!important;line-height:1!important;pointer-events:none!important
+}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product]:disabled .product-add-circle{display:none!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card.low-warning .product-add-circle{position:static!important;align-self:flex-end;margin-top:.15rem!important}
+
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .unavailable{white-space:normal!important;overflow-wrap:anywhere!important;font-size:.6rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .order-head{padding-bottom:.6rem!important;border-bottom:1px solid #e2ebe5!important;margin-bottom:.5rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .order-list .order-row{border:0!important;border-bottom:1px solid #e1eae4!important;background:transparent!important;border-radius:0!important;padding:.6rem .1rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .qty-control>button:not(.dm-cart-delete){background:#e8f2eb!important;color:#095b3d!important;border-color:#d9e9df!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .discount-box{background:#f7faf8!important;border-color:#dce6df!important;border-radius:.65rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .totals{margin-top:.4rem!important}
+}
+@media screen and (max-width:699px){
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading{margin:0 0 .4rem!important}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading .dm-v2-kicker{display:none}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading h2{font-size:1rem!important;margin:0!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs{
+ display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;justify-content:flex-start!important;scroll-snap-type:x proximity
+}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile{
+ flex:0 0 calc((100% - 1.35rem)/4)!important;min-width:4.2rem!important;max-width:none!important;height:auto!important;min-height:3.5rem!important;
+ padding:.3rem .2rem!important;gap:.15rem!important;scroll-snap-align:start
+}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile .category-symbol{width:1.65rem!important;height:1.65rem!important;min-height:0!important;max-height:1.65rem!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile .category-symbol :is(img,svg,.dm-ua-icon){width:100%!important;height:100%!important;object-fit:contain!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile strong{font-size:.65rem!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.15!important;text-align:center!important}
+html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-tile small{display:none!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;min-height:7.2rem!important;gap:.2rem!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card h4{font-size:.72rem!important;line-height:1.2!important;white-space:normal!important;margin:0!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .cat{font-size:.56rem!important;line-height:1.1!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .price{font-size:.83rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .order-head h3{font-size:1.08rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .order-type-switch>button{font-size:.72rem!important;padding:.4rem .2rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .pos-customer-fields label{font-size:.7rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .pos-customer-fields input{min-height:2.2rem!important;font-size:.75rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .totals{padding:.6rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel #payButton{min-height:2.8rem!important}
+}
