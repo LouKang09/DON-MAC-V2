@@ -22,6 +22,7 @@ jobs:
       - name: Syntax and report scope tests
         run: |
           npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+          node scripts/commercial-release-integrity-test.js
           node --check server.js
           node --check public/app-core.js
           node --check public/franchise-unified-adapter.js
@@ -88,8 +89,8 @@ jobs:
             set -e
             echo "$test baseline=$base candidate=$candidate"
             if [[ "$candidate" != 0 ]]; then
-              base_error=$(grep -m1 -E 'AssertionError|Error:' /tmp/base.log || true)
-              new_error=$(grep -m1 -E 'AssertionError|Error:' /tmp/new.log || true)
+              base_error=$(grep -m1 -E '^(AssertionError|TypeError|ReferenceError|SyntaxError|Error):? ' /tmp/base.log || true)
+              new_error=$(grep -m1 -E '^(AssertionError|TypeError|ReferenceError|SyntaxError|Error):? ' /tmp/new.log || true)
               printf 'BASE: %s\nCANDIDATE: %s\n' "$base_error" "$new_error"
               if [[ "$base" == 0 || "$base_error" != "$new_error" || -z "$new_error" ]]; then
                 cat /tmp/new.log
