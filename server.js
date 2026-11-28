@@ -811,20 +811,30 @@ function reportParams(params){
   return {period,target:raw,cashier,cashiers};
 }
 async function periodSales(params){
-  const {period,target,cashier,cashiers}=reportParams(params);
+  const staff=params.user?.role==='User';
+  const {period,target,cashier,cashiers}=reportParams(staff?{...params,cashier:'',cashiers:''}:params);
+  let earliest=null;
+  if(staff){
+    const grants=await cashierAccess.forUser(db,params.user);
+    if(!grants.includes('reports.view')&&!(params.dashboardPrint&&grants.includes('dashboard.view')))throw Object.assign(new Error('Sales Report access has not been granted by your Owner.'),{status:403});
+    const maxDays=cashierAccess.windowDays(grants),today=historicalSales.today();
+    if(target!==today||({daily:1,weekly:7,monthly:30}[period]||Infinity)>maxDays)throw Object.assign(new Error('This report exceeds your Owner-approved history limit.'),{status:403});
+    earliest=new Date(Date.parse(today+'T00:00:00Z')-(maxDays-1)*86400000).toISOString().slice(0,10);
+  }
   const access=await historicalSales.policy(db,params.user);
   const workspaceId=access.workspaceId,cutoff=access.cutoffUtc;
   const args=[workspaceId,cutoff,...(params.branchId==null?[]:[Number(params.branchId)])];
   const result=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name
     FROM sales s LEFT JOIN promos p ON p.id=s.promo_id
     WHERE EXISTS (SELECT 1 FROM chat_workspace_branches w WHERE w.workspace_id=$1 AND w.branch_id=s.branch_id)
-    AND s.sold_at >= $2`+(params.branchId==null?'':' AND s.branch_id=$3')+' ORDER BY s.sold_at ASC',args);
+    AND s.sold_at >= $2`+(params.branchId==null?'':' AND s.branch_id=$3')+(staff?' AND s.cashier_user_id=$'+args.push(Number(params.user.id)):'')+' ORDER BY s.sold_at ASC',args);
   const selected=new Set(cashiers);
-  const eligible=result.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&
+  const eligible=result.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&(!earliest||manilaDateString(s.sold_at)>=earliest)&&
     (!selected.size||selected.has(normalize(s.cashier_name_snapshot))));
-  return{period,target,cashier,cashiers,eligible,sold:eligible.filter(s=>s.status==='Sold')};
+  return{period,target,cashier:staff?params.user.username:cashier,cashiers,eligible,earliest,sold:eligible.filter(s=>s.status==='Sold')};
 }
 async function reportCashierChoices(branchId,user){
+  if(user.role!=='Admin')return{cashiers:[user.username]};
   const policy=await historicalSales.policy(db,user);
   if(branchId!=null)await ensureBranchInOwnerWorkspace(user,branchId);
   const sql='SELECT DISTINCT u.username AS cashier FROM users u '+
@@ -857,7 +867,7 @@ async function salesReport(params){
   }));
   const deposited=await reportFinancialPrivacy.depositedAmount(db,{
     workspaceId:await workspaceIdForUser(params.user.id),
-    branchId:params.branchId??null,from:reportDates.from,to:reportDates.to
+    branchId:params.branchId??null,from:scope.earliest&&scope.earliest>reportDates.from?scope.earliest:reportDates.from,to:reportDates.to,cashierUserId:params.user.role==='User'?params.user.id:null
   });
   const voided=scope.eligible.filter(s=>s.status==='Deleted');
   const refund=money(voided.reduce((a,s)=>a+Number(s.actual||0),0));
@@ -2469,44 +2479,10 @@ async function handleApi(req,res,url){
         await cashierAccess.forUser(db,{id:user.id,role:'User'});
       if(!franchiseLive.admin&&!grants.includes('dashboard.view')&&!grants.includes('reports.view'))
         throw Object.assign(new Error('Dashboard or sales report access is required to print.'),{status:403});
-      const branch=await franchiseLiveScope.branch(db,franchiseLive,franchiseLive.branchId);
-      const report=await franchiseLiveSales.report(db,franchiseLive,{branchId:branch.id,range:'day'});
-      const summary=(await db.query(
-        "SELECT COALESCE(SUM(gross),0) AS gross,COALESCE(SUM(actual),0) AS actual,"+
-        "COUNT(*) AS transaction_count FROM branch_live_sales "+
-        "WHERE workspace_id=$1 AND branch_id=$2 AND status='Sold' AND sold_at>=$3",
-        [franchiseLive.workspaceId,branch.id,report.since])).rows[0]||{};
-      const gross=Number(summary.gross||0),actual=Number(summary.actual||0);
-      const productGross=report.products.reduce((n,x)=>n+Number(x.gross||0),0);
-      const products=report.products.map(x=>{
-        const productActual=productGross>0?Number(x.gross)*actual/productGross:0;
-        return{name:x.name,qty:x.qty,gross:x.gross,adjusted:Number(x.gross)-productActual,
-          actual:productActual,costing:x.costing,net:productActual-Number(x.costing||0)};
-      });
-      const now=new Date();
-      const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',
-        year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
-      const filename='Sales_Daily_'+today+'.pdf';
-      const [soldCost,deposited]=await Promise.all([
-        dashboardFinancials.liveIngredientCost(db,franchiseLive.workspaceId,[branch.id],
-          report.since,new Date().toISOString()),
-        reportFinancialPrivacy.depositedAmount(db,{
-          workspaceId:franchiseLive.workspaceId,branchId:branch.id,
-          from:today,to:new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10)
-        })
-      ]);
-      const payload={period:'daily',target:today,cashier:franchiseLive.admin?'ALL':user.username,
-        transactionCount:Number(summary.transaction_count||0),deletedCount:0,
-        depositedAmount:deposited.amount,inStoreExpenses:soldCost,
-        gross,adjustment:gross-actual,actual,products:franchiseLive.admin?
-          products:products.map(reportFinancialPrivacy.publicProduct),
-        promos:report.promos,transactions:[]};
-      const lines=salesReportLines(payload,'Don Macchiatos - '+branch.name+' - Daily Sales Report',
-        {includeTransactions:false,includeCosting:franchiseLive.admin,costLabel:'In-Store Expense'});
-
-      const pdf=makePdf(lines,{title:'Daily Branch Sales Report'});
-      return binary(res,200,pdf,'application/pdf',
-        {'Content-Disposition':(cashierApp(req)?'attachment':'inline')+'; filename="'+filename+'"','Cache-Control':'no-store'});
+      const query=new URLSearchParams({period:'daily',date:historicalSales.today(),branchId:String(franchiseLive.branchId)});
+      const document=await franchiseLiveExports.pdfReport(db,franchiseLive,user,query,'sales',{dashboardPrint:true});
+      return binary(res,200,document.buffer,'application/pdf',
+        {'Content-Disposition':(cashierApp(req)?'attachment':'inline')+'; filename="'+document.filename+'"','Cache-Control':'no-store'});
     }
     // Report file responses must be emitted as binary, never passed through
     // JSON or the globally-shared report handlers below.
@@ -2716,7 +2692,7 @@ async function handleApi(req,res,url){
     return json(res,200,await reportCashierChoices(branchId,user),safeHeaders());
   }
   if(method==='GET'&&p==='/api/reports/sales'){
-    const report=await salesReport({...Object.fromEntries(url.searchParams),
+    const report=await salesReport({...Object.fromEntries(url.searchParams),dashboardPrint:false,
       branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});
     return json(res,200,user.role==='Admin'?report:reportFinancialPrivacy.staffReport(report),
       safeHeaders({'Cache-Control':'no-store'}));
@@ -2730,10 +2706,10 @@ async function handleApi(req,res,url){
     // Dashboard staff action: daily PDF for the authenticated user's assigned branch.
     // Do not trust client-provided branch or date values for this shortcut.
     const ownBranch=await branchSupport.salesScope(db,user,null);
-    const d=await salesPdf({period:'daily',branchId:ownBranch,user});
+    const d=await salesPdf({period:'daily',branchId:ownBranch,user,dashboardPrint:true});
     return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`${cashierApp(req)?'attachment':'inline'}; filename="${d.filename}"`});
   }
-  if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
+  if(method==='GET'&&p==='/api/reports/sales.pdf'){const d=await salesPdf({...Object.fromEntries(url.searchParams),dashboardPrint:false,branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
   if(method==='GET'&&p==='/api/reports/costing.pdf'){
     if(user.role!=='Admin')throw Object.assign(new Error('Ingredient costing report downloads are Owner/Admin-only.'),{status:403});
     const d=await costingPdf({...Object.fromEntries(url.searchParams),branchId:await branchSupport.salesScope(db,user,url.searchParams.get('branchId')),user});return binary(res,200,d.buffer,'application/pdf',{'Content-Disposition':`attachment; filename="${d.filename}"`});}
