@@ -253,10 +253,17 @@
     }
     window.donmacCashierPermissions=isAdmin?[]:[...userGrants];
     $('reportCashierSelect')?.classList.toggle('hidden',!isAdmin);
+    $('reportCashierField').classList.toggle('hidden',!isAdmin);
+    $('reportCashierField').inert=!isAdmin;
+    $('reportDateField').classList.toggle('hidden',!isAdmin);
+    $('reportDate').disabled=!isAdmin;
+    reportCashierUI.request++;reportCashierUI.selected.clear();reportCashierUI.choices=[];
+    $('reportCashierSelect').open=false;renderReportCashierChoices();
+    if(isAdmin)for(const option of $('reportPeriod').options){option.disabled=false;option.hidden=false;}
     if(!isAdmin){
       const maxDays=userGrants.includes('report.window.month')?30:userGrants.includes('report.window.week')?7:1;
       const options={daily:1,weekly:7,monthly:30};
-      for(const option of $('reportPeriod')?.options||[])option.disabled=!options[option.value]||options[option.value]>maxDays;
+      for(const option of $('reportPeriod')?.options||[]){option.disabled=!options[option.value]||options[option.value]>maxDays;option.hidden=option.disabled;}
       if($('reportPeriod')?.selectedOptions[0]?.disabled)$('reportPeriod').value='daily';
       if($('reportDate')){$('reportDate').value=manilaToday();$('reportDate').disabled=true;}
       if($('trendView')){
@@ -296,7 +303,7 @@
     }
     if($('replenishEntryType')){
       const initial=$('replenishEntryType').querySelector('option[value="INITIAL_STOCK"]');
-      if(initial)initial.disabled=!isAdmin;
+      if(initial){initial.disabled=!isAdmin;initial.hidden=!isAdmin;}
       if(!isAdmin&&$('replenishEntryType').value==='INITIAL_STOCK')
         $('replenishEntryType').value='DIRECT_REPLENISH';
     }
@@ -412,12 +419,14 @@
       ' plan · awaiting Admin Control approval. Your current '+(business?'Business':'Pro')+
       ' subscription stays unchanged until approved.':
       'Choose a different plan and click Update Plan to send a request. Admin Control alone approves the new plan and verifies payment.';
-    $('transferPlanGate').classList.toggle('hidden',business);
+    $('transferPlanGate').classList.toggle('hidden',business||!admin);
+    $('transferUpgradeButton').classList.toggle('hidden',!admin);
     $('transferUpgradeInformation')?.classList.add('hidden');
     $('inventoryTransferTab').disabled=!business;
     $('inventoryTransferTab').title=business?'Transfer Inventory':'Request an approved Business plan in Account Settings.';
     const card=$('inventoryTransferTab').closest('.inv-operation-card');
     card?.classList.toggle('plan-locked',!business);
+    card?.classList.toggle('hidden',!admin&&!business);
     if(!business){
       closeTransferEditorIfOpen();$('transferForm').classList.add('hidden');
       $('inventoryTransferTab').classList.remove('active');
@@ -530,7 +539,7 @@
   async function loadDevSubscription(){
     if(!state.user)return;
     try{state.subscription=await api('/api/account/subscription');renderDevSubscription();}
-    catch(error){$('inventoryTransferTab').disabled=true;$('transferPlanGate').classList.remove('hidden');toast('Subscription: '+error.message);}
+    catch(error){$('inventoryTransferTab').disabled=true;const admin=state.user?.role==='Admin';$('transferPlanGate').classList.toggle('hidden',!admin);$('inventoryTransferTab').closest('.inv-operation-card')?.classList.toggle('hidden',!admin);if(admin)toast('Subscription: '+error.message);}
   }
   $('accountPlanSelect').addEventListener('change',()=>renderAccountBranchPricing(state.subscription));
   async function requestPlanUpdate(plan){
@@ -1829,6 +1838,7 @@
     ).join('')||'<p class="report-cashier-empty">No recorded cashiers for this branch yet.</p>';
   }
   async function loadReportCashiers(reset=false){
+    if(state.user?.role!=='Admin')return;
     if(reset)reportCashierUI.selected.clear();
     const request=++reportCashierUI.request;
     const q=new URLSearchParams();
@@ -1836,14 +1846,14 @@
       q.set('branchId',$('reportBranch').value);
     try{
       const response=await api('/api/reports/cashiers?'+q);
-      if(request!==reportCashierUI.request)return;
+      if(request!==reportCashierUI.request||state.user?.role!=='Admin')return;
       reportCashierUI.choices=(response.cashiers||[]).filter(x=>typeof x==='string');
       const choices=new Set(reportCashierUI.choices);
       for(const chosen of reportCashierUI.selected)
         if(!choices.has(chosen))reportCashierUI.selected.delete(chosen);
       renderReportCashierChoices();
     }catch(err){
-      if(request!==reportCashierUI.request)return;
+      if(request!==reportCashierUI.request||state.user?.role!=='Admin')return;
       $('reportCashierList').innerHTML='<p class="report-cashier-empty">Could not load cashier list.</p>';
       toast('Cashier options: '+err.message);
     }
@@ -1892,7 +1902,7 @@
     });
     // JSON, rather than comma-separated names, preserves spaces and punctuation
     // and applies the same selection to the on-screen report and both PDFs.
-    if(reportCashierUI.selected.size)
+    if(state.user?.role==='Admin'&&reportCashierUI.selected.size)
       qs.set('cashiers',JSON.stringify([...reportCashierUI.selected]));
     if(state.user?.role==='Admin'&&$('reportBranch').value!=='all')
       qs.set('branchId',$('reportBranch').value);
