@@ -14,7 +14,63 @@ const server=http.createServer((req,res)=>{
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end();}
  res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream'});fs.createReadStream(file).pipe(res);
 });
-const sizes=[[320,640],[360,800],[390,844],[430,932],[699,900],[700,900],[768,1024],[1024,768],[1280,800],[1440,900],[1920,1080]];
+const sizes=[[320,480],[320,640],[360,800],[390,844],[430,932],[699,900],[700,900],[768,1024],[1024,480],[1024,768],[1280,800],[1440,900],[1920,1080]];
+// Compare identical CSS viewport geometry with and without native Android exit.
+async function phase3Phone(page,width,height){
+ const result=await page.evaluate(({width,height})=>{
+  const $=id=>document.getElementById(id);
+  const rect=el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
+  const root=document.documentElement,app=$('app'),auth=$('authScreen');
+  root.classList.add('dm-phone-layout','dm-cashier-role');
+  document.body.classList.remove('legacy-authenticated');document.body.classList.add('auth-locked');
+  app.classList.add('hidden');app.inert=true;app.setAttribute('aria-hidden','true');auth.classList.remove('hidden');
+  const modes=[];
+  for(const apk of [false,true]){
+   root.classList.toggle('dm-cashier-apk',apk);root.classList.toggle('dm-native-exit-supported',apk);
+   $('authSignupPrompt')?.classList.toggle('hidden',apk);
+   const login={shell:rect(auth.querySelector('.auth-shell')),signIn:rect($('authSubmit')),exit:getComputedStyle(auth.querySelector('.dm-auth-exit')).display,hiddenApp:getComputedStyle(app).display};
+   document.body.classList.add('legacy-authenticated');document.body.classList.remove('auth-locked');
+   app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');auth.classList.add('hidden');
+   document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-pos'));
+   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
+   $('viewTitle').textContent='Welcome to Don Macchiatos POS';
+   $('catalogGrid').innerHTML=Array.from({length:10},(_,i)=>'<button class="product-card"><h4>Product '+i+'</h4><strong>₱99.00</strong></button>').join('');
+   const grid=$('catalogGrid'),cards=[...grid.children].map(rect),main=app.querySelector('main.main'),nav=$('mobileBottomNav');
+   const before=grid.scrollLeft;grid.scrollLeft=100;const after=grid.scrollLeft;grid.scrollLeft=0;
+   main.scrollTop=main.scrollHeight;const pay=rect($('payButton')),navBox=rect(nav);main.scrollTop=0;
+   const pos={main:rect(main),grid:rect(grid),cards,scrollWidth:grid.scrollWidth,clientWidth:grid.clientWidth,scrolled:after>before,pay,nav:navBox,title:rect($('viewTitle')),titleScroll:$('viewTitle').scrollHeight,titleClient:$('viewTitle').clientHeight};
+   const dialog=$('transactionDialog');
+   $('transactionDetailBody').innerHTML='<details open class="transaction-section transaction-details"><summary>Inventory Impact</summary><div class="table-wrap"><table><tbody><tr>'+Array.from({length:9},(_,i)=>'<td>Movement column '+i+'</td>').join('')+'</tr></tbody></table></div></details>';
+   dialog.showModal();const wrapper=dialog.querySelector('.table-wrap');
+   wrapper.scrollLeft=100;
+   const detail={box:rect(dialog),wrapper:rect(wrapper),scrollWidth:wrapper.scrollWidth,clientWidth:wrapper.clientWidth,scrolled:wrapper.scrollLeft>0};
+   dialog.close();
+   modes.push({apk,login,pos,detail});
+   document.body.classList.remove('legacy-authenticated');document.body.classList.add('auth-locked');app.classList.add('hidden');app.inert=true;app.setAttribute('aria-hidden','true');auth.classList.remove('hidden');
+  }
+  root.classList.remove('dm-cashier-apk','dm-native-exit-supported');
+  return {width:innerWidth,height:innerHeight,modes};
+ },{width,height});
+ console.log('PHASE3 PHONE',width,height,JSON.stringify(result));
+ for(const m of result.modes){
+  assert.equal(m.login.hiddenApp,'none','Login must never reveal POS');
+  assert(m.login.shell.w>0&&m.login.shell.right<=width+2,'Login fits phone');
+  assert(m.login.signIn.w>0&&m.login.signIn.right<=width+2,'Sign in fits phone');
+  assert.equal(m.login.exit==='none',!m.apk,'Only native supported APK gets exit');
+  assert(m.pos.grid.right<=width+2,'Catalog fits phone');
+  assert(m.pos.scrolled&&m.pos.scrollWidth>m.pos.clientWidth,'Product catalog can scroll horizontally');
+  const rows=[...new Set(m.pos.cards.map(c=>Math.round(c.y)))];
+  assert.equal(rows.length,2,'Catalog uses two rows');
+  assert(m.pos.cards[4].right<=m.pos.grid.right+2,'At least three columns fit');
+  assert(m.pos.cards[6].right>m.pos.grid.right,'Additional columns scroll beyond first six');
+  assert(m.pos.titleScroll<=m.pos.titleClient+2,'Full heading visible without vertical clipping');
+  assert(m.pos.pay.bottom<=m.pos.nav.y+2,'Pay button reachable above fixed nav');
+  assert(m.detail.box.right<=width+2,'Detail dialog fits viewport');
+  assert(m.detail.scrolled&&m.detail.scrollWidth>m.detail.clientWidth,'Inventory impact scrolls horizontally');
+ }
+ assert(Math.abs(result.modes[0].pos.grid.w-result.modes[1].pos.grid.w)<1,'Browser/APK catalog geometry identical at same CSS width');
+ assert(Math.abs(result.modes[0].login.shell.w-result.modes[1].login.shell.w)<1,'Browser/APK login width identical');
+}
 async function run(){
  const port=await new Promise(r=>server.listen(0,'127.0.0.1',()=>r(server.address().port)));
  const browser=await puppeteer.launch({executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -26,6 +82,7 @@ async function run(){
     if([...document.styleSheets].some(s=>s.href&&new URL(s.href).pathname===new URL(url,location.origin).pathname))continue;
     await new Promise(resolve=>{const link=document.createElement('link');link.rel='stylesheet';link.href=url;link.onload=link.onerror=resolve;document.head.append(link);});
    }},dynamicCss);
+   if(width<700)await phase3Phone(page,width,height);
    for(const role of ['Admin','User']){
     const data=await page.evaluate(({role,width})=>{
      const $=id=>document.getElementById(id),app=$('app');document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');
