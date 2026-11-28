@@ -106,8 +106,8 @@
    const pane=document.createElement('div');pane.className='dm-mobile-nav-group-items';
    pane.id='dmMobile'+def.name;
    header.setAttribute('aria-controls',pane.id);
-   header.setAttribute('aria-expanded',String(def.name==='Transactions'));
-   pane.hidden=def.name!=='Transactions';
+   header.setAttribute('aria-expanded','false');
+   pane.hidden=true;
    header.onclick=()=>{pane.hidden=!pane.hidden;header.setAttribute('aria-expanded',String(!pane.hidden));};
    wrap.append(header,pane);
    mobilePanel.appendChild(wrap);
@@ -137,6 +137,12 @@
     }
    });
    mobileGroups.push(wrap);
+  });
+  // Reset Transactions whenever the drawer opens, not while the user is interacting with it.
+  $('mobileMoreButton')?.addEventListener('click',()=>{
+   if(!mobilePanel.classList.contains('hidden'))return;
+   const pane=$('dmMobileTransactions');
+   if(pane){pane.hidden=true;pane.parentElement?.querySelector('.dm-mobile-nav-group-toggle')?.setAttribute('aria-expanded','false');}
   });
   const syncMobile=()=>{
    for(const group of mobileGroups){
