@@ -306,7 +306,8 @@
    // Staff cannot enumerate other branches or private employee accounts.
    if(state.user?.role==='User')return{cashiers:[state.user.username]};
    const r=await live('/api/live/cashiers');
-   return{cashiers:(r.cashiers||[]).map(x=>x.username)};
+   const branch=url.searchParams.get('branchId');
+   return{cashiers:(r.cashiers||[]).filter(x=>!branch||branch==='all'||Number(x.branchId)===Number(branch)).map(x=>x.username)};
   }
   if(p==='/api/system-logs'&&method==='GET'){
    const limit=Number(url.searchParams.get('limit')||200);
