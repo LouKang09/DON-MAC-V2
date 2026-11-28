@@ -114,8 +114,48 @@ async function phase4Navigation(page){
  assert.equal(await page.$eval('#mobileMoreButton',el=>el.getAttribute('aria-expanded')),'false');
  console.log('PASS Phase 4 mobile navigation: attendance, More, collapsed Transactions and Escape');
 }
+// Render the actual stylesheet on real markup. Values below are synthetic,
+// not franchise data; capture screenshots for visual review in Actions.
+async function visualV2(page,width,height){
+ const data=await page.evaluate(()=>{
+  const $=id=>document.getElementById(id),app=$('app'),auth=$('authScreen');
+  const bg=e=>getComputedStyle(e).backgroundColor;
+  const rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}};
+  document.documentElement.classList.toggle('dm-phone-layout',innerWidth<700);
+  document.documentElement.classList.toggle('dm-native-exit-supported',innerWidth<700);
+  document.body.classList.remove('legacy-authenticated');document.body.classList.add('auth-locked');app.classList.add('hidden');app.setAttribute('aria-hidden','true');app.inert=true;auth.classList.remove('hidden');
+  const login={form:bg($('authForm')),title:getComputedStyle($('authTitle')).color,submit:bg($('authSubmit')),exit:bg(auth.querySelector('.dm-auth-exit')),signIn:rect($('authSubmit'))};
+  return login;
+ });
+ assert.equal(data.form,'rgb(255, 255, 255)','V2 sign-in surface is white');
+ assert.equal(data.title,'rgb(20, 47, 37)','V2 sign-in title contrast');
+ assert.equal(data.submit,'rgb(9, 91, 61)','V2 sign-in primary green');
+ if(width<700)assert.equal(data.exit,'rgb(255, 255, 255)','Native exit uses outlined pill');
+ if(width===360||width===1440)await page.screenshot({path:'commercial-visual-review/login-'+width+'.png'});
+ const dashboard=await page.evaluate(()=>{
+  const $=id=>document.getElementById(id),app=$('app');
+  document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');app.classList.remove('hidden');app.removeAttribute('aria-hidden');app.inert=false;$('authScreen').classList.add('hidden');document.documentElement.classList.remove('dm-native-exit-supported','dm-cashier-role');
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-dashboard'));
+  $('viewTitle').textContent='Dashboard';
+  $('dashboardSummary').innerHTML=['revenue','orders','today','month','expenses','deposited','discount','alerts'].map((key,i)=>'<button type="button" class="summary-card dm-kpi-button'+(i===0?' dash-financial-card':'')+'" data-dm-kpi="'+key+'"><div class="dash-card-main"><div class="dash-summary-label"><span class="dash-summary-icon">◉</span><span>'+['Total Revenue','Orders','Today Sales','Month Revenue','Store Expenses','Deposited Sales','Discount','Low Stock Alerts'][i]+'</span></div><strong>'+([1,7].includes(i)?'24':'₱12,450.00')+'</strong><small>Sample reporting period</small></div>'+(i===0?'<div class="dash-gross-net"><span>Gross <b>₱16,450.00</b></span><span>Net <b>₱12,450.00</b></span></div>':'')+'<span class="dm-kpi-arrow">›</span></button>').join('');
+  const cards=[...$('dashboardSummary').children],rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,right:r.right}};
+  return {header:getComputedStyle(document.querySelector('#app .topbar')).backgroundColor,revenue:getComputedStyle(cards[0]).backgroundColor,card:getComputedStyle(cards[1]).backgroundColor,layout:getComputedStyle(cards[0]).flexDirection,grid:rect($('dashboardSummary')),cards:cards.map(rect),nav:getComputedStyle($('mobileBottomNav')).backgroundColor};
+ });
+ assert.equal(dashboard.header,'rgb(255, 255, 255)','V2 light header overrides legacy theme');
+ assert.equal(dashboard.revenue,'rgb(9, 91, 61)','V2 featured revenue card');
+ assert.equal(dashboard.card,'rgb(255, 255, 255)','V2 secondary card');
+ assert.equal(dashboard.layout,'column','V2 KPI has vertical hierarchy');
+ assert(dashboard.cards.every(c=>c.right<=width+2),'Dashboard KPI cards fit viewport');
+ if(width<700){
+  assert.equal(dashboard.nav,'rgb(255, 255, 255)','V2 light mobile navigation');
+  assert(dashboard.cards[0].w>dashboard.cards[1].w,'Featured mobile revenue occupies full width');
+ }
+ if(width===360||width===1440)await page.screenshot({path:'commercial-visual-review/dashboard-'+width+'.png'});
+ console.log('PASS V2 visual hierarchy',width,height,JSON.stringify({login:data,dashboard}));
+}
 async function run(){
  const port=await new Promise(r=>server.listen(0,'127.0.0.1',()=>r(server.address().port)));
+ fs.mkdirSync('commercial-visual-review',{recursive:true});
  const browser=await puppeteer.launch({executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
   for(const [width,height] of sizes){
@@ -125,8 +165,10 @@ async function run(){
     if([...document.styleSheets].some(s=>s.href&&new URL(s.href).pathname===new URL(url,location.origin).pathname))continue;
     await new Promise(resolve=>{const link=document.createElement('link');link.rel='stylesheet';link.href=url;link.onload=link.onerror=resolve;document.head.append(link);});
    }},dynamicCss);
+   if(width===360||width===1440)await visualV2(page,width,height);
    if(width<700)await phase3Phone(page,width,height);
    if(width===360&&height===800)await phase4Navigation(page);
+   if(width===360){await page.evaluate(()=>{const app=document.getElementById('app');app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');document.body.classList.add('legacy-authenticated');document.body.classList.remove('auth-locked');document.getElementById('authScreen').classList.add('hidden');document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-pos'));});await page.screenshot({path:'commercial-visual-review/pos-360.png'});}
    for(const role of ['Admin','User']){
     const data=await page.evaluate(({role,width})=>{
      const $=id=>document.getElementById(id),app=$('app');document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');
@@ -153,6 +195,7 @@ async function run(){
     await page.goto('http://127.0.0.1:'+port+'/'+file,{waitUntil:'domcontentloaded'});
     const g=await page.evaluate(({app,main})=>{const el=document.querySelector(app);el.classList.remove('hidden');el.inert=false;const r=el.querySelector(main).getBoundingClientRect();return {viewport:innerWidth,width:r.width,right:r.right,canvas:getComputedStyle(el.querySelector(main)).backgroundImage};},{app,main});
     console.log('OFFICE',file,width,JSON.stringify(g));assert(g.width>0&&g.right<=g.viewport+2,'office main fits '+width);assert.equal(g.canvas,'none');
+    if(width===1440||width===360){const palette=await page.evaluate(({app})=>{const el=document.querySelector(app);const header=el.querySelector('.office-top,.topbar');return getComputedStyle(header).backgroundColor;},{app});assert.equal(palette,'rgb(255, 255, 255)','V2 office/admin light header');await page.screenshot({path:'commercial-visual-review/'+file.replace('.html','')+'-'+width+'.png'});}
    }
    await page.close();
   }
