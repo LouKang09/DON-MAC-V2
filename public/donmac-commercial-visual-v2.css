@@ -1,0 +1,196 @@
+/* Commercial visual redesign v2. Explicit screen hierarchy, not just tokens.
+   Existing role, subscription, navigation, stock and payment states are authoritative. */
+html.dm-commercial-v2{
+ --dm-v2-ink:#142f25;--dm-v2-muted:#60756a;--dm-v2-canvas:#f2f5f3;--dm-v2-card:#fff;
+ --dm-v2-line:#dce6df;--dm-v2-green:#095b3d;--dm-v2-forest:#123e2c;--dm-v2-soft:#e9f4ed;
+ --dm-v2-shadow:0 3px 14px rgba(27,62,44,.055);--dm-v2-radius:1rem
+}
+@media screen{
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp):not(.hidden) :is(main.main,.office-main,.content){
+ background:var(--dm-v2-canvas)!important;background-image:none!important;color:var(--dm-v2-ink)
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.sidebar,.office-side){
+ background:var(--dm-v2-forest)!important;background-image:none!important;
+ border-color:#214c39!important;box-shadow:none!important
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.sidebar,.office-side) :is(.nav.active,.side-link.active){
+ background:#2a6248!important;border-color:transparent!important;color:#fff!important;border-radius:.65rem!important
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.topbar,.office-top){
+ background:#fff!important;background-image:none!important;color:var(--dm-v2-ink)!important;
+ border-bottom:1px solid var(--dm-v2-line)!important;box-shadow:0 2px 9px #123e2c08!important
+}
+html.dm-commercial-v2 body #app .topbar :is(.topbar-heading,.topbar-heading-copy,.topbar-right,#viewTitle,#viewEyebrow,#posDate,#clock,.pos-daily-count,.db-pill,#appVersion,.topbar-profile-text b,.topbar-profile-text small){
+ color:var(--dm-v2-ink)!important;text-shadow:none!important
+}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.topbar,.office-top) :is(h1,.portal-eyebrow,.portal-date,.office-welcome){
+ color:var(--dm-v2-ink)!important;text-shadow:none!important
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.topbar-logo,.portal-logo){
+ border:1px solid var(--dm-v2-line)!important;background:#fff!important;box-shadow:none!important;border-radius:.7rem!important
+}
+html.dm-commercial-v2 body #app .topbar :is(#topbarProfileButton,#whatsNewButton,#dashboardPrintReport,#accountSettingsTop){
+ background:var(--dm-v2-soft)!important;border-color:var(--dm-v2-line)!important;color:var(--dm-v2-green)!important;box-shadow:none!important
+}
+html.dm-commercial-v2 body #app .topbar :is(#topbarProfileButton,#whatsNewButton,#dashboardPrintReport,#accountSettingsTop) :is(svg,.dm-ua-icon,.dm-ua-context,span){
+ color:var(--dm-v2-green)!important
+}
+html.dm-commercial-v2 body #app .topbar :is(#topbarProfileButton,#whatsNewButton,#dashboardPrintReport,#accountSettingsTop) svg{stroke:currentColor!important}
+html.dm-commercial-v2 body #app .topbar #topbarAvatar{background:#dcece1!important;color:var(--dm-v2-green)!important;border-color:#cfdfd5!important}
+html.dm-commercial-v2 body #app .topbar #accountSettingsTop .account-settings-gear-icon{filter:none!important}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.office-mobile-toggle,.menu-toggle){
+ background:var(--dm-v2-soft)!important;color:var(--dm-v2-green)!important;border-color:var(--dm-v2-line)!important
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.card,.catalog-panel,.order-panel,.panel,.main-card,.warehouse-chart-panel){
+ background-color:#fff!important;border-color:var(--dm-v2-line)!important;border-radius:var(--dm-v2-radius)!important;box-shadow:var(--dm-v2-shadow)!important
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) :is(.card-head,.panel-head,.section-header) :is(h2,h3){
+ color:var(--dm-v2-ink)!important;font-weight:750!important;letter-spacing:-.025em!important
+}
+html.dm-commercial-v2 body #app .main>.view>:is(h2,h3),
+html.dm-commercial-v2 body #app #view-dashboard .plan-widget-heading h3{
+ color:var(--dm-v2-ink)!important;background:transparent!important;text-shadow:none!important;padding:0!important
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) .dm-v2-section-heading{
+ margin:0 0 1rem;min-width:0;display:flex;align-items:flex-end;justify-content:space-between;gap:.75rem;flex-wrap:wrap
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) .dm-v2-section-heading h2{
+ margin:.2rem 0 .15rem;color:var(--dm-v2-ink);font-size:clamp(1.25rem,1.1rem + .65vw,1.7rem);font-weight:800;letter-spacing:-.035em;line-height:1.2
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) .dm-v2-kicker{
+ font-size:.65rem;font-weight:750;letter-spacing:.13em;text-transform:uppercase;color:var(--dm-v2-green)
+}
+html.dm-commercial-v2 body :is(#app,#officeApp,#platformApp) .dm-v2-section-heading p{margin:0;color:var(--dm-v2-muted);font-size:.8rem;line-height:1.4}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary{gap:.8rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card{
+ position:relative!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ justify-content:space-between!important;gap:.65rem!important;text-align:left!important;padding:1rem!important;
+ min-height:9rem!important;background:#fff!important;border:1px solid var(--dm-v2-line)!important;
+ border-radius:1rem!important;box-shadow:var(--dm-v2-shadow)!important;color:var(--dm-v2-ink)!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-card-main{
+ flex:1 1 auto!important;gap:.4rem!important;width:100%!important;min-width:0!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label{gap:.5rem!important;padding-right:1.8rem}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label>span:last-child{
+ color:var(--dm-v2-muted)!important;font-size:.75rem!important;font-weight:650!important;line-height:1.25!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-card-main>strong{
+ color:var(--dm-v2-ink)!important;font-size:clamp(1.35rem,1rem + .9vw,1.95rem)!important;letter-spacing:-.045em!important;line-height:1.1!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-card-main>small{font-size:.68rem!important;color:var(--dm-v2-muted)!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-gross-net{
+ flex:0 0 auto!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.5rem!important;
+ border-left:0!important;border-top:1px solid var(--dm-v2-line)!important;padding:.55rem 0 0!important;width:100%!important;margin:0!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-gross-net :is(span,b){color:var(--dm-v2-muted)!important;font-size:.68rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-gross-net b{color:var(--dm-v2-ink)!important;font-size:.76rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dm-kpi-arrow{
+ position:absolute!important;top:.8rem!important;right:.8rem!important;bottom:auto!important;left:auto!important;
+ background:var(--dm-v2-green)!important;color:#fff!important;border-radius:50%!important;width:1.65rem!important;height:1.65rem!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card[data-dm-kpi="revenue"]{
+ background:#095b3d!important;border-color:#095b3d!important;color:#fff!important
+}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card[data-dm-kpi="revenue"] :is(.dash-card-main>strong,.dash-summary-label>span:last-child,.dash-card-main>small,.dash-gross-net span,.dash-gross-net b){color:#fff!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card[data-dm-kpi="revenue"] .dash-gross-net{border-color:#ffffff38!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card[data-dm-kpi="revenue"] .dm-kpi-arrow{background:#ffffff28!important}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading{margin:0 0 .7rem}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading h2{font-size:1.25rem}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card{
+ position:relative!important;background:#fff!important;border:1px solid var(--dm-v2-line)!important;border-radius:.85rem!important;box-shadow:none!important;
+ padding:.65rem!important;color:var(--dm-v2-ink)!important;text-align:left!important;overflow:hidden!important
+}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card:not(:disabled):not(.selected):not(.low-warning):hover{border-color:var(--dm-v2-green)!important;background:#f7fbf8!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card.selected{border-color:var(--dm-v2-green)!important;background:var(--dm-v2-soft)!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card.low-warning{border-color:#d3a35c!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .product-art{
+ background:#f0f5f1!important;border-radius:.6rem!important;margin:0 0 .3rem!important;box-shadow:none!important
+}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .cat{font-size:.62rem!important;color:var(--dm-v2-muted)!important;font-weight:600!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card h4{
+ color:var(--dm-v2-ink)!important;font-weight:750!important;line-height:1.25!important;text-align:left!important
+}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .price{color:var(--dm-v2-green)!important;font-weight:800!important;text-align:left!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card:disabled{opacity:.65!important;background:#f1f3f1!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .order-head h3{font-size:1.25rem!important;letter-spacing:-.03em!important}
+html.dm-commercial-v2 body #app #view-pos .order-type-switch{background:#f2f5f3!important;border:1px solid var(--dm-v2-line)!important;border-radius:.75rem!important;padding:.2rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-type-switch>button{border:0!important;border-radius:.55rem!important;color:var(--dm-v2-muted)!important;background:transparent!important}
+html.dm-commercial-v2 body #app #view-pos .order-type-switch>button.active{background:#fff!important;color:var(--dm-v2-green)!important;box-shadow:0 1px 5px #153b2220!important;font-weight:750!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .totals{background:var(--dm-v2-soft)!important;border:1px solid #d2e5d7!important;border-radius:.8rem!important;padding:.75rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .totals .actual{border-top:1px solid #c4d9ca!important;padding-top:.5rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel .totals #actualAmount{font-size:1.4rem!important;color:var(--dm-v2-green)!important;font-weight:800!important;letter-spacing:-.03em}
+html.dm-commercial-v2 body #app #view-pos #payButton{background:var(--dm-v2-green)!important;border-radius:.75rem!important;color:white!important;min-height:3rem!important;font-weight:750!important;font-size:1rem!important;box-shadow:0 3px 10px #095b3d25!important}
+html.dm-commercial-v2 body #app #view-pos #payButton:disabled{opacity:.55!important;box-shadow:none!important}
+html.dm-commercial-v2 body #app #view-pos .order-list .empty-state{background:#f7f9f7!important;border:1px dashed #d1ded4!important;border-radius:.75rem!important;color:var(--dm-v2-muted)!important}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.stat,.metric){
+ background:#fff!important;border:1px solid var(--dm-v2-line)!important;border-radius:1rem!important;
+ padding:1.15rem!important;box-shadow:var(--dm-v2-shadow)!important
+}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.stat,.metric)>strong{
+ color:var(--dm-v2-ink)!important;font-size:clamp(1.45rem,1rem + 1.1vw,2.1rem)!important;font-weight:800!important;letter-spacing:-.04em!important
+}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.stat,.metric):first-child{background:var(--dm-v2-green)!important;border-color:var(--dm-v2-green)!important}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.stat,.metric):first-child :is(span,strong,small){color:#fff!important}
+html.dm-commercial-v2 body #platformApp .platform-dashboard-kpis>div{border:1px solid var(--dm-v2-line)!important;background:#f8fbf9!important;border-radius:.75rem!important;padding:.85rem!important}
+html.dm-commercial-v2 body #platformApp .platform-dashboard-kpis>div:first-child{background:var(--dm-v2-soft)!important}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.table-scroll,.table-wrap) thead th{
+ background:#edf3ef!important;color:#3d5c4b!important;font-weight:750!important
+}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.table-scroll,.table-wrap){border-color:var(--dm-v2-line)!important;border-radius:.7rem!important}
+html.dm-commercial-v2 body :is(#officeApp,#platformApp) :is(.table-scroll,.table-wrap) tbody tr:nth-child(even){background:#f8faf8}
+html.dm-commercial-v2 body #authScreen.auth-screen:not(.hidden) .auth-shell{border-radius:1.25rem!important;box-shadow:0 18px 55px #173b2530!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden){background:#fff!important;color:var(--dm-v2-ink)!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) #authTitle{
+ color:var(--dm-v2-ink)!important;text-align:left!important;letter-spacing:-.04em!important;font-weight:800!important;font-size:clamp(1.35rem,1.1rem + .6vw,1.8rem)!important
+}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) :is(label,.auth-hint,.auth-remember,.auth-signup){color:var(--dm-v2-muted)!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-text-action{color:var(--dm-v2-green)!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box{
+ background:#f5f8f5!important;border:1px solid #d0ded4!important;border-radius:.65rem!important;color:var(--dm-v2-ink)!important
+}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box input{color:var(--dm-v2-ink)!important;background:transparent!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box input::placeholder{color:#65786d!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box :is(svg,.auth-password-toggle){color:var(--dm-v2-green)!important;stroke:currentColor!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-submit{background:var(--dm-v2-green)!important;color:#fff!important;border:2px solid var(--dm-v2-green)!important;border-radius:999px!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-beans-icon{display:none!important}
+html.dm-commercial-v2.dm-native-exit-supported body #authScreen #authForm .dm-auth-exit{background:#fff!important;color:var(--dm-v2-green)!important;border:2px solid var(--dm-v2-green)!important;border-radius:999px!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .dm-v2-login-caption{color:var(--dm-v2-green);font-size:.68rem;font-weight:750;letter-spacing:.12em;margin:0 0 .4rem}
+}
+@media screen and (min-width:1181px){
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media screen and (max-width:699px){
+html.dm-commercial-v2 body #app .topbar{padding:.6rem .6rem!important}
+html.dm-commercial-v2 body #app #mobileBottomNav{background:#fff!important;border-top:1px solid var(--dm-v2-line)!important;box-shadow:0 -4px 24px #123e2c10!important}
+html.dm-commercial-v2 body #app #mobileBottomNav .mobile-nav-item:not(.hidden){color:#587063!important;background:transparent!important;border-color:transparent!important}
+html.dm-commercial-v2 body #app #mobileBottomNav .mobile-nav-item.active:not(.hidden),
+html.dm-commercial-v2 body #app #mobileBottomNav .mobile-more-button[aria-expanded="true"]{background:var(--dm-v2-soft)!important;color:var(--dm-v2-green)!important;border-color:#d6e7da!important}
+html.dm-commercial-v2 body #app #mobileBottomNav .mobile-nav-item.active .mobile-nav-icon{color:var(--dm-v2-green)!important}
+html.dm-commercial-v2 body #app #mobileBottomNav .dm-mobile-exit:not(.hidden),
+html.dm-commercial-v2 body #app #mobileBottomNav .mobile-signout-button:not(.hidden){color:#9b4946!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.55rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card{padding:.72rem!important;min-height:7.5rem!important;gap:.45rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card[data-dm-kpi="revenue"]{grid-column:1/-1!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-card-main>strong{font-size:clamp(1.08rem,4vw,1.5rem)!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card[data-dm-kpi="revenue"] .dash-card-main>strong{font-size:1.85rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-summary-label{padding-right:.75rem!important}
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dm-kpi-arrow{width:1.25rem!important;height:1.25rem!important;top:.5rem!important;right:.5rem!important}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading{margin:.2rem 0 .65rem!important}
+html.dm-commercial-v2 body #app #view-pos .catalog-panel>.dm-v2-section-heading p{display:none}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card{padding:.42rem!important;min-height:7rem!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .product-art{height:2.8rem!important;min-height:2.8rem!important;max-height:2.8rem!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card h4{font-size:.71rem!important;overflow-wrap:anywhere!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .price{font-size:.85rem!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .cat{font-size:.54rem!important}
+html.dm-commercial-v2 body #app #view-pos .order-panel{padding:.8rem!important;border-radius:1rem!important}
+html.dm-commercial-v2 body #authScreen .auth-shell{background:#fff!important}
+html.dm-commercial-v2 body #authScreen .auth-brand-panel{background:#fff!important;border-bottom:1px solid var(--dm-v2-line)!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden){padding:1.15rem!important}
+html.dm-commercial-v2 body #authScreen .auth-panel>.auth-card:not(.hidden) .auth-input-box{min-height:2.85rem!important}
+}
+@media screen and (max-width:360px){
+html.dm-commercial-v2 body #app #view-dashboard #dashboardSummary>.summary-card .dash-gross-net{grid-template-columns:minmax(0,1fr)!important}
+}
+@media (prefers-reduced-motion:reduce){html.dm-commercial-v2 body #app #catalogGrid .product-card{transition:none!important}}
