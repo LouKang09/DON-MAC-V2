@@ -8,6 +8,7 @@
  const remember=$('authRememberUsername'),toggle=$('authPasswordToggle');
  const KEY='donmac_login_remembered_username';
  const cashierApp=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
+ document.documentElement.classList.toggle('dm-cashier-apk',cashierApp);
  if(cashierApp)$('authSignupPrompt')?.classList.add('hidden');
  const pageIds={login:null,register:'authRegisterPanel',reset:'authResetPanel'};
  let page='login',checkSeq=0,available=false;
