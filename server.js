@@ -54,6 +54,7 @@ const franchiseLiveExports=require('./lib/franchise-live-report-exports');
 const shiftDeposits=require('./lib/franchise-shift-deposits');
 const chartPrefs=require('./lib/dashboard-chart-preferences');
 const reportFinancialPrivacy=require('./lib/report-financial-privacy');
+const reportCashierScope=require('./lib/report-cashier-scope');
 const franchisePayrollEntitlement=require('./lib/franchise-payroll-entitlement');
 const franchiseAttendance=require('./lib/franchise-attendance');
 const franchisePayrollLedger=require('./lib/franchise-payroll-ledger');
@@ -823,15 +824,16 @@ async function periodSales(params){
   }
   const access=await historicalSales.policy(db,params.user);
   const workspaceId=access.workspaceId,cutoff=access.cutoffUtc;
+  if(!staff&&(target<access.cutoffDate||target>historicalSales.today()))throw Object.assign(new Error('Choose a report date within your online history.'),{status:403});
+  const cashierIds=await reportCashierScope.resolve(db,{workspaceId,admin:!staff,userId:params.user.id},cashiers.map(x=>x.toLowerCase()));
   const args=[workspaceId,cutoff,...(params.branchId==null?[]:[Number(params.branchId)])];
+  const cashierWhere=reportCashierScope.clause('s.cashier_user_id',args,cashierIds);
   const result=await db.query(`SELECT s.*,CASE WHEN s.promo_id IS NOT NULL THEN COALESCE(s.remark,p.name) ELSE NULL END AS promo_name
     FROM sales s LEFT JOIN promos p ON p.id=s.promo_id
     WHERE EXISTS (SELECT 1 FROM chat_workspace_branches w WHERE w.workspace_id=$1 AND w.branch_id=s.branch_id)
-    AND s.sold_at >= $2`+(params.branchId==null?'':' AND s.branch_id=$3')+(staff?' AND s.cashier_user_id=$'+args.push(Number(params.user.id)):'')+' ORDER BY s.sold_at ASC',args);
-  const selected=new Set(cashiers);
-  const eligible=result.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&(!earliest||manilaDateString(s.sold_at)>=earliest)&&
-    (!selected.size||selected.has(normalize(s.cashier_name_snapshot))));
-  return{period,target,cashier:staff?params.user.username:cashier,cashiers,eligible,earliest,sold:eligible.filter(s=>s.status==='Sold')};
+    AND s.sold_at >= $2`+(params.branchId==null?'':' AND s.branch_id=$3')+cashierWhere+' ORDER BY s.sold_at ASC',args);
+  const eligible=result.rows.filter(s=>matchesPeriod(s.sold_at,period,target)&&(!earliest||manilaDateString(s.sold_at)>=earliest));
+  return{period,target,cashier:staff?params.user.username:cashier,cashiers,cashierIds,eligible,earliest,sold:eligible.filter(s=>s.status==='Sold')};
 }
 async function reportCashierChoices(branchId,user){
   if(user.role!=='Admin')return{cashiers:[user.username]};
@@ -867,7 +869,7 @@ async function salesReport(params){
   }));
   const deposited=await reportFinancialPrivacy.depositedAmount(db,{
     workspaceId:await workspaceIdForUser(params.user.id),
-    branchId:params.branchId??null,from:scope.earliest&&scope.earliest>reportDates.from?scope.earliest:reportDates.from,to:reportDates.to,cashierUserId:params.user.role==='User'?params.user.id:null
+    branchId:params.branchId??null,from:scope.earliest&&scope.earliest>reportDates.from?scope.earliest:reportDates.from,to:reportDates.to,cashierUserId:scope.cashierIds
   });
   const voided=scope.eligible.filter(s=>s.status==='Deleted');
   const refund=money(voided.reduce((a,s)=>a+Number(s.actual||0),0));
