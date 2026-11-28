@@ -123,6 +123,8 @@ async function visualV2(page,width,height){
   const rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}};
   document.documentElement.classList.toggle('dm-phone-layout',innerWidth<700);
   document.documentElement.classList.toggle('dm-native-exit-supported',innerWidth<700);
+  document.documentElement.classList.toggle('dm-cashier-apk',innerWidth<700);
+  if(innerWidth<700){$('authTitle').textContent='Welcome back';$('authSignupPrompt').classList.add('hidden');}
   document.body.classList.remove('legacy-authenticated');document.body.classList.add('auth-locked');app.classList.add('hidden');app.setAttribute('aria-hidden','true');app.inert=true;auth.classList.remove('hidden');
   const login={form:bg($('authForm')),title:getComputedStyle($('authTitle')).color,submit:bg($('authSubmit')),exit:bg(auth.querySelector('.dm-auth-exit')),signIn:rect($('authSubmit'))};
   return login;
@@ -134,7 +136,7 @@ async function visualV2(page,width,height){
  if(width===360||width===1440)await page.screenshot({path:'commercial-visual-review/login-'+width+'.png'});
  const dashboard=await page.evaluate(()=>{
   const $=id=>document.getElementById(id),app=$('app');
-  document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');app.classList.remove('hidden');app.removeAttribute('aria-hidden');app.inert=false;$('authScreen').classList.add('hidden');document.documentElement.classList.remove('dm-native-exit-supported','dm-cashier-role');
+  document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');app.classList.remove('hidden');app.removeAttribute('aria-hidden');app.inert=false;$('authScreen').classList.add('hidden');document.documentElement.classList.remove('dm-native-exit-supported','dm-cashier-apk','dm-cashier-role');
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-dashboard'));
   $('viewTitle').textContent='Dashboard';
   $('dashboardSummary').innerHTML=['revenue','orders','today','month','expenses','deposited','discount','alerts'].map((key,i)=>'<button type="button" class="summary-card dm-kpi-button'+(i===0?' dash-financial-card':'')+'" data-dm-kpi="'+key+'"><div class="dash-card-main"><div class="dash-summary-label"><span class="dash-summary-icon">◉</span><span>'+['Total Revenue','Orders','Today Sales','Month Revenue','Store Expenses','Deposited Sales','Discount','Low Stock Alerts'][i]+'</span></div><strong>'+([1,7].includes(i)?'24':'₱12,450.00')+'</strong><small>Sample reporting period</small></div>'+(i===0?'<div class="dash-gross-net"><span>Gross <b>₱16,450.00</b></span><span>Net <b>₱12,450.00</b></span></div>':'')+'<span class="dm-kpi-arrow">›</span></button>').join('');
@@ -168,7 +170,7 @@ async function run(){
    if(width===360||width===1440)await visualV2(page,width,height);
    if(width<700)await phase3Phone(page,width,height);
    if(width===360&&height===800)await phase4Navigation(page);
-   if(width===360){await page.evaluate(()=>{const app=document.getElementById('app');app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');document.body.classList.add('legacy-authenticated');document.body.classList.remove('auth-locked');document.getElementById('authScreen').classList.add('hidden');document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-pos'));});await page.screenshot({path:'commercial-visual-review/pos-360.png'});}
+   if(width===360){await page.evaluate(()=>{const app=document.getElementById('app');app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');document.body.classList.add('legacy-authenticated');document.body.classList.remove('auth-locked');document.getElementById('authScreen').classList.add('hidden');document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-pos'));document.documentElement.classList.add('dm-native-exit-supported','dm-cashier-role');document.getElementById('categoryTabs').innerHTML=['Coffee','Non Coffee','Food','Add-ons','Promos','Packages'].map((name,i)=>'<button type="button" class="tab category-tile'+(!i?' active':'')+'"><span class="category-symbol">'+['☕','🥛','🍰','＋','★','▦'][i]+'</span><strong>'+name+'</strong><small>Menu</small></button>').join('');document.getElementById('catalogGrid').innerHTML=['Iced Latte','Caramel Macchiato','Spanish Latte','Mocha','Cappuccino','Americano','Vanilla Latte'].map((name,i)=>'<button class="product-card"><div class="cat">Coffee</div><div class="product-art placeholder-art">☕</div><h4>'+name+'</h4><div class="price">₱'+(i%2?99:89)+'.00</div></button>').join('');document.querySelectorAll('#mobileBottomNav [data-view]').forEach(el=>{el.classList.toggle('hidden',false);el.setAttribute('aria-hidden','false');el.classList.toggle('active',el.dataset.view==='pos');});document.querySelector('#mobileMoreButton').classList.remove('active','hidden');document.getElementById('app').querySelector('main.main').scrollTop=0;});await page.screenshot({path:'commercial-visual-review/pos-360.png'});document.documentElement.classList.remove('dm-native-exit-supported');}
    for(const role of ['Admin','User']){
     const data=await page.evaluate(({role,width})=>{
      const $=id=>document.getElementById(id),app=$('app');document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');
@@ -193,9 +195,9 @@ async function run(){
    }
    for(const [file,app,main] of [['supply-office.html','#officeApp','.office-main'],['platform-admin.html','#platformApp','.content']]){
     await page.goto('http://127.0.0.1:'+port+'/'+file,{waitUntil:'domcontentloaded'});
-    const g=await page.evaluate(({app,main})=>{const el=document.querySelector(app);el.classList.remove('hidden');el.inert=false;const r=el.querySelector(main).getBoundingClientRect();return {viewport:innerWidth,width:r.width,right:r.right,canvas:getComputedStyle(el.querySelector(main)).backgroundImage};},{app,main});
+    const g=await page.evaluate(({app,main})=>{const el=document.querySelector(app);document.querySelector(app==='#officeApp'?'#officeLogin':'#platformLogin')?.classList.add('hidden');el.classList.remove('hidden');el.inert=false;const r=el.querySelector(main).getBoundingClientRect();return {viewport:innerWidth,width:r.width,right:r.right,canvas:getComputedStyle(el.querySelector(main)).backgroundImage};},{app,main});
     console.log('OFFICE',file,width,JSON.stringify(g));assert(g.width>0&&g.right<=g.viewport+2,'office main fits '+width);assert.equal(g.canvas,'none');
-    if(width===1440||width===360){const palette=await page.evaluate(({app})=>{const el=document.querySelector(app);const header=el.querySelector('.office-top,.topbar');return getComputedStyle(header).backgroundColor;},{app});assert.equal(palette,'rgb(255, 255, 255)','V2 office/admin light header');await page.screenshot({path:'commercial-visual-review/'+file.replace('.html','')+'-'+width+'.png'});}
+    if(width===1440||width===360){const palette=await page.evaluate(({app})=>{const el=document.querySelector(app);const header=el.querySelector('.office-top,.topbar');const login=document.querySelector(app==='#officeApp'?'#officeLogin':'#platformLogin');if(getComputedStyle(login).display!=='none')throw Error('Login obscures workspace fixture');return getComputedStyle(header).backgroundColor;},{app});assert.equal(palette,'rgb(255, 255, 255)','V2 office/admin light header');await page.screenshot({path:'commercial-visual-review/'+file.replace('.html','')+'-'+width+'.png'});}
    }
    await page.close();
   }
