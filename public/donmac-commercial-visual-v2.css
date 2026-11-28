@@ -283,9 +283,14 @@ html.dm-commercial-v2 body #app #view-pos #categoryTabs .category-status{display
 html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card:not(.promo):not(.package) .product-art{order:-1;display:grid!important;place-items:center;overflow:hidden}
 html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .product-art img{width:100%!important;height:100%!important;object-fit:contain!important}
 html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .price{display:flex!important;align-items:center;justify-content:space-between;gap:.15rem;width:100%;margin-top:auto!important}
-html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product]:not(:disabled) .price::after{
- content:"+";display:grid;place-items:center;border-radius:.45rem;background:#095b3d;color:#fff;width:1.25rem;height:1.25rem;flex:0 0 1.25rem;font-size:1rem;font-weight:700;line-height:1
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product] .price{padding-right:1.4rem!important;box-sizing:border-box}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product]:not(:disabled) .product-add-circle{
+ display:grid!important;place-items:center;position:absolute!important;right:.42rem!important;bottom:.42rem!important;top:auto!important;left:auto!important;
+ border-radius:.45rem!important;background:#095b3d!important;color:#fff!important;width:1.25rem!important;height:1.25rem!important;font-size:1rem!important;font-weight:700!important;line-height:1!important;pointer-events:none!important
 }
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card[data-product]:disabled .product-add-circle{display:none!important}
+html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card.low-warning .product-add-circle{position:static!important;align-self:flex-end;margin-top:.15rem!important}
+
 html.dm-commercial-v2 body #app #view-pos #catalogGrid .product-card .unavailable{white-space:normal!important;overflow-wrap:anywhere!important;font-size:.6rem!important}
 html.dm-commercial-v2 body #app #view-pos .order-panel .order-head{padding-bottom:.6rem!important;border-bottom:1px solid #e2ebe5!important;margin-bottom:.5rem!important}
 html.dm-commercial-v2 body #app #view-pos .order-panel .order-list .order-row{border:0!important;border-bottom:1px solid #e1eae4!important;background:transparent!important;border-radius:0!important;padding:.6rem .1rem!important}
