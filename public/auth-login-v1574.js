@@ -9,6 +9,9 @@
  const KEY='donmac_login_remembered_username';
  const cashierApp=/\bDonMacCashierApp\/1\b/.test(navigator.userAgent);
  document.documentElement.classList.toggle('dm-cashier-apk',cashierApp);
+ const phoneLayout=window.matchMedia('(max-width:699px)');
+ const syncMobileLogin=()=>document.documentElement.classList.toggle('dm-phone-layout',cashierApp||phoneLayout.matches);
+ syncMobileLogin();phoneLayout.addEventListener?.('change',syncMobileLogin);
  if(cashierApp)$('authSignupPrompt')?.classList.add('hidden');
  const pageIds={login:null,register:'authRegisterPanel',reset:'authResetPanel'};
  let page='login',checkSeq=0,available=false;
