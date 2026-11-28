@@ -171,9 +171,8 @@ async function signIn(page,name){
   assert(fresh.scope,'NEW account must receive identical dashboard branch scope');
   assert(fresh.chart,'NEW account must receive identical Sales Statistic visual');
   assert(!fresh.amount.includes('12,295'),'Previous owner sales must never appear for test1');
-  assert(legacy.main.background.includes('login-coffee-pattern-approved-hd.png'));
-  assert(fresh.main.background.includes('login-coffee-pattern-approved-hd.png'),
-   'NEW and SHARED accounts must receive the same coffee background');
+  assert.equal(legacy.main.background,'none','Operational workspace uses neutral canvas');
+  assert.equal(fresh.main.background,'none','NEW and SHARED accounts must use the same neutral canvas');
   assert.equal(legacy.summaryCount,fresh.summaryCount);
   assert.equal(legacy.summary.height,fresh.summary.height,'KPI styling must match account modes');
   await page.click('#mainNav [data-view="transactions"]');
