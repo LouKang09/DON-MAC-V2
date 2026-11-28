@@ -174,7 +174,7 @@ async function getUser(req, conn = db) {
   if (!token) return null;
   const tokenHash = hashToken(token);
   const result = await conn.query(
-    `SELECT u.id, u.username, u.role, u.active, u.branch_id, u.profile_photo, assigned_branch.active AS assigned_branch_active,
+    `SELECT u.id, u.username, u.role, u.active, u.branch_id, u.profile_photo, u.full_name, u.created_at, assigned_branch.active AS assigned_branch_active,
          COALESCE(u.login_username,u.username) AS login_name, s.expires_at, w.owner_user_id
        FROM sessions s
        JOIN users u ON u.id = s.user_id
@@ -189,7 +189,7 @@ async function getUser(req, conn = db) {
     return null;
   }
   if(cashierApp(req)&&row.role!=='User')return null;
-  return { id: Number(row.id), username: row.login_name||row.username, photoData:row.profile_photo||null, role: row.role,
+  return { id: Number(row.id), username: row.login_name||row.username, photoData:row.profile_photo||null, fullName:row.full_name||'', joinedAt:row.created_at||null, role: row.role,
     branchId: row.branch_id==null?null:Number(row.branch_id),
     branchActive:row.role==='Admin'||bool(row.assigned_branch_active),
     isOwner:Number(row.owner_user_id)===Number(row.id) };
@@ -947,7 +947,7 @@ async function getSaleDetail(reference,user){
     remark:s.remark||null,seniorDetails:s.senior_details||null,discountAmount:Number(s.discount_amount||0),
     gross:Number(s.gross||0),adjustment:Number(s.adjustment||0),actual:Number(s.actual||0),orderType:s.order_type||'Take Away',customerName:s.customer_name||null,tableLabel:s.table_label||null,
     deletedAt:s.deleted_at||null,deletedBy:s.deleted_by_username||null,
-    items,inventoryMovements,auditEvents
+    items:user.role==='Admin'?items:items.map(({excludeFromCosting,...item})=>item),inventoryMovements,auditEvents
   };
 }
 
@@ -2353,6 +2353,7 @@ async function handleApi(req,res,url){
       testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
       dataMode:liveMode?'NEW':testAccount?'TEMPORARY':'SHARED',
       liveMode,livePortal:liveMode?'/':null,
+      subscriptionPlan:liveCandidate?.subscriptionPlan||access.plan||null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
       accessPermissions:testAccount?[]:await cashierAccess.forUser(db,{id:Number(u.id),role:u.role,branchActive:bool(u.branch_active)})}},
@@ -2434,6 +2435,7 @@ async function handleApi(req,res,url){
     return json(res,200,{user:{...user,testMode:!!testAccount,testPortal:testAccount?'/phase2-test.html':null,
       dataMode:liveMode?'NEW':testAccount?'TEMPORARY':'SHARED',
       liveMode,livePortal:liveMode?'/':null,
+      subscriptionPlan:liveCandidate?.subscriptionPlan||access.plan||null,
       subscriptionStatus:liveCandidate?.subscriptionStatus||access.status||null,
       setupMode:liveMode&&!liveCandidate.liveEnabled,
       accessPermissions:testAccount?[]:await cashierAccess.forUser(db,user)}},safeHeaders());
