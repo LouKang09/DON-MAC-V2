@@ -133,17 +133,22 @@ async function snapshot(page){
    live:window.donmacFranchiseUnified};
  });
 }
-async function signOut(page){
- // Dismiss only the real release notification using its visible OK action.
- await page.waitForFunction(()=>document.querySelector('#dmUnifiedSystemPrompt[open]')||document.querySelector('#logoutButton')?.onclick,{timeout:10000});
- for(let i=0;i<3;i++){
+async function dismissWelcome(page){
+ // First visit intentionally displays the guide after 850 ms. Interact with
+ // its public close action and the real version notice, not DOM removal.
+ await wait(1300);
+ for(let i=0;i<8;i++){
   const notice=await page.$('#dmUnifiedSystemPrompt[open]');
-  if(!notice)break;
-  const message=await notice.evaluate(el=>el.textContent);
-  assert.match(message,/What's New|What’s New/,'Unexpected modal must not be bypassed');
-  await page.click('#dmPromptConfirm');
-  await page.waitForFunction(()=>!document.querySelector('#dmUnifiedSystemPrompt[open]'),{timeout:5000});
+  if(notice){assert.match(await notice.evaluate(el=>el.textContent),/What's New|What’s New/,'Unexpected modal must not be bypassed');await page.click('#dmPromptConfirm');await wait(150);continue;}
+  const guide=await page.$('.dm-guide-root .dm-guide-close:not(:disabled)');
+  if(guide){await guide.click();await wait(150);continue;}
+  break;
  }
+ assert.equal(await page.$('.dm-guide-root'),null,'Guide remains blocking the workspace');
+ assert.equal(await page.$('#dmUnifiedSystemPrompt[open]'),null,'System prompt remains blocking the workspace');
+}
+async function signOut(page){
+ await dismissWelcome(page);
  try{await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
   page.click('#logoutButton')]);}catch(err){console.error('SIGNOUT STATE',await page.evaluate(()=>{const el=document.querySelector('#logoutButton'),r=el.getBoundingClientRect();return {disabled:el.disabled,hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,250),dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>({id:d.id,text:d.textContent.slice(0,250)})),auth:document.getElementById('authScreen')?.className};}),requests.slice(-15));throw err;}
  await page.waitForFunction(()=>!document.body.classList.contains('legacy-authenticated')&&
@@ -190,8 +195,7 @@ async function signIn(page,name){
   assert.equal(fresh.main.background,'none','NEW and SHARED accounts must use the same neutral canvas');
   assert.equal(legacy.summaryCount,fresh.summaryCount);
   assert.equal(legacy.summary.height,fresh.summary.height,'KPI styling must match account modes');
-  const notice=await page.$('#dmUnifiedSystemPrompt[open]');
-  if(notice){assert.match(await notice.evaluate(el=>el.textContent),/What's New|What’s New/);await page.click('#dmPromptConfirm');}
+  await dismissWelcome(page);
   await page.click('#mainNav [data-view="transactions"]');
   await page.waitForFunction(()=>window.donmacFinance&&
    document.getElementById('financeTransactionCount').textContent.trim()==='0',
