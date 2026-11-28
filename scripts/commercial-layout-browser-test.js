@@ -78,9 +78,9 @@ async function phase4Navigation(page){
  await page.evaluate(()=>{
   const app=document.getElementById('app');app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');
   document.body.classList.add('legacy-authenticated');document.body.classList.remove('auth-locked');
-  document.documentElement.classList.add('dm-phone-layout','dm-cashier-role');
+  document.documentElement.classList.add('dm-phone-layout','dm-cashier-role','dm-cashier-apk');
   document.getElementById('authScreen').classList.add('hidden');
-  window.donmacAuthenticatedRole='User';window.donmacCashierPermissions=['transactions.view','expenses.view'];
+  window.donmacAuthenticatedRole='User';window.donmacCashierPermissions=['transactions.view','expenses.view','messages.view'];
   const setView=name=>{
    document.querySelectorAll('#app .view').forEach(el=>el.classList.toggle('active',el.id==='view-'+name));
    document.querySelectorAll('#mainNav .nav').forEach(el=>el.classList.toggle('active',el.dataset.view===name));
@@ -97,7 +97,8 @@ async function phase4Navigation(page){
  for(const path of ['nav-hierarchy-v20261117.js','mobile-nav-v1529.js']){
   await page.evaluate(source=>{(0,eval)(source)},fs.readFileSync(require('node:path').join(root,path),'utf8'));
  }
- const active=()=>page.$$eval('#mobileBottomNav [aria-current="page"]',els=>els.map(x=>x.dataset.view));
+ assert.equal(await page.$('#mobileMorePanel [data-mobile-chat-entry]'),null,'APK must not duplicate floating chat');
+ const active=()=>page.$eval('#mobileBottomNav [aria-current="page"]',els=>els.map(x=>x.dataset.view));
  await page.click('#mobileBottomNav [data-view="attendance"]');
  await page.waitForFunction(()=>document.querySelector('#mobileBottomNav [data-view="attendance"][aria-current="page"]'));
  assert.deepEqual(await active(),['attendance'],'Attendance is the sole active primary tab');
@@ -129,10 +130,10 @@ async function visualV2(page,width,height){
   const login={form:bg($('authForm')),title:getComputedStyle($('authTitle')).color,submit:bg($('authSubmit')),exit:bg(auth.querySelector('.dm-auth-exit')),signIn:rect($('authSubmit'))};
   return login;
  });
- assert.equal(data.form,'rgb(255, 255, 255)','V2 sign-in surface is white');
- assert.equal(data.title,'rgb(20, 47, 37)','V2 sign-in title contrast');
- assert.equal(data.submit,'rgb(9, 91, 61)','V2 sign-in primary green');
- if(width<700)assert.equal(data.exit,'rgb(255, 255, 255)','Native exit uses outlined pill');
+ assert.equal(data.form,'rgb(9, 91, 61)','Brand green sign-in surface');
+ assert.equal(data.title,'rgb(255, 255, 255)','Green sign-in title contrast');
+ assert.equal(data.submit,'rgb(255, 255, 255)','White primary action on green');
+ if(width<700)assert.equal(data.exit,'rgba(0, 0, 0, 0)','Native exit uses outlined pill');
  if(width===360||width===1440)await page.screenshot({path:'commercial-visual-review/login-'+width+'.png'});
  const dashboard=await page.evaluate(()=>{
   const $=id=>document.getElementById(id),app=$('app');
@@ -143,7 +144,7 @@ async function visualV2(page,width,height){
   const cards=[...$('dashboardSummary').children],rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,right:r.right}};
   return {header:getComputedStyle(document.querySelector('#app .topbar')).backgroundColor,revenue:getComputedStyle(cards[0]).backgroundColor,card:getComputedStyle(cards[1]).backgroundColor,layout:getComputedStyle(cards[0]).flexDirection,grid:rect($('dashboardSummary')),cards:cards.map(rect),nav:getComputedStyle($('mobileBottomNav')).backgroundColor};
  });
- assert.equal(dashboard.header,'rgb(255, 255, 255)','V2 light header overrides legacy theme');
+ assert.equal(dashboard.header,'rgb(9, 91, 61)','Brand green header');
  assert.equal(dashboard.revenue,'rgb(9, 91, 61)','V2 featured revenue card');
  assert.equal(dashboard.card,'rgb(255, 255, 255)','V2 secondary card');
  assert.equal(dashboard.layout,'column','V2 KPI has vertical hierarchy');
@@ -197,7 +198,7 @@ async function run(){
     await page.goto('http://127.0.0.1:'+port+'/'+file,{waitUntil:'domcontentloaded'});
     const g=await page.evaluate(({app,main})=>{const el=document.querySelector(app);document.querySelector(app==='#officeApp'?'#officeLogin':'#platformLogin')?.classList.add('hidden');el.classList.remove('hidden');el.inert=false;const r=el.querySelector(main).getBoundingClientRect();return {viewport:innerWidth,width:r.width,right:r.right,canvas:getComputedStyle(el.querySelector(main)).backgroundImage};},{app,main});
     console.log('OFFICE',file,width,JSON.stringify(g));assert(g.width>0&&g.right<=g.viewport+2,'office main fits '+width);assert.equal(g.canvas,'none');
-    if(width===1440||width===360){const palette=await page.evaluate(({app})=>{const el=document.querySelector(app);const header=el.querySelector('.office-top,.topbar');const login=document.querySelector(app==='#officeApp'?'#officeLogin':'#platformLogin');if(getComputedStyle(login).display!=='none')throw Error('Login obscures workspace fixture');return getComputedStyle(header).backgroundColor;},{app});assert.equal(palette,'rgb(255, 255, 255)','V2 office/admin light header');await page.screenshot({path:'commercial-visual-review/'+file.replace('.html','')+'-'+width+'.png'});}
+    if(width===1440||width===360){const palette=await page.evaluate(({app})=>{const el=document.querySelector(app);const header=el.querySelector('.office-top,.topbar');const login=document.querySelector(app==='#officeApp'?'#officeLogin':'#platformLogin');if(getComputedStyle(login).display!=='none')throw Error('Login obscures workspace fixture');return getComputedStyle(header).backgroundColor;},{app});assert.equal(palette,'rgb(9, 91, 61)','Brand green office/admin header');await page.screenshot({path:'commercial-visual-review/'+file.replace('.html','')+'-'+width+'.png'});}
    }
    await page.close();
   }
