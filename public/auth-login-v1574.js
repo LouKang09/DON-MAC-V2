@@ -12,7 +12,7 @@
  // CSP allows this external script; inline scripts are blocked.
  document.documentElement.classList.toggle('dm-native-exit-supported',cashierApp&&/\bDonMacNativeExit\/1\b/.test(navigator.userAgent));
  const phoneLayout=window.matchMedia('(max-width:699px)');
- const syncMobileLogin=()=>document.documentElement.classList.toggle('dm-phone-layout',cashierApp||phoneLayout.matches);
+ const syncMobileLogin=()=>document.documentElement.classList.toggle('dm-phone-layout',phoneLayout.matches);
  syncMobileLogin();phoneLayout.addEventListener?.('change',syncMobileLogin);
  if(cashierApp)$('authSignupPrompt')?.classList.add('hidden');
  const pageIds={login:null,register:'authRegisterPanel',reset:'authResetPanel'};
