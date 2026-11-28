@@ -41,7 +41,7 @@
  const special=el=>el.matches(
   '.office-campaign-inventory-note,.inv-direct-stock-tip,.advanced-data-notice,'+
   '.supply-notification-hint,.dm-transaction-count-note,.distribution-note,'+
-  '.warehouse-lifetime > summary > small,.panel-head p.muted,'+
+  '.warehouse-lifetime > summary > small,.panel-head p.muted,.inv-incoming-header p.muted,'+
   '.warehouse-chart-header p.muted,.warehouse-section-title p.muted,'+
   '.office-campaign-ingredient-composer > p.muted'
  );
@@ -60,7 +60,7 @@
   if(el.matches('.warehouse-lifetime > summary > small'))return el.parentElement;
   if(el.id==='distCostNote')return el.closest('.warehouse-lifetime')?.querySelector(':scope > summary');
   const local=el.closest('.panel-head,.warehouse-heading,.warehouse-chart-header,'+
-   '.warehouse-section-title,.office-campaign-ingredient-composer,.warehouse-cost-review,.card-head,.section-header');
+   '.warehouse-section-title,.office-campaign-ingredient-composer,.warehouse-cost-review,.card-head,.section-header,.inv-incoming-header');
   if(local){
    const h=local.querySelector('h1,h2,h3,h4,summary');
    if(h)return h;
@@ -132,9 +132,11 @@
   icon.addEventListener('focus',()=>show(icon));
   icon.addEventListener('blur',()=>{if(active===icon)hide()});
   // Touch can focus the same non-button icon; tapping again dismisses it.
+  let wasOpenOnTouch=false;
+  icon.addEventListener('pointerdown',()=>{wasOpenOnTouch=active===icon;});
   icon.addEventListener('click',event=>{
    if(!window.matchMedia?.('(hover: none)').matches)return;
-   if(active===icon){hide();icon.blur();}
+   if(wasOpenOnTouch){hide();icon.blur();}
    else{icon.focus();show(icon)}
    event.stopPropagation();
   });
