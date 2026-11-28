@@ -132,8 +132,8 @@ async function snapshot(page){
  });
 }
 async function signOut(page){
- await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
-  page.click('#logoutButton')]);
+ try{await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:25000}),
+  page.click('#logoutButton')]);}catch(err){console.error('SIGNOUT STATE',await page.evaluate(()=>{const el=document.querySelector('#logoutButton'),r=el.getBoundingClientRect();return {disabled:el.disabled,hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,250),dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>({id:d.id,text:d.textContent.slice(0,250)})),auth:document.getElementById('authScreen')?.className};}),requests.slice(-15));throw err;}
  await page.waitForFunction(()=>!document.body.classList.contains('legacy-authenticated')&&
   document.getElementById('authScreen')?.classList.contains('hidden')===false,{timeout:25000});
  await page.waitForFunction(()=>!document.getElementById('dashboardSummary').textContent.includes('12,295'),
