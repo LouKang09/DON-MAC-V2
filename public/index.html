@@ -342,7 +342,8 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
 }
 </style><style id="dm-mobile-compact-incoming-report">
 @media screen and (max-width:699px){
- html.dm-native-exit-supported #authScreen #authForm .dm-auth-exit{display:flex!important;min-height:2.55rem!important;width:100%!important;margin:.15rem 0 0!important;background:transparent!important;color:#fff!important;border:1px solid #a8d7bd!important;border-radius:.65rem!important;font-size:.87rem!important;font-weight:750!important}
+ html.dm-native-exit-supported #authScreen #authForm .dm-auth-exit{display:flex!important;align-items:center!important;justify-content:center!important;gap:.5rem!important;min-height:2.8rem!important;width:100%!important;margin:.45rem 0 0!important;background:transparent!important;color:#fff!important;border:2px solid #fff!important;border-radius:999px!important;font-size:1rem!important;font-weight:750!important;text-decoration:none!important;box-sizing:border-box!important}
+ html.dm-native-exit-supported #authScreen #authForm .dm-auth-exit svg{width:19px;height:19px;flex:0 0 19px}
  html body #app #view-inventory #incomingSupplyPanel{box-sizing:border-box!important;min-width:0!important;max-width:100%!important;margin:.35rem 0 .7rem!important;padding:.65rem .7rem!important;border-radius:.75rem!important}
  html body #app #view-inventory #incomingSupplyPanel .inv-incoming-header{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:.4rem!important;flex-wrap:nowrap!important}
  html body #app #view-inventory #incomingSupplyPanel .inv-incoming-header>div{min-width:0!important}
@@ -399,7 +400,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
           <button type="button" id="authForgotPassword" class="auth-text-action">Forgot password?</button>
         </div>
         <button id="authSubmit" class="primary big auth-submit dm-auth-action" data-dm-icon="logOut" type="submit"><svg class="dm-ua-native" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="m13 8 4 4-4 4M8 12h9"/></svg><span>Sign In</span></button>
-        <a class="dm-native-exit dm-auth-exit" href="https://donmacpos.com/__android_exit__" aria-label="Exit app">Exit App</a>
+        <a class="dm-native-exit dm-auth-exit" href="https://donmacpos.com/__android_exit__" aria-label="Exit app"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="m14 8 4 4-4 4M8 12h10"/></svg><span>Exit App</span></a>
         <p class="auth-signup" id="authSignupPrompt">Need a franchise account? <button type="button" id="authSignupButton" class="auth-text-action">Create Account</button></p>
         <p id="authHelpMessage" class="auth-help-message hidden" role="status"></p>
       </form>
