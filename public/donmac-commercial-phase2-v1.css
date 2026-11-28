@@ -1,0 +1,75 @@
+/* Commercial UI/UX Phase 2 — first screen-level refinements.
+   Shared by web and Android; never override business logic, hidden states or
+   native navigation. Feature-specific controls retain their tested sizes. */
+html.dm-cashier-role #app #view-reports :is(#reportCashierField,#reportDateField,.report-field-branch,.historical-sales-export,#reportCostingSection,#reportTransactionLogsSection),
+html.dm-cashier-role #app #view-inventory #inventoryAuditSection,
+html.dm-cashier-role #app #view-dashboard #dmFreeDashboardNotice,
+html.dm-cashier-role #app #view-inventory :is(#transferPlanGate,#transferUpgradeButton){display:none!important}
+html body #app #view-pos .catalog-panel,
+html body #app #view-pos .order-panel,
+html body #app #view-dashboard :is(.dashboard-statistics-card,.dashboard-insight-card),
+html body #app #view-reports .report-results-card,
+html body #app #view-inventory .inv-main-card,
+html body #officeApp .office-main .panel,
+html body #platformApp .content .main-card{
+ border:1px solid var(--dm-ds-border);
+ background-color:var(--dm-ds-surface);
+ border-radius:var(--dm-ds-card-radius);
+ box-shadow:var(--dm-ds-shadow);
+ min-width:0;
+}
+html body #app #view-pos #catalogGrid .product-card{
+ border-color:var(--dm-ds-border);
+ border-radius:var(--dm-ds-control-radius);
+ box-shadow:none;
+ transition:border-color var(--dm-ds-motion),box-shadow var(--dm-ds-motion);
+}
+@media(hover:hover){
+ html body #app #view-pos #catalogGrid .product-card:not(:disabled):hover{
+  border-color:var(--dm-ds-accent);
+  box-shadow:var(--dm-ds-shadow);
+ }
+}
+html body #app #view-pos .order-panel :is(.order-head,.order-summary),
+html body #app #view-reports .report-results-card .card-head,
+html body #officeApp .office-main .panel-head,
+html body #platformApp .content .section-header{
+ gap:var(--dm-ds-space-3);
+}
+html body #app #view-dashboard .summary-card,
+html body #officeApp .office-main .stat,
+html body #platformApp .content .metric{
+ border:1px solid var(--dm-ds-border);
+ border-radius:var(--dm-ds-card-radius);
+ background-color:var(--dm-ds-surface);
+ box-shadow:var(--dm-ds-shadow);
+}
+html body #app #view-reports .report-filter-layout,
+html body #app #view-reports .report-filter-fields,
+html body #officeApp .office-main .panel-head,
+html body #platformApp .content .toolbar{min-width:0;gap:var(--dm-ds-space-3)}
+html body #app #view-reports .report-filter-fields > :not(.hidden){min-width:0;max-width:100%}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.warehouse-table-scroll,.inv-incoming-table-wrap) table th{
+ background-color:var(--dm-ds-canvas);
+ color:var(--dm-ds-muted);
+}
+html body :is(#app,#officeApp,#platformApp) :is(.table-wrap,.table-scroll,.warehouse-table-scroll,.inv-incoming-table-wrap) table tbody tr:hover{background-color:#f8fbf9}
+html body #app #view-inventory .inv-incoming-panel{
+ border-color:var(--dm-ds-border);
+ background-color:var(--dm-ds-surface);
+}
+html body #officeApp .office-main .warehouse-controls,
+html body #platformApp .content .toolbar{align-items:end}
+@media(max-width:699px){
+ html body #app #view-reports .report-filter-fields{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem!important;
+ }
+ html.dm-cashier-role body #app #view-reports .report-filter-fields{grid-template-columns:minmax(0,1fr)!important}
+ html.dm-cashier-role body #app #view-reports .report-field-period{width:min(100%,12rem)!important;max-width:100%!important}
+ html body #app #view-reports .report-results-card,
+ html body #app #view-inventory .inv-main-card,
+ html body #officeApp .office-main .panel{padding:clamp(.65rem,3vw,.9rem)}
+ html body #app #view-pos .catalog-panel,
+ html body #app #view-pos .order-panel{box-shadow:none}
+}
+@media(prefers-reduced-motion:reduce){html body #app #view-pos #catalogGrid .product-card{transition:none!important}}
