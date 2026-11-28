@@ -9,7 +9,7 @@ const loader=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const dynamicCss=[...loader.matchAll(/loadCss\('[^']+',\s*'([^']+)'\)/g)].map(x=>x[1]);
 const server=http.createServer((req,res)=>{
  const p=new URL(req.url,'http://localhost').pathname;
- if(p.endsWith('.js')){res.writeHead(200,{'Content-Type':'application/javascript'});return res.end('');}
+ if(p.endsWith('.js')){const script=path.resolve(root,p.slice(1));if(!script.startsWith(root+path.sep)||!fs.existsSync(script)){res.writeHead(404);return res.end();}res.writeHead(200,{'Content-Type':'application/javascript'});return res.end('');}
  const file=path.resolve(root,p==='/'?'index.html':p.slice(1));
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end();}
  res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream'});fs.createReadStream(file).pipe(res);
@@ -71,6 +71,49 @@ async function phase3Phone(page,width,height){
  assert(Math.abs(result.modes[0].pos.grid.w-result.modes[1].pos.grid.w)<1,'Browser/APK catalog geometry identical at same CSS width');
  assert(Math.abs(result.modes[0].login.shell.w-result.modes[1].login.shell.w)<1,'Browser/APK login width identical');
 }
+// Run the real mobile navigation and hierarchy modules, rather than simulating
+// their active classes. This checks attendance (no desktop button), More, and
+// drawer reset using actual user clicks with local fixtures only.
+async function phase4Navigation(page){
+ await page.evaluate(()=>{
+  const app=document.getElementById('app');app.classList.remove('hidden');app.inert=false;app.removeAttribute('aria-hidden');
+  document.body.classList.add('legacy-authenticated');document.body.classList.remove('auth-locked');
+  document.documentElement.classList.add('dm-phone-layout','dm-cashier-role');
+  document.getElementById('authScreen').classList.add('hidden');
+  window.donmacAuthenticatedRole='User';window.donmacCashierPermissions=['transactions.view','expenses.view'];
+  const setView=name=>{
+   document.querySelectorAll('#app .view').forEach(el=>el.classList.toggle('active',el.id==='view-'+name));
+   document.querySelectorAll('#mainNav .nav').forEach(el=>el.classList.toggle('active',el.dataset.view===name));
+  };
+  for(const el of document.querySelectorAll('#mobileBottomNav [data-view],#mobileMorePanel [data-view]')){
+   const visible=['pos','attendance','transactions','expenses'].includes(el.dataset.view);
+   el.classList.toggle('hidden',!visible);
+   el.disabled=!visible;el.setAttribute('aria-hidden',String(!visible));
+   el.addEventListener('click',()=>setView(el.dataset.view));
+  }
+  document.getElementById('mobileMoreButton').classList.remove('hidden');
+  setView('pos');
+ });
+ for(const path of ['nav-hierarchy-v20261117.js','mobile-nav-v1529.js']){
+  await page.evaluate(source=>{(0,eval)(source)},fs.readFileSync(require('node:path').join(root,path),'utf8'));
+ }
+ const active=()=>page.$$eval('#mobileBottomNav [aria-current="page"]',els=>els.map(x=>x.dataset.view));
+ await page.click('#mobileBottomNav [data-view="attendance"]');
+ await page.waitForFunction(()=>document.querySelector('#mobileBottomNav [data-view="attendance"][aria-current="page"]'));
+ assert.deepEqual(await active(),['attendance'],'Attendance is the sole active primary tab');
+ await page.click('#mobileMoreButton');
+ const group='#mobileMorePanel [aria-controls="dmMobileTransactions"]';
+ await page.click(group);
+ await page.waitForSelector('#dmMobileTransactions [data-view="transactions"]',{visible:true});
+ await page.click('#dmMobileTransactions [data-view="transactions"]');
+ await page.waitForFunction(()=>document.getElementById('mobileMoreButton').classList.contains('active')&&document.getElementById('mobileMorePanel').classList.contains('hidden'));
+ assert.deepEqual(await active(),[],'Drawer destinations must not falsely select POS');
+ await page.click('#mobileMoreButton');
+ assert.equal(await page.$eval('#dmMobileTransactions',el=>el.hidden),true,'Transactions group starts collapsed when reopened');
+ await page.keyboard.press('Escape');
+ assert.equal(await page.$eval('#mobileMoreButton',el=>el.getAttribute('aria-expanded')),'false');
+ console.log('PASS Phase 4 mobile navigation: attendance, More, collapsed Transactions and Escape');
+}
 async function run(){
  const port=await new Promise(r=>server.listen(0,'127.0.0.1',()=>r(server.address().port)));
  const browser=await puppeteer.launch({executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -83,6 +126,7 @@ async function run(){
     await new Promise(resolve=>{const link=document.createElement('link');link.rel='stylesheet';link.href=url;link.onload=link.onerror=resolve;document.head.append(link);});
    }},dynamicCss);
    if(width<700)await phase3Phone(page,width,height);
+   if(width===360&&height===800)await phase4Navigation(page);
    for(const role of ['Admin','User']){
     const data=await page.evaluate(({role,width})=>{
      const $=id=>document.getElementById(id),app=$('app');document.body.classList.remove('auth-locked');document.body.classList.add('legacy-authenticated');
