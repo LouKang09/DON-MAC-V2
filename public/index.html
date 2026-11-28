@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dm-commercial-v2">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -373,6 +373,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
 
   <link id="dmCommercialPhase2" rel="stylesheet" href="/donmac-commercial-phase2-v1.css?v=2" />
   <link id="dmCommercialPhase3" rel="stylesheet" href="/donmac-commercial-phase3-responsive.css?v=1" />
+  <link id="dmCommercialVisualV2" rel="stylesheet" href="/donmac-commercial-visual-v2.css?v=1" />
 </head>
 <body class="auth-locked">
   <div id="toast" class="toast"></div>
@@ -385,7 +386,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
       <div class="auth-panel">
       <form id="authForm" class="auth-card">
         <img class="auth-beans-icon" src="/assets/login-coffee-beans-all-white-strokes-v1587.svg" alt="" width="116" height="116" decoding="async" />
-        <h1 id="authTitle">Welcome Back, Please login to your account</h1>
+        <p class="dm-v2-login-caption">DON MACCHIATOS · POS</p><h1 id="authTitle">Welcome Back, Please login to your account</h1>
         <p id="authHint" class="auth-hint" role="status"></p>
         <label for="authUsername">Username</label>
         <div class="auth-input-box">
@@ -542,6 +543,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
       </header>
 
       <section id="view-dashboard" class="view">
+        <div class="dm-v2-section-heading"><div><span class="dm-v2-kicker">Store overview</span><h2>Sales performance</h2><p>Monitor your store activity and key metrics.</p></div></div>
         <div id="dashboardSummary" class="summary-grid dashboard-summary" aria-label="Sales overview"></div>
 
         <div class="dashboard-grid dashboard-hero-grid">
@@ -624,6 +626,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
         <div class="pos-branch-bar hidden" aria-hidden="true"><select id="posBranch" aria-label="Branch for this sale"></select><span id="posBranchReadOnly"></span></div>
         <div class="pos-layout">
           <div class="catalog-panel">
+            <div class="dm-v2-section-heading"><div><span class="dm-v2-kicker">Point of sale</span><h2>Menu &amp; products</h2><p>Choose products to add to the current order.</p></div></div>
             <div class="catalog-tools"><label class="catalog-search-wrap" aria-label="Search products"><span aria-hidden="true">⌕</span><input id="searchBox" class="search" placeholder="Search products…" autocomplete="off" /></label></div>
             <div id="categoryTabs" class="tabs" aria-label="Product categories"></div>
             <div id="promoBanner" class="promo-banner hidden"></div>
@@ -1536,7 +1539,7 @@ html.dm-native-exit-supported #authScreen .dm-auth-exit{display:flex!important;a
   <script src="/auth-login-v1574.js?v=20261128-phase3-viewport"></script>
   <script src="/guided-tour-content-v20261116.js?v=7"></script>
   <script src="/guided-tour-v20261116.js?v=20261128-phase2-guide-close"></script>
-  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261127-staff-mobile"></script><script src="/nav-hierarchy-v20261117.js?v=20261128-collapsed"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=20261127-trial"></script><script src="/app.js?v=20261128-commercial-phase4"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
+  <script src="/historical-sales-v20261110.js?v=2" defer></script><script src="/franchise-payroll-v20261117.js?v=20261127-staff-mobile"></script><script src="/nav-hierarchy-v20261117.js?v=20261128-collapsed"></script><script src="/sidebar-collapse-core-v20261117.js?v=1"></script><script src="/expense-pie-chart-v20261125.js?v=3"></script><script src="/dashboard-kpi-chart-renderer-v20261125.js?v=20261125-today-sales-branch"></script><script src="/dashboard-kpi-drilldown-v20261118.js?v=20261125-chart-choice"></script><script src="/business-store-dashboard-v20261119.js?v=20261127-trial"></script><script src="/app.js?v=20261128-visual-redesign-v2"></script><script src="/inventory-usage-summary-v20261120.js?v=20261126-five-rows" defer></script>
   <script src="/vendor/lottie-svg.min.js" defer></script>
   <script src="/donmac-icon-controls-v20261121.js?v=3" defer></script>
   <script src="/donmac-useanimations-v20261120.js?v=15" defer></script>
